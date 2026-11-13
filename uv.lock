@@ -19,6 +19,7 @@ members = [
     "nest-forum",
     "nest-gallery",
     "nest-game",
+    "nest-game-character",
     "nest-game-inventory",
     "nest-game-item",
     "nest-game-world",
@@ -544,6 +545,27 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-character"
+version = "0.1.0"
+source = { editable = "game/subsystems/character" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-game" },
+    { name = "nest-game-item" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-item", editable = "game/subsystems/item" },
+    { name = "pyyaml" },
+]
+
+[[package]]
 name = "nest-game-inventory"
 version = "0.1.0"
 source = { editable = "game/subsystems/inventory" }
@@ -757,6 +779,7 @@ dependencies = [
     { name = "nest-forum" },
     { name = "nest-gallery" },
     { name = "nest-game" },
+    { name = "nest-game-character" },
     { name = "nest-game-inventory" },
     { name = "nest-game-item" },
     { name = "nest-game-world" },
@@ -797,6 +820,7 @@ requires-dist = [
     { name = "nest-forum", editable = "modules/forum" },
     { name = "nest-gallery", editable = "modules/gallery" },
     { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-character", editable = "game/subsystems/character" },
     { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
     { name = "nest-game-item", editable = "game/subsystems/item" },
     { name = "nest-game-world", editable = "game/subsystems/world" },

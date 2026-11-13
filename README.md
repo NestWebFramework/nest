@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, item, inventory)
+game/subsystems/      game subsystems (world, item, inventory, character)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -516,6 +516,30 @@ nothing, and the most worn units go first. A water skin's last drink leaves the 
 Stacks are written by key at `sync.every`. Game masters can follow each owner's
 `game.<server>.inventory.<type>.<id>`. The commands are `GiveItem`, `TakeItem` and
 `TransferItem`.
+
+**`character`** is what NPCs and players are. Its definitions come from the packs' `characters:`
+files: attributes, skills, technologies, emotions, traits, the 18 professions and their ranks,
+social ranks, and 16 diseases with their effects and treatments. A character has a single sheet
+(`character_sheet`, its values kept as JSON), whether it is an NPC or a player. The npc and
+player subsystems will add a mind on top.
+
+* **Needs:** every living character gets hungry, thirsty and tired by the game hour (settings),
+  so a world runs the same at any tick or time scale. Rest and sleep restore stamina. At full
+  hunger or thirst, health falls.
+* **Emotions** follow voievodate's rules: feelings fade, want brings sadness, anger and fear,
+  and comfort brings joy.
+* **Diseases** incubate, hurt every few hours, progress, and roll once for death at 80%.
+  Contagious ones spread between characters in the same place, using the world's seeded
+  generator. A treatment is given once (an item used, a healer, rest) and rolls its
+  effectiveness.
+* **Healing:** health and carry weight recover when no disease affects them. The old engine had
+  no healing.
+
+The old seed list forgot the diseases. The seed tool now runs that seed too, and the export
+maps the treatments' placeholder item (`item_id=16`, the iron hammer) to the items their
+comments name. The commands are `CreateCharacter`, `Infect`, `Treat`, `GrantExperience` and
+`ChangeAttribute`. Game masters follow `game.<server>.character` for births, deaths and
+illnesses, and `game.<server>.character.<id>` for one character's sheet.
 
 ```sh
 uv run nest game status applications/voievodate
