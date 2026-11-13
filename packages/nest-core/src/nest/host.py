@@ -308,6 +308,10 @@ class ModuleHost:
         self._nest._context.append(fn)
         return fn
 
+    def lookup(self, name: str, key: Any = None) -> Any:
+        """Ask the application's modules (see Nest.lookup); how a module finds another's service."""
+        return self._nest.lookup(name, key)
+
     def answer(self, name: str, fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
         """Answer a lookup other modules may ask (see Nest.lookup)."""
         self._nest._lookups.setdefault(name, []).append((self.name, fn))
@@ -421,7 +425,10 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
             app.mount(
                 f"/assets/{unit.name}", StaticFiles(directory=static), name=f"assets:{unit.name}"
             )
-        if entry.type in ("module", "theme"):
+        # Every package with code that runs in the application is set up: modules,
+        # themes and an ecosystem's own types (a game subsystem); interfaces and
+        # providers are not, they are bound.
+        if entry.type not in ("interface", "provider", "application"):
             nest.settings.declare(
                 unit.name, entry.manifest.settings, unit.instance.config if unit.instance else None
             )

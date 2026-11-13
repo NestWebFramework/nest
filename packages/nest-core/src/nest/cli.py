@@ -78,7 +78,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
         return 1
     print(f"{app.name} {app.manifest.module.version}: start order")
     for i, unit in enumerate(the_plan.units, 1):
-        route = unit.instance.route if unit.instance else "-"
+        route = (unit.instance.route if unit.instance else None) or "-"
         print(f"  {i:2}. {unit.name:24} {unit.entry.type:10} {route}")
     if the_plan.bindings:
         print("bindings")

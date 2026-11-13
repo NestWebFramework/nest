@@ -28,6 +28,8 @@ dependencies = [
     "nest-forum",
     "nest-messages",
     "nest-trains",
+    "nest-game",
+    "nest-game-world",
 ]
 
 [tool.uv]
@@ -40,6 +42,8 @@ members = [
     "interfaces/*",
     "providers/*",
     "themes/*",
+    "game/engine",
+    "game/subsystems/*",
 ]
 
 [tool.uv.sources]
@@ -67,6 +71,8 @@ nest-redirects = { workspace = true }
 nest-forum = { workspace = true }
 nest-messages = { workspace = true }
 nest-trains = { workspace = true }
+nest-game = { workspace = true }
+nest-game-world = { workspace = true }
 
 [dependency-groups]
 dev = [

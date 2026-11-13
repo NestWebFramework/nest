@@ -17,6 +17,8 @@ members = [
     "nest-forms",
     "nest-forum",
     "nest-gallery",
+    "nest-game",
+    "nest-game-world",
     "nest-glossary",
     "nest-htmx",
     "nest-media",
@@ -517,6 +519,38 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game"
+version = "0.1.0"
+source = { editable = "game/engine" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
+name = "nest-game-world"
+version = "0.1.0"
+source = { editable = "game/subsystems/world" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-game" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+]
+
+[[package]]
 name = "nest-glossary"
 version = "0.1.0"
 source = { editable = "modules/glossary" }
@@ -679,6 +713,8 @@ dependencies = [
     { name = "nest-forms" },
     { name = "nest-forum" },
     { name = "nest-gallery" },
+    { name = "nest-game" },
+    { name = "nest-game-world" },
     { name = "nest-glossary" },
     { name = "nest-htmx" },
     { name = "nest-media" },
@@ -714,6 +750,8 @@ requires-dist = [
     { name = "nest-forms", editable = "modules/forms" },
     { name = "nest-forum", editable = "modules/forum" },
     { name = "nest-gallery", editable = "modules/gallery" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-world", editable = "game/subsystems/world" },
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },
     { name = "nest-media", editable = "modules/media" },

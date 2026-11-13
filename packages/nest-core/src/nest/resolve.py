@@ -24,6 +24,19 @@ from nest.manifest import Binding, Instance
 HOST_FACILITIES = frozenset({"workspace", "realtime"})
 
 
+class _Includable:
+    """Every type an application may list under modules: whatever is set up, except themes."""
+
+    def __contains__(self, type_: object) -> bool:
+        return type_ not in ("interface", "provider", "application", "theme")
+
+    def __iter__(self):  # for the message: "a provider, not a module"
+        return iter(["module"])
+
+
+INCLUDABLE = _Includable()
+
+
 class PlanError(Exception):
     def __init__(self, app: str, problems: list[str]):
         self.app = app
@@ -90,7 +103,7 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
     for inst in manifest.modules:
         if not inst.enabled:
             continue
-        entry = find(inst.name, {"module"}, f"{app.name} includes '{inst.name}'")
+        entry = find(inst.name, INCLUDABLE, f"{app.name} includes '{inst.name}'")
         if entry is None:
             continue
         if entry.name in instances:
@@ -172,7 +185,13 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
                     f"{entry.name} requires {iface}; bind it in {app.name}'s module.yml"
                 )
     for name, inst in instances.items():
-        if inst.route is None:
+        # A module serves pages, so it needs a route; an ecosystem's part (a game
+        # subsystem) may run without one.
+        if (
+            inst.route is None
+            and included.get(name) is not None
+            and included[name].type == "module"
+        ):
             problems.append(f"{app.name} includes '{name}' without a route")
         declared = included[name].manifest.settings if name in included else {}
         for key in sorted(set(inst.config) - set(declared)):

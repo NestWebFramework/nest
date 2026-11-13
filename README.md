@@ -40,7 +40,9 @@ modules/              reusable modules (htmx, auth, forms, glossary, content, me
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
-applications/         applications (hello, regionalisme, morlaca, transilpedia, gari)
+game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
+game/subsystems/      game subsystems (world)
+applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -450,6 +452,54 @@ uv run nest trains journeys applications/gari "Cluj Napoca" "Bucuresti Nord"
 `applications/gari` mounts the timetable at `/cfr`, where gari.ro had it (`/cfr/gara/…`,
 `/cfr/tren/…`, `/cfr/itinerariu`, `/cfr/companie/…`), and the galleries at `/galerii-foto`, as
 Geticus routed them.
+
+## The game: nest-game
+
+The voievodate.ro simulation is the **nest-game ecosystem**. Its engine (`game/engine`, the
+`game` module) publishes a contract adding the **`subsystem`** type, which must declare `tick:`,
+so the core validates subsystems as it validates its own types.
+
+* **One World per game server** (`servers`). A world holds what each subsystem keeps, its own
+  seeded random generator and its own clock. Two servers share nothing.
+* **One loop per world is the only writer.** HTTP handlers `submit` commands and await the
+  result. Each tick, the loop:
+  1. applies the queued commands;
+  2. advances the clock;
+  3. runs each subsystem's stage in the order the manifests declare (`tick.after`), at its own
+     rate (`tick.every`), timed;
+  4. publishes the stages' events on `game.<server>.<topic>`;
+  5. hands what changed to each subsystem's writer, run in a thread at `sync.every`.
+* **Testable by hand.** With `autostart: false` the worlds are stepped by hand (tests, the CLI)
+  and behave exactly the same.
+* **Game masters** see every server's clock, tick time and stages at the module's route, and
+  can pause, resume and step it.
+
+```yaml
+# a subsystem's module.yml
+type: subsystem
+tick: {stage: npc, after: [world, economy], every: 0}
+sync: {every: 10}
+```
+
+```python
+class NpcSubsystem(Subsystem):
+    def load(self, world, db): ...          # build world.state["npc"] from the database
+    def tick(self, world, dt): ...          # dt game seconds; world.rng, world.now, world.emit(...)
+    def flush(self, world): ...             # collect what changed; return a writer for a thread
+    @handles(TalkToNpc)
+    def talk(self, world, command): ...     # applied on the loop, answered to the submitter
+```
+
+**`world`** is the first subsystem ported. It keeps the game calendar (a restarted world goes on
+where it was), the season by month, and each day's weather for the world and its regions, drawn
+with the world's seeded generator. Clients follow `game.<server>.world` for `clock` and
+`weather`.
+
+```sh
+uv run nest game status applications/voievodate
+uv run nest game step applications/voievodate voievodate 3600     # one game day at 24×
+uv run nest run applications/voievodate                            # http://127.0.0.1:8500/joc
+```
 
 ## Safe by default
 
