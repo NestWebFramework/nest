@@ -3,8 +3,8 @@
 <form class="row" method="post" action="{{ auth.logout }}">
   {{ csrf_field }}
   <span class="muted">{{ user.label }}</span>
-  <button class="secondary" type="submit">Sign out</button>
+  <button class="secondary" type="submit">{{ _("Sign out") }}</button>
 </form>
 {% else %}
-<a href="{{ auth.login }}">Sign in</a>
+<a href="{{ auth.login }}">{{ _("Sign in") }}</a>
 {% endif %}

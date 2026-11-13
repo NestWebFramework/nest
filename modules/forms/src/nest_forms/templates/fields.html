@@ -1,0 +1,54 @@
+{#
+  Accessible fields. Import with: {% import "forms/fields.html" as f %}
+  form is a Submission (from read() or blank()); labels come translated.
+#}
+
+{% macro _describe(name, hint, err) -%}
+{% if err %} aria-invalid="true"{% endif %}
+{%- if hint or err %} aria-describedby="{% if hint %}f-{{ name }}-hint{% endif %}{% if hint and err %} {% endif %}{% if err %}f-{{ name }}-error{% endif %}"{% endif %}
+{%- endmacro %}
+
+{% macro _notes(name, hint, err) %}
+{% if hint %}<small id="f-{{ name }}-hint" class="hint">{{ hint }}</small>{% endif %}
+{% if err %}<small id="f-{{ name }}-error" class="error">{{ err }}</small>{% endif %}
+{% endmacro %}
+
+{% macro field(form, name, label, type="text", hint=None, required=False, attrs={}) %}
+{% set err = form.errors.get(name) %}
+<div class="field{% if err %} invalid{% endif %}">
+  <label for="f-{{ name }}">{{ label }}{% if required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+  {% if type == "textarea" %}
+  <textarea id="f-{{ name }}" name="{{ name }}"{% if required %} required{% endif %}{{ _describe(name, hint, err) }} {{ attrs | xmlattr }}>{{ form.values.get(name, "") }}</textarea>
+  {% else %}
+  <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}"{% if type != "password" %} value="{{ form.values.get(name, "") }}"{% endif %}{% if required %} required{% endif %}{{ _describe(name, hint, err) }} {{ attrs | xmlattr }}>
+  {% endif %}
+  {{ _notes(name, hint, err) }}
+</div>
+{% endmacro %}
+
+{% macro select(form, name, label, options, hint=None, required=False) %}
+{% set err = form.errors.get(name) %}
+{% set current = form.values.get(name, "") | string %}
+<div class="field{% if err %} invalid{% endif %}">
+  <label for="f-{{ name }}">{{ label }}{% if required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+  <select id="f-{{ name }}" name="{{ name }}"{% if required %} required{% endif %}{{ _describe(name, hint, err) }}>
+    {% for value, text in options %}
+    <option value="{{ value }}"{% if value | string == current %} selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+  {{ _notes(name, hint, err) }}
+</div>
+{% endmacro %}
+
+{% macro checkbox(form, name, label, hint=None) %}
+{% set err = form.errors.get(name) %}
+<div class="field check{% if err %} invalid{% endif %}">
+  <input id="f-{{ name }}" name="{{ name }}" type="checkbox" value="1"{% if form.values.get(name) %} checked{% endif %}{{ _describe(name, hint, err) }}>
+  <label for="f-{{ name }}">{{ label }}</label>
+  {{ _notes(name, hint, err) }}
+</div>
+{% endmacro %}
+
+{% macro errors(form) %}
+{% if form.errors.get("__all__") %}<p class="notice danger" role="alert">{{ form.errors["__all__"] }}</p>{% endif %}
+{% endmacro %}

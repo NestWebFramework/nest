@@ -12,6 +12,7 @@ members = [
     "nest-db-mariadb",
     "nest-db-postgres",
     "nest-db-sqlite",
+    "nest-forms",
     "nest-htmx",
     "nest-theme-base",
     "nest-workspace",
@@ -301,7 +302,7 @@ wheels = [
 
 [[package]]
 name = "nest-auth"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "modules/auth" }
 dependencies = [
     { name = "nest-core" },
@@ -334,7 +335,7 @@ requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
 
 [[package]]
 name = "nest-core"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/nest-core" }
 dependencies = [
     { name = "fastapi" },
@@ -412,6 +413,17 @@ dependencies = [
 requires-dist = [{ name = "nest-db", editable = "interfaces/db" }]
 
 [[package]]
+name = "nest-forms"
+version = "0.1.0"
+source = { editable = "modules/forms" }
+dependencies = [
+    { name = "nest-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
+
+[[package]]
 name = "nest-htmx"
 version = "0.1.0"
 source = { editable = "modules/htmx" }
@@ -424,7 +436,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-theme-base"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "themes/base" }
 dependencies = [
     { name = "nest-htmx" },
@@ -446,6 +458,7 @@ dependencies = [
     { name = "nest-db-mariadb" },
     { name = "nest-db-postgres" },
     { name = "nest-db-sqlite" },
+    { name = "nest-forms" },
     { name = "nest-htmx" },
     { name = "nest-theme-base" },
 ]
@@ -467,6 +480,7 @@ requires-dist = [
     { name = "nest-db-mariadb", editable = "providers/db-mariadb" },
     { name = "nest-db-postgres", editable = "providers/db-postgres" },
     { name = "nest-db-sqlite", editable = "providers/db-sqlite" },
+    { name = "nest-forms", editable = "modules/forms" },
     { name = "nest-htmx", editable = "modules/htmx" },
     { name = "nest-theme-base", editable = "themes/base" },
 ]

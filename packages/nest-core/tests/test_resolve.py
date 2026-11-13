@@ -30,16 +30,16 @@ def test_dependencies_start_first_and_order_is_stable(app_dir):
         {
             "module.yml": APP,
             "modules/blog/module.yml": module_yml(
-                "blog", extra="deps:\n  forms: '>=0.1'\n  markdown: ''\n"
+                "blog", extra="deps:\n  parts: '>=0.1'\n  markdown: ''\n"
             ),
-            "modules/forms/module.yml": module_yml("forms", extra="deps:\n  markdown: ''\n"),
+            "modules/parts/module.yml": module_yml("parts", extra="deps:\n  markdown: ''\n"),
             "modules/markdown/module.yml": module_yml("markdown"),
         }
     )
     the_plan = make_plan(root)
-    assert [u.name for u in the_plan.units] == ["markdown", "forms", "blog"]
+    assert [u.name for u in the_plan.units] == ["markdown", "parts", "blog"]
     assert the_plan.unit("blog").instance.route == "/blog"
-    assert the_plan.unit("forms").instance is None
+    assert the_plan.unit("parts").instance is None
 
 
 def test_every_problem_is_reported_at_once(app_dir):
@@ -50,20 +50,20 @@ def test_every_problem_is_reported_at_once(app_dir):
                 "blog",
                 extra="""
             deps:
-              forms: '>=2'
+              parts: '>=2'
               missing: ''
             requires:
               host: [teleporter]
               interfaces: [nest.search]
         """,
             ),
-            "modules/forms/module.yml": module_yml("forms", version="1.0.0"),
+            "modules/parts/module.yml": module_yml("parts", version="1.0.0"),
         }
     )
     with pytest.raises(PlanError) as e:
         make_plan(root)
     text = str(e.value)
-    assert "blog needs forms >=2, but 1.0.0 is installed" in text
+    assert "blog needs parts >=2, but 1.0.0 is installed" in text
     assert "blog depends on 'missing', which is not installed" in text
     assert "host facility 'teleporter'" in text
     assert "blog requires nest.search; bind it in demo's module.yml" in text
@@ -143,6 +143,18 @@ def test_bindings_are_checked_against_installed_interfaces(app_dir):
     text = str(e.value)
     assert "configures 'redis' for nest.cache, but does not bind it" in text
     assert "binds 'nest.nothing', but no installed interface has that name" in text
+
+
+def test_a_name_claimed_twice_stops_the_plan(app_dir):
+    root = app_dir(
+        {
+            "module.yml": APP,
+            "modules/blog/module.yml": module_yml("blog", extra="deps:\n  htmx: ''\n"),
+            "modules/htmx/module.yml": module_yml("htmx"),  # an installed package has this name
+        }
+    )
+    with pytest.raises(PlanError, match="two packages are named 'htmx'.*rename one"):
+        make_plan(root)
 
 
 def test_a_disabled_module_is_left_out(app_dir):

@@ -168,6 +168,8 @@ class Application(_Section):
     port: int | None = None
     theme: str | None = None
     command: str | None = None
+    languages: list[str] = Field(default_factory=lambda: ["en"])
+    default_language: str | None = None
 
     @field_validator("port", mode="before")
     @classmethod

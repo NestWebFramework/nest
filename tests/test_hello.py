@@ -81,7 +81,8 @@ def test_health_and_events(client):
     assert client.get("/healthz").json() == {"status": "ok"}
     detail = client.get("/_nest/health").json()
     assert {m["name"]: m["state"] for m in detail["modules"]}["home"] == "ready"
-    assert detail["bindings"] == {"nest.cache": ["cache-memory"]}
+    assert detail["bindings"] == {"nest.db": ["db-sqlite"], "nest.cache": ["cache-memory"]}
+    assert detail["checks"] == {"db-sqlite": True}
     assert client.get("/_nest/events?topic=secret").status_code == 404
     assert client.get("/_nest/events").status_code == 400
 
@@ -107,6 +108,7 @@ def test_production_hides_docs_and_sets_secure_cookies(tmp_path):
             "NEST_APP_WORKSPACE": str(tmp_path),
             "NEST_ENV": "production",
             "NEST_SECRET_KEY": "k" * 40,
+            "NEST_MIGRATE": "auto",  # production defaults to check; this test migrates on purpose,
         },
     )
     with TestClient(app, base_url="https://testserver") as c:

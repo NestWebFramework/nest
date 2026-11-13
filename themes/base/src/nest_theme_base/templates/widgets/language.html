@@ -1,0 +1,11 @@
+{# The language switch, shown when the application offers more than one. #}
+{% if languages | length > 1 %}
+<form class="row language" method="post" action="/_nest/language">
+  {{ csrf_field }}
+  <input type="hidden" name="next" value="{{ request.url.path }}">
+  {% for lang in languages %}
+  <button type="submit" name="language" value="{{ lang }}" class="link{% if lang == locale %} current{% endif %}"
+          {% if lang == locale %}aria-current="true"{% endif %} lang="{{ lang }}">{{ lang | upper }}</button>
+  {% endfor %}
+</form>
+{% endif %}

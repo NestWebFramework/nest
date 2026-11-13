@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, Query, Request
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from markupsafe import Markup, escape
 from starlette.concurrency import run_in_threadpool
@@ -30,11 +30,12 @@ from starlette.concurrency import run_in_threadpool
 from nest.bind import Bindings, ProviderContext, build
 from nest.catalog import Catalog, Entry
 from nest.contract import load_contracts
+from nest.i18n import LOCALE_COOKIE, Catalogs, LocaleMiddleware, translator
 from nest.loader import import_main, import_object
 from nest.manifest import load_manifest
 from nest.realtime import Broker, Topic
 from nest.resolve import Plan, Unit, plan
-from nest.security import CSRF_FIELD, SecurityMiddleware, csrf_protect
+from nest.security import CSRF_FIELD, SecurityMiddleware, csrf_protect, local_path
 from nest.settings import Namespaced, SettingsStore
 from nest.templating import is_htmx, make_environment, render_block
 from nest.workspace import environment, is_production, resolve_workspace, secret_key
@@ -104,8 +105,22 @@ class Nest:
         if plan.theme is not None:
             theme_dir = plan.theme.manifest.folder(plan.theme.manifest.templates, "templates")
         self.templates = make_environment(plan.app.root, theme_dir, module_dirs)
+        languages = application.languages if application else ["en"]
+        default = (application.default_language if application else None) or languages[0]
+        self.catalogs = Catalogs(languages, default)
+        for unit in plan.units:
+            for item in unit.entry.manifest.locales:
+                self.catalogs.load(unit.name, item.locale, unit.entry.root / item.file)
+        for item in self.manifest.locales:  # the application's own wording wins
+            self.catalogs.load(self.name, item.locale, plan.app.root / item.file)
+        fallback = self.catalogs.translator()
         self.templates.globals.update(
-            asset=self.asset, app={"name": self.name, "title": self.title}
+            asset=self.asset,
+            app={"name": self.name, "title": self.title},
+            _=fallback.gettext,
+            ngettext=fallback.ngettext,
+            locale=fallback.locale,
+            languages=self.catalogs.languages,
         )
 
     def asset(self, module: str, path: str) -> str:
@@ -120,8 +135,15 @@ class Nest:
         context: dict[str, Any] = {}
         for provide in self._context:
             context.update(provide(request))
+        t = translator(request)
         context.update(
-            request=request, csrf_token=token, csrf_field=field, is_htmx=is_htmx(request)
+            request=request,
+            csrf_token=token,
+            csrf_field=field,
+            is_htmx=is_htmx(request),
+            _=t.gettext,
+            ngettext=t.ngettext,
+            locale=t.locale,
         )
         return context
 
@@ -329,6 +351,7 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
 
     for cls, options in nest._middleware:
         app.add_middleware(cls, **options)
+    app.add_middleware(LocaleMiddleware, catalogs=nest.catalogs)
     # Added last, so outermost: every response gets the headers, whatever a module did.
     app.add_middleware(SecurityMiddleware, secret=nest.secret, secure_cookies=nest.production)
     log.info("%s: %d packages ready, workspace %s", nest.name, len(the_plan.units), workspace)
@@ -380,6 +403,23 @@ def _core_routes(app: FastAPI, nest: Nest) -> None:
             },
             status_code=200 if all(checks.values()) else 503,
         )
+
+    @app.post("/_nest/language", include_in_schema=False, dependencies=[Depends(csrf_protect)])
+    async def choose_language(request: Request) -> RedirectResponse:
+        form = await request.form()
+        chosen = str(form.get("language", ""))
+        target = local_path(str(form.get("next", "/")))
+        response = RedirectResponse(target, status_code=303)
+        if chosen in nest.catalogs.languages:
+            response.set_cookie(
+                LOCALE_COOKIE,
+                chosen,
+                max_age=365 * 86400,
+                samesite="lax",
+                secure=nest.production,
+                path="/",
+            )
+        return response
 
     @app.get("/_nest/events", include_in_schema=False)
     async def events(request: Request, topic: list[str] = Query(default=[])) -> Any:

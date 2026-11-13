@@ -49,6 +49,9 @@ class Catalog:
         self._by_id: dict[str, Entry] = {}
         self._aliases: dict[str, Entry] = {}
         self.problems: list[str] = []
+        # Names claimed by more than one package. A plan that uses one stops:
+        # silently taking either would run code nobody chose.
+        self.conflicts: dict[str, list[str]] = {}
 
     def __iter__(self):
         return iter(sorted(self._by_name.values(), key=lambda e: e.name))
@@ -60,6 +63,7 @@ class Catalog:
         name, id_ = entry.name, entry.id
         if name in self._by_name:
             other = self._by_name[name]
+            self.conflicts.setdefault(name, [other.manifest.source]).append(entry.manifest.source)
             self.problems.append(
                 f"two packages are named '{name}': {other.manifest.source} and "
                 f"{entry.manifest.source}; the first is used"

@@ -30,7 +30,12 @@ SLIDE_AFTER = timedelta(hours=1)
 
 
 class AccountError(ValueError):
-    pass
+    """A refusal a person can act on; its message is translated where it is shown."""
+
+    def __init__(self, message: str, **params: object):
+        self.message = message
+        self.params = params
+        super().__init__(message.format(**params) if params else message)
 
 
 @dataclass(frozen=True)
@@ -81,7 +86,7 @@ def create_user(
     if not _EMAIL.match(email) or len(email) > 254:
         raise AccountError("That does not look like an email address.")
     if len(password) < min_length:
-        raise AccountError(f"A password has at least {min_length} characters.")
+        raise AccountError("A password has at least {n} characters.", n=min_length)
     if len(password) > MAX_PASSWORD:
         raise AccountError("That password is too long.")
     with db.session() as s, s.begin():

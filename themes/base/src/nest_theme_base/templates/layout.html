@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{% block lang %}en{% endblock %}">
+<html lang="{% block lang %}{{ locale }}{% endblock %}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,6 +15,7 @@
     <div class="container bar">
       {% block header %}<a class="brand" href="/">{{ app.title }}</a>{% endblock %}
       <nav aria-label="Main">{% block nav %}{% endblock %}</nav>
+      {% block language %}{% include "widgets/language.html" %}{% endblock %}
     </div>
   </header>
   <main id="main" class="container">

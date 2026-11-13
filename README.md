@@ -36,7 +36,7 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth)
+modules/              reusable modules (htmx, auth, forms)
 interfaces/           interfaces (cache, db)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb)
 themes/               themes (base)
@@ -160,11 +160,15 @@ on the bound database. Other modules protect their routes with a dependency:
 ```python
 from nest_auth import CurrentUser, require_role, require_user
 
+
 @router.get("/drafts")
-def drafts(user: CurrentUser = Depends(require_user)): ...          # others are sent to sign in
+def drafts(user: CurrentUser = Depends(require_user)): ...  # others are sent to sign in
+
 
 @router.post("/terms/{id}/delete")
-def delete(id: int, user: CurrentUser = Depends(require_role("editor"))): ...   # admin has every role
+def delete(
+    id: int, user: CurrentUser = Depends(require_role("editor"))
+): ...  # admin has every role
 ```
 
 How it works:
@@ -183,6 +187,60 @@ How it works:
 uv run nest auth create-user applications/hello ana@example.ro --role admin
 uv run nest auth sign-out-everywhere applications/hello ana@example.ro
 ```
+
+## Languages
+
+An application lists its languages: `application: {languages: [ro, en]}`. The first is the
+default unless `default_language` says otherwise. Every package lists its JSON catalogs:
+
+```yaml
+locales:
+  - {locale: ro, file: locales/ro.json}
+```
+
+A catalog maps the English text to its translation. A plural is a list with one form per plural
+category, and Romanian has three:
+
+```json
+{"Wrong email or password.": "Email sau parolă greșită.",
+ "{n} term": ["{n} termen", "{n} termeni", "{n} de termeni"]}
+```
+
+Templates use `{{ _("Sign in") }}` and `{{ ngettext("{n} term", "{n} terms", count) }}`.
+In Python, use `translator(request)("Saved.")`.
+
+The application's own catalogs are loaded last, so it can reword any module. A visitor's
+language comes from their choice (`POST /_nest/language`, the base theme's switch), then
+`Accept-Language`, then the default. `<html lang>` follows it.
+
+## Forms
+
+A form is a Pydantic model. `read()` validates the submitted fields and returns everything a
+page needs: the values as typed, one translated message per field, or the typed data.
+An empty field counts as not given, so a required field means "not blank".
+
+```python
+from nest_forms import Form, blank, read
+
+class TermForm(Form):
+    word: str = Field(max_length=80)
+    definition: str = Field(min_length=10)
+
+@router.post("/terms")
+async def create(request: Request):
+    form = await read(request, TermForm)
+    if not form.ok:
+        return render(request, "glossary/edit.html", form=form, fragment="form")
+    ...
+```
+
+```jinja
+{% import "forms/fields.html" as f %}
+{{ f.field(form, "word", _("Word"), required=True, hint=_("As it is written")) }}
+{{ f.field(form, "definition", _("Definition"), type="textarea") }}
+```
+
+The macros render labels, hints and errors, linked with `aria-invalid` and `aria-describedby`.
 
 ## Safe by default
 

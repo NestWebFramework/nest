@@ -1,27 +1,27 @@
 {% extends "layout.html" %}
-{% block title %}Create an account · {{ app.title }}{% endblock %}
+{% block title %}{{ _("Create an account") }} · {{ app.title }}{% endblock %}
 {% block content %}
 <section class="card narrow">
-  <h1>Create an account</h1>
-  {% if first %}<p class="notice">This is the first account: it will administer {{ app.title }}.</p>{% endif %}
+  <h1>{{ _("Create an account") }}</h1>
+  {% if first %}<p class="notice">{{ _("This is the first account: it will administer {app}.", app=app.title) }}</p>{% endif %}
   {% block form %}
   <form id="auth-form" class="stack" method="post" action="{{ auth.register }}"
         hx-post="{{ auth.register }}" hx-target="#auth-form" hx-swap="outerHTML">
     {{ csrf_field }}
     {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
     <div>
-      <label for="name">Name</label>
+      <label for="name">{{ _("Name") }}</label>
       <input id="name" name="name" autocomplete="name" value="{{ name }}">
     </div>
     <div>
-      <label for="email">Email</label>
+      <label for="email">{{ _("Email") }}</label>
       <input id="email" name="email" type="email" autocomplete="email" required value="{{ email }}">
     </div>
     <div>
-      <label for="password">Password</label>
+      <label for="password">{{ _("Password") }}</label>
       <input id="password" name="password" type="password" autocomplete="new-password" required minlength="10">
     </div>
-    <button type="submit">Create account</button>
+    <button type="submit">{{ _("Create account") }}</button>
   </form>
   {% endblock %}
 </section>

@@ -13,7 +13,7 @@ module:
   type: module
   title: Accounts
   category: security
-  version: 0.1.0
+  version: 0.2.0
   description: >
     Accounts with roles, sign-in and sign-out, server-side sessions on the
     bound database, and the dependencies other modules protect routes with.
@@ -56,6 +56,9 @@ settings:
   lockout_minutes:
     type: int
     default: 15
+
+locales:
+  - {locale: ro, file: locales/ro.json}
 
 docs:
   title: Accounts

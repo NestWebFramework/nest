@@ -1,0 +1,18 @@
+{
+  "Sign in": "Autentificare",
+  "Sign out": "Ieșire",
+  "Email": "Email",
+  "Password": "Parolă",
+  "Name": "Nume",
+  "No account yet?": "Nu ai cont?",
+  "Create one": "Creează unul",
+  "Create an account": "Creează un cont",
+  "Create account": "Creează contul",
+  "This is the first account: it will administer {app}.": "Acesta este primul cont: va administra {app}.",
+  "Wrong email or password.": "Email sau parolă greșită.",
+  "Too many attempts. Try again in {minutes} minutes.": "Prea multe încercări. Încearcă din nou peste {minutes} minute.",
+  "That does not look like an email address.": "Aceasta nu pare o adresă de email.",
+  "A password has at least {n} characters.": "O parolă are cel puțin {n} caractere.",
+  "That password is too long.": "Parola este prea lungă.",
+  "An account with this email already exists.": "Există deja un cont cu acest email."
+}

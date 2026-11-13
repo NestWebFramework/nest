@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
-{% block title %}Sign in · {{ app.title }}{% endblock %}
+{% block title %}{{ _("Sign in") }} · {{ app.title }}{% endblock %}
 {% block content %}
 <section class="card narrow">
-  <h1>Sign in</h1>
+  <h1>{{ _("Sign in") }}</h1>
   {% block form %}
   <form id="auth-form" class="stack" method="post" action="{{ auth.login }}"
         hx-post="{{ auth.login }}" hx-target="#auth-form" hx-swap="outerHTML">
@@ -10,15 +10,15 @@
     <input type="hidden" name="next" value="{{ next }}">
     {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
     <div>
-      <label for="email">Email</label>
+      <label for="email">{{ _("Email") }}</label>
       <input id="email" name="email" type="email" autocomplete="username" required value="{{ email }}">
     </div>
     <div>
-      <label for="password">Password</label>
+      <label for="password">{{ _("Password") }}</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required>
     </div>
-    <button type="submit">Sign in</button>
-    {% if can_register %}<p class="muted">No account yet? <a href="{{ auth.register }}">Create one</a>.</p>{% endif %}
+    <button type="submit">{{ _("Sign in") }}</button>
+    {% if can_register %}<p class="muted">{{ _("No account yet?") }} <a href="{{ auth.register }}">{{ _("Create one") }}</a>.</p>{% endif %}
   </form>
   {% endblock %}
 </section>

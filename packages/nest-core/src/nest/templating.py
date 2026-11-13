@@ -61,7 +61,19 @@ def render_block(env: Environment, name: str, block: str, context: Mapping[str, 
     template = env.get_template(name)
     if block not in template.blocks:
         raise LookupError(f"{name} has no block '{block}'")
-    return "".join(template.blocks[block](template.new_context(dict(context))))
+    ctx = template.new_context(dict(context))
+    # A block may use what the template sets up outside any block: its
+    # {% import %}s and {% set %}s. Run the template's top level until it first
+    # produces output (for a child template, that is where the layout begins),
+    # which leaves those names in the context, then render only the block.
+    top = template.root_render_func(ctx)
+    try:
+        next(top)
+    except StopIteration:
+        pass
+    finally:
+        top.close()
+    return "".join(template.blocks[block](ctx))
 
 
 def render(

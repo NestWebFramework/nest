@@ -7,7 +7,7 @@ import time
 from collections import deque
 from http.cookies import SimpleCookie
 from typing import Any
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
@@ -15,7 +15,7 @@ from nest_db import Database
 from starlette.concurrency import run_in_threadpool
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from nest import bound, is_htmx, render
+from nest import bound, is_htmx, local_path, render, translator
 from nest.host import module_state
 from nest_auth import sessions
 from nest_auth.sessions import AccountError, CurrentUser
@@ -131,12 +131,7 @@ def require_role(*roles: str) -> Any:
 
 
 def safe_next(value: str | None) -> str:
-    """Only a path on this site: an open redirect is how a phishing link borrows trust."""
-    if not value or not value.startswith("/") or value.startswith("//") or "\\" in value:
-        return "/"
-    if any(ord(ch) < 32 for ch in value) or urlsplit(value).netloc:
-        return "/"
-    return value
+    return local_path(value)
 
 
 router = APIRouter()
@@ -211,14 +206,20 @@ def login(
             request,
             "auth/login.html",
             429,
-            error=f"Too many attempts. Try again in {minutes} minutes.",
+            error=translator(request)(
+                "Too many attempts. Try again in {minutes} minutes.", minutes=minutes
+            ),
             **values,
         )
     user = sessions.authenticate(db, email, password)
     if user is None:
         state["throttle"].fail(key)
         return _form_page(
-            request, "auth/login.html", 401, error="Wrong email or password.", **values
+            request,
+            "auth/login.html",
+            401,
+            error=translator(request)("Wrong email or password."),
+            **values,
         )
     state["throttle"].clear(key)
     token = sessions.open_session(
@@ -278,7 +279,13 @@ def register(
         )
     except AccountError as e:
         return _form_page(
-            request, "auth/register.html", 400, email=email, name=name, error=str(e), first=first
+            request,
+            "auth/register.html",
+            400,
+            email=email,
+            name=name,
+            error=translator(request)(e.message, **e.params),
+            first=first,
         )
     token = sessions.open_session(
         db, user, days=state["session_days"], user_agent=request.headers.get("user-agent", "")

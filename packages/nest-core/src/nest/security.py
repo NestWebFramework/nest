@@ -32,6 +32,15 @@ DEFAULT_CSP = (
 )
 
 
+def local_path(value: str | None, fallback: str = "/") -> str:
+    """Only a path on this site. An open redirect is how a phishing link borrows trust."""
+    if not value or not value.startswith("/") or value.startswith("//") or "\\" in value:
+        return fallback
+    if any(ord(ch) < 32 for ch in value) or urlsplit(value).netloc:
+        return fallback
+    return value
+
+
 def _sign(secret: str, nonce: str) -> str:
     mac = hmac.new(secret.encode(), nonce.encode(), hashlib.sha256).hexdigest()[:32]
     return f"{nonce}.{mac}"

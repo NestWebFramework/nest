@@ -62,7 +62,16 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
         raise PlanError(app.name, [f"'{app.name}' is a {manifest.type}, not an application"])
     problems += [f"{app.name}: {p}" for p in contract.validate(manifest)]
 
+    def conflict(name: str, why: str) -> bool:
+        if name in catalog.conflicts:
+            sources = " and ".join(catalog.conflicts[name])
+            problems.append(f"{why}: two packages are named '{name}' ({sources}); rename one")
+            return True
+        return False
+
     def find(ref: str, wanted: set[str], why: str) -> Entry | None:
+        if conflict(ref, why):
+            return None
         entry, note = catalog.find(ref)
         if note:
             notes.append(note)
@@ -126,6 +135,8 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
         included[entry.name] = entry
         edges.setdefault(entry.name, set())
         for dep, spec in entry.manifest.deps.items():
+            if conflict(dep, f"{entry.name} depends on '{dep}'"):
+                continue
             dep_entry, note = catalog.find(dep)
             if note:
                 notes.append(note)
