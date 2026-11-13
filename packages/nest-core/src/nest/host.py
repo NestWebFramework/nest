@@ -84,7 +84,13 @@ class Nest:
         self.broker = Broker()
         self.settings = SettingsStore(workspace / "data" / "settings.conf", self.name, environ)
         self.states: dict[str, ModuleState] = {}
+        # Per-application, per-module state. A module keeps what it needs at run
+        # time here, never in module-level globals, so two applications in one
+        # process (or one test after another) never share it.
+        self.module_state: dict[str, dict[str, Any]] = {}
         self.app: FastAPI | None = None
+        self._context: list[Callable[[Request], Mapping[str, Any]]] = []
+        self._middleware: list[tuple[type, dict[str, Any]]] = []
         self._startup: list[Hook] = []
         self._shutdown: list[Hook] = []
         self._background: list[Callable[[], Awaitable[Any]]] = []
@@ -111,12 +117,13 @@ class Nest:
     def template_context(self, request: Request) -> dict[str, Any]:
         token = request.state.csrf_token
         field = Markup(f'<input type="hidden" name="{CSRF_FIELD}" value="{escape(token)}">')
-        return {
-            "request": request,
-            "csrf_token": token,
-            "csrf_field": field,
-            "is_htmx": is_htmx(request),
-        }
+        context: dict[str, Any] = {}
+        for provide in self._context:
+            context.update(provide(request))
+        context.update(
+            request=request, csrf_token=token, csrf_field=field, is_htmx=is_htmx(request)
+        )
+        return context
 
     def render_block(self, name: str, block: str, **context: Any) -> str:
         """A fragment rendered outside a request, for an SSE event."""
@@ -243,6 +250,25 @@ class ModuleHost:
         self._nest._background.append(fn)
         return fn
 
+    @property
+    def state(self) -> dict[str, Any]:
+        """This module's run-time state in this application (instead of globals)."""
+        return self._nest.module_state.setdefault(self.name, {})
+
+    def context(self, fn: Callable[[Request], Mapping[str, Any]]) -> Callable:
+        """Add values to every page's template context (``user``, for the auth module)."""
+        self._nest._context.append(fn)
+        return fn
+
+    def add_middleware(self, cls: type, **options: Any) -> None:
+        """Wrap the application in an ASGI middleware, inside the security layer."""
+        self._nest._middleware.append((cls, options))
+
+
+def module_state(request: Request, module: str) -> dict[str, Any]:
+    """A module's run-time state, from a request (for dependencies a module exports)."""
+    return request.app.state.nest.module_state.setdefault(module, {})
+
 
 def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None) -> FastAPI:
     app_root = Path(app_dir).resolve()
@@ -301,6 +327,9 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
         else:
             nest.states[unit.name].state = "ready"
 
+    for cls, options in nest._middleware:
+        app.add_middleware(cls, **options)
+    # Added last, so outermost: every response gets the headers, whatever a module did.
     app.add_middleware(SecurityMiddleware, secret=nest.secret, secure_cookies=nest.production)
     log.info("%s: %d packages ready, workspace %s", nest.name, len(the_plan.units), workspace)
     return app

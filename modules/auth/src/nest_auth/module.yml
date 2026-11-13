@@ -1,0 +1,62 @@
+#
+# auth — accounts, sign-in and server-side sessions.
+#
+# Passwords are hashed with the standard library's scrypt. The browser holds a
+# random session token; the database holds only its SHA-256. Sign-in is
+# throttled per email and address; ?next= goes only to a path on this site.
+# Registration is closed unless allowed, except for the very first account,
+# which becomes the administrator.
+#
+module:
+  name: auth
+  id: nest.module.auth
+  type: module
+  title: Accounts
+  category: security
+  version: 0.1.0
+  description: >
+    Accounts with roles, sign-in and sign-out, server-side sessions on the
+    bound database, and the dependencies other modules protect routes with.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_auth
+
+provides:
+  import: nest_auth
+  exports: [CurrentUser, current_user, require_user, require_role, hash_password, verify_password]
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  htmx: ">=0.1,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_auth.models:Base"
+
+settings:
+  allow_registration:
+    type: bool
+    default: false
+    description: Whether anyone may create an account (the first account always may).
+  session_days:
+    type: int
+    default: 14
+    description: A session ends after this many days without use.
+  min_password_length:
+    type: int
+    default: 10
+  login_attempts:
+    type: int
+    default: 5
+    description: Failed sign-ins allowed per email and address before a pause.
+  lockout_minutes:
+    type: int
+    default: 15
+
+docs:
+  title: Accounts
+  section: modules

@@ -36,7 +36,7 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx)
+modules/              reusable modules (htmx, auth)
 interfaces/           interfaces (cache, db)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb)
 themes/               themes (base)
@@ -150,6 +150,38 @@ To run the same tests against live servers:
 ```sh
 NEST_TEST_POSTGRES_URL=postgresql://nest:pw@127.0.0.1:5432/nest_test uv run pytest
 NEST_TEST_MARIADB_URL=mariadb://nest:pw@127.0.0.1:3306/nest_test uv run pytest
+```
+
+## Accounts
+
+The `auth` module provides accounts with roles, sign-in and sign-out, and server-side sessions
+on the bound database. Other modules protect their routes with a dependency:
+
+```python
+from nest_auth import CurrentUser, require_role, require_user
+
+@router.get("/drafts")
+def drafts(user: CurrentUser = Depends(require_user)): ...          # others are sent to sign in
+
+@router.post("/terms/{id}/delete")
+def delete(id: int, user: CurrentUser = Depends(require_role("editor"))): ...   # admin has every role
+```
+
+How it works:
+
+* Passwords are hashed with the standard library's scrypt.
+* The browser holds a random token and the database stores only its SHA-256.
+  Signing out ends the session on the server.
+* Failed sign-ins are throttled per email and address.
+* `?next=` only ever leads to a path on this site.
+* An unknown email takes as long to refuse as a wrong password.
+* Registration is closed unless `allow_registration` is set. The very first account can always
+  register, and it becomes the administrator.
+* Templates get `user`, plus `{% include "auth/status.html" %}` for the navigation.
+
+```sh
+uv run nest auth create-user applications/hello ana@example.ro --role admin
+uv run nest auth sign-out-everywhere applications/hello ana@example.ro
 ```
 
 ## Safe by default

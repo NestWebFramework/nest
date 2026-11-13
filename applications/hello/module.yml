@@ -20,8 +20,12 @@ application:
 modules:
   - name: home
     route: /
+  - name: auth
+    route: /auth
 
 bind:
+  nest.db:
+    providers: [db-sqlite]
   nest.cache:
     providers: [cache-memory]
     config:

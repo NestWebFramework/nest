@@ -66,19 +66,25 @@ def render_block(env: Environment, name: str, block: str, context: Mapping[str, 
 
 def render(
     request: Request,
-    name: str,
+    template: str,
     context: Mapping[str, Any] | None = None,
+    /,
     *,
     fragment: str | None = None,
     status_code: int = 200,
     headers: Mapping[str, str] | None = None,
     **values: Any,
 ) -> HTMLResponse:
-    """The page, or only ``fragment`` when htmx asked: one handler for both clients."""
+    """The page, or only ``fragment`` when htmx asked: one handler for both clients.
+
+    Template values are keyword arguments; only ``fragment``, ``status_code``
+    and ``headers`` are taken by ``render`` itself (the first three parameters
+    are positional-only, so ``name=`` or ``request=`` reach the template).
+    """
     nest = request.app.state.nest
     ctx = {**nest.template_context(request), **(context or {}), **values}
     if fragment and is_htmx(request):
-        body = render_block(nest.templates, name, fragment, ctx)
+        body = render_block(nest.templates, template, fragment, ctx)
     else:
-        body = nest.templates.get_template(name).render(ctx)
+        body = nest.templates.get_template(template).render(ctx)
     return HTMLResponse(body, status_code=status_code, headers=dict(headers or {}))

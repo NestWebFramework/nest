@@ -1,0 +1,10 @@
+{# Who is signed in, for a layout's navigation: {% include "auth/status.html" %} #}
+{% if user %}
+<form class="row" method="post" action="{{ auth.logout }}">
+  {{ csrf_field }}
+  <span class="muted">{{ user.label }}</span>
+  <button class="secondary" type="submit">Sign out</button>
+</form>
+{% else %}
+<a href="{{ auth.login }}">Sign in</a>
+{% endif %}

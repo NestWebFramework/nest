@@ -4,6 +4,7 @@ requires-python = ">=3.12"
 
 [manifest]
 members = [
+    "nest-auth",
     "nest-cache",
     "nest-cache-memory",
     "nest-core",
@@ -299,6 +300,23 @@ wheels = [
 ]
 
 [[package]]
+name = "nest-auth"
+version = "0.1.0"
+source = { editable = "modules/auth" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-db" },
+    { name = "nest-htmx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-htmx", editable = "modules/htmx" },
+]
+
+[[package]]
 name = "nest-cache"
 version = "0.1.0"
 source = { editable = "interfaces/cache" }
@@ -420,6 +438,7 @@ name = "nest-workspace"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "nest-auth" },
     { name = "nest-cache" },
     { name = "nest-cache-memory" },
     { name = "nest-core" },
@@ -440,6 +459,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-cache", editable = "interfaces/cache" },
     { name = "nest-cache-memory", editable = "providers/cache-memory" },
     { name = "nest-core", editable = "packages/nest-core" },

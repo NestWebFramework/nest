@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
 {% block content %}
 <h1>{{ greeting }}</h1>
 <p class="muted">A page rendered on the server. The button below is answered by a fragment;

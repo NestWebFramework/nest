@@ -73,3 +73,4 @@ tr:last-child td { border-bottom: none; }
 .htmx-indicator { opacity: 0; transition: opacity .2s; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.narrow { max-width: 28rem; margin-inline: auto; }

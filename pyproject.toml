@@ -13,6 +13,7 @@ dependencies = [
     "nest-db-sqlite",
     "nest-db-postgres",
     "nest-db-mariadb",
+    "nest-auth",
 ]
 
 [tool.uv]
@@ -37,6 +38,7 @@ nest-db = { workspace = true }
 nest-db-sqlite = { workspace = true }
 nest-db-postgres = { workspace = true }
 nest-db-mariadb = { workspace = true }
+nest-auth = { workspace = true }
 
 [dependency-groups]
 dev = [

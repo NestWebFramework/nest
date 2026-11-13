@@ -1,0 +1,17 @@
+[project]
+name = "nest-auth"
+version = "0.1.0"
+description = "Accounts, sign-in and server-side sessions for Nest applications."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-htmx"]
+
+[project.entry-points."nest.modules"]
+auth = "nest_auth"
+
+[project.entry-points."nest.commands"]
+auth = "nest_auth.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
