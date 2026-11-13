@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, item, inventory, character, settlement, building, npc)
+game/subsystems/      game subsystems (world, item, inventory, character, settlement, building, npc, production)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -596,6 +596,36 @@ actions from the old game's own data: the well's "Drink Water" and the "Gather F
 (`hunger_min: 20`); those are dropped, because the preconditions already stop a hungry worker.
 Buying waits for the economy. Anyone may follow `game.<server>.npc.<settlement id>`: where each
 NPC is and what it does, with its walk (from, to, depart, arrive) for a client to animate.
+
+**`production`** is what workers make. Its data is `production.yml`: 82 recipes, what each
+trade keeps, and the seasons' effect on output.
+
+* **Working:** while an NPC works (its profession's activity, at its workplace), its job
+  advances by game minutes. Skill makes it faster, 2% a level.
+* **Choosing:** a worker makes the recipe of its trade that yields most. If one is stopped only
+  by something a common recipe gives (water, for the baker's bread), it does that first. It
+  chooses again after each making.
+* **Finishing:** a finished recipe takes its inputs (from the worker, else the settlement's
+  store), wears its tools and gives its outputs by the season. It also gives the recipe's
+  experience.
+* **The store:** beyond what the trade keeps (a farmer 20 wheat), the outputs go to the
+  settlement's store. Bakers take flour from it and the hungry take food (a new NPC action). It
+  is a commons until the economy puts prices on things.
+* **Kits:** a new worker gets the tools of its trade's first recipes, and founders know their
+  trade at level 1.
+
+The old engine gave no tools, and its recipes asked for skill levels nobody could reach, so it
+never produced. The original data also had these gaps:
+
+* Recipes ask for ten skills no pack defines (baking, smithing...); those are reported and not
+  asked.
+* Nothing made water, so drawing it at the well is added.
+* Four first recipes took 100 minutes where their kin take 6 to 10, so they are taken as 10.
+* Herders' recipes want a barn, so their buildings now have one.
+* Tools still break by the old arithmetic (a bow lasts six hunts). Replacing them waits for the
+  economy and the blacksmith.
+
+Anyone may follow `game.<server>.production.<settlement id>` to watch the store.
 
 ```sh
 uv run nest game status applications/voievodate
