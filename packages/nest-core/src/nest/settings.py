@@ -1,7 +1,10 @@
 """Runtime settings: values a person may change on a running application.
 
 Build and deploy facts stay in ``module.yml``; secrets stay in the environment;
-this store holds the rest, as RoboHub's settings module does: namespaced keys
+this store holds the rest. A value is found in the environment, then in this
+store, then in what the application's manifest sets for the module
+(``modules: [{name: glossary, config: {per_page: 50}}]``), then in the module's
+default. The store holds values as RoboHub's settings module does: namespaced keys
 (``glossary.per_page``) in ``data/settings.conf``. Only declared keys exist,
 each typed by its spec. A value set in the environment wins and is read-only.
 """
@@ -52,12 +55,22 @@ class SettingsStore:
         self._app = app
         self._environ = environ
         self._specs: dict[str, tuple[str, str, SettingSpec]] = {}
+        self._instance: dict[str, Any] = {}
         self._lock = threading.Lock()
         self._values = self._read()
 
-    def declare(self, owner: str, specs: Mapping[str, SettingSpec]) -> None:
+    def declare(
+        self,
+        owner: str,
+        specs: Mapping[str, SettingSpec],
+        instance: Mapping[str, Any] | None = None,
+    ) -> None:
+        """A module's settings; ``instance`` is what the application's manifest sets for it."""
         for key, spec in specs.items():
             self._specs[f"{owner}.{key}"] = (owner, key, spec)
+        for key, value in (instance or {}).items():
+            if key in specs:
+                self._instance[f"{owner}.{key}"] = _coerce(specs[key], value, f"{owner}.{key}")
 
     def _read(self) -> dict[str, str]:
         values = {}
@@ -80,6 +93,8 @@ class SettingsStore:
             return _coerce(spec, self._environ[var], key)
         if key in self._values:
             return _coerce(spec, self._values[key], key)
+        if key in self._instance:
+            return self._instance[key]
         if default is not _MISSING:
             return default
         return _coerce(spec, spec.default, key)

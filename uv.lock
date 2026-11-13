@@ -13,7 +13,10 @@ members = [
     "nest-db-postgres",
     "nest-db-sqlite",
     "nest-forms",
+    "nest-glossary",
     "nest-htmx",
+    "nest-search",
+    "nest-search-sqlite",
     "nest-theme-base",
     "nest-workspace",
 ]
@@ -424,6 +427,27 @@ dependencies = [
 requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
+name = "nest-glossary"
+version = "0.1.0"
+source = { editable = "modules/glossary" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-core" },
+    { name = "nest-db" },
+    { name = "nest-forms" },
+    { name = "nest-search" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-forms", editable = "modules/forms" },
+    { name = "nest-search", editable = "interfaces/search" },
+]
+
+[[package]]
 name = "nest-htmx"
 version = "0.1.0"
 source = { editable = "modules/htmx" }
@@ -433,6 +457,28 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
+
+[[package]]
+name = "nest-search"
+version = "0.1.0"
+source = { editable = "interfaces/search" }
+dependencies = [
+    { name = "markupsafe" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "markupsafe", specifier = ">=2.1" }]
+
+[[package]]
+name = "nest-search-sqlite"
+version = "0.1.0"
+source = { editable = "providers/search-sqlite" }
+dependencies = [
+    { name = "nest-search" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-search", editable = "interfaces/search" }]
 
 [[package]]
 name = "nest-theme-base"
@@ -459,7 +505,10 @@ dependencies = [
     { name = "nest-db-postgres" },
     { name = "nest-db-sqlite" },
     { name = "nest-forms" },
+    { name = "nest-glossary" },
     { name = "nest-htmx" },
+    { name = "nest-search" },
+    { name = "nest-search-sqlite" },
     { name = "nest-theme-base" },
 ]
 
@@ -481,7 +530,10 @@ requires-dist = [
     { name = "nest-db-postgres", editable = "providers/db-postgres" },
     { name = "nest-db-sqlite", editable = "providers/db-sqlite" },
     { name = "nest-forms", editable = "modules/forms" },
+    { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },
+    { name = "nest-search", editable = "interfaces/search" },
+    { name = "nest-search-sqlite", editable = "providers/search-sqlite" },
     { name = "nest-theme-base", editable = "themes/base" },
 ]
 

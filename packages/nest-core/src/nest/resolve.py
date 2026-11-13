@@ -174,6 +174,17 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
     for name, inst in instances.items():
         if inst.route is None:
             problems.append(f"{app.name} includes '{name}' without a route")
+        declared = included[name].manifest.settings if name in included else {}
+        for key in sorted(set(inst.config) - set(declared)):
+            known = ", ".join(declared) or "none"
+            problems.append(
+                f"{app.name} sets '{key}' for {name}, which has no such setting (settings: {known})"
+            )
+        for key in sorted(set(inst.config) & set(declared)):
+            if declared[key].secret:
+                problems.append(
+                    f"{app.name} sets {name}.{key}, a secret; set it in the environment instead"
+                )
 
     order = _order(edges, problems)
     if problems:

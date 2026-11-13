@@ -282,6 +282,12 @@ class ModuleHost:
         self._nest._context.append(fn)
         return fn
 
+    def template_filter(self, name: str, fn: Callable[..., Any]) -> None:
+        """Add a Jinja filter, named for every template of the application."""
+        if name in self._nest.templates.filters:
+            raise HostError(f"{self.name}: the template filter '{name}' already exists")
+        self._nest.templates.filters[name] = fn
+
     def add_middleware(self, cls: type, **options: Any) -> None:
         """Wrap the application in an ASGI middleware, inside the security layer."""
         self._nest._middleware.append((cls, options))
@@ -344,7 +350,9 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
                 f"/assets/{unit.name}", StaticFiles(directory=static), name=f"assets:{unit.name}"
             )
         if entry.type in ("module", "theme"):
-            nest.settings.declare(unit.name, entry.manifest.settings)
+            nest.settings.declare(
+                unit.name, entry.manifest.settings, unit.instance.config if unit.instance else None
+            )
             _setup(nest, unit)
         else:
             nest.states[unit.name].state = "ready"

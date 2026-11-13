@@ -1,0 +1,32 @@
+#
+# search-sqlite — SQLite FTS5 as nest.search.
+#
+# The index is a file of its own in the workspace, whatever database the
+# application binds: it is derived data, rebuilt from the modules' records.
+# The unicode61 tokenizer folds diacritics; titles weigh more than bodies.
+#
+module:
+  name: search-sqlite
+  id: nest.provider.search-sqlite
+  type: provider
+  title: SQLite search
+  version: 0.1.0
+  description: Full-text search with SQLite FTS5, diacritics folded, ranked by BM25.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_search_sqlite
+implements: [nest.search]
+
+deps:
+  search: ">=0.1,<1"
+
+settings:
+  path:
+    type: str
+    default: data/search.db
+    description: The index file, relative to the workspace; ":memory:" for tests.
+  title_weight:
+    type: float
+    default: 10.0
+    description: How much more a match in a title counts than one in the body.

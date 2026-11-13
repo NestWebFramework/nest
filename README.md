@@ -36,11 +36,11 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms)
-interfaces/           interfaces (cache, db)
-providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb)
+modules/              reusable modules (htmx, auth, forms, glossary)
+interfaces/           interfaces (cache, db, search)
+providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite)
 themes/               themes (base)
-applications/         applications (hello)
+applications/         applications (hello, regionalisme)
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -222,9 +222,11 @@ An empty field counts as not given, so a required field means "not blank".
 ```python
 from nest_forms import Form, blank, read
 
+
 class TermForm(Form):
     word: str = Field(max_length=80)
     definition: str = Field(min_length=10)
+
 
 @router.post("/terms")
 async def create(request: Request):
@@ -241,6 +243,44 @@ async def create(request: Request):
 ```
 
 The macros render labels, hints and errors, linked with `aria-invalid` and `aria-describedby`.
+
+## Search
+
+`nest.search` is an interface. Modules index documents and ask for matches, and the provider
+decides how. `search-sqlite` keeps an FTS5 index in the workspace:
+
+* diacritics are folded both ways, so "stiinta" finds "știință" and "ştiinţă" finds both;
+* the last word typed matches as a prefix;
+* titles rank above bodies;
+* snippets are escaped first and then marked.
+
+Whatever someone types is only words, never query syntax. The index is derived data, so
+`nest glossary reindex` rebuilds it from the records.
+
+## Glossaries: the regionalisme site
+
+`glossary` holds dictionaries. A dictionary holds terms, and a term holds senses (definition,
+usage, synonyms, antonyms, see-also, source, translation, abbreviation), the shape Glossword used.
+
+* **Visitors** browse by letter, read a term with its neighbours, and search every dictionary at once.
+* **Editors** (the `editor` role) add, change and remove terms, and each save is indexed.
+* **Definitions** are plain text, never HTML: a blank line starts a paragraph, `[[word]]` links a
+  term, and an address becomes a link.
+
+`applications/regionalisme` is regionalisme.ro on Nest. With `legacy_glossword: true` in the
+application's manifest, Glossword's `/index.php/term/Graiul+moldovenesc,cuvânt.xhtml` addresses
+redirect permanently to the new ones.
+
+```sh
+uv run nest glossary import-glossword applications/regionalisme export.txt --dictionary "Graiul moldovenesc"
+uv run nest glossary dictionaries applications/regionalisme
+uv run nest glossary export applications/regionalisme backup.json     # and `import` to restore
+uv run nest auth create-user applications/regionalisme ana@example.ro --role editor
+uv run nest run applications/regionalisme                             # http://127.0.0.1:8200
+```
+
+The import reads Glossword's own text export (Admin → Export). It is safe to run again:
+terms already imported are updated, not duplicated.
 
 ## Safe by default
 
