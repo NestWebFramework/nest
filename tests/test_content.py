@@ -457,3 +457,15 @@ def test_storage_round_trip(site, tmp_path):
         Path(site.storage.local_path("x.txt")).parent
         == Path(site.storage.local_path("y.txt")).parent
     )
+
+
+def test_mysqldump_reads_tables_written_on_one_line():
+    dump = Dump.parse(
+        "CREATE TABLE `a` (`id` int, `kind` enum('Y','N'), `price` decimal(10,2), PRIMARY KEY (`id`)) ENGINE=InnoDB;\n"
+        "INSERT INTO `a` VALUES (1,'Y',2.50);\n"
+        "CREATE TABLE IF NOT EXISTS `b` (\n  `x` int,\n  KEY `k` (`x`)\n) DEFAULT CHARSET=utf8;\n"
+        "INSERT INTO `b` VALUES (7);\n"
+    )
+    assert dump.columns == {"a": ["id", "kind", "price"], "b": ["x"]}
+    assert list(dump.rows("a")) == [{"id": 1, "kind": "Y", "price": 2.5}]
+    assert list(dump.rows("b")) == [{"x": 7}]

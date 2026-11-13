@@ -45,6 +45,22 @@ def _wordpress(args: argparse.Namespace) -> int:
     return 0
 
 
+def _geticus(args: argparse.Namespace) -> int:
+    from nest_gallery.geticus import import_dump
+
+    nest = _app(args.app)
+    report = import_dump(
+        nest.bindings.get("nest.db"),
+        nest.bindings.get("nest.storage"),
+        Path(args.dump),
+        root=Path(args.root),
+    )
+    print(f"✓ {report.galleries} galleries, {report.photos} photos")
+    for path in report.missing[:10]:
+        print(f"  ! missing {path}")
+    return 0
+
+
 def _list(args: argparse.Namespace) -> int:
     from nest_gallery import service
 
@@ -73,6 +89,11 @@ def register(sub: Any) -> None:
     p.add_argument("--prefix", default="wp_")
     p.add_argument("--all", action="store_true", help="every gallery, not only those a page uses")
     p.set_defaults(func=_wordpress)
+    p = actions.add_parser("import-geticus", help="move a Geticus site's galleries in")
+    p.add_argument("app")
+    p.add_argument("dump")
+    p.add_argument("--root", required=True, help="the site's folder (where assets/ is)")
+    p.set_defaults(func=_geticus)
     p = actions.add_parser("list", help="the albums and galleries")
     p.add_argument("app")
     p.set_defaults(func=_list)

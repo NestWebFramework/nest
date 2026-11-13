@@ -19,8 +19,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-_CREATE = re.compile(r"CREATE TABLE `([^`]+)` \((.*?)\n\)[^;]*;", re.S)
-_COLUMN = re.compile(r"^\s*`([^`]+)`\s", re.M)
+# The body ends at the ")" that the table options (or the semicolon) follow,
+# whether the statement spans lines, as mysqldump writes it, or sits on one.
+_CREATE = re.compile(
+    r"CREATE TABLE (?:IF NOT EXISTS )?`([^`]+)` \((.*?)\)\s*(?:ENGINE|DEFAULT CHARSET|CHARSET|COMMENT|;)",
+    re.S,
+)
+_COLUMN = re.compile(r"^\s*`([^`]+)`\s")
 _INSERT = re.compile(r"INSERT INTO `([^`]+)`(?:\s*\(([^)]*)\))?\s+VALUES\s*", re.I)
 _ESCAPES = {"0": "\0", "b": "\b", "n": "\n", "r": "\r", "t": "\t", "Z": "\x1a"}
 
@@ -42,7 +47,7 @@ class Dump:
     def parse(cls, text: str) -> Dump:
         dump = cls(text)
         for name, body in _CREATE.findall(text):
-            dump.columns[name] = _COLUMN.findall(body)
+            dump.columns[name] = _columns(body)
         return dump
 
     def tables(self) -> list[str]:
@@ -66,6 +71,31 @@ class Dump:
                         f"{table}: a row has {len(values)} values for {len(names)} columns"
                     )
                 yield dict(zip(names, values, strict=True))
+
+
+def _columns(body: str) -> list[str]:
+    """Column names from a CREATE TABLE body, one per line or several to a line.
+
+    Definitions are split on commas outside brackets and quotes, so
+    enum('Y','N') and decimal(10,2) stay whole; keys and constraints, which do
+    not start with a backquoted name, are not columns.
+    """
+    parts, depth, quote, start = [], 0, "", 0
+    for i, ch in enumerate(body):
+        if quote:
+            if ch == quote:
+                quote = ""
+        elif ch in "'\"":
+            quote = ch
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append(body[start:i])
+            start = i + 1
+    parts.append(body[start:])
+    return [m.group(1) for part in parts if (m := _COLUMN.match(part))]
 
 
 def _tuples(text: str, pos: int) -> Iterator[list[Any]]:

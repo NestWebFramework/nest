@@ -85,5 +85,6 @@ def shortcodes(host: Any) -> None:
         return handler
 
     host.shortcode("Best_Wordpress_Gallery", legacy("bwg_shortcode"))  # Photo Gallery (10Web)
+    host.shortcode("geticus_gallery", legacy("geticus_gallery"))  # a Geticus site's galleries
     host.shortcode("nggallery", legacy("ngg_gallery"))  # NextGEN, old form
     host.shortcode("ngg", legacy("ngg_gallery", "ids"))  # NextGEN, [ngg src="galleries" ids="1"]

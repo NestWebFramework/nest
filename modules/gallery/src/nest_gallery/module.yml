@@ -14,7 +14,7 @@ module:
   type: module
   title: Galleries
   category: content
-  version: 0.2.0
+  version: 0.3.0
   description: Photo galleries and albums with pages, embeds, a lightbox and WordPress imports.
   license: MIT
   created: "2026-11-13"

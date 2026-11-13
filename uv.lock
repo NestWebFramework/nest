@@ -27,6 +27,7 @@ members = [
     "nest-storage",
     "nest-storage-local",
     "nest-theme-base",
+    "nest-trains",
     "nest-workspace",
 ]
 
@@ -498,7 +499,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-gallery"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "modules/gallery" }
 dependencies = [
     { name = "nest-core" },
@@ -646,6 +647,21 @@ dependencies = [
 requires-dist = [{ name = "nest-htmx", editable = "modules/htmx" }]
 
 [[package]]
+name = "nest-trains"
+version = "0.1.0"
+source = { editable = "modules/trains" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
 name = "nest-workspace"
 version = "0.0.0"
 source = { virtual = "." }
@@ -673,6 +689,7 @@ dependencies = [
     { name = "nest-storage" },
     { name = "nest-storage-local" },
     { name = "nest-theme-base" },
+    { name = "nest-trains" },
 ]
 
 [package.dev-dependencies]
@@ -707,6 +724,7 @@ requires-dist = [
     { name = "nest-storage", editable = "interfaces/storage" },
     { name = "nest-storage-local", editable = "providers/storage-local" },
     { name = "nest-theme-base", editable = "themes/base" },
+    { name = "nest-trains", editable = "modules/trains" },
 ]
 
 [package.metadata.requires-dev]

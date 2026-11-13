@@ -27,6 +27,7 @@ dependencies = [
     "nest-redirects",
     "nest-forum",
     "nest-messages",
+    "nest-trains",
 ]
 
 [tool.uv]
@@ -65,6 +66,7 @@ nest-comments = { workspace = true }
 nest-redirects = { workspace = true }
 nest-forum = { workspace = true }
 nest-messages = { workspace = true }
+nest-trains = { workspace = true }
 
 [dependency-groups]
 dev = [

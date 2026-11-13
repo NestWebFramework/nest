@@ -36,11 +36,11 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, comments, redirects, forum, messages)
+modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, comments, redirects, forum, messages, trains)
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
-applications/         applications (hello, regionalisme, morlaca, transilpedia)
+applications/         applications (hello, regionalisme, morlaca, transilpedia, gari)
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -417,6 +417,31 @@ uv run nest forum add-board applications/hello "Discuții generale" --descriptio
 Realtime topics can be families (`forum.topic.*`, and later `player.*` for the game). A family's
 `authorize(request, name)` sees the concrete name, which is how a member may follow
 `messages.user.7` only when they are member 7.
+
+## Trains: gari.ro's timetable
+
+**`trains`** is a railway timetable, reusable by any application:
+
+* **Stations:** departure and arrival boards, amenities, a map link, and, with `gallery`, their
+  photos.
+* **Trains:** the whole route, with passenger stops and the points a train runs through.
+* **Journeys:** direct trains between two stations, with duration, distance and the fare the
+  fare table gives per class.
+* **Operators**, an A–Z station list, and station names matched without diacritics: "Bucuresti"
+  finds "Bucureşti Nord".
+
+A route is kept as ordered stops whose times count past midnight (`07:40 (+1)`), so night
+trains stay in order.
+
+```sh
+uv run nest trains import-geticus applications/gari ~/projects/gari/gari/db/gari.sql
+uv run nest gallery import-geticus applications/gari ~/projects/gari/gari/db/gari.sql --root ~/projects/gari/gari
+uv run nest trains journeys applications/gari "Cluj Napoca" "Bucuresti Nord"
+```
+
+`applications/gari` mounts the timetable at `/cfr`, where gari.ro had it (`/cfr/gara/…`,
+`/cfr/tren/…`, `/cfr/itinerariu`, `/cfr/companie/…`), and the galleries at `/galerii-foto`, as
+Geticus routed them.
 
 ## Safe by default
 

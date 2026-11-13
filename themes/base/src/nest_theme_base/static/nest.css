@@ -141,3 +141,12 @@ ol.thread { list-style: none; padding: 0; display: flex; flex-direction: column;
 .message { max-width: min(36rem, 90%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; }
 .message.mine { align-self: flex-end; border-color: var(--accent); }
 .message-meta { margin: 0; font-size: .85rem; } .message p { margin: .25rem 0; }
+ul.columns { columns: 14rem; column-gap: 2rem; padding-left: 1.1rem; }
+.journey-form { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); align-items: end; margin-block: 1rem; }
+.journey-form .field { margin: 0; }
+table.board td, table.board th { white-space: nowrap; } table.board td:nth-child(3) { white-space: normal; }
+ol.route { list-style: none; padding-left: 0; border-left: 3px solid var(--accent); margin-left: .5rem; }
+ol.route li { position: relative; padding: .2rem 0 .2rem 1rem; display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
+ol.route li::before { content: ""; position: absolute; left: -.45rem; top: .65rem; width: .6rem; height: .6rem; border-radius: 50%; background: var(--accent); }
+ol.route li.through { font-size: .85rem; color: var(--muted); } ol.route li.through::before { background: var(--border); width: .4rem; height: .4rem; left: -.35rem; }
+ol.route .times { min-width: 7.5rem; font-variant-numeric: tabular-nums; }
