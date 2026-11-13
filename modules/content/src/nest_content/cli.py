@@ -50,6 +50,33 @@ def _wordpress(args: argparse.Namespace) -> int:
     return 0
 
 
+def _geticus(args: argparse.Namespace) -> int:
+    from nest_content.geticus import import_dump
+
+    nest = _app(args.app)
+    b = nest.bindings
+    report = import_dump(
+        b.get("nest.db"),
+        b.get("nest.search"),
+        b.get("nest.storage"),
+        nest.module_state["content"]["types"],
+        Path(args.dump),
+        root=Path(args.root) if args.root else None,
+        plain_type=args.plain_type,
+        categorized_type=args.categorized_type,
+        language=args.language,
+        settings=nest.settings,
+    )
+    print(
+        f"✓ {report.terms} categories, {report.entries} entries (+{report.files} files), {report.menu_items} menu items"
+    )
+    for line in report.skipped:
+        print(f"  not moved: {line}")
+    for path in report.missing[:10]:
+        print(f"  ! missing {path}")
+    return 0
+
+
 def _reindex(args: argparse.Namespace) -> int:
     from nest_content import service
 
@@ -81,6 +108,21 @@ def register(sub: Any) -> None:
     p.add_argument("--uploads", help="the site's wp-content/uploads folder")
     p.add_argument("--prefix", default="wp_")
     p.set_defaults(func=_wordpress)
+
+    p = actions.add_parser(
+        "import-geticus", help="move a Geticus site's pages, categories and menu in"
+    )
+    p.add_argument("app")
+    p.add_argument("dump")
+    p.add_argument(
+        "--root", help="the site's folder (where assets/ is), to copy the images pages use"
+    )
+    p.add_argument("--plain-type", default="page", help="the type for entries in no category")
+    p.add_argument(
+        "--categorized-type", default="article", help="the type for entries in a category"
+    )
+    p.add_argument("--language", default="romanian", help="the menu language to take")
+    p.set_defaults(func=_geticus)
 
     p = actions.add_parser("reindex", help="rebuild the search index from the entries")
     p.add_argument("app")

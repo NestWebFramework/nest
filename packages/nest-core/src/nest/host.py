@@ -34,6 +34,7 @@ from jinja2 import TemplateNotFound
 from markupsafe import Markup, escape
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.gzip import GZipMiddleware
 
 from nest.bind import Bindings, ProviderContext, build
 from nest.catalog import Catalog, Entry
@@ -431,6 +432,8 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
     for cls, options in nest._middleware:
         app.add_middleware(cls, **options)
     app.add_middleware(LocaleMiddleware, catalogs=nest.catalogs)
+    # Pages and SVG shrink about tenfold; SSE streams are left alone by Starlette.
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
     # Added last, so outermost: every response gets the headers, whatever a module did.
     app.add_middleware(SecurityMiddleware, secret=nest.secret, secure_cookies=nest.production)
     log.info("%s: %d packages ready, workspace %s", nest.name, len(the_plan.units), workspace)

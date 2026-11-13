@@ -150,3 +150,9 @@ ol.route li { position: relative; padding: .2rem 0 .2rem 1rem; display: flex; fl
 ol.route li::before { content: ""; position: absolute; left: -.45rem; top: .65rem; width: .6rem; height: .6rem; border-radius: 50%; background: var(--accent); }
 ol.route li.through { font-size: .85rem; color: var(--muted); } ol.route li.through::before { background: var(--border); width: .4rem; height: .4rem; left: -.35rem; }
 ol.route .times { min-width: 7.5rem; font-variant-numeric: tabular-nums; }
+.railway-map { margin: 1rem 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.railway-map svg { width: 100%; height: auto; display: block; color: var(--muted); }
+.railway-map .links line { stroke-width: .5; opacity: .45; }
+.railway-map circle { fill: var(--accent); } .railway-map circle.r0 { opacity: .55; }
+.railway-map a:hover circle, .railway-map a:focus circle { fill: var(--text); }
+.railway-map text { font-size: 9px; fill: var(--text); pointer-events: none; }

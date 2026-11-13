@@ -469,3 +469,97 @@ def test_mysqldump_reads_tables_written_on_one_line():
     assert dump.columns == {"a": ["id", "kind", "price"], "b": ["x"]}
     assert list(dump.rows("a")) == [{"id": 1, "kind": "Y", "price": 2.5}]
     assert list(dump.rows("b")) == [{"x": 7}]
+
+
+GETICUS = r"""
+CREATE TABLE `settings` (`id` int, `slug` varchar(50), `value` text, `module` varchar(50)) ENGINE=InnoDB;
+INSERT INTO `settings` VALUES (6,'site_homepage','19','content');
+CREATE TABLE `categories` (
+  `id` int, `category_group_id` int, `parent_id` int, `title` varchar(100), `url_title` varchar(100), `description` text, `sort` int
+) ENGINE=InnoDB;
+INSERT INTO `categories` VALUES (9,3,0,'Istorie','istorie',NULL,9);
+CREATE TABLE `content_fields` (`id` int, `content_type_id` int, `content_field_type_id` int, `short_tag` varchar(50), `sort` int) ENGINE=InnoDB;
+INSERT INTO `content_fields` VALUES (1,1,1,'main_column',2),(10,5,8,'logo',10);
+CREATE TABLE `entries` (
+  `id` int, `slug` varchar(100), `title` varchar(200), `content_type_id` int, `status` varchar(20), `created_date` int, `modified_date` int
+) ENGINE=InnoDB;
+INSERT INTO `entries` VALUES (19,NULL,'Acasa',1,'published',1424000000,1424000000),(21,'locomotive-cu-aburi','Locomotive cu aburi',1,'published',1424000000,1424000000),(4,'about','About',1,'published',1424000000,1424000000),(9,NULL,'Saa',1,'published',0,0),(10,NULL,'Template gara',5,'published',0,0),(20,'istoric','Istoric',1,'draft',0,0);
+CREATE TABLE `entries_data` (`id` int, `entry_id` int, `field_id_1` text, `field_id_10` text) ENGINE=InnoDB;
+INSERT INTO `entries_data` VALUES (1,19,'<p>Bine ai venit</p>',NULL),(2,21,'<p>Abur <img src=\"/assets/cms/uploads/images/loc/Abur%20mare.jpg\"><script>x</script></p>',NULL),(3,4,'<p>Despre</p>',NULL);
+CREATE TABLE `categories_entries` (`id` int, `category_id` int, `entry_id` int) ENGINE=InnoDB;
+INSERT INTO `categories_entries` VALUES (1,9,21),(2,0,4);
+CREATE TABLE `navigation_items` (
+  `id` int, `type` varchar(20), `language` varchar(20), `entry_id` int, `category_id` int, `component` varchar(50),
+  `title` varchar(100), `url` varchar(200), `target` varchar(10), `parent_id` int, `hide` int, `sort` int, `parameters` text
+) ENGINE=InnoDB;
+INSERT INTO `navigation_items` VALUES (1,'category_list','romanian',0,9,'','Istorie','','',0,0,1,''),(2,'component','romanian',0,0,'mersultrenurilor','Gări','','',0,0,2,'a:3:{s:4:\"name\";s:4:\"gari\";s:9:\"real_name\";s:4:\"Gari\";}'),(3,'page','romanian',4,0,'','Despre','','',0,1,3,''),(4,'page','english',4,0,'','About','','',0,0,1,''),(5,'component','romanian',0,0,'contact','Contact','','',0,0,9,'');
+"""
+
+
+def test_a_geticus_site_comes_in_with_its_addresses(tmp_path):
+    from nest_content.geticus import import_dump as import_geticus
+
+    root = tmp_path / "gari"
+    root.mkdir()
+    manifest = textwrap.dedent(APP).replace(
+        "content_types:\n  event:",
+        """content_types:
+  page: {title: Pagini, path: "/{path}", hierarchical: true}
+  article: {title: Articole, path: "/cfr/{category}/{slug}", taxonomies: [category]}
+taxonomies:
+  category: {title: Categorii, hierarchical: true, path: "/cfr/{path}"}
+unused_types:
+  event:""",
+    )
+    (root / "module.yml").write_text(manifest, encoding="utf-8")
+    site_dir = tmp_path / "site"
+    (site_dir / "assets/cms/uploads/images/loc").mkdir(parents=True)
+    (site_dir / "assets/cms/uploads/images/loc/Abur mare.jpg").write_bytes(b"jpeg")
+    dump = tmp_path / "gari.sql"
+    dump.write_text(GETICUS, encoding="utf-8")
+    app = create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
+    n = app.state.nest
+    b = n.bindings
+    types = n.module_state["content"]["types"]
+    report = import_geticus(
+        b.get("nest.db"),
+        b.get("nest.search"),
+        b.get("nest.storage"),
+        types,
+        dump,
+        root=site_dir,
+        settings=n.settings,
+    )
+    assert (report.terms, report.entries, report.files, report.menu_items) == (1, 4, 1, 2)
+    assert any("Saa" in s for s in report.skipped) and any(
+        "Template gara" in s for s in report.skipped
+    )
+    assert any(
+        "Contact" in s for s in report.skipped
+    )  # no such module here: reported, not linked to nothing
+    with TestClient(app) as c:
+        page = c.get("/cfr/istorie/locomotive-cu-aburi")
+        assert (
+            page.status_code == 200
+            and '<img src="/media/assets/cms/uploads/images/loc/Abur%20mare.jpg">' in page.text
+        )
+        assert "<script>" not in page.text.split('<div class="body">')[1]
+        assert c.get("/media/assets/cms/uploads/images/loc/Abur%20mare.jpg").content == b"jpeg"
+        assert c.get("/cfr/istorie").status_code == 200 and c.get("/about").status_code == 200
+        assert c.get("/istoric").status_code == 404  # a draft
+        home = c.get("/").text
+        assert "Bine ai venit" in home  # site_homepage
+        assert (
+            '<a href="/cfr/istorie">Istorie</a>' in home and '<a href="/cfr/gari">Gări</a>' in home
+        )
+        assert "About" not in home  # the English menu, and a hidden item, left
+        again = import_geticus(
+            b.get("nest.db"),
+            b.get("nest.search"),
+            b.get("nest.storage"),
+            types,
+            dump,
+            root=site_dir,
+        )
+        assert again.entries == 4
+        assert service.counts_by_type(b.get("nest.db")) == {"page": 3, "article": 1}

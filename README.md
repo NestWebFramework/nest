@@ -330,6 +330,11 @@ What the importer brings over:
 * **Body cleanup:** WordPress's paragraphs are added once. Upload addresses on any host the site
   ever had become `/media/uploads/...`, and links to the old site become relative.
 
+A Geticus site's pages move in the same way, with
+`nest content import-geticus APP dump.sql --root SITE-FOLDER`. It brings categories, entries
+(each type's rich-text field as the body, with its images copied over), the menu in the site's
+language and the home page.
+
 It is safe to run again: what it brought before is updated, not duplicated. The gallery plugins
 come in through the `gallery` module, comments through `comments` (both below).
 
@@ -429,6 +434,9 @@ Realtime topics can be families (`forum.topic.*`, and later `player.*` for the g
   fare table gives per class.
 * **Operators**, an A–Z station list, and station names matched without diacritics: "Bucuresti"
   finds "Bucureşti Nord".
+* **A railway map:** stations and the links trains run between them, drawn server-side as an
+  SVG, with no map library and nothing external.
+* **Stations near you:** one small static script asks the browser where it is.
 
 A route is kept as ordered stops whose times count past midnight (`07:40 (+1)`), so night
 trains stay in order.
@@ -445,7 +453,8 @@ Geticus routed them.
 
 ## Safe by default
 
-Every response gets a strict Content-Security-Policy (no inline script, no eval),
+Responses over 1 KB are gzipped; the railway map's 292 KB travel as 50 KB. Every response
+also gets a strict Content-Security-Policy (no inline script, no eval),
 `X-Frame-Options: DENY`, `nosniff` and a same-origin referrer. Every unsafe request to a
 module's routes needs a signed CSRF token: htmx sends it as a header from `<body hx-headers>`,
 and plain forms send `{{ csrf_field }}`. The Origin header is checked too.
