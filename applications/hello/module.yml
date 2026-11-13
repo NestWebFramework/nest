@@ -1,0 +1,33 @@
+#
+# hello — the smallest application that uses every part of Nest: a local
+# module mounted at /, the base theme, an interface bound to a provider, an
+# htmx form answered by a fragment, and one SSE connection with a snapshot.
+#
+module:
+  name: hello
+  id: nest.app.hello
+  type: application
+  title: Hello, Nest
+  version: 0.1.0
+  description: The demonstration application.
+  created: "2026-11-13"
+
+application:
+  title: Hello, Nest
+  port: 8100
+  theme: base
+
+modules:
+  - name: home
+    route: /
+
+bind:
+  nest.cache:
+    providers: [cache-memory]
+    config:
+      cache-memory:
+        max_items: 1000
+
+deploy:
+  port: 8100
+  service: hello

@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>{{ greeting }}</h1>
+<p class="muted">A page rendered on the server. The button below is answered by a fragment;
+the clock arrives over the page's single SSE connection.</p>
+
+<div class="grid">
+  <section class="card">
+    <h2>Counter</h2>
+    <form method="post" action="/count" hx-post="/count" hx-target="#counter" hx-swap="outerHTML">
+      {{ csrf_field }}
+      {% block counter %}<p id="counter">Pressed <strong>{{ count }}</strong> times.</p>{% endblock %}
+      <button type="submit">Press</button>
+    </form>
+  </section>
+
+  <section class="card" hx-ext="sse" sse-connect="/_nest/events?topic=clock">
+    <h2>Server time</h2>
+    <div sse-swap="clock">{% block clock %}<p id="clock"><code>{{ now | default("…") }}</code></p>{% endblock %}</div>
+  </section>
+</div>
+{% endblock %}

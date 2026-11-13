@@ -1,0 +1,14 @@
+[project]
+name = "nest-db"
+version = "0.1.0"
+description = "The nest.db interface: one way to reach a relational database, whatever the engine."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["sqlalchemy>=2.0"]
+
+[project.entry-points."nest.modules"]
+db = "nest_db"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

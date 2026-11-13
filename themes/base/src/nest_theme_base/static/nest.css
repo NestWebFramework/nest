@@ -1,0 +1,75 @@
+/* nest.css — the base theme. No framework: tokens, a layout, and the elements. */
+:root {
+  --bg: #f8f7f4; --surface: #ffffff; --text: #1d1c1a; --muted: #5f5b53;
+  --border: #dedad0; --accent: #8a2b1f; --accent-text: #ffffff; --focus: #1f4f8a;
+  --ok: #2d6a3e; --danger: #a32121;
+  --radius: 8px; --gap: 1rem; --max: 72rem;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151413; --surface: #1e1d1b; --text: #ecebe6; --muted: #a6a196;
+    --border: #34312c; --accent: #e0806f; --accent-text: #151413; --focus: #8db6ea;
+    --ok: #7cc48e; --danger: #f08a8a;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 1rem/1.6 var(--font);
+  display: flex; flex-direction: column; min-height: 100vh; }
+main { flex: 1; padding-block: 1.5rem 3rem; }
+.container { width: 100%; max-width: var(--max); margin-inline: auto; padding-inline: 1rem; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: 1rem; top: 1rem; background: var(--surface); padding: .5rem 1rem; z-index: 10; }
+
+.site-header { background: var(--surface); border-bottom: 1px solid var(--border); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .5rem 1.5rem; min-height: 3.5rem; }
+.brand { font-weight: 700; color: var(--text); text-decoration: none; font-size: 1.1rem; }
+nav ul { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; margin: 0; padding: 0; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover, nav a[aria-current="page"] { color: var(--text); }
+.site-footer { border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; padding-block: 1rem; }
+
+h1, h2, h3 { line-height: 1.25; margin: 1.5rem 0 .75rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin-top: .5rem; }
+p { margin: .5rem 0 1rem; }
+code, pre { font-family: var(--mono); font-size: .9em; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem 1rem; overflow-x: auto; }
+img, video { max-width: 100%; height: auto; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem 1.25rem; margin-block: var(--gap); }
+.grid { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.muted { color: var(--muted); }
+.stack > * + * { margin-top: var(--gap); }
+.row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+
+button, .button { font: inherit; cursor: pointer; border: 1px solid var(--accent); background: var(--accent);
+  color: var(--accent-text); border-radius: var(--radius); padding: .5rem 1rem; min-height: 2.5rem;
+  text-decoration: none; display: inline-flex; align-items: center; gap: .4rem; }
+button.secondary, .button.secondary { background: transparent; color: var(--accent); }
+button:disabled { opacity: .55; cursor: not-allowed; }
+label { display: block; font-weight: 600; margin-bottom: .25rem; }
+input, select, textarea { font: inherit; color: inherit; background: var(--surface); width: 100%;
+  border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; min-height: 2.5rem; }
+textarea { min-height: 6rem; resize: vertical; }
+fieldset { border: 1px solid var(--border); border-radius: var(--radius); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; background: var(--surface); }
+th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+
+.notice { border-left: 4px solid var(--accent); background: var(--surface); padding: .75rem 1rem;
+  border-radius: 0 var(--radius) var(--radius) 0; }
+.notice.ok { border-color: var(--ok); } .notice.danger { border-color: var(--danger); }
+
+/* htmx: indicators without the inline styles htmx would inject. */
+.htmx-indicator { opacity: 0; transition: opacity .2s; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

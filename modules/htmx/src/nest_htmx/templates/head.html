@@ -1,0 +1,4 @@
+{# htmx with a strict CSP: no eval (hx-on, js: values) and no injected styles. #}
+<meta name="htmx-config" content='{"allowEval": false, "includeIndicatorStyles": false, "selfRequestsOnly": true, "historyCacheSize": 0}'>
+<script src="{{ asset('htmx', 'htmx.min.js') }}" defer></script>
+<script src="{{ asset('htmx', 'sse.js') }}" defer></script>

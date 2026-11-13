@@ -1,0 +1,25 @@
+#
+# base — the theme every scaffolded application starts with.
+#
+# One stylesheet (no framework, no build), system fonts, light and dark from
+# the browser's preference, readable from a 320px phone to a wide screen.
+# Layout blocks: title, head, header, nav, content, footer.
+#
+module:
+  name: base
+  id: nest.theme.base
+  type: theme
+  title: Base theme
+  version: 0.1.0
+  description: A responsive, dependency-free layout and stylesheet for Nest applications.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_theme_base
+
+deps:
+  htmx: ">=0.1,<1"
+
+docs:
+  title: Base theme
+  section: themes

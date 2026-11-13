@@ -1,0 +1,14 @@
+[project]
+name = "nest-cache-memory"
+version = "0.1.0"
+description = "An in-process provider of nest.cache."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-cache"]
+
+[project.entry-points."nest.modules"]
+cache-memory = "nest_cache_memory"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

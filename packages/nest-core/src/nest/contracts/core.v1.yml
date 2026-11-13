@@ -1,0 +1,52 @@
+# The core contract: the package types Nest itself defines.
+#
+# A contract says, per type, which sections a manifest of that type must carry
+# and which it must not, and why. An ecosystem (the game, later) publishes its
+# own contract through the `nest.contracts` entry point; the validator applies
+# it without knowing what its words mean.
+version: 1
+ecosystem: nest
+
+types:
+  module:
+    description: Reusable code with a published API. It owns no port.
+    required: [main]
+    forbidden:
+      application: a module owns no port; the application that includes it does
+      modules: only an application composes modules
+      bind: only an application binds interfaces to providers
+      deploy: a module is deployed inside an application, never on its own
+
+  interface:
+    description: A named, versioned set of declarations with no implementation.
+    required: [interface]
+    forbidden:
+      implements: an interface has no implementation
+      application: an interface does not run
+      modules: only an application composes modules
+      bind: only an application binds interfaces to providers
+
+  provider:
+    description: Implements one or more interfaces, with typed settings.
+    required: [main, implements]
+    forbidden:
+      application: a provider owns no port
+      modules: only an application composes modules
+      bind: only an application binds interfaces to providers
+
+  theme:
+    description: Layouts, widgets, styles and the slots modules fill.
+    required: []
+    forbidden:
+      application: a theme owns no port
+      modules: only an application composes modules
+      bind: only an application binds interfaces to providers
+      implements: a theme is not a provider
+
+  application:
+    description: Composes modules, binds interfaces, and runs as one service on one port.
+    required: [application]
+    forbidden:
+      implements: an application is not a provider
+      provides: an application exports nothing; put shared code in a module
+      interface: an application is not an interface

@@ -1,0 +1,14 @@
+[project]
+name = "nest-db-sqlite"
+version = "0.1.0"
+description = "SQLite as a provider of nest.db: a file in the application's workspace."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-db"]
+
+[project.entry-points."nest.modules"]
+db-sqlite = "nest_db_sqlite"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

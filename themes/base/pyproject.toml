@@ -1,0 +1,14 @@
+[project]
+name = "nest-theme-base"
+version = "0.1.0"
+description = "The base Nest theme: one small stylesheet, responsive, light and dark."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-htmx"]
+
+[project.entry-points."nest.modules"]
+base = "nest_theme_base"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

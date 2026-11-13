@@ -1,0 +1,22 @@
+module:
+  name: home
+  id: nest.app.hello.home
+  type: module
+  title: Home
+  version: 0.1.0
+
+main: home
+
+requires:
+  host: [realtime]
+  interfaces: [nest.cache]
+
+deps:
+  htmx: ">=0.1"
+  cache: ">=0.1"
+
+settings:
+  greeting:
+    type: str
+    default: "Bună ziua"
+    description: The greeting on the home page.

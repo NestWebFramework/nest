@@ -1,0 +1,40 @@
+#
+# htmx — vendored htmx and its Server-Sent Events extension.
+#
+# Served by the host under /assets/htmx/, so an application never depends on
+# a CDN or a JavaScript build. The theme includes `htmx/head.html` once.
+#
+module:
+  name: htmx
+  id: nest.module.htmx
+  type: module
+  title: htmx
+  category: ui
+  version: 0.1.0
+  description: >
+    A pinned copy of htmx 2.0.4 and htmx-ext-sse 2.2.2, served from the host,
+    configured for a strict Content-Security-Policy (no eval, no inline styles).
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_htmx
+
+provides:
+  import: nest_htmx
+  exports: [HTMX_VERSION, SSE_VERSION]
+
+# What is vendored, and the bytes it must be. A test checks the files against
+# these sums, so a changed file is noticed.
+vendored:
+  - file: static/htmx.min.js
+    package: htmx.org
+    version: 2.0.4
+    sha256: e209dda5c8235479f3166defc7750e1dbcd5a5c1808b7792fc2e6733768fb447
+  - file: static/sse.js
+    package: htmx-ext-sse
+    version: 2.2.2
+    sha256: 83eca6fa0611fe2b0bf1700b424b88b5eced38ef448ef9760a2ea08fbc875611
+
+docs:
+  title: htmx
+  section: modules

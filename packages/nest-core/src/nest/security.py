@@ -1,0 +1,119 @@
+"""Safe defaults every application gets without asking.
+
+* Security headers on every response: a strict Content-Security-Policy (no
+  inline script, no eval), no framing, no MIME sniffing, a same-origin
+  referrer.
+* CSRF protection on every unsafe request to a module's routes: a signed token
+  in an HttpOnly cookie, echoed by htmx in a header or by a plain form in a
+  hidden field, compared in constant time; plus an Origin check.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import secrets
+from http.cookies import SimpleCookie
+from urllib.parse import urlsplit
+
+from fastapi import HTTPException, Request
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+CSRF_COOKIE = "nest_csrf"
+CSRF_HEADER = "x-csrf-token"
+CSRF_FIELD = "csrf_token"
+SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
+
+DEFAULT_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+    "connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; "
+    "form-action 'self'; frame-ancestors 'none'"
+)
+
+
+def _sign(secret: str, nonce: str) -> str:
+    mac = hmac.new(secret.encode(), nonce.encode(), hashlib.sha256).hexdigest()[:32]
+    return f"{nonce}.{mac}"
+
+
+def _valid(secret: str, token: str | None) -> bool:
+    if not token or "." not in token:
+        return False
+    nonce = token.split(".", 1)[0]
+    return hmac.compare_digest(_sign(secret, nonce), token)
+
+
+class SecurityMiddleware:
+    """Pure ASGI, so it never buffers a streamed (SSE) response."""
+
+    def __init__(self, app: ASGIApp, *, secret: str, secure_cookies: bool, csp: str = DEFAULT_CSP):
+        self.app = app
+        self.secret = secret
+        self.secure = secure_cookies
+        self.headers = {
+            "content-security-policy": csp,
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY",
+            "referrer-policy": "same-origin",
+            "cross-origin-opener-policy": "same-origin",
+            "permissions-policy": "camera=(), microphone=(), geolocation=()",
+        }
+        if secure_cookies:
+            self.headers["strict-transport-security"] = "max-age=31536000; includeSubDomains"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        token = None
+        for name, value in scope.get("headers", []):
+            if name == b"cookie":
+                jar = SimpleCookie()
+                try:
+                    jar.load(value.decode("latin-1"))
+                except Exception:  # noqa: BLE001 - a malformed cookie is no cookie
+                    continue
+                if CSRF_COOKIE in jar:
+                    token = jar[CSRF_COOKIE].value
+        fresh = None
+        if not _valid(self.secret, token):
+            token = fresh = _sign(self.secret, secrets.token_urlsafe(24))
+        scope.setdefault("state", {})["csrf_token"] = token
+        scope["state"]["csrf_cookie_valid"] = fresh is None
+
+        async def send_with_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                for key, value in self.headers.items():
+                    if key not in headers:
+                        headers[key] = value
+                if fresh:
+                    cookie = f"{CSRF_COOKIE}={fresh}; Path=/; HttpOnly; SameSite=Lax"
+                    headers.append("set-cookie", cookie + ("; Secure" if self.secure else ""))
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
+
+
+async def csrf_protect(request: Request) -> None:
+    """A dependency every module router gets: refuse a forged unsafe request."""
+    if request.method in SAFE_METHODS:
+        return
+    origin = request.headers.get("origin")
+    if origin and origin != "null":
+        host = request.headers.get("host", "")
+        if urlsplit(origin).netloc != host:
+            raise HTTPException(403, "cross-origin request refused")
+    if not request.state.csrf_cookie_valid:
+        raise HTTPException(403, "CSRF cookie missing; reload the page")
+    expected = request.state.csrf_token
+    sent = request.headers.get(CSRF_HEADER)
+    if not sent:
+        content_type = request.headers.get("content-type", "")
+        if content_type.startswith(("application/x-www-form-urlencoded", "multipart/form-data")):
+            form = await request.form()
+            value = form.get(CSRF_FIELD)
+            sent = value if isinstance(value, str) else None
+    if not sent or not hmac.compare_digest(expected, sent):
+        raise HTTPException(403, "CSRF token missing or invalid")

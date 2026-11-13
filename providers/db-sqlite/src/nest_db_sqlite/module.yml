@@ -1,0 +1,40 @@
+#
+# db-sqlite — SQLite as nest.db.
+#
+# The database is a file in the application's workspace: nothing to install,
+# nothing to run. WAL lets readers and one writer work at once; foreign keys
+# are enforced. The right choice for local development and small sites.
+#
+module:
+  name: db-sqlite
+  id: nest.provider.db-sqlite
+  type: provider
+  title: SQLite
+  version: 0.1.0
+  description: SQLite in the application's workspace, with WAL and foreign keys on.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_db_sqlite
+implements: [nest.db]
+
+deps:
+  db: ">=0.1,<1"
+
+settings:
+  path:
+    type: str
+    default: data/app.db
+    description: The database file, relative to the workspace; ":memory:" for tests.
+  journal_mode:
+    type: str
+    default: WAL
+    choices: [WAL, DELETE, TRUNCATE, MEMORY]
+  synchronous:
+    type: str
+    default: NORMAL
+    choices: [OFF, NORMAL, FULL, EXTRA]
+  busy_timeout_ms:
+    type: int
+    default: 5000
+    description: How long a writer waits for the lock before failing.

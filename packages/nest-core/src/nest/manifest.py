@@ -1,0 +1,306 @@
+"""module.yml: reading a manifest into a typed model.
+
+Every package Nest knows is described by one ``module.yml``. The identity
+(``module.id``, ``name``, ``type``, ``version``) is the same core RoboHub uses;
+the sections after it say what the package gives and what it needs. The model
+types the sections the core understands and lets an ecosystem add its own
+(a game ``subsystem`` declares ``tick`` and ``sync``); the contract of the
+package's type says which sections it must carry and which it must not.
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+from typing import Any, Literal
+
+import yaml
+from packaging.specifiers import InvalidSpecifier, SpecifierSet
+from packaging.version import InvalidVersion, Version
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError, field_validator
+
+MANIFEST_FILE = "module.yml"
+
+_DOTTED = re.compile(r"^[a-z0-9][a-z0-9_-]*(\.[a-z0-9][a-z0-9_-]*)+$")
+_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+_SETTING = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+class ManifestError(Exception):
+    """A manifest that cannot be read, with every problem found in it."""
+
+    def __init__(self, source: str, problems: list[str]):
+        self.source = source
+        self.problems = problems
+        super().__init__(f"{source}:\n  - " + "\n  - ".join(problems))
+
+
+class _Section(BaseModel):
+    # A typo in a known section is an error, not a silently ignored key.
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+
+class Identity(BaseModel):
+    """Who a package is. Only ``id`` is its identity; ``name`` may repeat elsewhere."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str
+    type: str
+    version: str
+    title: str | None = None
+    description: str | None = None
+    category: str | None = None
+    previous_ids: list[str] = Field(default_factory=list)
+    license: str | None = None
+    maintainer: str | None = None
+    created: str | None = None
+
+    @field_validator("id")
+    @classmethod
+    def _id(cls, v: str) -> str:
+        if not _DOTTED.match(v):
+            raise ValueError("an id is lower-case and dotted, e.g. 'nest.module.glossary'")
+        return v
+
+    @field_validator("previous_ids")
+    @classmethod
+    def _previous(cls, v: list[str]) -> list[str]:
+        for old in v:
+            if not _DOTTED.match(old):
+                raise ValueError(f"previous id '{old}' is not a dotted id")
+        return v
+
+    @field_validator("name")
+    @classmethod
+    def _name(cls, v: str) -> str:
+        if not _NAME.match(v):
+            raise ValueError("a name is lower-case letters, digits, '-' and '_'")
+        return v
+
+    @field_validator("version")
+    @classmethod
+    def _version(cls, v: str) -> str:
+        try:
+            Version(v)
+        except InvalidVersion as e:
+            raise ValueError(f"'{v}' is not a version (PEP 440 / semver)") from e
+        return v
+
+
+class Provides(_Section):
+    """The public API: the import path other code uses and the names it may use."""
+
+    import_: str | None = Field(default=None, alias="import")
+    exports: list[str] = Field(default_factory=list)
+
+
+class Requires(_Section):
+    """What a package needs from whoever includes it."""
+
+    host: list[str] = Field(default_factory=list)
+    interfaces: list[str] = Field(default_factory=list)
+
+
+class SettingSpec(_Section):
+    """A setting a module or provider declares, typed so a value is checked at startup."""
+
+    type: Literal["str", "int", "float", "bool"] = "str"
+    default: Any = None
+    choices: list[Any] | None = None
+    required: bool = False
+    secret: bool = False
+    description: str | None = None
+
+
+class InterfaceSpec(_Section):
+    """An interface: its name, as code and bindings refer to it, and its Protocol."""
+
+    name: str
+    protocol: str
+
+    @field_validator("name")
+    @classmethod
+    def _iface(cls, v: str) -> str:
+        if not _DOTTED.match(v):
+            raise ValueError("an interface name is dotted, e.g. 'nest.cache'")
+        return v
+
+    @field_validator("protocol")
+    @classmethod
+    def _protocol(cls, v: str) -> str:
+        if ":" not in v:
+            raise ValueError("a protocol is written 'package.module:ClassName'")
+        return v
+
+
+class Instance(_Section):
+    """A module as an application includes it. The host owns all of this."""
+
+    name: str
+    route: str | None = None
+    enabled: bool = True
+    optional: bool = False
+    config: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("route")
+    @classmethod
+    def _route(cls, v: str | None) -> str | None:
+        if v is not None and not v.startswith("/"):
+            raise ValueError("a route starts with '/'")
+        return v.rstrip("/") or "/" if v else v
+
+
+class Binding(_Section):
+    """Which providers answer an interface in this application, and their settings."""
+
+    providers: list[str] = Field(min_length=1)
+    config: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
+
+class Application(_Section):
+    """What makes a package an application: it runs, on a port, with a theme."""
+
+    kind: str = "hosted"
+    title: str | None = None
+    route: str = "/"
+    port: int | None = None
+    theme: str | None = None
+    command: str | None = None
+
+    @field_validator("port", mode="before")
+    @classmethod
+    def _port(cls, v: Any) -> Any:
+        return int(v) if isinstance(v, str) and v.isdigit() else v
+
+
+class Deploy(_Section):
+    port: int | None = None
+    service: str | None = None
+    calls: list[str] = Field(default_factory=list)
+
+
+class Locale(_Section):
+    locale: str
+    file: str
+
+
+class Manifest(BaseModel):
+    """A whole module.yml. Unknown top-level sections are kept for the contract to judge."""
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    module: Identity
+    main: str | None = None
+    provides: Provides = Field(default_factory=Provides)
+    requires: Requires = Field(default_factory=Requires)
+    deps: dict[str, str] = Field(default_factory=dict)
+    implements: list[str] = Field(default_factory=list)
+    interface: InterfaceSpec | None = None
+    settings: dict[str, SettingSpec] = Field(default_factory=dict)
+    templates: str | None = None
+    static: str | None = None
+    locales: list[Locale] = Field(default_factory=list)
+    application: Application | None = None
+    modules: list[Instance] = Field(default_factory=list)
+    bind: dict[str, Binding] = Field(default_factory=dict)
+    deploy: Deploy | None = None
+    docs: dict[str, Any] = Field(default_factory=dict)
+    system_deps: dict[str, Any] = Field(default_factory=dict)
+
+    _root: Path = PrivateAttr(default=Path("."))
+    _raw: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _source: str = PrivateAttr(default="<memory>")
+
+    @field_validator("deps")
+    @classmethod
+    def _deps(cls, v: dict[str, str]) -> dict[str, str]:
+        for name, spec in v.items():
+            spec = "" if spec in (None, "*") else str(spec)
+            try:
+                SpecifierSet(spec)
+            except InvalidSpecifier as e:
+                raise ValueError(f"dependency '{name}': '{spec}' is not a version range") from e
+        return {k: ("" if s in (None, "*") else str(s)) for k, s in v.items()}
+
+    @field_validator("settings")
+    @classmethod
+    def _settings(cls, v: dict[str, SettingSpec]) -> dict[str, SettingSpec]:
+        for key, spec in v.items():
+            if not _SETTING.match(key):
+                raise ValueError(f"setting '{key}' must be snake_case")
+            if spec.secret and spec.default is not None:
+                raise ValueError(f"setting '{key}' is secret and cannot have a default")
+        return v
+
+    @property
+    def root(self) -> Path:
+        """The folder the manifest lives in; relative paths in it start here."""
+        return self._root
+
+    @property
+    def raw(self) -> dict[str, Any]:
+        return self._raw
+
+    @property
+    def source(self) -> str:
+        return self._source
+
+    @property
+    def name(self) -> str:
+        return self.module.name
+
+    @property
+    def id(self) -> str:
+        return self.module.id
+
+    @property
+    def type(self) -> str:
+        return self.module.type
+
+    @property
+    def version(self) -> Version:
+        return Version(self.module.version)
+
+    def folder(self, declared: str | None, convention: str) -> Path | None:
+        """A folder the manifest names, or the conventional one when it exists."""
+        path = self._root / (declared or convention)
+        if declared is not None and not path.is_dir():
+            return None
+        return path if path.is_dir() else None
+
+
+def _describe(err: dict[str, Any]) -> str:
+    where = ".".join(str(p) for p in err.get("loc", ()))
+    msg = err.get("msg", "invalid")
+    msg = msg.removeprefix("Value error, ")
+    return f"{where}: {msg}" if where else msg
+
+
+def parse_manifest(raw: Any, source: str, root: Path) -> Manifest:
+    """Validate an already-loaded mapping as a manifest."""
+    if not isinstance(raw, dict):
+        raise ManifestError(source, ["a manifest is a YAML mapping"])
+    try:
+        manifest = Manifest.model_validate(raw)
+    except ValidationError as e:
+        raise ManifestError(source, [_describe(err) for err in e.errors()]) from None
+    manifest._root = root
+    manifest._raw = raw
+    manifest._source = source
+    return manifest
+
+
+def load_manifest(path: Path) -> Manifest:
+    """Read ``module.yml`` at ``path`` (a file, or a folder that holds one)."""
+    path = Path(path)
+    if path.is_dir():
+        path = path / MANIFEST_FILE
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise ManifestError(str(path), ["no such file"]) from None
+    except yaml.YAMLError as e:
+        raise ManifestError(str(path), [f"not valid YAML: {e}"]) from None
+    return parse_manifest(raw, str(path), path.parent.resolve())

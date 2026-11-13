@@ -1,0 +1,14 @@
+[project]
+name = "nest-htmx"
+version = "0.1.0"
+description = "A pinned copy of htmx and its SSE extension, served by the host."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core"]
+
+[project.entry-points."nest.modules"]
+htmx = "nest_htmx"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

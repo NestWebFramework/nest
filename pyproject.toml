@@ -1,0 +1,69 @@
+[project]
+name = "nest-workspace"
+version = "0.0.0"
+description = "The Nest workspace: the core, its modules, interfaces, providers, themes and applications."
+requires-python = ">=3.12"
+dependencies = [
+    "nest-core",
+    "nest-htmx",
+    "nest-theme-base",
+    "nest-cache",
+    "nest-cache-memory",
+    "nest-db",
+    "nest-db-sqlite",
+    "nest-db-postgres",
+    "nest-db-mariadb",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "packages/*",
+    "modules/*",
+    "interfaces/*",
+    "providers/*",
+    "themes/*",
+]
+
+[tool.uv.sources]
+nest-core = { workspace = true }
+nest-htmx = { workspace = true }
+nest-theme-base = { workspace = true }
+nest-cache = { workspace = true }
+nest-cache-memory = { workspace = true }
+nest-db = { workspace = true }
+nest-db-sqlite = { workspace = true }
+nest-db-postgres = { workspace = true }
+nest-db-mariadb = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["packages/nest-core/tests", "tests"]
+addopts = "-q"
+filterwarnings = [
+    # Starlette 1.x nudges toward a successor of httpx for its TestClient; httpx still works.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]  # the formatter owns line length
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dependencies are declared as argument defaults.
+extend-immutable-calls = ["nest.bound", "nest.bind.bound", "fastapi.Depends", "fastapi.Query"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["nest"]
