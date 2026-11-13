@@ -41,7 +41,8 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world)
+game/subsystems/      game subsystems (world, item, inventory)
+game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
 
@@ -483,17 +484,38 @@ sync: {every: 10}
 
 ```python
 class NpcSubsystem(Subsystem):
-    def load(self, world, db): ...          # build world.state["npc"] from the database
-    def tick(self, world, dt): ...          # dt game seconds; world.rng, world.now, world.emit(...)
-    def flush(self, world): ...             # collect what changed; return a writer for a thread
+    def load(self, world, db): ...  # build world.state["npc"] from the database
+    def tick(self, world, dt): ...  # dt game seconds; world.rng, world.now, world.emit(...)
+    def flush(self, world): ...  # collect what changed; return a writer for a thread
     @handles(TalkToNpc)
-    def talk(self, world, command): ...     # applied on the loop, answered to the submitter
+    def talk(self, world, command): ...  # applied on the loop, answered to the submitter
 ```
 
 **`world`** is the first subsystem ported. It keeps the game calendar (a restarted world goes on
 where it was), the season by month, and each day's weather for the world and its regions, drawn
 with the world's seeded generator. Clients follow `game.<server>.world` for `clock` and
 `weather`.
+
+**Content packs** (type `content`) are the game's data as YAML: no code, no tick, read once at
+start. `game/content/voievodate` carries the original game's 260 items. Packs load in the order
+the application lists them, and a later pack redefines an item by its slug, so a server can
+override the voievodate data without copying it. The pack's tools rebuild the YAML from
+flasknest-core's seeds: `tools/seed_all.py` runs them into a SQLite file, and `tools/export.py`
+turns that file into `data/items.yml`.
+
+**`item`** reads every pack's `items:` into one catalogue: weight, value, durability and wear,
+uses, effects, what an item is made of, and what a container leaves when it is empty. The other
+subsystems get it with `catalogue_of(host)`. Broken references are reported at start, not
+fatal. The original seeds had one: herbal tea leaves a `clay-cup` that no seed defines.
+
+**`inventory`** holds who has what (`inventory_stack`). An owner is any `(type, id)`, such as an
+npc, a player, a household or a guild. Each stack also has a location, which defaults to the
+owner's person or vault. Alike things pile up in one stack. Tools and other items with
+durability or several uses are kept unit by unit, each with its own wear. Taking is all or
+nothing, and the most worn units go first. A water skin's last drink leaves the empty skin.
+Stacks are written by key at `sync.every`. Game masters can follow each owner's
+`game.<server>.inventory.<type>.<id>`. The commands are `GiveItem`, `TakeItem` and
+`TransferItem`.
 
 ```sh
 uv run nest game status applications/voievodate

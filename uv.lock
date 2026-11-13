@@ -9,6 +9,7 @@ members = [
     "nest-cache-memory",
     "nest-comments",
     "nest-content",
+    "nest-content-voievodate",
     "nest-core",
     "nest-db",
     "nest-db-mariadb",
@@ -18,6 +19,8 @@ members = [
     "nest-forum",
     "nest-gallery",
     "nest-game",
+    "nest-game-inventory",
+    "nest-game-item",
     "nest-game-world",
     "nest-glossary",
     "nest-htmx",
@@ -393,6 +396,11 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-content-voievodate"
+version = "0.1.0"
+source = { editable = "game/content/voievodate" }
+
+[[package]]
 name = "nest-core"
 version = "0.2.0"
 source = { editable = "packages/nest-core" }
@@ -533,6 +541,40 @@ requires-dist = [
     { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
+name = "nest-game-inventory"
+version = "0.1.0"
+source = { editable = "game/subsystems/inventory" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-game" },
+    { name = "nest-game-item" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-item", editable = "game/subsystems/item" },
+]
+
+[[package]]
+name = "nest-game-item"
+version = "0.1.0"
+source = { editable = "game/subsystems/item" }
+dependencies = [
+    { name = "nest-game" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-game", editable = "game/engine" },
+    { name = "pyyaml", specifier = ">=6.0" },
 ]
 
 [[package]]
@@ -705,6 +747,7 @@ dependencies = [
     { name = "nest-cache-memory" },
     { name = "nest-comments" },
     { name = "nest-content" },
+    { name = "nest-content-voievodate" },
     { name = "nest-core" },
     { name = "nest-db" },
     { name = "nest-db-mariadb" },
@@ -714,6 +757,8 @@ dependencies = [
     { name = "nest-forum" },
     { name = "nest-gallery" },
     { name = "nest-game" },
+    { name = "nest-game-inventory" },
+    { name = "nest-game-item" },
     { name = "nest-game-world" },
     { name = "nest-glossary" },
     { name = "nest-htmx" },
@@ -742,6 +787,7 @@ requires-dist = [
     { name = "nest-cache-memory", editable = "providers/cache-memory" },
     { name = "nest-comments", editable = "modules/comments" },
     { name = "nest-content", editable = "modules/content" },
+    { name = "nest-content-voievodate", editable = "game/content/voievodate" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-db-mariadb", editable = "providers/db-mariadb" },
@@ -751,6 +797,8 @@ requires-dist = [
     { name = "nest-forum", editable = "modules/forum" },
     { name = "nest-gallery", editable = "modules/gallery" },
     { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
+    { name = "nest-game-item", editable = "game/subsystems/item" },
     { name = "nest-game-world", editable = "game/subsystems/world" },
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },

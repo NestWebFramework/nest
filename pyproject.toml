@@ -30,6 +30,9 @@ dependencies = [
     "nest-trains",
     "nest-game",
     "nest-game-world",
+    "nest-game-item",
+    "nest-game-inventory",
+    "nest-content-voievodate",
 ]
 
 [tool.uv]
@@ -44,6 +47,7 @@ members = [
     "themes/*",
     "game/engine",
     "game/subsystems/*",
+    "game/content/*",
 ]
 
 [tool.uv.sources]
@@ -73,6 +77,9 @@ nest-messages = { workspace = true }
 nest-trains = { workspace = true }
 nest-game = { workspace = true }
 nest-game-world = { workspace = true }
+nest-game-item = { workspace = true }
+nest-game-inventory = { workspace = true }
+nest-content-voievodate = { workspace = true }
 
 [dependency-groups]
 dev = [

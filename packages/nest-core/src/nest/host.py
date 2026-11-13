@@ -317,6 +317,19 @@ class ModuleHost:
         self._nest._lookups.setdefault(name, []).append((self.name, fn))
         return fn
 
+    def packages(self, type_: str | None = None) -> list[Any]:
+        """The manifests of the application's packages (of one type), read-only.
+
+        In the order the application lists them (those only pulled in as
+        dependencies first), so a later content pack overrides an earlier one.
+        How a game subsystem finds the content packs' files: each manifest has
+        its ``root`` folder and its ``raw`` sections.
+        """
+        listed = {i.name: n for n, i in enumerate(self._nest.plan.app.manifest.modules)}
+        units = [u for u in self._nest.plan.units if type_ is None or u.entry.type == type_]
+        units.sort(key=lambda u: listed.get(u.name, -1))
+        return [u.entry.manifest for u in units]
+
     def has_module(self, name: str) -> bool:
         """Whether the application includes a package of that name (to cooperate, not depend)."""
         return self._nest.plan.unit(name) is not None
