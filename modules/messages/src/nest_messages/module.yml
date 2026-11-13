@@ -1,0 +1,48 @@
+#
+# messages — private conversations between members, reusable by any application.
+#
+# Members write to one another by email (or by name when only one member has
+# it); only participants see a conversation. Each member's channel
+# messages.user.<id> (only theirs to follow) carries new messages into an open
+# conversation and refreshes the inbox. Plain text; a limit per hour.
+#
+module:
+  name: messages
+  id: nest.module.messages
+  type: module
+  title: Messages
+  category: community
+  version: 0.1.0
+  description: Private conversations between members, with read state and live delivery.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_messages
+
+provides:
+  import: nest_messages
+  exports: []
+
+requires:
+  host: [realtime]
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.3,<1"
+  htmx: ">=0.1,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_messages.models:Base"
+
+settings:
+  max_recipients: {type: int, default: 10, description: People one conversation may start with.}
+  per_hour: {type: int, default: 60, description: Messages a member may send per hour.}
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+docs:
+  title: Messages
+  section: modules

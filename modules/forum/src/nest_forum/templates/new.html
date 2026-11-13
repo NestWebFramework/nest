@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("New topic") }} · {{ board.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ base }}/">{{ _("Forum") }}</a> › <a href="{{ base }}/{{ board.slug }}/">{{ board.title }}</a></p>
+<h1>{{ _("New topic") }}</h1>
+<form class="stack" method="post" action="{{ base }}/{{ board.slug }}/new">
+  {{ csrf_field }}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  <div class="field"><label for="title">{{ _("Title") }}</label><input id="title" name="title" required maxlength="200" value="{{ values.get('title', '') }}"></div>
+  <div class="field"><label for="body">{{ _("Message") }}</label><textarea id="body" name="body" rows="10" required>{{ values.get('body', '') }}</textarea></div>
+  <button type="submit">{{ _("Start the topic") }}</button>
+</form>
+{% endblock %}

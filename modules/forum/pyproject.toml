@@ -1,0 +1,17 @@
+[project]
+name = "nest-forum"
+version = "0.1.0"
+description = "A forum: boards, topics, posts, moderation, and replies that arrive live."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-auth"]
+
+[project.entry-points."nest.modules"]
+forum = "nest_forum"
+
+[project.entry-points."nest.commands"]
+forum = "nest_forum.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

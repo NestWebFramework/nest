@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("New message") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ base }}/">{{ _("Messages") }}</a></p>
+<h1>{{ _("New message") }}</h1>
+<form class="stack" method="post" action="{{ base }}/new">
+  {{ csrf_field }}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  <div class="field"><label for="to">{{ _("To") }}</label><input id="to" name="to" required value="{{ values.get('to', '') }}">
+    <small class="hint">{{ _("Email addresses or names, separated by commas.") }}</small></div>
+  <div class="field"><label for="subject">{{ _("Subject") }}</label><input id="subject" name="subject" maxlength="200" value="{{ values.get('subject', '') }}"></div>
+  <div class="field"><label for="body">{{ _("Message") }}</label><textarea id="body" name="body" rows="8" required>{{ values.get('body', '') }}</textarea></div>
+  <button type="submit">{{ _("Send") }}</button>
+</form>
+{% endblock %}

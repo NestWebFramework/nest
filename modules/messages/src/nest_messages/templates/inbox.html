@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Messages") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1>{{ _("Messages") }}</h1><a class="button" href="{{ base }}/new">{{ _("New message") }}</a></div>
+<nav class="row" aria-label="{{ _('Messages') }}">
+  <a href="{{ base }}/"{% if not archived %} aria-current="page"{% endif %}>{{ _("Inbox") }}</a>
+  <a href="{{ base }}/?archived=1"{% if archived %} aria-current="page"{% endif %}>{{ _("Archived") }}</a>
+</nav>
+<div hx-ext="sse" sse-connect="/_nest/events?topic=messages.user.{{ me.id }}">
+{% block rows %}
+<ul id="inbox" class="inbox" hx-get="{{ base }}/{% if archived %}?archived=1{% endif %}" hx-trigger="sse:inbox" hx-swap="outerHTML">
+  {% for r in rows %}
+  <li class="{{ 'unread' if r.unread else '' }}">
+    <a href="{{ base }}/{{ r.conversation.id }}">
+      <strong>{% for uid in r.others %}{{ names[uid].label if uid in names else "?" }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>
+      {% if r.conversation.subject %}<span> · {{ r.conversation.subject }}</span>{% endif %}
+      {% if r.last %}<span class="muted"> — {{ r.last.body | truncate(80) }}</span>{% endif %}
+    </a>
+    <time class="muted" datetime="{{ r.conversation.last_message_at.isoformat() }}">{{ r.conversation.last_message_at.strftime("%d.%m.%Y %H:%M") }}</time>
+  </li>
+  {% else %}<li class="muted">{{ _("No conversations.") }}</li>{% endfor %}
+</ul>
+{% endblock %}
+</div>
+{% endblock %}

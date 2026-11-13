@@ -1,0 +1,2 @@
+{# The unread count for a layout's navigation: {% include "messages/badge.html" %} #}
+{% if user %}{% set n = unread_messages() %}<a href="{{ messages_url }}/">{{ _("Messages") }}{% if n %} <span class="badge">{{ n }}</span>{% endif %}</a>{% endif %}

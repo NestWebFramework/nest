@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block title %}{{ board.title }} · {{ _("Forum") }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ base }}/">{{ _("Forum") }}</a></p>
+<div class="row between"><h1>{{ board.title }}</h1>
+  {% if user and not board.locked %}<a class="button" href="{{ base }}/{{ board.slug }}/new">{{ _("New topic") }}</a>{% endif %}</div>
+{% if board.description %}<p>{{ board.description }}</p>{% endif %}
+{% block topics %}
+<div id="topics" class="table-wrap"><table class="forum">
+  <thead><tr><th>{{ _("Topic") }}</th><th>{{ _("Replies") }}</th><th>{{ _("Views") }}</th><th>{{ _("Latest") }}</th></tr></thead>
+  <tbody>
+  {% for t in topics %}
+  <tr{% if t.hidden %} class="muted"{% endif %}>
+    <td>{% if t.pinned %}<span class="badge">{{ _("Pinned") }}</span> {% endif %}{% if t.locked %}<span class="badge">{{ _("Closed") }}</span> {% endif %}
+      <a href="{{ base }}/t/{{ t.id }}/{{ t.slug }}"><strong>{{ t.title }}</strong></a><br>
+      <span class="muted">{{ names[t.author_id].label if t.author_id in names else "?" }} · {{ t.created_at.strftime("%d.%m.%Y") }}</span></td>
+    <td>{{ t.posts - 1 }}</td><td>{{ t.views }}</td>
+    <td><a href="{{ base }}/t/{{ t.id }}/{{ t.slug }}?last=1">{{ t.last_post_at.strftime("%d.%m.%Y %H:%M") }}</a><br>
+      <span class="muted">{{ names[t.last_author_id].label if t.last_author_id in names else "" }}</span></td>
+  </tr>
+  {% else %}<tr><td colspan="4" class="muted">{{ _("No topics yet.") }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if pages > 1 %}<nav class="row between pager" aria-label="{{ _('Pages') }}">
+  {% if page > 1 %}<a href="?page={{ page - 1 }}" hx-get="?page={{ page - 1 }}" hx-target="#topics" hx-swap="outerHTML" hx-push-url="true">← {{ _("Newer") }}</a>{% else %}<span></span>{% endif %}
+  <span class="muted">{{ page }} / {{ pages }}</span>
+  {% if page < pages %}<a href="?page={{ page + 1 }}" hx-get="?page={{ page + 1 }}" hx-target="#topics" hx-swap="outerHTML" hx-push-url="true">{{ _("Older") }} →</a>{% endif %}
+</nav>{% endif %}
+</div>
+{% endblock %}
+{% endblock %}

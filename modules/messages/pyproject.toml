@@ -1,0 +1,14 @@
+[project]
+name = "nest-messages"
+version = "0.1.0"
+description = "Private conversations between members, delivered live."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-auth"]
+
+[project.entry-points."nest.modules"]
+messages = "nest_messages"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

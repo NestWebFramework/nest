@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Edit") }} · {{ _("Forum") }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<h1>{{ _("Edit") }}</h1>
+<ol class="posts">
+{% block edit %}
+<li id="post-{{ p.id }}" class="post">
+  <form class="stack" method="post" action="{{ base }}/p/{{ p.id }}/edit" hx-post="{{ base }}/p/{{ p.id }}/edit" hx-target="#post-{{ p.id }}" hx-swap="outerHTML">
+    {{ csrf_field }}
+    <textarea name="body" rows="6" required aria-label="{{ _('Edit') }}">{{ p.body }}</textarea>
+    <button type="submit">{{ _("Save") }}</button>
+  </form>
+</li>
+{% endblock %}
+</ol>
+{% endblock %}

@@ -1,0 +1,14 @@
+{
+  "Forum": "Forum", "Board": "Secțiune", "Topics": "Subiecte", "Posts": "Mesaje", "Latest": "Ultimul",
+  "No boards yet.": "Încă nu există secțiuni.", "New topic": "Subiect nou", "Topic": "Subiect", "Replies": "Răspunsuri",
+  "Views": "Vizualizări", "Pinned": "Fixat", "Closed": "Închis", "No topics yet.": "Încă nu există subiecte.",
+  "Pages": "Pagini", "Newer": "Mai noi", "Older": "Mai vechi", "Title": "Titlu", "Message": "Mesaj",
+  "Start the topic": "Începe subiectul", "Unpin": "Desprinde", "Pin": "Fixează", "Reopen": "Redeschide",
+  "Close": "Închide", "Show": "Arată", "Hide": "Ascunde", "edited": "modificat", "Edit": "Modifică",
+  "Previous": "Înapoi", "Next": "Înainte", "Reply": "Răspuns", "Send": "Trimite", "Save": "Salvează",
+  "Sign in to reply.": "Autentifică-te pentru a răspunde.", "Write something first.": "Scrie ceva mai întâi.",
+  "A post has at most {n} characters.": "Un mesaj are cel mult {n} caractere.", "A topic needs a title.": "Un subiect are nevoie de titlu.",
+  "A title has at most {n} characters.": "Un titlu are cel mult {n} caractere.", "This board is closed.": "Secțiunea este închisă.",
+  "This topic no longer exists.": "Subiectul nu mai există.", "This topic is closed.": "Subiectul este închis.",
+  "This post no longer exists.": "Mesajul nu mai există.", "Slow down a little; try again in a minute.": "Mai încet puțin; încearcă din nou peste un minut."
+}

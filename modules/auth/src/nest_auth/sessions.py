@@ -166,3 +166,28 @@ def close_session(db: Any, token: str) -> None:
 def close_all_sessions(db: Any, user_id: int) -> None:
     with db.session() as s, s.begin():
         s.execute(delete(Session).where(Session.user_id == user_id))
+
+
+def users_by_ids(db: Any, ids: list[int]) -> dict[int, CurrentUser]:
+    """Members by id, for modules that show who wrote what."""
+    if not ids:
+        return {}
+    with db.session() as s:
+        return {u.id: _current(u) for u in s.scalars(select(User).where(User.id.in_(set(ids))))}
+
+
+def find_user(db: Any, who: str) -> CurrentUser | None:
+    """An active member by email, or by name when only one has it."""
+    who = (who or "").strip()
+    if not who:
+        return None
+    with db.session() as s:
+        user = s.scalar(select(User).where(User.email == normalize_email(who), User.active))
+        if user is None:
+            matches = list(
+                s.scalars(
+                    select(User).where(func.lower(User.name) == who.lower(), User.active).limit(2)
+                )
+            )
+            user = matches[0] if len(matches) == 1 else None
+        return _current(user) if user else None

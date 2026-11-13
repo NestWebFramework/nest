@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from nest import ModuleHost
 from nest_auth.passwords import hash_password, verify_password
-from nest_auth.sessions import CurrentUser
+from nest_auth.sessions import CurrentUser, find_user, users_by_ids
 from nest_auth.web import (
     AuthMiddleware,
     Throttle,
@@ -28,9 +28,11 @@ from nest_auth.web import (
 __all__ = [
     "CurrentUser",
     "current_user",
+    "find_user",
     "hash_password",
     "require_role",
     "require_user",
+    "users_by_ids",
     "verify_password",
 ]
 

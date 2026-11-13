@@ -1,0 +1,52 @@
+#
+# forum — boards, topics and posts, reusable by any application.
+#
+# Reading is public unless public_read is off; posting is for members. A new
+# reply is pushed over SSE (topic family forum.topic.*) to everyone reading
+# its topic; without JavaScript the form posts and the page reloads at the new
+# post. Posts are plain text. Moderators pin, lock and hide; authors edit for
+# edit_minutes. Members may post posts_per_minute at most.
+#
+module:
+  name: forum
+  id: nest.module.forum
+  type: module
+  title: Forum
+  category: community
+  version: 0.1.0
+  description: Boards, topics and posts with moderation, editing, and replies that arrive live.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_forum
+
+provides:
+  import: nest_forum
+  exports: []
+
+requires:
+  host: [realtime]
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.3,<1"
+  htmx: ">=0.1,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_forum.models:Base"
+
+settings:
+  public_read: {type: bool, default: true, description: Whether people who have not signed in may read.}
+  edit_minutes: {type: int, default: 30, description: How long an author may edit a post.}
+  posts_per_page: {type: int, default: 30}
+  topics_per_page: {type: int, default: 30}
+  posts_per_minute: {type: int, default: 5, description: Posts a member may send per minute.}
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+docs:
+  title: Forum
+  section: modules

@@ -36,7 +36,7 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, comments, redirects)
+modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, comments, redirects, forum, messages)
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
@@ -390,6 +390,33 @@ Two core registries let modules cooperate without importing each other:
 
 * **Lookups:** `host.answer("wordpress.post", fn)` and `nest.lookup(name, key)`.
 * **Fallbacks:** answered by `priority`. `content` uses 10, `redirects` -10.
+
+## Forum and messages: community, delivered live
+
+**`forum`** has boards, topics and posts.
+
+* **Access:** reading is public unless `public_read` is off. Posting is for members, at most
+  `posts_per_minute`.
+* **Editing:** authors edit for `edit_minutes`. Moderators pin, lock and hide.
+* **Live replies:** a new reply is pushed over SSE (the topic family `forum.topic.*`) to everyone
+  reading the topic, so it appears without a reload. Without JavaScript the form posts and the
+  page reloads at the new post.
+
+**`messages`** holds private conversations between members.
+
+* **Privacy:** members write by email, or by name when it is unambiguous. Only participants see a
+  conversation; anyone else gets a 404.
+* **Live delivery:** each member has a channel, `messages.user.<id>`, that only they may follow. A
+  new message appears in their open conversation, rendered for them, and their inbox refreshes.
+  `{% include "messages/badge.html" %}` shows the unread count.
+
+```sh
+uv run nest forum add-board applications/hello "Discuții generale" --description "Orice despre Nest."
+```
+
+Realtime topics can be families (`forum.topic.*`, and later `player.*` for the game). A family's
+`authorize(request, name)` sees the concrete name, which is how a member may follow
+`messages.user.7` only when they are member 7.
 
 ## Safe by default
 

@@ -25,6 +25,8 @@ dependencies = [
     "nest-gallery",
     "nest-comments",
     "nest-redirects",
+    "nest-forum",
+    "nest-messages",
 ]
 
 [tool.uv]
@@ -61,6 +63,8 @@ nest-media = { workspace = true }
 nest-gallery = { workspace = true }
 nest-comments = { workspace = true }
 nest-redirects = { workspace = true }
+nest-forum = { workspace = true }
+nest-messages = { workspace = true }
 
 [dependency-groups]
 dev = [

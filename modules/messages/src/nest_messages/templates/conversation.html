@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block title %}{{ conversation.subject or _("Conversation") }} · {{ _("Messages") }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ base }}/">{{ _("Messages") }}</a></p>
+<h1>{{ conversation.subject or _("Conversation") }}</h1>
+<p class="muted">{% for uid in people %}{{ names[uid].label if uid in names else "?" }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+<div hx-ext="sse" sse-connect="/_nest/events?topic=messages.user.{{ me.id }}">
+  <ol id="thread" class="thread" sse-swap="conversation-{{ conversation.id }}" hx-swap="beforeend">
+    {% for m in messages %}{% block message scoped %}
+    <li class="message{% if m.sender_id == me_id %} mine{% endif %}">
+      <p class="message-meta"><strong>{{ names[m.sender_id].label if m.sender_id in names else "?" }}</strong>
+        <time class="muted" datetime="{{ m.created_at.isoformat() }}">{{ m.created_at.strftime("%d.%m.%Y %H:%M") }}</time></p>
+      <div>{{ m.body | message_text }}</div>
+    </li>
+    {% endblock %}{% endfor %}
+  </ol>
+</div>
+{% block reply %}
+<form id="reply" class="stack" method="post" action="{{ base }}/{{ conversation.id }}/reply"
+      hx-post="{{ base }}/{{ conversation.id }}/reply" hx-target="#reply" hx-swap="outerHTML">
+  {{ csrf_field }}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  <div class="field"><label for="reply-body">{{ _("Reply") }}</label><textarea id="reply-body" name="body" rows="3" required>{{ body }}</textarea></div>
+  <button type="submit">{{ _("Send") }}</button>
+</form>
+{% endblock %}
+<form method="post" action="{{ base }}/{{ conversation.id }}/archive">{{ csrf_field }}<button class="secondary">{{ _("Archive") }}</button></form>
+{% endblock %}

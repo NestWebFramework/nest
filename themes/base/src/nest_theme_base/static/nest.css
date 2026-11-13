@@ -131,3 +131,13 @@ ol.comment-replies { padding-left: 1.25rem; border-left: 2px solid var(--border)
 .comment { margin-bottom: 1rem; } .comment-meta { margin: 0 0 .25rem; } .comment-body p { margin: .25rem 0; }
 .comment-reply summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.badge { display: inline-block; font-size: .75rem; padding: .05rem .45rem; border-radius: 999px; background: var(--border); color: var(--text); vertical-align: middle; }
+ol.posts { list-style: none; padding: 0; } .post { border-bottom: 1px solid var(--border); padding: .75rem 0; }
+.post-meta { margin: 0 0 .25rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+form.inline { display: inline; }
+ul.inbox { list-style: none; padding: 0; } ul.inbox li { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem 0; border-bottom: 1px solid var(--border); }
+ul.inbox li a { text-decoration: none; color: inherit; } ul.inbox li.unread strong { color: var(--accent); }
+ol.thread { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.message { max-width: min(36rem, 90%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; }
+.message.mine { align-self: flex-end; border-color: var(--accent); }
+.message-meta { margin: 0; font-size: .85rem; } .message p { margin: .25rem 0; }

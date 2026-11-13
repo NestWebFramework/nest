@@ -221,7 +221,7 @@ class ModuleRealtime:
         return self._broker.register(name, self._owner, **kwargs)
 
     def publish(self, topic: str, event: str, data: str) -> None:
-        registered = self._broker.topics.get(topic)
+        registered = self._broker.find(topic)
         if registered is not None and registered.owner != self._owner:
             raise HostError(
                 f"{self._owner} cannot publish to '{topic}', which {registered.owner} owns"

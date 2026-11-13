@@ -1,0 +1,11 @@
+{
+  "Messages": "Mesaje", "New message": "Mesaj nou", "Inbox": "Primite", "Archived": "Arhivate",
+  "No conversations.": "Nu ai conversații.", "To": "Către", "Email addresses or names, separated by commas.": "Adrese de email sau nume, separate prin virgulă.",
+  "Subject": "Subiect", "Message": "Mesaj", "Send": "Trimite", "Conversation": "Conversație", "Reply": "Răspuns",
+  "Archive": "Arhivează", "Say whom you are writing to.": "Spune cui scrii.",
+  "At most {n} people in one conversation.": "Cel mult {n} persoane într-o conversație.",
+  "Nobody here is called “{name}”.": "Nu există nimeni numit „{name}”.",
+  "You have sent many messages this hour; try again later.": "Ai trimis multe mesaje în ultima oră; încearcă mai târziu.",
+  "Write something first.": "Scrie ceva mai întâi.", "A message has at most {n} characters.": "Un mesaj are cel mult {n} caractere.",
+  "Write to someone other than yourself.": "Scrie altcuiva decât ție.", "This conversation does not exist.": "Conversația nu există."
+}

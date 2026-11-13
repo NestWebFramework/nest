@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Forum") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<h1>{{ _("Forum") }}</h1>
+<div class="table-wrap"><table class="forum">
+  <thead><tr><th>{{ _("Board") }}</th><th>{{ _("Topics") }}</th><th>{{ _("Posts") }}</th><th>{{ _("Latest") }}</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td><a href="{{ base }}/{{ r.board.slug }}/"><strong>{{ r.board.title }}</strong></a>{% if r.board.description %}<br><span class="muted">{{ r.board.description }}</span>{% endif %}</td>
+    <td>{{ r.topics }}</td><td>{{ r.posts }}</td>
+    <td>{% if r.last %}<a href="{{ base }}/t/{{ r.last.id }}/{{ r.last.slug }}?last=1">{{ r.last.title | truncate(40) }}</a><br>
+      <span class="muted">{{ names[r.last.last_author_id].label if r.last.last_author_id in names else "" }} · {{ r.last.last_post_at.strftime("%d.%m.%Y %H:%M") }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+  </tr>
+  {% else %}<tr><td colspan="4" class="muted">{{ _("No boards yet.") }}</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

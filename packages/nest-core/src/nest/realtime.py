@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import re
 from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
@@ -23,6 +24,7 @@ Snapshot = Callable[[], Event | Iterable[Event] | None | Awaitable[Any]]
 Authorize = Callable[[Request], bool | Awaitable[bool]]
 
 PING_SECONDS = 15.0
+_NAME = re.compile(r"^[A-Za-z0-9_.:-]{1,120}$")
 MAX_TOPICS_PER_CONNECTION = 16
 
 
@@ -70,6 +72,14 @@ class Broker:
         authorize: Authorize | None = None,
         public: bool = False,
     ) -> Topic:
+        """A topic by name, or a family of them: "forum.topic.*" covers "forum.topic.17".
+
+        For a family, ``authorize(request, name)`` and ``snapshot(name)`` are
+        given the concrete name; for a single topic, ``authorize(request)`` and
+        ``snapshot()``.
+        """
+        if name.endswith("*") and (not name.endswith(".*") or "*" in name[:-1]):
+            raise TopicError(f"topic '{name}': a family ends in '.*', e.g. 'forum.topic.*'")
         if name in self.topics:
             raise TopicError(f"topic '{name}' is already registered by {self.topics[name].owner}")
         if not public and authorize is None:
@@ -78,12 +88,25 @@ class Broker:
         self.topics[name] = topic
         return topic
 
+    def find(self, name: str) -> Topic | None:
+        """The topic ``name`` belongs to: itself, or the family it is a member of."""
+        if name in self.topics:
+            return self.topics[name]
+        if "*" in name or not _NAME.match(name):
+            return None
+        best = None
+        for key, topic in self.topics.items():
+            member = key.endswith(".*") and name.startswith(key[:-1]) and len(name) > len(key) - 1
+            if member and (best is None or len(key) > len(best.name)):
+                best = topic
+        return best
+
     def subscribers(self, name: str) -> int:
         return len(self._subscribers.get(name, ()))
 
     def publish(self, topic: str, event: str, data: str) -> None:
         """Send ``event`` to everyone following ``topic``. Never blocks."""
-        if topic not in self.topics:
+        if self.find(topic) is None:
             raise TopicError(f"topic '{topic}' is not registered")
         for sub in list(self._subscribers.get(topic, ())):
             try:
@@ -99,11 +122,14 @@ class Broker:
         if len(names) > MAX_TOPICS_PER_CONNECTION:
             return 400, f"at most {MAX_TOPICS_PER_CONNECTION} topics per connection"
         for name in names:
-            topic = self.topics.get(name)
+            topic = self.find(name)
             if topic is None:
                 return 404, f"no topic '{name}'"
-            if not topic.public and not await _maybe(topic.authorize(request)):
-                return 403, f"not allowed to follow '{name}'"
+            family = topic.name != name
+            if not topic.public:
+                allowed = topic.authorize(request, name) if family else topic.authorize(request)
+                if not await _maybe(allowed):
+                    return 403, f"not allowed to follow '{name}'"
         return None
 
     async def stream(self, request: Request, names: list[str]) -> AsyncIterator[str]:
@@ -113,10 +139,11 @@ class Broker:
         try:
             yield "retry: 3000\n\n"
             for name in names:
-                snapshot = self.topics[name].snapshot
+                topic = self.find(name)
+                snapshot = topic.snapshot if topic else None
                 if snapshot is None:
                     continue
-                result = await _maybe(snapshot())
+                result = await _maybe(snapshot(name) if topic.name != name else snapshot())
                 if result is None:
                     continue
                 events = [result] if isinstance(result, tuple) else list(result)

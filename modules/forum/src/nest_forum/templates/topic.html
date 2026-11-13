@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block title %}{{ topic.title }} · {{ board.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ base }}/">{{ _("Forum") }}</a> › <a href="{{ base }}/{{ board.slug }}/">{{ board.title }}</a></p>
+<h1>{{ topic.title }}{% if topic.locked %} <span class="badge">{{ _("Closed") }}</span>{% endif %}</h1>
+{% if moderating %}
+<form class="row" method="post" action="{{ base }}/t/{{ topic.id }}/moderate">{{ csrf_field }}
+  <button class="secondary" name="action" value="{{ 'unpin' if topic.pinned else 'pin' }}">{{ _("Unpin") if topic.pinned else _("Pin") }}</button>
+  <button class="secondary" name="action" value="{{ 'unlock' if topic.locked else 'lock' }}">{{ _("Reopen") if topic.locked else _("Close") }}</button>
+  <button class="secondary" name="action" value="{{ 'show' if topic.hidden else 'hide' }}">{{ _("Show") if topic.hidden else _("Hide") }}</button>
+</form>
+{% endif %}
+<div{% if live %} hx-ext="sse" sse-connect="/_nest/events?topic=forum.topic.{{ topic.id }}"{% endif %}>
+  <ol id="posts" class="posts"{% if live %} sse-swap="post" hx-swap="beforeend"{% endif %}>
+    {% for p in posts %}{% block post scoped %}
+    <li id="post-{{ p.id }}" class="post{% if p.hidden %} muted{% endif %}">
+      <p class="post-meta"><strong>{{ names[p.author_id].label if p.author_id in names else "?" }}</strong>
+        <a class="muted" href="#post-{{ p.id }}"><time datetime="{{ p.created_at.isoformat() }}">{{ p.created_at.strftime("%d.%m.%Y %H:%M") }}</time></a>
+        {% if p.edited_at %}<span class="muted">· {{ _("edited") }}</span>{% endif %}
+        {% if may_edit(p) %}<a href="{{ base }}/p/{{ p.id }}/edit" hx-get="{{ base }}/p/{{ p.id }}/edit" hx-target="#post-{{ p.id }}" hx-swap="outerHTML">{{ _("Edit") }}</a>{% endif %}
+        {% if moderating %}<form class="inline" method="post" action="{{ base }}/p/{{ p.id }}/hide">{{ csrf_field }}<input type="hidden" name="hidden" value="{{ '0' if p.hidden else '1' }}"><button class="link">{{ _("Show") if p.hidden else _("Hide") }}</button></form>{% endif %}
+      </p>
+      <div class="post-body">{{ p.body | forum_text }}</div>
+    </li>
+    {% endblock %}{% endfor %}
+  </ol>
+</div>
+{% if pages > 1 %}<nav class="row between pager" aria-label="{{ _('Pages') }}">
+  {% if page > 1 %}<a href="?page={{ page - 1 }}">← {{ _("Previous") }}</a>{% else %}<span></span>{% endif %}
+  <span class="muted">{{ page }} / {{ pages }}</span>
+  {% if page < pages %}<a href="?page={{ page + 1 }}">{{ _("Next") }} →</a>{% endif %}
+</nav>{% endif %}
+{% if user and not topic.locked %}
+{% block reply %}
+<form id="reply" class="stack" method="post" action="{{ base }}/t/{{ topic.id }}/reply"
+      hx-post="{{ base }}/t/{{ topic.id }}/reply" hx-target="#reply" hx-swap="outerHTML">
+  {{ csrf_field }}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  <div class="field"><label for="reply-body">{{ _("Reply") }}</label><textarea id="reply-body" name="body" rows="5" required>{{ body }}</textarea></div>
+  <button type="submit">{{ _("Send") }}</button>
+</form>
+{% endblock %}
+{% elif not user %}<p class="muted">{{ _("Sign in to reply.") }}</p>{% endif %}
+{% endblock %}
