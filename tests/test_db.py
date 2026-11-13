@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from nest_db import model_base
+from nest_db import migrate, model_base
 from nest_db.server import ConfigError
 from sqlalchemy import ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,6 +23,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from nest import create_app
 from nest.bind import BindError, ProviderContext, build_settings, conformance
 from nest.catalog import Catalog
+from nest.host import HostError
 
 NOTES_MODULE = {
     "modules/notes/module.yml": """
@@ -35,7 +36,35 @@ NOTES_MODULE = {
         requires:
           interfaces: [nest.db]
         deps:
-          db: ">=0.1"
+          db: ">=0.2"
+        db:
+          migrations: migrations
+          metadata: "notes:Base"
+    """,
+    "modules/notes/migrations/versions/0001_notes.py": """
+        \"\"\"notes
+
+        Revision ID: 0001
+        \"\"\"
+        import sqlalchemy as sa
+        from alembic import op
+
+        revision = "0001"
+        down_revision = None
+        branch_labels = None
+        depends_on = None
+
+
+        def upgrade():
+            op.create_table(
+                "notes_note",
+                sa.Column("id", sa.Integer(), primary_key=True),
+                sa.Column("body", sa.String(200), nullable=False),
+            )
+
+
+        def downgrade():
+            op.drop_table("notes_note")
     """,
     "modules/notes/notes/__init__.py": """
         from fastapi import APIRouter, Form
@@ -74,13 +103,6 @@ NOTES_MODULE = {
 
 
         def setup(host: ModuleHost) -> None:
-            db = host.bound(Database)
-
-            @host.on_startup
-            def create_tables():  # until per-module migrations land
-                Base.metadata.drop_all(db.engine())
-                Base.metadata.create_all(db.engine())
-
             host.mount(router)
     """,
 }
@@ -159,7 +181,93 @@ def test_the_same_module_runs_on_a_server(tmp_path, variable, provider, dialect)
     app = create_app(
         notes_app(tmp_path, bind), environ={"NEST_APP_WORKSPACE": str(tmp_path), env_key: url}
     )
-    assert exercise(app) == dialect
+    nest = app.state.nest
+    try:
+        assert exercise(app) == dialect
+    finally:  # leave the server as it was: the module's tables and version table gone
+        (notes,) = migrate.discover(nest.plan)
+        db = nest.bindings.get("nest.db")
+        migrate.downgrade(db, notes, "base")
+        with db.engine().begin() as conn:
+            conn.execute(text(f"DROP TABLE IF EXISTS {notes.version_table}"))
+        db.dispose()
+
+
+# --- migrations -------------------------------------------------------------------
+
+
+def test_development_migrates_on_start(tmp_path):
+    app = create_app(notes_app(tmp_path, SQLITE), environ={"NEST_APP_WORKSPACE": str(tmp_path)})
+    nest = app.state.nest
+    db = nest.bindings.get("nest.db")
+    (notes,) = migrate.discover(nest.plan)
+    assert notes.version_table == "notes_alembic_version"
+    assert migrate.current(db, notes) == {"0001"}
+    assert not migrate.pending(db, notes)
+
+
+def test_production_refuses_to_start_behind_and_starts_after_an_upgrade(tmp_path):
+    root = notes_app(tmp_path, SQLITE)
+    env = {
+        "NEST_APP_WORKSPACE": str(tmp_path),
+        "NEST_ENV": "production",
+        "NEST_SECRET_KEY": "k" * 40,
+    }
+    with pytest.raises(HostError, match="not applied for: notes; run `nest db upgrade`"):
+        create_app(root, environ=env)
+    off = create_app(root, environ={**env, "NEST_MIGRATE": "off"}).state.nest
+    (notes,) = migrate.discover(off.plan)
+    migrate.upgrade(off.bindings.get("nest.db"), notes)  # what the cluster's job does
+    create_app(root, environ=env)  # now it starts
+
+
+def test_a_bad_policy_is_refused(tmp_path):
+    with pytest.raises(HostError, match="NEST_MIGRATE must be auto, check or off"):
+        create_app(
+            notes_app(tmp_path, SQLITE),
+            environ={"NEST_APP_WORKSPACE": str(tmp_path), "NEST_MIGRATE": "yes"},
+        )
+
+
+def test_autogenerate_sees_only_the_modules_own_tables(tmp_path):
+    root = notes_app(tmp_path, SQLITE)
+    model = root / "modules/notes/notes/__init__.py"
+    model.write_text(
+        model.read_text().replace(
+            "body: Mapped[str] = mapped_column(String(200))",
+            "body: Mapped[str] = mapped_column(String(200))\n"
+            "    pinned: Mapped[bool] = mapped_column(default=False)",
+        )
+    )
+    nest = create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path)}).state.nest
+    db = nest.bindings.get("nest.db")
+    with db.engine().begin() as conn:  # someone else's table, which notes must not drop
+        conn.execute(text("CREATE TABLE glossary_term (id INTEGER PRIMARY KEY)"))
+    (notes,) = migrate.discover(nest.plan)
+    path = migrate.revision(db, notes, "pin notes", autogenerate=True)
+    body = path.read_text()
+    assert "'pinned'" in body
+    assert "glossary_term" not in body
+    assert "batch_alter_table" in body  # SQLite alters by copying
+
+    migrate.upgrade(db, notes)
+    with db.engine().connect() as conn:
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(notes_note)"))]
+    assert "pinned" in cols
+    migrate.downgrade(db, notes, "-1")
+    assert migrate.current(db, notes) == {"0001"}
+
+
+def test_the_db_command_reports_status(tmp_path, capsys, monkeypatch):
+    from nest.cli import main
+
+    root = notes_app(tmp_path, SQLITE)
+    monkeypatch.setenv("NEST_APP_WORKSPACE", str(tmp_path / "ws"))
+    assert main(["db", "status", str(root)]) == 1  # nothing applied yet
+    assert "pending" in capsys.readouterr().out
+    assert main(["db", "upgrade", str(root)]) == 0
+    assert main(["db", "status", str(root)]) == 0
+    assert "up to date" in capsys.readouterr().out
 
 
 def test_a_server_provider_without_settings_stops_the_start_clearly(tmp_path):

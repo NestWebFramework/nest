@@ -141,3 +141,19 @@ def test_vendored_htmx_matches_its_recorded_sums():
     for item in manifest["vendored"]:
         digest = hashlib.sha256((root / item["file"]).read_bytes()).hexdigest()
         assert digest == item["sha256"], item["file"]
+
+
+def test_two_apps_with_the_same_local_module_id_each_get_their_own_code(tmp_path):
+    texts = {}
+    for folder in ("one", "two"):
+        root = new_app("twin", tmp_path / folder)
+        page = root / "modules" / "home" / "templates" / "index.html"
+        init = root / "modules" / "home" / "home" / "__init__.py"
+        init.write_text(
+            init.read_text().replace('"home/index.html")', f'"home/index.html", who="{folder}")')
+        )
+        page.write_text(page.read_text().replace("It runs.", "{{ who }}"))
+        app = create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / folder / "ws")})
+        with TestClient(app) as c:
+            texts[folder] = c.get("/").text
+    assert "<p>one</p>" in texts["one"] and "<p>two</p>" in texts["two"]

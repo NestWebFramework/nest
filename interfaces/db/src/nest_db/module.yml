@@ -10,7 +10,7 @@ module:
   id: nest.interface.db
   type: interface
   title: Database
-  version: 0.1.0
+  version: 0.2.0
   description: >
     A relational database behind SQLAlchemy: sessions, the engine for
     migrations, the dialect and its capabilities, and a health check.
@@ -20,6 +20,10 @@ module:
 interface:
   name: nest.db
   protocol: "nest_db:Database"
+
+# Migrates (or checks) every module that declares db.migrations, before any
+# module is set up. NEST_MIGRATE=auto|check|off; see nest_db/migrate.py.
+startup: "nest_db.migrate:on_startup"
 
 provides:
   import: nest_db

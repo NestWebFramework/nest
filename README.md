@@ -99,14 +99,16 @@ In a module:
 from nest_db import Database, model_base
 from nest import bound
 
-Base = model_base("glossary")            # tables must be named glossary_*
+Base = model_base("glossary")  # tables must be named glossary_*
+
 
 class Term(Base):
     __tablename__ = "glossary_term"
     ...
 
+
 @router.get("/")
-def index(db: Database = bound(Database)):    # a sync handler runs in the threadpool
+def index(db: Database = bound(Database)):  # a sync handler runs in the threadpool
     with db.session() as s:
         ...
 ```
@@ -115,6 +117,33 @@ def index(db: Database = bound(Database)):    # a sync handler runs in the threa
 That way a migration names the same constraints on SQLite, PostgreSQL and MariaDB.
 `db.dialect()` and `db.capabilities()` (`json`, `fts`, `returning`, `schemas`) cover the
 rare engine-specific path. The health page pings the database.
+
+### Migrations, per module
+
+A module that owns tables says where its migrations are. It ships only revision files,
+because Nest supplies what Alembic's `env.py` would:
+
+```yaml
+db:
+  migrations: migrations                  # migrations/versions/*.py
+  metadata: nest_glossary.models:Base     # for --autogenerate
+```
+
+Each module keeps its own version table (`glossary_alembic_version`) and migrates independently,
+in dependency order. Autogenerate sees only tables under the module's prefix, so it can never
+drop another module's tables. On SQLite, column changes are written as batch operations.
+
+```sh
+uv run nest db status applications/glossary
+uv run nest db revision applications/glossary glossary -m "add senses" --autogenerate
+uv run nest db upgrade applications/glossary
+uv run nest db downgrade applications/glossary glossary -1
+```
+
+At startup, `NEST_MIGRATE` decides what happens. `auto` is the default in development:
+it upgrades. `check` is the default in production: it refuses to start while migrations are
+pending. On microk8s, `nest db upgrade` runs as a Job before the Deployment rolls out.
+`off` does neither.
 
 To run the same tests against live servers:
 

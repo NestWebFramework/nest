@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from importlib.metadata import entry_points
 from pathlib import Path
 
 from nest.catalog import Catalog, Entry
@@ -152,6 +153,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("name")
     p.add_argument("--into", default=".", help="the folder to create it in")
     p.set_defaults(func=cmd_new)
+
+    # Packages add commands of their own (``nest db ...``) through an entry point:
+    # ``[project.entry-points."nest.commands"] db = "nest_db.cli:register"``.
+    for ep in sorted(entry_points(group="nest.commands"), key=lambda e: e.name):
+        ep.load()(sub)
 
     args = parser.parse_args(argv)
     return args.func(args)

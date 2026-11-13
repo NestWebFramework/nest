@@ -30,7 +30,7 @@ from starlette.concurrency import run_in_threadpool
 from nest.bind import Bindings, ProviderContext, build
 from nest.catalog import Catalog, Entry
 from nest.contract import load_contracts
-from nest.loader import import_main
+from nest.loader import import_main, import_object
 from nest.manifest import load_manifest
 from nest.realtime import Broker, Topic
 from nest.resolve import Plan, Unit, plan
@@ -273,6 +273,14 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
     app.state.nest = nest
     nest.app = app
     _core_routes(app, nest)
+
+    for unit in the_plan.units:
+        hook = unit.entry.manifest.startup
+        if hook:
+            try:
+                import_object(hook, unit.entry)(nest)
+            except Exception as e:
+                raise HostError(f"{unit.name}: its startup hook failed: {e}") from e
 
     for unit in the_plan.units:
         entry = unit.entry

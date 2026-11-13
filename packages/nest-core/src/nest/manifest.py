@@ -208,6 +208,16 @@ class Manifest(BaseModel):
     deploy: Deploy | None = None
     docs: dict[str, Any] = Field(default_factory=dict)
     system_deps: dict[str, Any] = Field(default_factory=dict)
+    # Called as fn(nest) once bindings exist and before any module is set up,
+    # for packages that prepare the application (the db interface migrates).
+    startup: str | None = None
+
+    @field_validator("startup")
+    @classmethod
+    def _startup(cls, v: str | None) -> str | None:
+        if v is not None and ":" not in v:
+            raise ValueError("a startup hook is written 'package.module:function'")
+        return v
 
     _root: Path = PrivateAttr(default=Path("."))
     _raw: dict[str, Any] = PrivateAttr(default_factory=dict)
