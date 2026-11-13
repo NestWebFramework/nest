@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, item, inventory, character)
+game/subsystems/      game subsystems (world, item, inventory, character, settlement, building)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -540,6 +540,36 @@ maps the treatments' placeholder item (`item_id=16`, the iron hammer) to the ite
 comments name. The commands are `CreateCharacter`, `Infect`, `Treat`, `GrantExperience` and
 `ChangeAttribute`. Game masters follow `game.<server>.character` for births, deaths and
 illnesses, and `game.<server>.character.<id>` for one character's sheet.
+
+**`settlement`** keeps the hamlets, villages and towns: where each is (map tiles), its
+residents, treasury, prosperity and technologies. Once a game day it counts its living
+residents: the population, plus ages, genders, ranks and professions. It then evolves to the
+next type when it meets its rule: population, prosperity, base buildings and technologies. The
+old engine kept these rules in code; they are now in `settlements.yml`. The commands are
+`FoundSettlement`, `Settle` and `AdjustSettlement`.
+
+**`building`** raises buildings (`buildings.yml`: 29 buildings, 10 attributes, construction
+materials, 7 upgrades).
+
+* **Condition** is the weighted mean of a building's attributes.
+* **Grants:** every settlement gets, free, what its type grants: a hamlet a well and a church,
+  a village a market stall. This follows what the old engine built.
+* **Raising** a building otherwise takes the construction materials from the owner's
+  inventory.
+* **Upgrades** go in order, cost their materials and gold (a character's money or a
+  settlement's treasury) and take their game hours.
+* **Decay:** buildings decay by game day and year, using voievodate's odds and the world's
+  generator. Storms damage roofs. Wells improve the water supply, sanitation and fire
+  protection around them; the old code meant to, but no building was tagged.
+
+The commands are `RaiseBuilding`, `StartUpgrade` and `RepairBuilding`. Settlements and
+buildings are public, so anyone may follow `game.<server>.settlement[.<id>]` and
+`game.<server>.building[.<settlement id>]`.
+
+The checks at start report what the original data lacks. Settlement evolution past a village
+asks for technologies no pack defines (`basic_trade`, `trade_routes`, `stone_masonry`,
+`advanced_civil_engineering`), and a city is granted a `cathedral` that is no building.
+Placement by terrain waits for the map, voievodate's 501 × 501 tiles.
 
 ```sh
 uv run nest game status applications/voievodate
