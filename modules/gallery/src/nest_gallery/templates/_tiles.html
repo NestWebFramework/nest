@@ -1,0 +1,10 @@
+{# Tiles for collections: cards, base (the gallery module's route), media(key) → URL #}
+<div class="gallery-tiles">
+  {% for card in cards %}
+  <a class="gallery-tile" href="{{ base }}/{{ card.collection.slug }}/">
+    {% if card.cover %}<img src="{{ media(card.cover) }}" alt="" loading="lazy">{% else %}<span class="gallery-empty"></span>{% endif %}
+    <span class="gallery-tile-title">{{ card.collection.title }}</span>
+    <span class="muted">{% if card.is_album %}{{ ngettext("{n} gallery", "{n} galleries", card.count) }}{% else %}{{ ngettext("{n} photo", "{n} photos", card.count) }}{% endif %}</span>
+  </a>
+  {% endfor %}
+</div>

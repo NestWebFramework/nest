@@ -9,12 +9,11 @@ from __future__ import annotations
 
 from nest import ModuleHost
 from nest.host import HostError
-from nest_content.html import shortcode
 from nest_content.service import KIND, EntryData
 from nest_content.types import Registry
-from nest_content.web import router, serve
+from nest_content.web import Context, catlist, router, serve, wp_gallery
 
-__all__ = ["KIND", "EntryData", "Registry", "shortcode"]
+__all__ = ["KIND", "Context", "EntryData", "Registry"]
 
 
 def setup(host: ModuleHost) -> None:
@@ -30,5 +29,9 @@ def setup(host: ModuleHost) -> None:
 
         return {"menu": lambda slug: service.menu_tree(db, slug), "content_types": registry.types}
 
+    host.shortcode("catlist", catlist)
+    if not host.has_module("gallery"):
+        # WordPress's own [gallery ids="..."]; the gallery module answers [gallery] when present.
+        host.shortcode("gallery", wp_gallery)
     host.mount(router)
     host.fallback(serve)

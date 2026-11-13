@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from nest_auth.sessions import create_user
 from nest_content import service
-from nest_content.html import autop, expand, sanitize
+from nest_content.html import autop, sanitize
 from nest_content.service import EntryData
 from nest_content.types import Registry, TypesError, build_path
 from nest_content.wordpress import import_dump, rewrite
@@ -25,6 +25,7 @@ application: {title: Satul, port: 8000, theme: base, languages: [ro, en]}
 modules:
   - {name: content, route: /}
   - {name: auth, route: /cont}
+  - {name: media, route: /media}
 bind:
   nest.db: {providers: [db-sqlite]}
   nest.search: {providers: [search-sqlite]}
@@ -188,11 +189,23 @@ def test_autop_is_wordpress_paragraphs():
 
 
 def test_shortcodes_only_in_text_and_unknown_ones_stay():
-    from nest_content.html import shortcode
+    from nest.shortcodes import ShortcodeError, Shortcodes
 
-    shortcode("hello")(lambda attrs, ctx: f"<b>{attrs.get('name', '?')}</b>")
-    out = str(expand('<p>[hello name="Ana"] [nope x=1]</p><a title="[hello]">t</a>', None))
-    assert "<b>Ana</b>" in out and "[nope x=1]" in out and 'title="[hello]"' in out
+    registry = Shortcodes()
+    registry.register("hello", "test", lambda attrs, ctx: f"<b>{attrs.get('name', '?')}</b>")
+    out = str(
+        registry.expand('<p>[hello name="Ana"] [HELLO] [nope x=1]</p><a title="[hello]">t</a>')
+    )
+    assert (
+        "<b>Ana</b>" in out
+        and "<b>?</b>" in out
+        and "[nope x=1]" in out
+        and 'title="[hello]"' in out
+    )
+    with pytest.raises(ShortcodeError, match="already answered by test"):
+        registry.register("Hello", "other", lambda a, c: "")
+    registry.register("boom", "test", lambda a, c: 1 / 0)
+    assert str(registry.expand("a [boom] b")) == "a  b"  # a failing shortcode renders nothing
 
 
 # --- types -----------------------------------------------------------------------------

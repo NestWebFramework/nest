@@ -1,0 +1,8 @@
+{# A gallery's photos, opened in the lightbox when scripts run, as plain links when not. #}
+<div class="gallery-grid">
+  {% for p in photos %}
+  <a href="{{ media(p.key) }}" data-lightbox="g{{ collection.id }}"{% if p.caption %} data-caption="{{ p.caption }}"{% endif %}>
+    <img src="{{ media(p.thumb or p.key) }}" alt="{{ p.alt }}" loading="lazy">
+  </a>
+  {% endfor %}
+</div>

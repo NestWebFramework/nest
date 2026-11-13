@@ -15,17 +15,16 @@ from typing import Any
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import RedirectResponse, Response
 from nest_auth import CurrentUser, require_role
 from nest_db import Database
 from nest_search import Search
-from nest_storage import Storage, StorageError
 from starlette.concurrency import run_in_threadpool
 
 from nest import bound, is_htmx, render, translator
 from nest.host import module_state
 from nest_content import service
-from nest_content.html import expand, link_list, shortcode
+from nest_content.html import link_list
 from nest_content.models import STATUSES, Entry
 from nest_content.service import KIND, ContentError, EntryData
 
@@ -47,11 +46,13 @@ def _bindings(request: Request) -> tuple[Any, Any, Any]:
 
 @dataclass
 class Context:
+    """What a shortcode handler is given when a content page expands it."""
+
     db: Any
     entry: Entry | None
+    request: Any = None
 
 
-@shortcode("catlist")
 def catlist(attrs: dict[str, str], ctx: Context) -> str:
     """[catlist id=3 numberposts=10 orderby=title order=asc] (WordPress's List Category Posts)."""
     term = None
@@ -78,8 +79,7 @@ def catlist(attrs: dict[str, str], ctx: Context) -> str:
     return link_list([(e.title, e.path) for e in entries if e.id != own])
 
 
-@shortcode("gallery")
-def gallery(attrs: dict[str, str], ctx: Context) -> str:
+def wp_gallery(attrs: dict[str, str], ctx: Context) -> str:
     """[gallery ids="12,13"]: the images, by their WordPress attachment ids."""
     from markupsafe import escape
 
@@ -91,33 +91,13 @@ def gallery(attrs: dict[str, str], ctx: Context) -> str:
                 images.append(m)
     if not images:
         return ""
+    from nest_media import media_url
+
     figures = "".join(
-        f'<figure><a href="/media/{quote(m.key)}"><img src="/media/{quote(m.key)}" alt="{escape(m.alt)}" loading="lazy"></a></figure>'
+        f'<figure><a href="{media_url(ctx.request, m.key)}"><img src="{media_url(ctx.request, m.key)}" alt="{escape(m.alt)}" loading="lazy"></a></figure>'
         for m in images
     )
     return f'<div class="gallery">{figures}</div>'
-
-
-# --- media -------------------------------------------------------------------------
-
-
-@router.get("/media/{key:path}")
-def media(key: str, storage: Storage = bound(Storage)):
-    try:
-        stat = storage.stat(key)
-    except StorageError:
-        raise HTTPException(404) from None
-    if stat is None:
-        raise HTTPException(404)
-    headers = {"Cache-Control": "public, max-age=604800", "X-Content-Type-Options": "nosniff"}
-    if stat.content_type.startswith(("text/html", "image/svg", "application/xhtml")):
-        # Stored files are never pages on this site.
-        headers["Content-Disposition"] = "attachment"
-        headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
-    path = storage.local_path(key)
-    if path:
-        return FileResponse(path, media_type=stat.content_type, headers=headers)
-    return StreamingResponse(storage.open(key), media_type=stat.content_type, headers=headers)
 
 
 # --- search ------------------------------------------------------------------------
@@ -190,7 +170,7 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
         spec=spec,
         terms=service.terms_of(db, e.id),
         children=service.children(db, e.id) if spec.hierarchical else [],
-        body=expand(e.body, Context(db, e)),
+        body=request.app.state.nest.shortcodes.expand(e.body, Context(db, e, request)),
     )
 
 

@@ -36,7 +36,7 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, content)
+modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery)
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
@@ -298,8 +298,8 @@ taxonomies.
   matches, so a moved site keeps every URL. Children follow their parent's slug.
 * **Bodies** are HTML, sanitized with nh3 on every save. Shortcodes (`[catlist]`, `[gallery]`)
   are expanded only when shown, and only in text.
-* **Also included:** media in `nest.storage`, menus, revisions, search, and an editor under
-  `/admin/content` for the `editor` role.
+* **Also included:** media in `nest.storage` (served by the `media` module), menus, revisions,
+  search, and an editor under `/admin/content` for the `editor` role.
 
 ```yaml
 content_types:
@@ -330,8 +330,35 @@ What the importer brings over:
 * **Body cleanup:** WordPress's paragraphs are added once. Upload addresses on any host the site
   ever had become `/media/uploads/...`, and links to the old site become relative.
 
-It is safe to run again: what it brought before is updated, not duplicated. Comments and the
-gallery plugins (NextGEN, Photo Gallery) are not moved yet.
+It is safe to run again: what it brought before is updated, not duplicated. The gallery plugins
+come in through the `gallery` module (below). Comments are not moved yet.
+
+## Galleries, media and shortcodes: modules any application reuses
+
+Features many sites need are modules of their own, as in RoboHub. An application includes them
+at a route; they share nothing but the core's interfaces.
+
+* **`media`** serves the files in `nest.storage` at its route (`/media` by convention, which
+  imported pages assume). A stored HTML or SVG file is sent as a sandboxed attachment, never
+  shown as a page. Templates get `media_url(key)`.
+* **`gallery`** holds galleries of photos; an album is a gallery of galleries. Each has its own
+  page under the module's route. Thumbnails open in a lightbox (one static script, CSP-safe);
+  without JavaScript they are links.
+* **Shortcodes** are a per-application registry in the core. A module answers a tag with
+  `host.shortcode("album", fn)`, and a module that renders rich text expands them. So `gallery`
+  gives `content`'s pages `[gallery slug="…"]` and `[album slug="…"]` without either importing
+  the other. Shortcodes are expanded only in text, a tag nobody answers stays as written, and a
+  failing handler renders nothing.
+
+```sh
+uv run nest gallery import-wordpress applications/morlaca ~/projects/morlaca/db/morlaca.sql \
+    --uploads ~/projects/morlaca/wp-content/uploads        # --all for galleries no page uses
+uv run nest gallery list applications/morlaca
+```
+
+The import moves Photo Gallery (10Web) and NextGEN galleries and albums with their photos and
+thumbnails. It keeps the plugins' ids as aliases: `[Best_Wordpress_Gallery id="2"]` and
+`[nggallery id=1]` in imported pages keep working, unchanged.
 
 ## Safe by default
 

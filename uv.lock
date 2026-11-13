@@ -14,8 +14,10 @@ members = [
     "nest-db-postgres",
     "nest-db-sqlite",
     "nest-forms",
+    "nest-gallery",
     "nest-glossary",
     "nest-htmx",
+    "nest-media",
     "nest-search",
     "nest-search-sqlite",
     "nest-storage",
@@ -348,6 +350,7 @@ dependencies = [
     { name = "nest-core" },
     { name = "nest-db" },
     { name = "nest-forms" },
+    { name = "nest-media" },
     { name = "nest-search" },
     { name = "nest-storage" },
     { name = "nh3" },
@@ -359,6 +362,7 @@ requires-dist = [
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-forms", editable = "modules/forms" },
+    { name = "nest-media", editable = "modules/media" },
     { name = "nest-search", editable = "interfaces/search" },
     { name = "nest-storage", editable = "interfaces/storage" },
     { name = "nh3", specifier = ">=0.2.17" },
@@ -455,6 +459,25 @@ dependencies = [
 requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
+name = "nest-gallery"
+version = "0.1.0"
+source = { editable = "modules/gallery" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-db" },
+    { name = "nest-media" },
+    { name = "nest-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-media", editable = "modules/media" },
+    { name = "nest-storage", editable = "interfaces/storage" },
+]
+
+[[package]]
 name = "nest-glossary"
 version = "0.1.0"
 source = { editable = "modules/glossary" }
@@ -485,6 +508,21 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
+
+[[package]]
+name = "nest-media"
+version = "0.1.0"
+source = { editable = "modules/media" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-storage", editable = "interfaces/storage" },
+]
 
 [[package]]
 name = "nest-search"
@@ -550,8 +588,10 @@ dependencies = [
     { name = "nest-db-postgres" },
     { name = "nest-db-sqlite" },
     { name = "nest-forms" },
+    { name = "nest-gallery" },
     { name = "nest-glossary" },
     { name = "nest-htmx" },
+    { name = "nest-media" },
     { name = "nest-search" },
     { name = "nest-search-sqlite" },
     { name = "nest-storage" },
@@ -578,8 +618,10 @@ requires-dist = [
     { name = "nest-db-postgres", editable = "providers/db-postgres" },
     { name = "nest-db-sqlite", editable = "providers/db-sqlite" },
     { name = "nest-forms", editable = "modules/forms" },
+    { name = "nest-gallery", editable = "modules/gallery" },
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },
+    { name = "nest-media", editable = "modules/media" },
     { name = "nest-search", editable = "interfaces/search" },
     { name = "nest-search-sqlite", editable = "providers/search-sqlite" },
     { name = "nest-storage", editable = "interfaces/storage" },

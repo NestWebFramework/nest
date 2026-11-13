@@ -45,6 +45,7 @@ from nest.realtime import Broker, Topic
 from nest.resolve import Plan, Unit, plan
 from nest.security import CSRF_FIELD, SecurityMiddleware, csrf_protect, local_path
 from nest.settings import Namespaced, SettingsStore
+from nest.shortcodes import Shortcodes
 from nest.templating import is_htmx, make_environment, render_block
 from nest.workspace import environment, is_production, resolve_workspace, secret_key
 
@@ -91,6 +92,7 @@ class Nest:
             (application.title if application else None) or self.manifest.module.title or self.name
         )
         self.broker = Broker()
+        self.shortcodes = Shortcodes()
         self.settings = SettingsStore(workspace / "data" / "settings.conf", self.name, environ)
         self.states: dict[str, ModuleState] = {}
         # Per-application, per-module state. A module keeps what it needs at run
@@ -290,6 +292,19 @@ class ModuleHost:
         """Add values to every page's template context (``user``, for the auth module)."""
         self._nest._context.append(fn)
         return fn
+
+    def has_module(self, name: str) -> bool:
+        """Whether the application includes a package of that name (to cooperate, not depend)."""
+        return self._nest.plan.unit(name) is not None
+
+    def shortcode(self, name: str, fn: Callable[[dict[str, str], Any], str] | None = None) -> Any:
+        """Answer ``[name ...]`` in rich text: ``host.shortcode("album", fn)`` or as a decorator."""
+
+        def register(handler: Callable[[dict[str, str], Any], str]) -> Callable:
+            self._nest.shortcodes.register(name, self.name, handler)
+            return handler
+
+        return register(fn) if fn is not None else register
 
     def template_filter(self, name: str, fn: Callable[..., Any]) -> None:
         """Add a Jinja filter, named for every template of the application."""

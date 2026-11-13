@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}{{ collection.title }} · {{ app.title }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ asset('gallery', 'gallery.css') }}">
+<script src="{{ asset('gallery', 'lightbox.js') }}" defer></script>
+{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ base or '/' }}/">{{ _("Galleries") }}</a></p>
+<h1>{{ collection.title }}</h1>
+{% if collection.description %}<p>{{ collection.description }}</p>{% endif %}
+{% set media = media_url %}
+{% if cards %}{% include "gallery/_tiles.html" %}{% else %}{% include "gallery/_photos.html" %}{% endif %}
+{% endblock %}

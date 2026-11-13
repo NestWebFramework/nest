@@ -15,7 +15,7 @@
     {% endif %}
     {% if user and user.has("editor") %}<p><a class="button secondary" href="/admin/content/{{ entry.type }}/{{ entry.id }}">{{ _("Edit") }}</a></p>{% endif %}
   </header>
-  {% if entry.featured %}<figure class="featured"><img src="/media/{{ entry.featured }}" alt=""></figure>{% endif %}
+  {% if entry.featured %}<figure class="featured"><img src="{{ media_url(entry.featured) }}" alt=""></figure>{% endif %}
   <div class="body">{{ body }}</div>
   {% if children %}
   <nav aria-label="{{ _('In this section') }}"><ul>{% for c in children %}<li><a href="{{ c.path }}">{{ c.title }}</a></li>{% endfor %}</ul></nav>

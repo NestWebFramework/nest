@@ -1,0 +1,45 @@
+#
+# gallery — photo galleries and albums, reusable by any application.
+#
+# A gallery holds photos in order; an album holds galleries. Each has its own
+# page under the route the application gives the module, and can be embedded
+# in another module's page with [gallery slug="..."] or [album slug="..."].
+# Thumbnails open in a lightbox (one small static script, CSP-safe); without
+# JavaScript they are links. WordPress's Photo Gallery and NextGEN galleries
+# come in with `nest gallery import-wordpress`, their old shortcodes kept.
+#
+module:
+  name: gallery
+  id: nest.module.gallery
+  type: module
+  title: Galleries
+  category: content
+  version: 0.1.0
+  description: Photo galleries and albums with pages, embeds, a lightbox and WordPress imports.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_gallery
+
+provides:
+  import: nest_gallery
+  exports: []
+
+requires:
+  interfaces: [nest.db, nest.storage]
+
+deps:
+  db: ">=0.2,<1"
+  storage: ">=0.1,<1"
+  media: ">=0.1,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_gallery.models:Base"
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+docs:
+  title: Galleries
+  section: modules
