@@ -94,42 +94,75 @@ def _bwg(
         else {}
     )
     links = (
-        list(dump.rows(t("bwg_album_gallery"))) if t("bwg_album_gallery") in dump.columns else []
+        sorted(dump.rows(t("bwg_album_gallery")), key=lambda x: int(x["order"] or 0))
+        if t("bwg_album_gallery") in dump.columns
+        else []
     )
     images = sorted(
         dump.rows(t("bwg_image")), key=lambda r: (int(r["gallery_id"]), int(r["order"] or 0))
     )
 
+    def number(value: Any) -> int:
+        return int(value) if str(value or "").isdigit() else 0
+
+    # What pages use: the albums and galleries their shortcodes name...
     wanted_albums: set[int] = set(albums) if everything else set()
     wanted_galleries: set[int] = set(galleries) if everything else set()
     for sid in used:
         sc = shortcodes.get(sid, {})
-        if str(sc.get("album_id", "0")).isdigit() and int(sc.get("album_id", 0) or 0):
-            wanted_albums.add(int(sc["album_id"]))
-        if str(sc.get("gallery_id", "0")).isdigit() and int(sc.get("gallery_id", 0) or 0):
-            wanted_galleries.add(int(sc["gallery_id"]))
-    for link in links:  # an album brings what it holds
-        if int(link["album_id"]) in wanted_albums and not int(link["is_album"]):
-            wanted_galleries.add(int(link["alb_gal_id"]))
+        if number(sc.get("album_id")):
+            wanted_albums.add(number(sc.get("album_id")))
+        if number(sc.get("gallery_id")):
+            wanted_galleries.add(number(sc.get("gallery_id")))
+    # ...and everything those albums hold, albums inside albums included.
+    frontier = list(wanted_albums)
+    while frontier:
+        aid = frontier.pop()
+        for link in links:
+            if int(link["album_id"]) != aid:
+                continue
+            child = int(link["alb_gal_id"])
+            if int(link["is_album"]):
+                if child not in wanted_albums:
+                    wanted_albums.add(child)
+                    frontier.append(child)
+            else:
+                wanted_galleries.add(child)
     report.skipped += len(set(galleries) - wanted_galleries)
 
-    made: dict[int, int] = {}
+    # A collection's parent and place: the first album that holds it.
+    parent_of: dict[tuple[str, int], tuple[int, int]] = {}
+    for link in links:
+        key = ("bwg_album" if int(link["is_album"]) else "bwg_gallery", int(link["alb_gal_id"]))
+        if int(link["album_id"]) in wanted_albums and key not in parent_of:
+            parent_of[key] = (int(link["album_id"]), int(link["order"] or 0))
+
+    made: dict[tuple[str, int], int] = {}
+
+    def create(source: str, legacy_id: int, row: dict, cover: str = "") -> int:
+        c = service.ensure(
+            db,
+            _text(row["name"]),
+            slug=_text(row["slug"]),
+            description=_text(row["description"]),
+            position=int(row["order"] or 0),
+            published=str(row["published"]) == "1",
+            cover=cover,
+        )
+        service.alias(db, source, legacy_id, c.id)
+        made[(source, legacy_id)] = c.id
+        return c.id
+
+    for aid in sorted(wanted_albums):
+        if aid in albums:
+            create("bwg_album", aid, albums[aid])
+            report.albums += 1
     for gid in sorted(wanted_galleries):
         g = galleries.get(gid)
         if g is None:
             continue
-        cover = (g.get("preview_image") or g.get("random_preview_image") or "").lstrip("/")
-        c = service.ensure(
-            db,
-            _text(g["name"]),
-            slug=_text(g["slug"]),
-            description=_text(g["description"]),
-            position=int(g["order"] or 0),
-            published=str(g["published"]) == "1",
-            cover=f"uploads/photo-gallery/{cover}" if cover else "",
-        )
-        made[gid] = c.id
-        service.alias(db, "bwg_gallery", gid, c.id)
+        preview = (g.get("preview_image") or g.get("random_preview_image") or "").lstrip("/")
+        cid = create("bwg_gallery", gid, g, f"uploads/photo-gallery/{preview}" if preview else "")
         photos = []
         for img in (
             i for i in images if int(i["gallery_id"]) == gid and str(i["published"]) == "1"
@@ -151,45 +184,32 @@ def _bwg(
                     "alt": _text(img["alt"]),
                 }
             )
-        report.photos += service.set_photos(db, c.id, photos)
+        report.photos += service.set_photos(db, cid, photos)
         report.galleries += 1
-    for aid in sorted(wanted_albums):
-        a = albums.get(aid)
-        if a is None:
-            continue
-        album = service.ensure(
+
+    for (
+        source,
+        legacy_id,
+    ), cid in made.items():  # now that every album exists, hang each in its place
+        parent = parent_of.get((source, legacy_id))
+        row = albums[legacy_id] if source == "bwg_album" else galleries[legacy_id]
+        parent_id = made.get(("bwg_album", parent[0])) if parent else None
+        service.ensure(
             db,
-            _text(a["name"]),
-            slug=_text(a["slug"]),
-            description=_text(a["description"]),
-            position=int(a["order"] or 0),
-            published=str(a["published"]) == "1",
+            _text(row["name"]),
+            slug=_text(row["slug"]),
+            description=_text(row["description"]),
+            parent_id=parent_id if parent_id != cid else None,
+            position=parent[1] if parent else int(row["order"] or 0),
+            published=str(row["published"]) == "1",
         )
-        service.alias(db, "bwg_album", aid, album.id)
-        for link in sorted(
-            (x for x in links if int(x["album_id"]) == aid), key=lambda x: int(x["order"] or 0)
-        ):
-            child = made.get(int(link["alb_gal_id"])) if not int(link["is_album"]) else None
-            if child is not None:
-                g = galleries[int(link["alb_gal_id"])]
-                service.ensure(
-                    db,
-                    _text(g["name"]),
-                    slug=_text(g["slug"]),
-                    description=_text(g["description"]),
-                    parent_id=album.id,
-                    position=int(link["order"] or 0),
-                    published=str(g["published"]) == "1",
-                )
-        report.albums += 1
+
     for sid, sc in shortcodes.items():  # what [Best_Wordpress_Gallery id=N] shows
-        target = None
-        if int(sc.get("album_id", 0) or 0) in wanted_albums:
-            target = service.by_alias(db, "bwg_album", int(sc["album_id"]))
-        elif int(sc.get("gallery_id", 0) or 0) in made:
-            target = service.by_alias(db, "bwg_gallery", int(sc["gallery_id"]))
+        target = made.get(("bwg_album", number(sc.get("album_id")))) or made.get(
+            ("bwg_gallery", number(sc.get("gallery_id")))
+        )
         if target is not None:
-            service.alias(db, "bwg_shortcode", sid, target.id)
+            service.alias(db, "bwg_shortcode", sid, target)
 
 
 def _ngg(

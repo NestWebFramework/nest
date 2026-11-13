@@ -13,13 +13,14 @@ from nest.host import module_state
 from nest_gallery import service
 
 router = APIRouter()
+index_router = APIRouter()  # mounted unless the application keeps its own page at the route
 
 
 def _base(request: Request) -> str:
     return module_state(request, "gallery")["base"]
 
 
-@router.get("/")
+@index_router.get("/")
 def index(request: Request, db: Database = bound(Database)):
     return render(request, "gallery/index.html", cards=service.cards(db, None), base=_base(request))
 

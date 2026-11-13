@@ -14,7 +14,7 @@ module:
   type: module
   title: Galleries
   category: content
-  version: 0.1.0
+  version: 0.2.0
   description: Photo galleries and albums with pages, embeds, a lightbox and WordPress imports.
   license: MIT
   created: "2026-11-13"
@@ -36,6 +36,15 @@ deps:
 db:
   migrations: migrations
   metadata: "nest_gallery.models:Base"
+
+settings:
+  index:
+    type: bool
+    default: true
+    description: >
+      Whether the module answers its route itself with every top-level album
+      and gallery. Off when a page of the site lives at that address (a
+      WordPress page that embeds an album, say) and should stay.
 
 locales:
   - {locale: ro, file: locales/ro.json}

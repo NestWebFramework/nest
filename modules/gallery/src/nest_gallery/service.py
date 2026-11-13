@@ -131,15 +131,7 @@ def cards(db: Any, parent_id: int | None) -> list[Card]:
         )
         out = []
         for c in rows:
-            cover = c.cover
-            if not cover:
-                first = s.scalar(
-                    select(Photo)
-                    .where(Photo.collection_id == c.id)
-                    .order_by(Photo.position)
-                    .limit(1)
-                )
-                cover = (first.thumb or first.key) if first else ""
+            cover = c.cover or _first_cover(s, c.id)
             is_album = child_counts.get(c.id, 0) > 0
             out.append(
                 Card(
@@ -150,3 +142,24 @@ def cards(db: Any, parent_id: int | None) -> list[Card]:
                 )
             )
         return out
+
+
+def _first_cover(s: Any, collection_id: int, depth: int = 0) -> str:
+    """A collection's own first photo, or else its first child's cover (albums of albums)."""
+    first = s.scalar(
+        select(Photo).where(Photo.collection_id == collection_id).order_by(Photo.position).limit(1)
+    )
+    if first is not None:
+        return first.thumb or first.key
+    if depth > 5:
+        return ""
+    children = s.scalars(
+        select(Collection)
+        .where(Collection.parent_id == collection_id, Collection.published)
+        .order_by(Collection.position, Collection.title)
+    )
+    for child in children:
+        cover = child.cover or _first_cover(s, child.id, depth + 1)
+        if cover:
+            return cover
+    return ""

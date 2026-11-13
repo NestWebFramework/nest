@@ -251,3 +251,50 @@ def test_a_shortcode_for_nothing_renders_nothing(tmp_path, missing):
     with make(tmp_path, WITH_CONTENT) as c:
         out = str(c.app.state.nest.shortcodes.expand(f'<p>[gallery slug="{missing}"]</p>', None))
         assert re.fullmatch(r"<p>\s*</p>", out)
+
+
+def test_albums_inside_albums_come_in_with_their_galleries(tmp_path):
+    """transilpedia: a page shows album 4, which holds albums, which hold the galleries."""
+    dump, uploads = wordpress_folder(tmp_path)
+    nested = (
+        DUMP.replace(
+            "INSERT INTO `wp_bwg_album` VALUES (1,'Fotografii vechi si noi','fotografii-vechi-si-noi','',1,1);",
+            "INSERT INTO `wp_bwg_album` VALUES (1,'Fotografii vechi si noi','fotografii-vechi-si-noi','',1,1),"
+            "(4,'Transilvania','transilvania','',4,1);",
+        )
+        .replace(
+            "INSERT INTO `wp_bwg_album_gallery` VALUES (5,1,0,2,1),(6,1,0,1,2);",
+            "INSERT INTO `wp_bwg_album_gallery` VALUES (5,1,0,2,1),(6,1,0,1,2),(7,4,1,1,1),(8,4,0,3,2);",
+        )
+        .replace(
+            '(2,\' gallery_type=\\"album_extended_preview\\" album_id=\\"1\\"\')',
+            '(2,\' gallery_type=\\"album_extended_preview\\" album_id=\\"4\\"\')',
+        )
+    )
+    assert nested != DUMP
+    dump.write_text(nested, encoding="utf-8")
+    with make(tmp_path, ALONE) as c:
+        report = import_dump(c.db, c.storage, dump, uploads=uploads)
+        assert (report.albums, report.skipped) == (2, 0)  # "Nefolosită" is in album 4 now
+        top = service.cards(c.db, None)
+        assert [x.collection.slug for x in top] == ["vechi", "transilvania"]
+        transilvania = top[1]
+        assert transilvania.is_album and transilvania.count == 2
+        # An album has no photos of its own: its cover is its first child's.
+        assert (
+            transilvania.cover == "uploads/photo-gallery/hram/thumb/c.jpg"
+        )  # via album 1, whose first is Hramul
+        inner = service.cards(c.db, transilvania.collection.id)
+        assert [x.collection.slug for x in inner] == ["fotografii-vechi-si-noi", "nefolosita"]
+        assert service.by_alias(c.db, "bwg_shortcode", 2).slug == "transilvania"
+
+
+def test_a_site_page_can_keep_the_gallery_route(tmp_path):
+    manifest = ALONE.replace(
+        "  - {name: gallery, route: /galerii}",
+        "  - name: gallery\n    route: /galerii\n    config: {index: false}",
+    )
+    with make(tmp_path, manifest) as c:
+        service.ensure(c.db, "Vara")
+        assert c.get("/galerii/").status_code == 404  # left to whatever page the site has there
+        assert c.get("/galerii/vara/").status_code == 200

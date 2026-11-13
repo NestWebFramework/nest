@@ -479,7 +479,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-gallery"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "modules/gallery" }
 dependencies = [
     { name = "nest-core" },

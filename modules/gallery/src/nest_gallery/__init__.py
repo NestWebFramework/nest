@@ -9,7 +9,7 @@ gallery plugins left behind keep working after an import.
 from __future__ import annotations
 
 from nest import ModuleHost
-from nest_gallery.web import router, shortcodes
+from nest_gallery.web import index_router, router, shortcodes
 
 __all__: list[str] = []
 
@@ -17,4 +17,6 @@ __all__: list[str] = []
 def setup(host: ModuleHost) -> None:
     host.state["base"] = "" if host.route in (None, "/") else host.route
     shortcodes(host)
+    if host.settings.get("index"):
+        host.mount(index_router)
     host.mount(router)
