@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, item, inventory, character, settlement, building)
+game/subsystems/      game subsystems (world, item, inventory, character, settlement, building, npc)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -570,6 +570,32 @@ The checks at start report what the original data lacks. Settlement evolution pa
 asks for technologies no pack defines (`basic_trade`, `trade_routes`, `stone_masonry`,
 `advanced_civil_engineering`), and a city is granted a `cathedral` that is no building.
 Placement by terrain waits for the map, voievodate's 501 × 501 tiles.
+
+**`npc`** gives NPCs a mind. Its data is in `npc.yml`: 26 GOAP actions, 9 conscience rules, and
+each profession's work, skill, workplace and schedule by season. Names, founders and provisions
+are there too.
+
+* **When to decide:** an NPC decides when its action ends, or at once when hunger or thirst pass
+  70.
+* **What to choose:** the schedule's activity for the game hour and season scores 0.5. Each
+  rule that holds adds its weight to an intent (thirst over 70 adds 10 to drink). The best
+  intent that can be planned wins.
+* **Planning:** the planner chains back through the actions' preconditions. To eat without
+  food, an NPC takes some from home or forages. Emotions and traits tilt the costs.
+* **Doing:** the NPC walks to where the action happens (home, workplace, well, market, the
+  wild) at a walking speed, then spends the action's game minutes there. Work trains the
+  profession's skill. Meals and drinks go on until sated.
+* **Founders:** a new settlement is peopled with the professions every settlement has (farmer,
+  hunter, woodcutter, fisher, merchant) and a few more. Each founder gets a home, a workplace
+  and provisions.
+
+The old engine's schedules read the wall clock's hour; Nest's follow the game's hour and
+season. The old GOAP list had no way to eat or drink before there was a market; Nest adds two
+actions from the old game's own data: the well's "Drink Water" and the "Gather Food" activity
+(foraging). The seeds' schedule-skip rules on work said to skip working while fed
+(`hunger_min: 20`); those are dropped, because the preconditions already stop a hungry worker.
+Buying waits for the economy. Anyone may follow `game.<server>.npc.<settlement id>`: where each
+NPC is and what it does, with its walk (from, to, depart, arrive) for a client to animate.
 
 ```sh
 uv run nest game status applications/voievodate

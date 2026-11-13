@@ -23,6 +23,7 @@ members = [
     "nest-game-character",
     "nest-game-inventory",
     "nest-game-item",
+    "nest-game-npc",
     "nest-game-settlement",
     "nest-game-world",
     "nest-glossary",
@@ -621,6 +622,31 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-npc"
+version = "0.1.0"
+source = { editable = "game/subsystems/npc" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-game" },
+    { name = "nest-game-building" },
+    { name = "nest-game-character" },
+    { name = "nest-game-inventory" },
+    { name = "nest-game-item" },
+    { name = "nest-game-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-building", editable = "game/subsystems/building" },
+    { name = "nest-game-character", editable = "game/subsystems/character" },
+    { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
+    { name = "nest-game-item", editable = "game/subsystems/item" },
+    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
+]
+
+[[package]]
 name = "nest-game-settlement"
 version = "0.1.0"
 source = { editable = "game/subsystems/settlement" }
@@ -821,6 +847,7 @@ dependencies = [
     { name = "nest-game-character" },
     { name = "nest-game-inventory" },
     { name = "nest-game-item" },
+    { name = "nest-game-npc" },
     { name = "nest-game-settlement" },
     { name = "nest-game-world" },
     { name = "nest-glossary" },
@@ -864,6 +891,7 @@ requires-dist = [
     { name = "nest-game-character", editable = "game/subsystems/character" },
     { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
     { name = "nest-game-item", editable = "game/subsystems/item" },
+    { name = "nest-game-npc", editable = "game/subsystems/npc" },
     { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
     { name = "nest-game-world", editable = "game/subsystems/world" },
     { name = "nest-glossary", editable = "modules/glossary" },
