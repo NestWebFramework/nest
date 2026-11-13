@@ -22,10 +22,18 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, Query, Request
-from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    Response,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
+from jinja2 import TemplateNotFound
 from markupsafe import Markup, escape
 from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from nest.bind import Bindings, ProviderContext, build
 from nest.catalog import Catalog, Entry
@@ -91,6 +99,7 @@ class Nest:
         self.module_state: dict[str, dict[str, Any]] = {}
         self.app: FastAPI | None = None
         self._context: list[Callable[[Request], Mapping[str, Any]]] = []
+        self._fallbacks: list[tuple[str, Callable[[Request], Any]]] = []
         self._middleware: list[tuple[type, dict[str, Any]]] = []
         self._startup: list[Hook] = []
         self._shutdown: list[Hook] = []
@@ -288,6 +297,28 @@ class ModuleHost:
             raise HostError(f"{self.name}: the template filter '{name}' already exists")
         self._nest.templates.filters[name] = fn
 
+    def fallback(self, fn: Callable[[Request], Any]) -> Callable[[Request], Any]:
+        """Answer a GET that no route matched: return a response, or None to pass it on.
+
+        Fallbacks are asked in start order. This is how a module serves paths it
+        stores rather than declares (a CMS page at /history/the-church/) without
+        a catch-all route that would shadow every module mounted after it. A
+        blocking fallback is run in the thread pool.
+        """
+        self._nest._fallbacks.append((self.name, fn))
+        return fn
+
+    def sections(self, key: str) -> list[tuple[str, Any]]:
+        """A top-level manifest section as every package of the plan writes it, then the app's."""
+        found = [
+            (u.name, u.entry.manifest.raw[key])
+            for u in self._nest.plan.units
+            if key in u.entry.manifest.raw
+        ]
+        if key in self._nest.manifest.raw:
+            found.append((self._nest.name, self._nest.manifest.raw[key]))
+        return found
+
     def add_middleware(self, cls: type, **options: Any) -> None:
         """Wrap the application in an ASGI middleware, inside the security layer."""
         self._nest._middleware.append((cls, options))
@@ -383,6 +414,32 @@ def _setup(nest: Nest, unit: Unit) -> None:
 
 
 def _core_routes(app: FastAPI, nest: Nest) -> None:
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, exc: StarletteHTTPException) -> Response:
+        # A GET that no route matched (no endpoint in scope) is offered to the
+        # modules' fallbacks before it becomes a 404.
+        if (
+            exc.status_code == 404
+            and "endpoint" not in request.scope
+            and request.method in ("GET", "HEAD")
+        ):
+            for owner, fn in nest._fallbacks:
+                try:
+                    if inspect.iscoroutinefunction(fn):
+                        answer = await fn(request)
+                    else:
+                        answer = await run_in_threadpool(fn, request)
+                except StarletteHTTPException as raised:
+                    exc = raised
+                    break
+                except Exception:
+                    log.exception("fallback of %s failed", owner)
+                    exc = StarletteHTTPException(500)
+                    break
+                if answer is not None:
+                    return answer
+        return _error_page(request, nest, exc)
+
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
@@ -440,6 +497,30 @@ def _core_routes(app: FastAPI, nest: Nest) -> None:
             media_type="text/event-stream",
             headers={"cache-control": "no-cache", "x-accel-buffering": "no"},
         )
+
+
+def _error_page(request: Request, nest: Nest, exc: StarletteHTTPException) -> Response:
+    """An HTML page for a browser (the theme's error.html), JSON for anything else."""
+    headers = getattr(exc, "headers", None) or {}
+    wants_html = "text/html" in request.headers.get("accept", "") and not is_htmx(request)
+    if wants_html and exc.status_code >= 400:
+        try:
+            template = nest.templates.get_template("error.html")
+        except TemplateNotFound:
+            template = None
+        if template is not None:
+            try:
+                body = template.render(
+                    {
+                        **nest.template_context(request),
+                        "status": exc.status_code,
+                        "detail": exc.detail,
+                    }
+                )
+                return HTMLResponse(body, status_code=exc.status_code, headers=headers)
+            except Exception:  # noqa: BLE001 - an error page must never fail
+                log.exception("error.html failed to render")
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=headers)
 
 
 def app_from_env() -> FastAPI:

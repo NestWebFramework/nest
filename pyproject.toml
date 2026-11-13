@@ -18,6 +18,9 @@ dependencies = [
     "nest-search",
     "nest-search-sqlite",
     "nest-glossary",
+    "nest-storage",
+    "nest-storage-local",
+    "nest-content",
 ]
 
 [tool.uv]
@@ -47,6 +50,9 @@ nest-forms = { workspace = true }
 nest-search = { workspace = true }
 nest-search-sqlite = { workspace = true }
 nest-glossary = { workspace = true }
+nest-storage = { workspace = true }
+nest-storage-local = { workspace = true }
+nest-content = { workspace = true }
 
 [dependency-groups]
 dev = [

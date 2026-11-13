@@ -1,0 +1,14 @@
+{
+  "Edit": "Modifică", "In this section": "În această secțiune", "Tags": "Etichete",
+  "Nothing here yet.": "Încă nu e nimic aici.", "Pages": "Pagini", "Newer": "Mai noi", "Older": "Mai vechi",
+  "Search": "Caută", "{n} result": ["{n} rezultat", "{n} rezultate", "{n} de rezultate"],
+  "Content": "Conținut", "New": "Nou", "Filter by title": "Filtrează după titlu", "Title": "Titlu",
+  "Status": "Stare", "Address": "Adresă", "Updated": "Modificat", "draft": "ciornă", "published": "publicat",
+  "private": "privat", "Saved.": "Salvat.", "View": "Vezi", "Slug": "Identificator în adresă",
+  "Made from the title when empty.": "Se face din titlu dacă e gol.", "Published": "Publicat la",
+  "Parent": "Părinte", "Summary": "Rezumat", "Text": "Text",
+  "HTML: paragraphs, headings, lists, links, images, tables. Anything else is removed when saved.": "HTML: paragrafe, titluri, liste, legături, imagini, tabele. Restul se elimină la salvare.",
+  "Featured image": "Imagine reprezentativă", "Save": "Salvează", "Delete": "Șterge",
+  "{n} earlier version": ["{n} versiune anterioară", "{n} versiuni anterioare", "{n} de versiuni anterioare"],
+  "An entry needs a title.": "O intrare are nevoie de un titlu.", "That entry no longer exists.": "Intrarea nu mai există."
+}

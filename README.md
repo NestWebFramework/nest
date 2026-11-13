@@ -36,11 +36,11 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary)
-interfaces/           interfaces (cache, db, search)
-providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite)
+modules/              reusable modules (htmx, auth, forms, glossary, content)
+interfaces/           interfaces (cache, db, search, storage)
+providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
-applications/         applications (hello, regionalisme)
+applications/         applications (hello, regionalisme, morlaca, transilpedia)
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -281,6 +281,57 @@ uv run nest run applications/regionalisme                             # http://1
 
 The import reads Glossword's own text export (Admin → Export). It is safe to run again:
 terms already imported are updated, not duplicated.
+
+## Content: the CMS, and WordPress sites moved in
+
+`content` is the CMS. It combines Geticus's content types with WordPress's posts, pages and
+taxonomies.
+
+* **Content types and taxonomies** are YAML (`content_types:`, `taxonomies:`). Any package can
+  declare them, and the application's own declarations win. `content` declares WordPress's
+  `post` and `page` with `category` and `post_tag`.
+* **Custom fields** are typed (text, textarea, html, integer, decimal, boolean, date, datetime,
+  select, url, media, entry). Each entry stores its fields as JSON, checked by a model built
+  from the declarations, so there is no column per field.
+* **Addresses** come from the type's path template (`/{category}/{slug}/`, `/{path}/`,
+  `/evenimente/{year}/{slug}/`) and are stored. A page is found by its path when no route
+  matches, so a moved site keeps every URL. Children follow their parent's slug.
+* **Bodies** are HTML, sanitized with nh3 on every save. Shortcodes (`[catlist]`, `[gallery]`)
+  are expanded only when shown, and only in text.
+* **Also included:** media in `nest.storage`, menus, revisions, search, and an editor under
+  `/admin/content` for the `editor` role.
+
+```yaml
+content_types:
+  event:
+    title: Evenimente
+    path: "/evenimente/{year}/{slug}/"
+    taxonomies: [category]
+    fields:
+      starts: {type: datetime, label: Începe, required: true}
+      kind:   {type: select, choices: [hram, nedeie]}
+```
+
+A WordPress site moves in from its mysqldump and uploads folder. No MySQL server is needed:
+`nest_db.mysqldump` reads the dump as data.
+
+```sh
+uv run nest content import-wordpress applications/morlaca ~/projects/morlaca/db/morlaca.sql \
+    --uploads ~/projects/morlaca/wp-content/uploads
+```
+
+What the importer brings over:
+
+* **Taxonomies, posts and pages:** categories and tags with their parents; posts and pages with
+  their slugs, so the addresses stay the same.
+* **Media:** featured images; attachments with their resized copies, and any other uploads the
+  bodies link to.
+* **Site structure:** menus and the static front page. Old `?p=123` links redirect.
+* **Body cleanup:** WordPress's paragraphs are added once. Upload addresses on any host the site
+  ever had become `/media/uploads/...`, and links to the old site become relative.
+
+It is safe to run again: what it brought before is updated, not duplicated. Comments and the
+gallery plugins (NextGEN, Photo Gallery) are not moved yet.
 
 ## Safe by default
 

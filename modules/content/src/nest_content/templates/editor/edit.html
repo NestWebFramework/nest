@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block title %}{{ values.title or _("New") }} · {{ spec.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/admin/content">{{ _("Content") }}</a> › <a href="/admin/content/{{ type_name }}">{{ spec.title }}</a></p>
+<h1>{{ values.title or _("New") }}</h1>
+{% if request.query_params.get("saved") %}<p class="notice ok" role="status">{{ _("Saved.") }} {% if entry and entry.status == "published" %}<a href="{{ entry.path }}">{{ _("View") }}</a>{% endif %}</p>{% endif %}
+{% block form %}
+{% set action = "/admin/content/" ~ type_name ~ ("/" ~ entry.id if entry else "/new") %}
+<form id="entry-form" class="stack" method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#entry-form" hx-swap="outerHTML">
+  {{ csrf_field }}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  <div class="field"><label for="title">{{ _("Title") }} <span class="req" aria-hidden="true">*</span></label>
+    <input id="title" name="title" value="{{ values.title }}" required maxlength="300"></div>
+  <div class="grid">
+    <div class="field"><label for="slug">{{ _("Slug") }}</label><input id="slug" name="slug" value="{{ values.slug }}">
+      <small class="hint">{{ _("Made from the title when empty.") }}</small></div>
+    <div class="field"><label for="status">{{ _("Status") }}</label>
+      <select id="status" name="status">{% for s in statuses %}<option value="{{ s }}"{% if s == values.status %} selected{% endif %}>{{ _(s) }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="published_at">{{ _("Published") }}</label>
+      <input id="published_at" name="published_at" type="datetime-local" value="{{ values.published_at }}"></div>
+    {% if spec.hierarchical %}
+    <div class="field"><label for="parent_id">{{ _("Parent") }}</label>
+      <select id="parent_id" name="parent_id"><option value="">—</option>
+        {% for p in parents if not entry or p.id != entry.id %}<option value="{{ p.id }}"{% if p.id == values.parent_id %} selected{% endif %}>{{ p.title }}</option>{% endfor %}</select></div>
+    {% endif %}
+  </div>
+  {% for name, (tax, options) in taxonomies.items() %}
+  <fieldset><legend>{{ tax.title }}</legend>
+    <div class="checks">{% for t in options %}<label class="check"><input type="checkbox" name="terms_{{ name }}" value="{{ t.id }}"{% if t.id in values.terms.get(name, []) %} checked{% endif %}> {{ t.name }}</label>{% endfor %}</div>
+  </fieldset>
+  {% endfor %}
+  <div class="field"><label for="excerpt">{{ _("Summary") }}</label><textarea id="excerpt" name="excerpt" rows="2">{{ values.excerpt }}</textarea></div>
+  <div class="field"><label for="body">{{ _("Text") }}</label><textarea id="body" name="body" rows="18" class="code">{{ values.body }}</textarea>
+    <small class="hint">{{ _("HTML: paragraphs, headings, lists, links, images, tables. Anything else is removed when saved.") }}</small></div>
+  {% for name, f in spec.fields.items() %}
+  {% set kind = {"textarea": "textarea", "html": "textarea", "integer": "number", "decimal": "number", "date": "date", "datetime": "datetime-local", "url": "url"}.get(f.type, "text") %}
+  <div class="field{% if f.type == 'boolean' %} check{% endif %}">
+    {% if f.type == "boolean" %}
+    <input id="field_{{ name }}" name="field_{{ name }}" type="checkbox" value="1"{% if values.fields.get(name) %} checked{% endif %}><label for="field_{{ name }}">{{ f.label or name }}</label>
+    {% else %}
+    <label for="field_{{ name }}">{{ f.label or name }}{% if f.required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+    {% if f.type == "select" %}
+    <select id="field_{{ name }}" name="field_{{ name }}"><option value="">—</option>{% for c in f.choices %}<option{% if values.fields.get(name) == c %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    {% elif kind == "textarea" %}<textarea id="field_{{ name }}" name="field_{{ name }}" rows="3">{{ values.fields.get(name, "") }}</textarea>
+    {% else %}<input id="field_{{ name }}" name="field_{{ name }}" type="{{ kind }}" value="{{ values.fields.get(name, '') }}"{% if kind == 'number' and f.type == 'decimal' %} step="any"{% endif %}>{% endif %}
+    {% endif %}
+    {% if f.help %}<small class="hint">{{ f.help }}</small>{% endif %}
+  </div>
+  {% endfor %}
+  <div class="field"><label for="featured">{{ _("Featured image") }}</label><input id="featured" name="featured" value="{{ values.featured }}" placeholder="uploads/2026/11/church.jpg"></div>
+  <button type="submit">{{ _("Save") }}</button>
+</form>
+{% endblock %}
+{% if entry %}
+{% if revisions %}<details><summary>{{ ngettext("{n} earlier version", "{n} earlier versions", revisions | length) }}</summary>
+  <ul>{% for r in revisions %}<li>{{ r.created_at.strftime("%d.%m.%Y %H:%M") }} · {{ r.data.title }}</li>{% endfor %}</ul></details>{% endif %}
+<form method="post" action="/admin/content/{{ type_name }}/{{ entry.id }}/delete" class="danger-zone">{{ csrf_field }}
+  <button type="submit" class="secondary">{{ _("Delete") }}</button></form>
+{% endif %}
+{% endblock %}

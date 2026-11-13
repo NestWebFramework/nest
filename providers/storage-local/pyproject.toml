@@ -1,0 +1,14 @@
+[project]
+name = "nest-storage-local"
+version = "0.1.0"
+description = "A folder of the workspace as a provider of nest.storage."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-storage"]
+
+[project.entry-points."nest.modules"]
+storage-local = "nest_storage_local"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

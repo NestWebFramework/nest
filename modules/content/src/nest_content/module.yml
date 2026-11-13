@@ -1,0 +1,80 @@
+#
+# content — the CMS: typed entries, taxonomies, menus and media.
+#
+# Content types are YAML, declared by any package and by the application
+# (which wins); a field's value is validated by its declared type and kept in
+# the entry's JSON. An entry's address comes from its type's path template and
+# is stored, so a page is found by its path and a moved site keeps its URLs.
+# Bodies are HTML, sanitized on every save (nh3); shortcodes are expanded when
+# a page is shown. Files live in nest.storage. WordPress sites come in with
+# `nest content import-wordpress`.
+#
+module:
+  name: content
+  id: nest.module.content
+  type: module
+  title: Content
+  category: content
+  version: 0.1.0
+  description: >
+    Pages, posts and any declared content type with custom fields; categories
+    and tags; menus; media in nest.storage; revisions; search; a WordPress
+    importer that keeps the old addresses.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_content
+
+provides:
+  import: nest_content
+  exports: [KIND, EntryData, Registry, shortcode]
+
+requires:
+  interfaces: [nest.db, nest.search, nest.storage]
+
+deps:
+  db: ">=0.2,<1"
+  search: ">=0.1,<1"
+  storage: ">=0.1,<1"
+  forms: ">=0.1,<1"
+  auth: ">=0.2,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_content.models:Base"
+
+# The WordPress set. An application declares its own, or redeclares these.
+content_types:
+  post:
+    title: Posts
+    path: "/{category}/{slug}/"
+    taxonomies: [category, post_tag]
+  page:
+    title: Pages
+    path: "/{path}/"
+    hierarchical: true
+
+taxonomies:
+  category:
+    title: Categories
+    hierarchical: true
+    path: "/category/{path}/"
+  post_tag:
+    title: Tags
+    path: "/tag/{slug}/"
+
+settings:
+  home:
+    type: str
+    default: ""
+    description: The path of the entry shown at /; empty shows the latest entries.
+  per_page:
+    type: int
+    default: 10
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+docs:
+  title: Content
+  section: modules

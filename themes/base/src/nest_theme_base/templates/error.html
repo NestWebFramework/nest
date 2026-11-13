@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block title %}{{ status }} · {{ app.title }}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{% if status == 404 %}{{ _("This page does not exist.") }}{% elif status == 403 %}{{ _("You may not see this page.") }}{% else %}{{ _("Something went wrong.") }}{% endif %}</h1>
+  <p class="muted">{{ status }}</p>
+  <p><a href="/">{{ _("Back to the home page") }}</a></p>
+</section>
+{% endblock %}

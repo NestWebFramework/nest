@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Search") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "content/menu.html" %}{% endblock %}
+{% block content %}
+<h1>{{ _("Search") }}</h1>
+<form class="search" role="search" method="get" action="/search">
+  <label class="visually-hidden" for="q">{{ _("Search") }}</label>
+  <input id="q" name="q" type="search" value="{{ q }}" autofocus autocomplete="off"
+         hx-get="/search" hx-trigger="input changed delay:250ms, search" hx-target="#results" hx-push-url="true">
+  <button type="submit">{{ _("Search") }}</button>
+</form>
+<div id="results" aria-live="polite">
+{% block results %}
+{% if q %}
+<p class="muted">{{ ngettext("{n} result", "{n} results", total) }}</p>
+<ol class="results">
+  {% for hit in hits %}<li><a href="{{ hit.url }}"><strong>{{ hit.title }}</strong></a>{% if hit.snippet %}<p>{{ hit.snippet_html() }}</p>{% endif %}</li>{% endfor %}
+</ol>
+{% endif %}
+{% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %}{% if term %}{{ term.name }} · {% endif %}{{ app.title }}{% endblock %}
+{% block nav %}{% include "content/menu.html" %}{% endblock %}
+{% block content %}
+{% if term %}<h1>{{ term.name }}</h1>{% if term.description %}<p>{{ term.description }}</p>{% endif %}{% endif %}
+{% block listing %}
+<section id="listing">
+  {% for e in entries %}
+  <article class="card summary">
+    <h2><a href="{{ e.path }}">{{ e.title }}</a></h2>
+    {% if e.published_at %}<p class="muted"><time datetime="{{ e.published_at.isoformat() }}">{{ e.published_at.strftime("%d.%m.%Y") }}</time></p>{% endif %}
+    <p>{{ (e.excerpt or e.body) | striptags | truncate(240) }}</p>
+  </article>
+  {% else %}
+  <p class="muted">{{ _("Nothing here yet.") }}</p>
+  {% endfor %}
+  {% if pages > 1 %}
+  <nav class="row between pager" aria-label="{{ _('Pages') }}">
+    {% if page > 1 %}<a href="?page={{ page - 1 }}" hx-get="?page={{ page - 1 }}" hx-target="#listing" hx-swap="outerHTML" hx-push-url="true">← {{ _("Newer") }}</a>{% else %}<span></span>{% endif %}
+    <span class="muted">{{ page }} / {{ pages }}</span>
+    {% if page < pages %}<a href="?page={{ page + 1 }}" hx-get="?page={{ page + 1 }}" hx-target="#listing" hx-swap="outerHTML" hx-push-url="true">{{ _("Older") }} →</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}
+{% endblock %}

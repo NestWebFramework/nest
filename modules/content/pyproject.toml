@@ -1,0 +1,17 @@
+[project]
+name = "nest-content"
+version = "0.1.0"
+description = "Content types, entries, taxonomies, menus and media: the CMS for WordPress- and Geticus-style sites."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-search", "nest-storage", "nest-forms", "nest-auth", "nh3>=0.2.17"]
+
+[project.entry-points."nest.modules"]
+content = "nest_content"
+
+[project.entry-points."nest.commands"]
+content = "nest_content.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

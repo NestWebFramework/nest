@@ -1,0 +1,21 @@
+module:
+  name: storage-local
+  id: nest.provider.storage-local
+  type: provider
+  title: Local storage
+  version: 0.1.0
+  description: Files in a folder of the application's workspace (media/ by default).
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_storage_local
+implements: [nest.storage]
+
+deps:
+  storage: ">=0.1,<1"
+
+settings:
+  root:
+    type: str
+    default: media
+    description: The folder, relative to the workspace.

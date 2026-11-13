@@ -1,0 +1,14 @@
+[project]
+name = "nest-storage"
+version = "0.1.0"
+description = "The nest.storage interface: files kept by key, wherever the provider keeps them."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = []
+
+[project.entry-points."nest.modules"]
+storage = "nest_storage"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

@@ -20,6 +20,9 @@ main: nest_theme_base
 deps:
   htmx: ">=0.1,<1"
 
+locales:
+  - {locale: ro, file: locales/ro.json}
+
 docs:
   title: Base theme
   section: themes
