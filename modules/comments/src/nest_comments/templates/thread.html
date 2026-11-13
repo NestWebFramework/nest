@@ -1,0 +1,39 @@
+{# A subject's comments and the form; replaced whole after a post (htmx). #}
+{% macro node(n, level) %}
+<li id="comment-{{ n.comment.id }}" class="comment">
+  <p class="comment-meta"><strong>{{ n.comment.author_name }}</strong>
+    <time class="muted" datetime="{{ n.comment.created_at.isoformat() }}">{{ n.comment.created_at.strftime("%d.%m.%Y %H:%M") }}</time></p>
+  <div class="comment-body">{{ n.comment.body | plain }}</div>
+  {% if can_post and level + 1 < max_depth %}
+  <details class="comment-reply"><summary>{{ _("Reply") }}</summary>{{ form(n.comment.id) }}</details>
+  {% endif %}
+  {% if n.replies %}<ol class="comment-replies">{% for r in n.replies %}{{ node(r, level + 1) }}{% endfor %}</ol>{% endif %}
+</li>
+{% endmacro %}
+{% macro form(parent) %}
+<form class="stack comment-form" method="post" action="{{ action }}/post" hx-post="{{ action }}/post"
+      hx-target="closest .comments" hx-swap="outerHTML">
+  {{ csrf_field }}
+  <input type="hidden" name="subject" value="{{ subject }}">
+  <input type="hidden" name="sig" value="{{ sig }}">
+  <input type="hidden" name="stamp" value="{{ stamp }}">
+  {% if parent %}<input type="hidden" name="parent_id" value="{{ parent }}">{% endif %}
+  <div class="trap" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+  {% if not user %}
+  <div class="grid">
+    <div class="field"><label for="cn-{{ parent }}">{{ _("Name") }}</label><input id="cn-{{ parent }}" name="author_name" required maxlength="120" value="{{ values.get('author_name', '') if not parent else '' }}"></div>
+    <div class="field"><label for="ce-{{ parent }}">{{ _("Email (not shown)") }}</label><input id="ce-{{ parent }}" name="author_email" type="email" maxlength="254" value="{{ values.get('author_email', '') if not parent else '' }}"></div>
+  </div>
+  {% endif %}
+  <div class="field"><label for="cb-{{ parent }}">{{ _("Comment") }}</label>
+    <textarea id="cb-{{ parent }}" name="body" rows="4" required maxlength="5000">{{ values.get('body', '') if not parent else '' }}</textarea></div>
+  <button type="submit">{{ _("Send") }}</button>
+</form>
+{% endmacro %}
+<section class="comments" aria-labelledby="comments-{{ sig }}">
+  <h2 id="comments-{{ sig }}">{{ ngettext("{n} comment", "{n} comments", total) }}</h2>
+  {% if notice %}<p class="notice ok" role="status">{{ notice }}</p>{% endif %}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  {% if roots %}<ol class="comment-list">{% for n in roots %}{{ node(n, 0) }}{% endfor %}</ol>{% endif %}
+  {% if can_post %}{{ form(none) }}{% else %}<p class="muted">{{ _("Sign in to comment.") }}</p>{% endif %}
+</section>

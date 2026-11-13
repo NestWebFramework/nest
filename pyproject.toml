@@ -23,6 +23,8 @@ dependencies = [
     "nest-content",
     "nest-media",
     "nest-gallery",
+    "nest-comments",
+    "nest-redirects",
 ]
 
 [tool.uv]
@@ -57,6 +59,8 @@ nest-storage-local = { workspace = true }
 nest-content = { workspace = true }
 nest-media = { workspace = true }
 nest-gallery = { workspace = true }
+nest-comments = { workspace = true }
+nest-redirects = { workspace = true }
 
 [dependency-groups]
 dev = [

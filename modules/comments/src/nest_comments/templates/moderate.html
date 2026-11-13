@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Comments") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<h1>{{ _("Comments") }}</h1>
+<nav class="row" aria-label="{{ _('Comments') }}">
+  {% for s, label in [("pending", _("Waiting")), ("approved", _("Published")), ("spam", _("Spam"))] %}
+  <a href="?status={{ s }}"{% if s == status %} aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Comment") }}</th><th>{{ _("On") }}</th><th></th></tr></thead>
+  <tbody>
+  {% for c in comments %}
+  {% block row scoped %}
+  <tr id="mod-{{ c.id }}">
+    <td><strong>{{ c.author_name }}</strong> <span class="muted">{{ c.created_at.strftime("%d.%m.%Y %H:%M") }}</span>
+      <div>{{ c.body | plain }}</div></td>
+    <td class="muted">{{ c.subject }}</td>
+    <td><form class="row" method="post" action="{{ action }}/{{ c.id }}/status" hx-post="{{ action }}/{{ c.id }}/status" hx-target="#mod-{{ c.id }}" hx-swap="outerHTML">
+      {{ csrf_field }}
+      {% if c.status != "approved" %}<button name="status" value="approved">{{ _("Publish") }}</button>{% endif %}
+      {% if c.status != "spam" %}<button class="secondary" name="status" value="spam">{{ _("Spam") }}</button>{% endif %}
+      {% if c.status != "deleted" %}<button class="secondary" name="status" value="deleted">{{ _("Delete") }}</button>{% endif %}
+    </form></td>
+  </tr>
+  {% endblock %}
+  {% else %}<tr><td colspan="3" class="muted">{{ _("Nothing waits.") }}</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

@@ -36,7 +36,7 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery)
+modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, comments, redirects)
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
@@ -331,7 +331,7 @@ What the importer brings over:
   ever had become `/media/uploads/...`, and links to the old site become relative.
 
 It is safe to run again: what it brought before is updated, not duplicated. The gallery plugins
-come in through the `gallery` module (below). Comments are not moved yet.
+come in through the `gallery` module, comments through `comments` (both below).
 
 ## Galleries, media and shortcodes: modules any application reuses
 
@@ -359,6 +359,37 @@ uv run nest gallery list applications/morlaca
 The import moves Photo Gallery (10Web) and NextGEN galleries and albums with their photos and
 thumbnails. It keeps the plugins' ids as aliases: `[Best_Wordpress_Gallery id="2"]` and
 `[nggallery id=1]` in imported pages keep working, unchanged.
+
+## Comments and redirects
+
+**`comments`** works on anything. A page embeds a thread with
+`{% if comments is defined %}{{ comments("content.entry:" ~ entry.id) }}{% endif %}`. The
+subject is a name, not a foreign key, so any module's records can be commented without the
+comments module knowing them.
+
+* **Integrity:** the form carries the subject signed, so nobody can post to one a page did not
+  offer.
+* **Bodies:** plain text, shown with paragraphs and `nofollow ugc` links.
+* **Guests:** when allowed, they wait for a moderator (the `moderator` role, at
+  `<route>/moderate`). Members are published at once.
+* **Robots:** they meet a honeypot, a minimum time, and a per-address limit. The address is kept
+  only as a keyed hash.
+* **Import:** `nest comments import-wordpress APP dump.sql` attaches WordPress comments to the
+  pages their posts became. It finds them through the application's `wordpress.post` lookup,
+  which `content` answers.
+
+**`redirects`** sends old addresses on to new ones. It answers only after every page, so a page
+that exists always wins over a redirect.
+
+* **Targets:** a path on this site or an http(s) address. A loop is refused when it is added, and
+  410 says a page is gone for good.
+* **Tools:** editors work at the module's route (`/admin/redirects`); hit counts show which old
+  links are still used; `nest redirects add | import-csv | list`.
+
+Two core registries let modules cooperate without importing each other:
+
+* **Lookups:** `host.answer("wordpress.post", fn)` and `nest.lookup(name, key)`.
+* **Fallbacks:** answered by `priority`. `content` uses 10, `redirects` -10.
 
 ## Safe by default
 

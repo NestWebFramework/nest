@@ -101,7 +101,8 @@ class Nest:
         self.module_state: dict[str, dict[str, Any]] = {}
         self.app: FastAPI | None = None
         self._context: list[Callable[[Request], Mapping[str, Any]]] = []
-        self._fallbacks: list[tuple[str, Callable[[Request], Any]]] = []
+        self._fallbacks: list[tuple[int, int, str, Callable[[Request], Any]]] = []
+        self._lookups: dict[str, list[tuple[str, Callable[[Any], Any]]]] = {}
         self._middleware: list[tuple[type, dict[str, Any]]] = []
         self._startup: list[Hook] = []
         self._shutdown: list[Hook] = []
@@ -157,6 +158,19 @@ class Nest:
             locale=t.locale,
         )
         return context
+
+    def lookup(self, name: str, key: Any) -> Any:
+        """Ask the modules that answer ``name`` about ``key``; the first answer wins.
+
+        How modules find each other's records without importing each other: the
+        content module answers "wordpress.post" (an old post id → its entry), so a
+        comments importer can attach WordPress comments to the right page.
+        """
+        for _owner, fn in self._lookups.get(name, []):
+            answer = fn(key)
+            if answer is not None:
+                return answer
+        return None
 
     def render_block(self, name: str, block: str, **context: Any) -> str:
         """A fragment rendered outside a request, for an SSE event."""
@@ -293,6 +307,11 @@ class ModuleHost:
         self._nest._context.append(fn)
         return fn
 
+    def answer(self, name: str, fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        """Answer a lookup other modules may ask (see Nest.lookup)."""
+        self._nest._lookups.setdefault(name, []).append((self.name, fn))
+        return fn
+
     def has_module(self, name: str) -> bool:
         """Whether the application includes a package of that name (to cooperate, not depend)."""
         return self._nest.plan.unit(name) is not None
@@ -312,15 +331,21 @@ class ModuleHost:
             raise HostError(f"{self.name}: the template filter '{name}' already exists")
         self._nest.templates.filters[name] = fn
 
-    def fallback(self, fn: Callable[[Request], Any]) -> Callable[[Request], Any]:
+    def fallback(
+        self, fn: Callable[[Request], Any], *, priority: int = 0
+    ) -> Callable[[Request], Any]:
         """Answer a GET that no route matched: return a response, or None to pass it on.
 
-        Fallbacks are asked in start order. This is how a module serves paths it
+        Higher ``priority`` is asked first; among equals, in start order. Pages a
+        module stores answer before redirects away from them (content uses 10,
+        redirects -10). This is how a module serves paths it
         stores rather than declares (a CMS page at /history/the-church/) without
         a catch-all route that would shadow every module mounted after it. A
         blocking fallback is run in the thread pool.
         """
-        self._nest._fallbacks.append((self.name, fn))
+        fallbacks = self._nest._fallbacks
+        fallbacks.append((-priority, len(fallbacks), self.name, fn))
+        fallbacks.sort(key=lambda f: (f[0], f[1]))
         return fn
 
     def sections(self, key: str) -> list[tuple[str, Any]]:
@@ -438,7 +463,7 @@ def _core_routes(app: FastAPI, nest: Nest) -> None:
             and "endpoint" not in request.scope
             and request.method in ("GET", "HEAD")
         ):
-            for owner, fn in nest._fallbacks:
+            for _priority, _order, owner, fn in nest._fallbacks:
                 try:
                     if inspect.iscoroutinefunction(fn):
                         answer = await fn(request)

@@ -1,0 +1,10 @@
+{
+  "Redirects": "Redirecționări", "Old address": "Adresa veche", "New address": "Adresa nouă", "Kind": "Fel",
+  "moved for good": "mutat definitiv", "for now": "temporar", "gone": "dispărut", "Add": "Adaugă", "Find": "Caută",
+  "Hits": "Accesări", "Delete": "Șterge", "No redirects.": "Nu există redirecționări.",
+  "An old address is a path on this site, starting with '/'.": "Adresa veche este o cale pe acest site, care începe cu „/”.",
+  "A new address is a path on this site or an http(s) address.": "Adresa nouă este o cale pe acest site sau o adresă http(s).",
+  "An address cannot send to itself.": "O adresă nu poate trimite spre ea însăși.",
+  "That would send visitors round in a circle.": "Asta i-ar trimite pe vizitatori în cerc.",
+  "Status {status} is not a redirect.": "Codul {status} nu este o redirecționare."
+}

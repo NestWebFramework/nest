@@ -1,0 +1,67 @@
+#
+# comments — comments on anything, reusable by any application.
+#
+# A page embeds a thread with {{ comments("content.entry:" ~ entry.id) }} when
+# the module is part of the application; the subject is signed in the form.
+# Comments are plain text (paragraphs and links, never HTML). Guests may be
+# allowed, and then wait for a moderator (the "moderator" role; admin has
+# it). Robots meet a honeypot, a minimum time between showing and sending a
+# form, and a limit per address (kept only as a keyed hash).
+#
+module:
+  name: comments
+  id: nest.module.comments
+  type: module
+  title: Comments
+  category: community
+  version: 0.1.0
+  description: Threaded comments on any module's records, with moderation and spam defences.
+  license: MIT
+  created: "2026-11-13"
+
+main: nest_comments
+
+provides:
+  import: nest_comments
+  exports: [Node, thread, thread_html]
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.2,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_comments.models:Base"
+
+settings:
+  allow_guests:
+    type: bool
+    default: false
+    description: Whether people who have not signed in may comment.
+  moderation:
+    type: str
+    default: guests
+    choices: [none, guests, all]
+    description: Whose comments wait for a moderator before they are shown.
+  max_depth:
+    type: int
+    default: 3
+    description: How deep replies nest; a reply deeper than this sits beside its parent.
+  min_seconds:
+    type: float
+    default: 3
+    description: A form sent back sooner than this after it was shown is refused.
+  per_hour:
+    type: int
+    default: 10
+    description: Comments a guest may send per address per hour.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+docs:
+  title: Comments
+  section: modules

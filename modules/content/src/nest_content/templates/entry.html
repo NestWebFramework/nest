@@ -20,6 +20,7 @@
   {% if children %}
   <nav aria-label="{{ _('In this section') }}"><ul>{% for c in children %}<li><a href="{{ c.path }}">{{ c.title }}</a></li>{% endfor %}</ul></nav>
   {% endif %}
+  {% if comments is defined %}{{ comments("content.entry:" ~ entry.id) }}{% endif %}
   {% if terms.get("post_tag") %}
   <p class="muted">{{ _("Tags") }}: {% for t in terms["post_tag"] %}<a href="{{ t.path }}">{{ t.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
   {% endif %}

@@ -1,0 +1,17 @@
+[project]
+name = "nest-comments"
+version = "0.1.0"
+description = "Comments on anything: threads, moderation, spam defences, WordPress imports."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-auth"]
+
+[project.entry-points."nest.modules"]
+comments = "nest_comments"
+
+[project.entry-points."nest.commands"]
+comments = "nest_comments.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

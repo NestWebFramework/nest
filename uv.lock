@@ -7,6 +7,7 @@ members = [
     "nest-auth",
     "nest-cache",
     "nest-cache-memory",
+    "nest-comments",
     "nest-content",
     "nest-core",
     "nest-db",
@@ -18,6 +19,7 @@ members = [
     "nest-glossary",
     "nest-htmx",
     "nest-media",
+    "nest-redirects",
     "nest-search",
     "nest-search-sqlite",
     "nest-storage",
@@ -342,6 +344,23 @@ dependencies = [
 requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
 
 [[package]]
+name = "nest-comments"
+version = "0.1.0"
+source = { editable = "modules/comments" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
 name = "nest-content"
 version = "0.1.0"
 source = { editable = "modules/content" }
@@ -525,6 +544,23 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-redirects"
+version = "0.1.0"
+source = { editable = "modules/redirects" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
 name = "nest-search"
 version = "0.1.0"
 source = { editable = "interfaces/search" }
@@ -581,6 +617,7 @@ dependencies = [
     { name = "nest-auth" },
     { name = "nest-cache" },
     { name = "nest-cache-memory" },
+    { name = "nest-comments" },
     { name = "nest-content" },
     { name = "nest-core" },
     { name = "nest-db" },
@@ -592,6 +629,7 @@ dependencies = [
     { name = "nest-glossary" },
     { name = "nest-htmx" },
     { name = "nest-media" },
+    { name = "nest-redirects" },
     { name = "nest-search" },
     { name = "nest-search-sqlite" },
     { name = "nest-storage" },
@@ -611,6 +649,7 @@ requires-dist = [
     { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-cache", editable = "interfaces/cache" },
     { name = "nest-cache-memory", editable = "providers/cache-memory" },
+    { name = "nest-comments", editable = "modules/comments" },
     { name = "nest-content", editable = "modules/content" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
@@ -622,6 +661,7 @@ requires-dist = [
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },
     { name = "nest-media", editable = "modules/media" },
+    { name = "nest-redirects", editable = "modules/redirects" },
     { name = "nest-search", editable = "interfaces/search" },
     { name = "nest-search-sqlite", editable = "providers/search-sqlite" },
     { name = "nest-storage", editable = "interfaces/storage" },
