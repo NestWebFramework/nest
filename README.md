@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, item, inventory, character, settlement, building, npc, production)
+game/subsystems/      game subsystems (world, item, inventory, character, settlement, building, npc, production, economy)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -658,6 +658,30 @@ never produced. The original data also had these gaps:
   economy and the blacksmith.
 
 Anyone may follow `game.<server>.production.<settlement id>` to watch the store.
+
+**`economy`** sets what things are worth and gives every settlement a market. Its data is
+`economy.yml`: the wage, the spread, the seasons and the old price limits.
+
+* **Values come from labour:** an item's cheapest recipe, at a wage, plus its inputs' values and
+  its tools' wear, through the whole chain. Bread is flour, water and the baker's time
+  (wheat 1.00, flour 1.84, bread 2.21). Items no recipe makes get a value from their type and
+  effects.
+* **Markets hold real goods** (an inventory owner, `("market", id)`) and trade from the
+  settlement's treasury, so money moves between people and is never made from nothing.
+* **Prices:** a price is the value moved by scarcity (stock against recent demand), the season
+  and a spread, worked out when asked.
+* **Who trades:** workers sell what their trade does not keep, as much as the market wants and
+  can pay for. The hungry buy the food that feeds most for the money (`go_buy_food`, playable
+  now). Workers buy back broken tools.
+* **Merchants:** once a game day, a settlement's merchant brings what its workers lack (a broken
+  tool) and sends away surpluses, for a commission. Money paid to and earned from the world
+  beyond is the only money that enters or leaves.
+
+The old engine began every item's price at 1.0, with limits for eleven, and its market paid
+sellers from nothing. Not yet here: taxes (with the settlement's laws), and demand for logs,
+clay and wool, which wait for builders and crafts. Anyone may follow
+`game.<server>.economy.<settlement id>` for the market's goods and prices, at most once a game
+hour.
 
 ```sh
 uv run nest game status applications/voievodate

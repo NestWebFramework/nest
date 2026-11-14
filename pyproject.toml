@@ -37,6 +37,7 @@ dependencies = [
     "nest-game-building",
     "nest-game-npc",
     "nest-game-production",
+    "nest-game-economy",
     "nest-content-voievodate",
 ]
 
@@ -89,6 +90,7 @@ nest-game-settlement = { workspace = true }
 nest-game-building = { workspace = true }
 nest-game-npc = { workspace = true }
 nest-game-production = { workspace = true }
+nest-game-economy = { workspace = true }
 nest-content-voievodate = { workspace = true }
 
 [dependency-groups]
