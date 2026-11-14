@@ -493,8 +493,16 @@ class NpcSubsystem(Subsystem):
     def talk(self, world, command): ...  # applied on the loop, answered to the submitter
 ```
 
-**Light on small servers.** The target is 1000-2000 players on a basic machine, and
-`tools/bench_game.py` measures it. It builds a world of settlements and players, steps it, and
+**Light on small servers.** The target is 1000-2000 players on a basic machine, and the
+benchmark (`nest_game.bench`) measures it. Game masters run it from the panel's **Tools** page
+(`<game route>/tools`): it shows progress while it runs, keeps each run's results in the
+workspace (`data/bench/`, the newest 50), and compares two runs in a before/after table with the
+change. From a terminal, `tools/bench_game.py` does the same.
+
+The benchmark runs in a child process at low priority, one run at a time, in a scratch folder with
+its own SQLite database. Its environment is cleared of `NEST_*`, so the live secret and database
+credentials stay with the server. It is stopped after `bench_minutes`, and its folder is removed
+after. It builds a world of settlements and players, steps it, and
 reports each subsystem's tick time and the checkpoints. With 2000 players, 266 NPCs and 612
 buildings in 40 settlements:
 

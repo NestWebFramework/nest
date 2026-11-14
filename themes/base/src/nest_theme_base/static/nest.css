@@ -156,3 +156,7 @@ ol.route .times { min-width: 7.5rem; font-variant-numeric: tabular-nums; }
 .railway-map circle { fill: var(--accent); } .railway-map circle.r0 { opacity: .55; }
 .railway-map a:hover circle, .railway-map a:focus circle { fill: var(--text); }
 .railway-map text { font-size: 9px; fill: var(--text); pointer-events: none; }
+/* numbers in tables, and a change for the better or the worse (the game's benchmark) */
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.better { color: var(--ok); } .worse { color: var(--danger); }
+progress { width: 100%; max-width: 32rem; }
