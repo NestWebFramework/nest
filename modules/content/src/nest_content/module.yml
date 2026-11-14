@@ -79,3 +79,9 @@ locales:
 docs:
   title: Content
   section: modules
+
+admin:
+  title: Content
+  order: 10
+  role: editor
+  description: Pages, articles and their categories; menus.

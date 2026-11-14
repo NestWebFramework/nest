@@ -3,7 +3,8 @@
 Public pages are not routes: an entry or a term is found by its stored path
 when no route matched (a fallback), so a site keeps whatever addresses it had
 (/istorie/biserica-din-morlaca/) without a catch-all that would shadow other
-modules. Media is served from nest.storage. Editors work under /admin/content.
+modules. Media is served from nest.storage. Editors work in the admin panel
+(<admin route>/content), given to it as the module's admin pages.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ from nest_db import Database
 from nest_search import Search
 from starlette.concurrency import run_in_threadpool
 
-from nest import bound, is_htmx, render, translator
+from nest import admin_url, bound, is_htmx, render, translator
 from nest.host import module_state
 from nest_content import service
 from nest_content.html import link_list
@@ -29,6 +30,7 @@ from nest_content.models import STATUSES, Entry
 from nest_content.service import KIND, ContentError, EntryData
 
 router = APIRouter()
+admin = APIRouter()  # the editor: the admin panel mounts it at <admin route>/content
 editor = require_role("editor")
 
 
@@ -199,7 +201,7 @@ def _listing_page(request: Request, db: Any, state: dict[str, Any], term: Any) -
 # --- editing -----------------------------------------------------------------------
 
 
-@router.get("/admin/content")
+@admin.get("/")
 def admin_home(
     request: Request, user: CurrentUser = Depends(editor), db: Database = bound(Database)
 ):
@@ -211,7 +213,7 @@ def admin_home(
     )
 
 
-@router.get("/admin/content/{type_name}")
+@admin.get("/{type_name}")
 def admin_list(
     request: Request,
     type_name: str,
@@ -278,7 +280,7 @@ def _values_of(e: Entry, terms: dict[str, list[Any]]) -> dict[str, Any]:
     }
 
 
-@router.get("/admin/content/{type_name}/new")
+@admin.get("/{type_name}/new")
 def admin_new(
     request: Request,
     type_name: str,
@@ -304,7 +306,7 @@ def admin_new(
     )
 
 
-@router.get("/admin/content/{type_name}/{entry_id:int}")
+@admin.get("/{type_name}/{entry_id:int}")
 def admin_edit(
     request: Request,
     type_name: str,
@@ -385,25 +387,25 @@ async def _save(
             status_code=200 if is_htmx(request) else 400,
             **context,
         )
-    target = f"/admin/content/{quote(type_name)}/{e.id}?saved=1"
+    target = admin_url(request, "content", f"{quote(type_name)}/{e.id}?saved=1")
     if is_htmx(request):
         return Response(status_code=200, headers={"HX-Redirect": target})
     return RedirectResponse(target, status_code=303)
 
 
-@router.post("/admin/content/{type_name}/new")
+@admin.post("/{type_name}/new")
 async def admin_create(request: Request, type_name: str, user: CurrentUser = Depends(editor)):
     return await _save(request, type_name, user, None)
 
 
-@router.post("/admin/content/{type_name}/{entry_id:int}")
+@admin.post("/{type_name}/{entry_id:int}")
 async def admin_update(
     request: Request, type_name: str, entry_id: int, user: CurrentUser = Depends(editor)
 ):
     return await _save(request, type_name, user, entry_id)
 
 
-@router.post("/admin/content/{type_name}/{entry_id:int}/delete")
+@admin.post("/{type_name}/{entry_id:int}/delete")
 def admin_delete(
     request: Request,
     type_name: str,
@@ -413,4 +415,4 @@ def admin_delete(
     index: Search = bound(Search),
 ):
     service.delete_entry(db, index, entry_id)
-    return RedirectResponse(f"/admin/content/{quote(type_name)}", status_code=303)
+    return RedirectResponse(admin_url(request, "content", quote(type_name)), status_code=303)

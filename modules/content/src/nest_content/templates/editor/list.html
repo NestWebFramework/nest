@@ -1,12 +1,12 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% block title %}{{ spec.title }} · {{ app.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
-{% block content %}
-<p class="muted"><a href="/admin/content">{{ _("Content") }}</a></p>
-<div class="row between"><h1>{{ spec.title }}</h1><a class="button" href="/admin/content/{{ type_name }}/new">{{ _("New") }}</a></div>
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a></p>
+<div class="row between"><h1>{{ spec.title }}</h1><a class="button" href="{{ admin_root }}/content/{{ type_name }}/new">{{ _("New") }}</a></div>
 <form class="search" method="get">
   <input name="q" type="search" value="{{ q }}" placeholder="{{ _('Filter by title') }}" aria-label="{{ _('Filter by title') }}"
-         hx-get="/admin/content/{{ type_name }}" hx-trigger="input changed delay:250ms" hx-target="#rows" hx-swap="outerHTML">
+         hx-get="{{ admin_root }}/content/{{ type_name }}" hx-trigger="input changed delay:250ms" hx-target="#rows" hx-swap="outerHTML">
 </form>
 {% block rows %}
 <div id="rows" class="table-wrap">
@@ -14,7 +14,7 @@
     <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Status") }}</th><th>{{ _("Address") }}</th><th>{{ _("Updated") }}</th></tr></thead>
     <tbody>
       {% for e in entries %}
-      <tr><td><a href="/admin/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td><td>{{ _(e.status) }}</td>
+      <tr><td><a href="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td><td>{{ _(e.status) }}</td>
           <td><a href="{{ e.path }}">{{ e.path }}</a></td><td>{{ e.updated_at.strftime("%d.%m.%Y %H:%M") }}</td></tr>
       {% else %}<tr><td colspan="4" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
     </tbody>

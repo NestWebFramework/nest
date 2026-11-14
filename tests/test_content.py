@@ -24,6 +24,7 @@ module: {name: site, id: test.app.site, type: application, version: 0.1.0}
 application: {title: Satul, port: 8000, theme: base, languages: [ro, en]}
 modules:
   - {name: content, route: /}
+  - {name: admin, route: /admin}
   - {name: auth, route: /cont}
   - {name: media, route: /media}
 bind:
@@ -356,7 +357,7 @@ def test_storage_keys_cannot_escape(key):
 
 def test_an_editor_writes_an_entry_of_a_declared_type(site):
     sign_in(site)
-    assert "Evenimente" in site.get("/admin/content").text
+    assert "Evenimente" in site.get("/admin/content/").text
     form = site.get("/admin/content/event/new").text
     assert 'name="field_starts"' in form and 'type="datetime-local"' in form and "nedeie" in form
     headers = {"X-CSRF-Token": site.cookies["nest_csrf"]}
@@ -427,9 +428,9 @@ def test_children_follow_their_parents_slug_and_revisions_are_kept(site):
 
 
 def test_only_editors_reach_the_editor(site):
-    assert site.get("/admin/content", follow_redirects=False).status_code == 303
+    assert site.get("/admin/content/", follow_redirects=False).status_code == 303
     sign_in(site, roles=())
-    assert site.get("/admin/content").status_code == 403
+    assert site.get("/admin/content/").status_code == 403
 
 
 def test_content_must_be_mounted_at_the_root(tmp_path):

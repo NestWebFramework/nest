@@ -1,11 +1,11 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% block title %}{{ _("Content") }} · {{ app.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
-{% block content %}
+{% block admin_content %}
 <h1>{{ _("Content") }}</h1>
 <div class="grid">
   {% for name, spec in types.items() %}
-  <a class="card tile" href="/admin/content/{{ name }}"><strong>{{ spec.title }}</strong>
+  <a class="card tile" href="{{ admin_root }}/content/{{ name }}"><strong>{{ spec.title }}</strong>
     <span class="muted">{{ counts.get(name, 0) }}</span></a>
   {% endfor %}
 </div>

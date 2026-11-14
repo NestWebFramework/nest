@@ -20,12 +20,13 @@ module: {name: site, id: test.app.site, type: application, version: 0.1.0}
 application: {title: Satul, port: 8000, theme: base, languages: [ro, en]}
 modules:
   - {name: content, route: /}
+  - {name: admin, route: /admin}
   - {name: auth, route: /cont}
   - {name: media, route: /media}
   - name: comments
     route: /comentarii
     config: {allow_guests: true, min_seconds: 0, per_hour: 3}
-  - {name: redirects, route: /admin/redirects}
+  - {name: redirects}
 bind:
   nest.db: {providers: [db-sqlite]}
   nest.search: {providers: [search-sqlite]}

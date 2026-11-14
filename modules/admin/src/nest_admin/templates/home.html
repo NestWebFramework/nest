@@ -1,0 +1,12 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Admin panel") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ _("Admin panel") }} <span class="muted">· {{ app.title }}</span></h1>
+{% if not request.app.state.nest.admin_pages %}<p class="muted">{{ _("No module of this application has admin pages.") }}</p>
+{% elif not pages %}<p class="muted">{{ _("Nothing here is open to you.") }}</p>
+{% else %}
+<div class="grid">
+  {% for p in pages %}<a class="card tile" href="{{ p.base }}/"><strong>{{ p.title }}</strong>{% if p.description %}<span class="muted">{{ p.description }}</span>{% endif %}</a>{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,12 +1,12 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% block title %}{{ values.title or _("New") }} · {{ spec.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
-{% block content %}
-<p class="muted"><a href="/admin/content">{{ _("Content") }}</a> › <a href="/admin/content/{{ type_name }}">{{ spec.title }}</a></p>
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a> › <a href="{{ admin_root }}/content/{{ type_name }}">{{ spec.title }}</a></p>
 <h1>{{ values.title or _("New") }}</h1>
 {% if request.query_params.get("saved") %}<p class="notice ok" role="status">{{ _("Saved.") }} {% if entry and entry.status == "published" %}<a href="{{ entry.path }}">{{ _("View") }}</a>{% endif %}</p>{% endif %}
 {% block form %}
-{% set action = "/admin/content/" ~ type_name ~ ("/" ~ entry.id if entry else "/new") %}
+{% set action = admin_root ~ "/content/" ~ type_name ~ ("/" ~ entry.id if entry else "/new") %}
 <form id="entry-form" class="stack" method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#entry-form" hx-swap="outerHTML">
   {{ csrf_field }}
   {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
@@ -55,7 +55,7 @@
 {% if entry %}
 {% if revisions %}<details><summary>{{ ngettext("{n} earlier version", "{n} earlier versions", revisions | length) }}</summary>
   <ul>{% for r in revisions %}<li>{{ r.created_at.strftime("%d.%m.%Y %H:%M") }} · {{ r.data.title }}</li>{% endfor %}</ul></details>{% endif %}
-<form method="post" action="/admin/content/{{ type_name }}/{{ entry.id }}/delete" class="danger-zone">{{ csrf_field }}
+<form method="post" action="{{ admin_root }}/content/{{ type_name }}/{{ entry.id }}/delete" class="danger-zone">{{ csrf_field }}
   <button type="submit" class="secondary">{{ _("Delete") }}</button></form>
 {% endif %}
 {% endblock %}

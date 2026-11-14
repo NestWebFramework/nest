@@ -11,8 +11,7 @@ from fastapi.responses import RedirectResponse, Response
 from nest_auth import CurrentUser, require_role
 from nest_db import Database
 
-from nest import ModuleHost, bound, is_htmx, render, translator
-from nest.host import module_state
+from nest import ModuleHost, admin_url, bound, is_htmx, render, translator
 from nest_redirects import service
 from nest_redirects.service import RedirectError
 
@@ -23,7 +22,7 @@ editor = require_role("editor")
 
 
 def _base(request: Request) -> str:
-    return module_state(request, "redirects")["base"]
+    return admin_url(request, "redirects")
 
 
 @router.get("/")
@@ -96,6 +95,5 @@ def answer(request: Request) -> Response | None:
 
 
 def setup(host: ModuleHost) -> None:
-    host.state["base"] = "" if host.route in (None, "/") else host.route
-    host.mount(router)
+    host.admin(router)  # all its pages are in the admin panel, at <admin route>/redirects
     host.fallback(answer, priority=-10)

@@ -69,6 +69,19 @@ class ModuleState:
     reason: str | None = None
 
 
+@dataclass
+class AdminPage:
+    """A module's pages in the admin panel, mounted at <admin route>/<module>."""
+
+    module: str
+    router: APIRouter
+    title: str
+    order: int = 50
+    role: str = "admin"  # who sees it (the "admin" role sees everything)
+    description: str = ""
+    base: str = ""  # where it was mounted
+
+
 class Nest:
     """Everything an application holds at run time; ``app.state.nest``."""
 
@@ -102,6 +115,8 @@ class Nest:
         self.module_state: dict[str, dict[str, Any]] = {}
         self.app: FastAPI | None = None
         self._context: list[Callable[[Request], Mapping[str, Any]]] = []
+        self.admin_pages: list[AdminPage] = []  # what modules give the admin panel
+        self.admin_root: str | None = None  # where the admin panel is (the admin module's route)
         self._fallbacks: list[tuple[int, int, str, Callable[[Request], Any]]] = []
         self._lookups: dict[str, list[tuple[str, Callable[[Any], Any]]]] = {}
         self._middleware: list[tuple[type, dict[str, Any]]] = []
@@ -278,6 +293,33 @@ class ModuleHost:
         assert self._nest.app is not None
         self._nest.app.include_router(router, prefix=prefix, dependencies=[Depends(csrf_protect)])
 
+    def admin(self, router: APIRouter) -> AdminPage:
+        """Give the admin panel this module's pages (its manifest's admin: says title, order, role).
+
+        They are mounted at <admin route>/<module> once every module is set
+        up, if the application includes the admin module; links to them come
+        from ``admin_url``.
+        """
+        spec = self.manifest.raw.get("admin") or {}
+        page = AdminPage(
+            self.name,
+            router,
+            str(spec.get("title") or self.manifest.module.title or self.name),
+            int(spec.get("order", 50)),
+            str(spec.get("role", "admin")),
+            str(spec.get("description", "")),
+        )
+        self._nest.admin_pages.append(page)
+        return page
+
+    def claim_admin(self) -> None:
+        """This module is the admin panel: the others' admin pages are mounted under its route."""
+        if self.route is None:
+            raise HostError(f"{self.name} is the admin panel and needs a route")
+        if self._nest.admin_root is not None:
+            raise HostError("two modules claim the admin panel")
+        self._nest.admin_root = "" if self.route == "/" else self.route
+
     def url(self, path: str = "") -> str:
         base = "" if self.route in (None, "/") else self.route
         return f"{base}/{path.lstrip('/')}" if path else (base or "/")
@@ -382,6 +424,15 @@ class ModuleHost:
         self._nest._middleware.append((cls, options))
 
 
+def admin_url(request: Request, module: str, path: str = "") -> str:
+    """Where a module's admin pages are (the admin panel's route, then the module's name)."""
+    root = request.app.state.nest.admin_root
+    if root is None:
+        raise HostError("this application has no admin panel (include the admin module)")
+    base = f"{root}/{module}"
+    return f"{base}/{path.lstrip('/')}" if path else base
+
+
 def module_state(request: Request, module: str) -> dict[str, Any]:
     """A module's run-time state, from a request (for dependencies a module exports)."""
     return request.app.state.nest.module_state.setdefault(module, {})
@@ -448,6 +499,17 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
             _setup(nest, unit)
         else:
             nest.states[unit.name].state = "ready"
+
+    if nest.admin_pages and nest.admin_root is None:
+        log.warning(
+            "%s: %s give admin pages, but no module is the admin panel (include the admin module)",
+            nest.name,
+            ", ".join(p.module for p in nest.admin_pages),
+        )
+    elif nest.admin_root is not None:
+        for page in sorted(nest.admin_pages, key=lambda p: (p.order, p.module)):
+            page.base = f"{nest.admin_root}/{page.module}"
+            app.include_router(page.router, prefix=page.base, dependencies=[Depends(csrf_protect)])
 
     for cls, options in nest._middleware:
         app.add_middleware(cls, **options)

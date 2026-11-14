@@ -494,8 +494,8 @@ class NpcSubsystem(Subsystem):
 ```
 
 **Light on small servers.** The target is 1000-2000 players on a basic machine, and the
-benchmark (`nest_game.bench`) measures it. Game masters run it from the panel's **Tools** page
-(`<game route>/tools`): it shows progress while it runs, keeps each run's results in the
+benchmark (`nest_game.bench`) measures it. Game masters run it from the admin panel's **Tools** page
+(`<admin route>/game/tools`): it shows progress while it runs, keeps each run's results in the
 workspace (`data/bench/`, the newest 50), and compares two runs in a before/after table with the
 change. From a terminal, `tools/bench_game.py` does the same.
 
@@ -585,7 +585,7 @@ The old engine kept 251,001 tile rows in a table and parsed the outlines with sh
 boot. Other subsystems ask `map_of(host)`: `at(x, y)`, `region(x, y)`, `tiles_of(county)`. A
 settlement's region is the county it stands in. With `places: true` (voievodate sets it), a new
 world begins with one settlement in each county, named for its seat; their founders arrive with
-them. Game masters see the land at `<game route>/map`: the counties in their duchies' colours, and
+them. Game masters see the land in the admin panel (`<admin route>/game/map`): the counties in their duchies' colours, and
 a dot for each settlement sized by its people, refreshed while the page is open.
 
 **`settlement`** keeps the hamlets, villages and towns: where each is (map tiles), its
@@ -750,6 +750,27 @@ uv run nest game status applications/voievodate
 uv run nest game step applications/voievodate voievodate 3600     # one game day at 24×
 uv run nest run applications/voievodate                            # http://127.0.0.1:8500/joc
 ```
+
+## The admin panel
+
+Every application has one admin panel, made of what the application is made of. The `admin`
+module is the shell, included once at a route (`/admin`). Each module gives it its own pages,
+with `host.admin(router)`, and says in its manifest how they are listed:
+
+```yaml
+# a module's module.yml
+admin: {title: Content, order: 10, role: editor, description: Pages, articles and menus.}
+```
+
+The panel mounts each module's pages at `<admin route>/<module>`: `/admin/content`,
+`/admin/redirects`, `/admin/game`. It shows each user a menu and a front page with only the pages
+their roles open (the `admin` role opens all). A module's admin templates extend
+`admin/layout.html`, and links come from `admin_url(request, module, path)`.
+
+So morlaca and transilpedia, made of the same modules, have the same panel. The game has the
+game's panel: its servers, its land and its tools (`/admin/game`). No panel is written for an
+application, and an application without the admin module serves no admin pages (it says so at
+start). A module whose pages are all in the panel needs no route of its own (redirects).
 
 ## Safe by default
 

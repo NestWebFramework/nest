@@ -1,7 +1,7 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% block title %}{{ _("Redirects") }} · {{ app.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
-{% block content %}
+{% block admin_content %}
 <h1>{{ _("Redirects") }}</h1>
 <form class="stack card" method="post" action="{{ base }}/">
   {{ csrf_field }}

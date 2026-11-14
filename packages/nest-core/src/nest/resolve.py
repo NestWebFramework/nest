@@ -186,11 +186,13 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
                 )
     for name, inst in instances.items():
         # A module serves pages, so it needs a route; an ecosystem's part (a game
-        # subsystem) may run without one.
+        # subsystem) may run without one, and so may a module whose pages are all
+        # in the admin panel (its manifest has an admin: section).
         if (
             inst.route is None
             and included.get(name) is not None
             and included[name].type == "module"
+            and "admin" not in included[name].manifest.raw
         ):
             problems.append(f"{app.name} includes '{name}' without a route")
         declared = included[name].manifest.settings if name in included else {}

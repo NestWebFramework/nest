@@ -4,8 +4,8 @@
 # A redirect answers only when nothing else did, so an existing page always
 # wins. Targets are a path on this site or an http(s) address; a chain that
 # would loop is refused when it is added; 410 says a page is gone for good.
-# Editors manage them where the application mounts the module
-# (/admin/redirects by convention); hits show which old links are still used.
+# Editors manage them in the admin panel (<admin route>/redirects); hits show
+# which old links are still used.
 #
 module:
   name: redirects
@@ -41,3 +41,9 @@ locales:
 docs:
   title: Redirects
   section: modules
+
+admin:
+  title: Redirects
+  order: 80
+  role: editor
+  description: Old addresses sent on to new ones, and how often they are still used.

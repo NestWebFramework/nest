@@ -2,7 +2,7 @@
 
 Content types are declared in YAML (any manifest, the application's last);
 entries are found by their stored path, so a moved site keeps its addresses;
-bodies are sanitized HTML with shortcodes; editors work under /admin/content.
+bodies are sanitized HTML with shortcodes; editors work in the admin panel.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from nest import ModuleHost
 from nest.host import HostError
 from nest_content.service import KIND, EntryData
 from nest_content.types import Registry
-from nest_content.web import Context, catlist, router, serve, wp_gallery
+from nest_content.web import Context, admin, catlist, router, serve, wp_gallery
 
 __all__ = ["KIND", "Context", "EntryData", "Registry"]
 
@@ -43,4 +43,5 @@ def setup(host: ModuleHost) -> None:
         # WordPress's own [gallery ids="..."]; the gallery module answers [gallery] when present.
         host.shortcode("gallery", wp_gallery)
     host.mount(router)
+    host.admin(admin)
     host.fallback(serve, priority=10)

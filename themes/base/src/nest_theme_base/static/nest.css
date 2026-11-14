@@ -162,3 +162,9 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 progress { width: 100%; max-width: 32rem; }
 /* a map drawn as SVG (the game's land) */
 svg.land { width: 100%; height: auto; max-height: 75vh; display: block; margin: 0 auto 1rem; }
+/* the admin panel: a column of its pages beside the page */
+.admin { display: grid; grid-template-columns: 12rem 1fr; gap: 1.5rem; align-items: start; }
+.admin-nav { display: flex; flex-direction: column; gap: .35rem; position: sticky; top: 1rem; }
+.admin-nav a[aria-current="page"] { font-weight: 600; }
+.admin-main { min-width: 0; }
+@media (max-width: 48rem) { .admin { grid-template-columns: 1fr; } .admin-nav { flex-direction: row; flex-wrap: wrap; position: static; } }
