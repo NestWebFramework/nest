@@ -34,6 +34,7 @@ members = [
     "nest-game-law",
     "nest-game-map",
     "nest-game-npc",
+    "nest-game-overlord",
     "nest-game-player",
     "nest-game-polity",
     "nest-game-production",
@@ -865,6 +866,23 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-overlord"
+version = "0.1.0"
+source = { editable = "game/subsystems/overlord" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-game" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+]
+
+[[package]]
 name = "nest-game-player"
 version = "0.1.0"
 source = { editable = "game/subsystems/player" }
@@ -1284,6 +1302,7 @@ dependencies = [
     { name = "nest-game-law" },
     { name = "nest-game-map" },
     { name = "nest-game-npc" },
+    { name = "nest-game-overlord" },
     { name = "nest-game-player" },
     { name = "nest-game-polity" },
     { name = "nest-game-production" },
@@ -1348,6 +1367,7 @@ requires-dist = [
     { name = "nest-game-law", editable = "game/subsystems/law" },
     { name = "nest-game-map", editable = "game/subsystems/map" },
     { name = "nest-game-npc", editable = "game/subsystems/npc" },
+    { name = "nest-game-overlord", editable = "game/subsystems/overlord" },
     { name = "nest-game-player", editable = "game/subsystems/player" },
     { name = "nest-game-polity", editable = "game/subsystems/polity" },
     { name = "nest-game-production", editable = "game/subsystems/production" },
