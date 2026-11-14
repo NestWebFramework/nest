@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy)
+game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy, household)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -697,6 +697,35 @@ sellers from nothing. Not yet here: taxes (with the settlement's laws), and dema
 clay and wool, which wait for builders and crafts. Anyone may follow
 `game.<server>.economy.<settlement id>` for the market's goods and prices, at most once a game
 hour.
+
+**`household`** makes families. Every resident NPC belongs to a household, with the roles from
+`households.yml`.
+
+* **Marriage:** once a game day, unmarried adults of a settlement may marry. The spouse moves
+  into the head's home.
+* **Children:** married couples may have children, characters born at 0. Under 12 their family
+  feeds them every hour from what it holds, else buys food with the purse or a parent's money,
+  and brings water from the well. At 12 they get a mind of their own. At 16 they take up the
+  head's trade at the head's workplace, and production equips them.
+* **The purse:** members give a fifth of what they hold beyond 100 coins. Those short of money
+  are given an allowance, and a worker whose tool broke may draw the rest of its price.
+* **Death:** the headship passes to the spouse, then the eldest child, then a relative. An
+  emptied household leaves its purse to the settlement.
+* **Old age:** characters now also die of it (the `old_age` setting), so a land that is born
+  into also dies.
+
+Two-year simulations showed what a settlement needs to live, and set these rules:
+
+* An hour of work costs a quarter of an action's effects; the seeds' numbers are a working
+  session's.
+* A producer of food keeps two days' eating of it.
+* Workers take their surplus to market once a game day, not only when they make something.
+* A purchase of food buys a full meal and the next.
+* A merchant's caravan buys surpluses for export, up to 300 coins a day, so producers of logs,
+  clay or wool earn and money enters the land. Food is never exported.
+
+Not yet: animals, fields and winter firewood from the old household data, and taxes. Exports
+make producers of unwanted goods rich, which taxes will balance.
 
 ```sh
 uv run nest game status applications/voievodate
