@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy, household, law)
+game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy, household, law, religion)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (keeper, hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -744,6 +744,21 @@ Not yet: animals, fields and winter firewood from the old household data.
 * **Commands:** `SetTax` and `SetLaw`.
 
 Judges, trials, councils and elections wait for the government.
+
+**`religion`** gives everyone a faith (`religion.yml`, from the old seeds by
+`tools/export_religion.py`). It comes from the region they live in (the old weights: Transylvania
+and the Banat 30% Catholic) or from their household's head.
+
+* **Worship:** on Sundays and major feasts the faithful of a settlement with a church of their
+  faith gather, and their piety and happiness rise. A church serves the faith most of its
+  settlement keeps. A week away costs a point of piety; priests keep theirs.
+* **The calendar** is the Julian, as the Romanian lands kept it throughout 1100-1600. Weekdays
+  come from the Julian Day Number. Easter follows the Julian computus for every church until the
+  reform of 1582, and the Gregorian for Catholics after it, given in Julian dates.
+* **Corrections to the old data:** Christmas is 25 December, not today's 7 January. The Order of
+  the Dragon was Sigismund's Catholic order (1408), not an Orthodox one.
+
+Game masters see each settlement's faiths, their piety and the year's feasts in the admin panel.
 
 ```sh
 uv run nest game status applications/voievodate
