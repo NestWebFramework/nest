@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy, household)
+game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy, household, law)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -724,8 +724,26 @@ Two-year simulations showed what a settlement needs to live, and set these rules
 * A merchant's caravan buys surpluses for export, up to 300 coins a day, so producers of logs,
   clay or wool earn and money enters the land. Food is never exported.
 
-Not yet: animals, fields and winter firewood from the old household data, and taxes. Exports
-make producers of unwanted goods rich, which taxes will balance.
+Not yet: animals, fields and winter firewood from the old household data.
+
+**`law`** gives each settlement its own taxes and laws (`law.yml`, from the old seeds by
+`tools/export_law.py`).
+
+* **Taxes:** each tax says what it falls on, and it is collected:
+  * a share of what is made, in kind, to the market (the grain tithe, the miller's toll);
+  * a share of what the market pays sellers (market dues, the tavern tax);
+  * a share of craftsmen's money once a year.
+
+  The old engine looked its taxes up as "income" and "trade", which none was called, so none
+  was ever collected.
+* **Laws:** a law's enforcement is the chance an offender is caught, and its severity the
+  punishment: a fine, lashes or the pillory. The starving poor steal food at the market (a new
+  NPC action), so theft has thieves. The old crime detection was an empty loop.
+* **Alms:** once a game day the treasury relieves the poor, from what it holds beyond its reserve.
+  A treasury that only took starved its settlement of coin.
+* **Commands:** `SetTax` and `SetLaw`.
+
+Judges, trials, councils and elections wait for the government.
 
 ```sh
 uv run nest game status applications/voievodate

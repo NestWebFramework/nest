@@ -25,6 +25,7 @@ members = [
     "nest-game-household",
     "nest-game-inventory",
     "nest-game-item",
+    "nest-game-law",
     "nest-game-map",
     "nest-game-npc",
     "nest-game-production",
@@ -670,6 +671,25 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-law"
+version = "0.1.0"
+source = { editable = "game/subsystems/law" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-game" },
+    { name = "nest-game-character" },
+    { name = "nest-game-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-character", editable = "game/subsystems/character" },
+    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
+]
+
+[[package]]
 name = "nest-game-map"
 version = "0.1.0"
 source = { editable = "game/subsystems/map" }
@@ -937,6 +957,7 @@ dependencies = [
     { name = "nest-game-household" },
     { name = "nest-game-inventory" },
     { name = "nest-game-item" },
+    { name = "nest-game-law" },
     { name = "nest-game-map" },
     { name = "nest-game-npc" },
     { name = "nest-game-production" },
@@ -985,6 +1006,7 @@ requires-dist = [
     { name = "nest-game-household", editable = "game/subsystems/household" },
     { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
     { name = "nest-game-item", editable = "game/subsystems/item" },
+    { name = "nest-game-law", editable = "game/subsystems/law" },
     { name = "nest-game-map", editable = "game/subsystems/map" },
     { name = "nest-game-npc", editable = "game/subsystems/npc" },
     { name = "nest-game-production", editable = "game/subsystems/production" },
