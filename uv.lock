@@ -34,6 +34,7 @@ members = [
     "nest-game-justice",
     "nest-game-law",
     "nest-game-map",
+    "nest-game-monastery",
     "nest-game-npc",
     "nest-game-overlord",
     "nest-game-player",
@@ -864,6 +865,27 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-monastery"
+version = "0.1.0"
+source = { editable = "game/subsystems/monastery" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-game" },
+    { name = "nest-game-character" },
+    { name = "nest-game-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-character", editable = "game/subsystems/character" },
+    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
+]
+
+[[package]]
 name = "nest-game-npc"
 version = "0.1.0"
 source = { editable = "game/subsystems/npc" }
@@ -1346,6 +1368,7 @@ dependencies = [
     { name = "nest-game-justice" },
     { name = "nest-game-law" },
     { name = "nest-game-map" },
+    { name = "nest-game-monastery" },
     { name = "nest-game-npc" },
     { name = "nest-game-overlord" },
     { name = "nest-game-player" },
@@ -1413,6 +1436,7 @@ requires-dist = [
     { name = "nest-game-justice", editable = "game/subsystems/justice" },
     { name = "nest-game-law", editable = "game/subsystems/law" },
     { name = "nest-game-map", editable = "game/subsystems/map" },
+    { name = "nest-game-monastery", editable = "game/subsystems/monastery" },
     { name = "nest-game-npc", editable = "game/subsystems/npc" },
     { name = "nest-game-overlord", editable = "game/subsystems/overlord" },
     { name = "nest-game-player", editable = "game/subsystems/player" },
