@@ -44,6 +44,7 @@ dependencies = [
     "nest-game-household",
     "nest-game-law",
     "nest-game-religion",
+    "nest-game-relationship",
     "nest-content-voievodate",
 ]
 
@@ -103,6 +104,7 @@ nest-game-map = { workspace = true }
 nest-game-household = { workspace = true }
 nest-game-law = { workspace = true }
 nest-game-religion = { workspace = true }
+nest-game-relationship = { workspace = true }
 nest-content-voievodate = { workspace = true }
 
 [dependency-groups]
