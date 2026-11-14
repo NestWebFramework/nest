@@ -160,3 +160,5 @@ ol.route .times { min-width: 7.5rem; font-variant-numeric: tabular-nums; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .better { color: var(--ok); } .worse { color: var(--danger); }
 progress { width: 100%; max-width: 32rem; }
+/* a map drawn as SVG (the game's land) */
+svg.land { width: 100%; height: auto; max-height: 75vh; display: block; margin: 0 auto 1rem; }

@@ -38,6 +38,7 @@ dependencies = [
     "nest-game-npc",
     "nest-game-production",
     "nest-game-economy",
+    "nest-game-map",
     "nest-content-voievodate",
 ]
 
@@ -91,6 +92,7 @@ nest-game-building = { workspace = true }
 nest-game-npc = { workspace = true }
 nest-game-production = { workspace = true }
 nest-game-economy = { workspace = true }
+nest-game-map = { workspace = true }
 nest-content-voievodate = { workspace = true }
 
 [dependency-groups]

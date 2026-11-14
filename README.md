@@ -41,7 +41,7 @@ interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, item, inventory, character, settlement, building, npc, production, economy)
+game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy)
 game/content/         game content packs: data only (voievodate)
 applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
@@ -572,6 +572,21 @@ maps the treatments' placeholder item (`item_id=16`, the iron hammer) to the ite
 comments name. The commands are `CreateCharacter`, `Infect`, `Treat`, `GrantExperience` and
 `ChangeAttribute`. Game masters follow `game.<server>.character` for births, deaths and
 illnesses, and `game.<server>.character.<id>` for one character's sheet.
+
+**`map`** is the land: every tile's terrain and county, and the regions above (county, duchy,
+principality, kingdom). The voievodate pack bakes them once with `tools/export_map.py`, from
+the old engine's 65 county outlines:
+
+* `regions.yml` holds the regions, with outlines and colours to draw.
+* `map.bin` holds 501 × 501 tiles of two bytes each, gzipped to 9 KB. The game holds it in memory,
+  so a tile's county is an index into bytes.
+
+The old engine kept 251,001 tile rows in a table and parsed the outlines with shapely at every
+boot. Other subsystems ask `map_of(host)`: `at(x, y)`, `region(x, y)`, `tiles_of(county)`. A
+settlement's region is the county it stands in. With `places: true` (voievodate sets it), a new
+world begins with one settlement in each county, named for its seat; their founders arrive with
+them. Game masters see the land at `<game route>/map`: the counties in their duchies' colours, and
+a dot for each settlement sized by its people, refreshed while the page is open.
 
 **`settlement`** keeps the hamlets, villages and towns: where each is (map tiles), its
 residents, treasury, prosperity and technologies. Once a game day it counts its living

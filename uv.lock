@@ -24,6 +24,7 @@ members = [
     "nest-game-economy",
     "nest-game-inventory",
     "nest-game-item",
+    "nest-game-map",
     "nest-game-npc",
     "nest-game-production",
     "nest-game-settlement",
@@ -647,6 +648,21 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-map"
+version = "0.1.0"
+source = { editable = "game/subsystems/map" }
+dependencies = [
+    { name = "nest-game" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-game", editable = "game/engine" },
+    { name = "pyyaml" },
+]
+
+[[package]]
 name = "nest-game-npc"
 version = "0.1.0"
 source = { editable = "game/subsystems/npc" }
@@ -898,6 +914,7 @@ dependencies = [
     { name = "nest-game-economy" },
     { name = "nest-game-inventory" },
     { name = "nest-game-item" },
+    { name = "nest-game-map" },
     { name = "nest-game-npc" },
     { name = "nest-game-production" },
     { name = "nest-game-settlement" },
@@ -944,6 +961,7 @@ requires-dist = [
     { name = "nest-game-economy", editable = "game/subsystems/economy" },
     { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
     { name = "nest-game-item", editable = "game/subsystems/item" },
+    { name = "nest-game-map", editable = "game/subsystems/map" },
     { name = "nest-game-npc", editable = "game/subsystems/npc" },
     { name = "nest-game-production", editable = "game/subsystems/production" },
     { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
