@@ -1,0 +1,14 @@
+[project]
+name = "nest-keeper"
+version = "0.1.0"
+description = "The keeper: Nest's own orchestration of its applications: what exists, how each is planned, which run."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-auth", "nest-admin"]
+
+[project.entry-points."nest.modules"]
+keeper = "nest_keeper"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

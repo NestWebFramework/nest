@@ -1,0 +1,44 @@
+#
+# keeper — Nest's own orchestration: the applications it knows, how each is
+# planned, whether each runs, the packages they are made of.
+#
+# Applications are found as installed packages of type application (a site in
+# a repo of its own) and as folders of the apps setting (./applications). For
+# each: its manifest, its plan (start order, routes, bindings, notes), its
+# problems, and whether it answers its health check on its port. The keeper's
+# pages are its admin panel's (admin role); its route sends to the panel.
+# What is generic to every application is here; what is specific to one is in
+# that application's own admin panel.
+#
+module:
+  name: keeper
+  id: nest.module.keeper
+  type: module
+  title: Keeper
+  category: admin
+  version: 0.1.0
+  description: Nest's applications, their plans, which of them run, and the packages they are made of.
+  license: MIT
+  created: "2026-11-14"
+
+main: nest_keeper
+
+provides:
+  import: nest_keeper
+  exports: [applications]
+
+deps:
+  auth: ">=0.2,<1"
+  admin: ">=0.1,<1"
+
+settings:
+  apps: {type: str, default: "applications", description: "Folders of applications, by comma (relative to where Nest runs)."}
+
+admin:
+  title: Applications
+  order: 1
+  role: admin
+  description: Every application Nest knows, its plan and problems, and whether it runs.
+
+locales:
+  - {locale: ro, file: locales/ro.json}

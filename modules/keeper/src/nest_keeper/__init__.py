@@ -1,0 +1,176 @@
+"""The keeper: Nest's own orchestration of its applications.
+
+What is generic to every application lives here: which applications exist
+(installed packages of type application, and the folders of the ``apps``
+setting), how each is planned (start order, routes, bindings, notes), what is
+wrong with it, whether it answers on its port, and the packages Nest can see.
+What is specific to one application is in that application's admin panel.
+The pages are the keeper's admin panel's (the admin role).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+import urllib.request
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
+from nest_auth import CurrentUser, require_role
+
+from nest import ModuleHost, admin_url, render
+from nest.catalog import Catalog, Entry
+from nest.contract import load_contracts
+from nest.host import module_state
+from nest.manifest import MANIFEST_FILE, ManifestError, load_manifest
+from nest.resolve import PlanError, plan
+
+__all__ = ["applications"]
+
+admin = APIRouter()
+router = APIRouter()
+keeper = require_role("admin")
+PROBE_SECONDS = 0.3
+
+
+@dataclass
+class Application:
+    name: str
+    root: Path
+    source: str  # "package" or the folder it was found in
+    title: str = ""
+    version: str = ""
+    port: int | None = None
+    units: list[dict[str, Any]] = field(default_factory=list)
+    bindings: dict[str, list[str]] = field(default_factory=dict)
+    notes: list[str] = field(default_factory=list)
+    problems: list[str] = field(default_factory=list)
+    running: bool | None = None  # None: not asked yet
+
+
+def applications(folders: list[Path]) -> list[Application]:
+    """Every application Nest can see, each planned as ``nest plan`` would."""
+    contract = load_contracts()
+    found: dict[str, Application] = {}
+    roots: list[tuple[Path, str]] = []
+    for entry in Catalog.discover().of_type("application"):
+        roots.append((entry.root, "package"))
+    for folder in folders:
+        if folder.is_dir():
+            for path in sorted(folder.glob(f"*/{MANIFEST_FILE}")):
+                roots.append((path.parent, str(folder)))
+    for root, source in roots:
+        try:
+            manifest = load_manifest(root)
+        except ManifestError as e:
+            found.setdefault(root.name, Application(root.name, root, source, problems=[str(e)]))
+            continue
+        if manifest.type != "application" or manifest.name in found:
+            continue
+        app = Application(
+            manifest.name,
+            root,
+            source,
+            title=(manifest.application.title if manifest.application else "") or manifest.name,
+            version=manifest.module.version,
+            port=manifest.application.port if manifest.application else None,
+            problems=list(contract.validate(manifest)),
+        )
+        try:
+            the_plan = plan(
+                Entry(manifest=manifest, source="application"), Catalog.discover(root), contract
+            )
+        except PlanError as e:
+            app.problems.append(str(e))
+        else:
+            app.units = [
+                {
+                    "name": u.name,
+                    "type": u.entry.type,
+                    "version": u.entry.manifest.module.version,
+                    "route": (u.instance.route if u.instance else None) or "",
+                }
+                for u in the_plan.units
+            ]
+            app.bindings = {k: list(b.providers) for k, b in the_plan.bindings.items()}
+            app.notes = list(the_plan.notes)
+        found[manifest.name] = app
+    return sorted(found.values(), key=lambda a: a.name)
+
+
+def _probe(port: int) -> bool:
+    """Whether something answers /healthz on this machine's port (and only there)."""
+    try:
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{int(port)}/healthz", timeout=PROBE_SECONDS
+        ) as r:
+            return r.status == 200
+    except (OSError, ValueError):
+        return False
+
+
+async def probed(apps: list[Application]) -> list[Application]:
+    async def one(app: Application) -> None:
+        app.running = await asyncio.to_thread(_probe, app.port) if app.port else None
+
+    await asyncio.gather(*(one(a) for a in apps))
+    return apps
+
+
+def _folders(request: Request) -> list[Path]:
+    return module_state(request, "keeper")["folders"]
+
+
+@admin.get("/")
+async def index(request: Request, user: CurrentUser = Depends(keeper)):
+    apps = await probed(await asyncio.to_thread(applications, _folders(request)))
+    return render(
+        request,
+        "keeper/index.html",
+        fragment="apps",
+        apps=apps,
+        base=admin_url(request, "keeper"),
+        here=request.app.state.nest.name,
+    )
+
+
+@admin.get("/packages")
+def packages(request: Request, user: CurrentUser = Depends(keeper)):
+    catalog = Catalog.discover()
+    by_type: dict[str, list[Entry]] = {}
+    for entry in catalog:
+        by_type.setdefault(entry.type, []).append(entry)
+    return render(
+        request,
+        "keeper/packages.html",
+        by_type=dict(sorted(by_type.items())),
+        problems=catalog.problems,
+        base=admin_url(request, "keeper"),
+    )
+
+
+@admin.get("/app/{name}")
+async def detail(request: Request, name: str, user: CurrentUser = Depends(keeper)):
+    apps = {a.name: a for a in await asyncio.to_thread(applications, _folders(request))}
+    if name not in apps:
+        raise HTTPException(404)
+    (app,) = await probed([apps[name]])
+    return render(request, "keeper/app.html", app=app, base=admin_url(request, "keeper"))
+
+
+@router.get("/")
+def front(request: Request):
+    return RedirectResponse(admin_url(request, "keeper") + "/", status_code=303)
+
+
+def setup(host: ModuleHost) -> None:
+    raw = str(host.settings.get("apps") or "")
+    host.state["folders"] = [
+        Path(os.path.expanduser(p.strip())).resolve() for p in raw.split(",") if p.strip()
+    ]
+    host.admin(admin)
+    if host.route is not None:
+        host.mount(router)

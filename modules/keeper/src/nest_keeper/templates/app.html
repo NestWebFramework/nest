@@ -1,0 +1,17 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ app.title }} · {{ _("Applications") }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/">← {{ _("Applications") }}</a></p>
+<h1>{{ app.title }} <span class="muted">· {{ app.name }} {{ app.version }}</span></h1>
+<p>{% if app.running %}<span class="better">● {{ _("runs") }}</span>{% elif app.running is false %}<span class="muted">○ {{ _("stopped") }}</span>{% endif %}
+  {% if app.port %}· {{ _("port") }} {{ app.port }}{% endif %} · <span class="muted">{{ app.root }}</span></p>
+{% if app.problems %}<div class="notice danger" role="alert"><ul>{% for p in app.problems %}<li>{{ p }}</li>{% endfor %}</ul></div>{% endif %}
+<h2>{{ _("Start order") }}</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th class="num">#</th><th>{{ _("Package") }}</th><th>{{ _("Type") }}</th><th>{{ _("Version") }}</th><th>{{ _("Route") }}</th></tr></thead>
+  <tbody>{% for u in app.units %}<tr><td class="num">{{ loop.index }}</td><td>{{ u.name }}</td><td>{{ u.type }}</td><td>{{ u.version }}</td><td>{{ u.route or "—" }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% if app.bindings %}<h2>{{ _("Bindings") }}</h2>
+<ul>{% for iface, providers in app.bindings.items() %}<li>{{ iface }} → {{ providers|join(", ") }}</li>{% endfor %}</ul>{% endif %}
+{% if app.notes %}<h2>{{ _("Notes") }}</h2><ul>{% for n in app.notes %}<li>{{ n }}</li>{% endfor %}</ul>{% endif %}
+{% endblock %}

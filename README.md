@@ -43,7 +43,7 @@ themes/               themes (base)
 game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
 game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy, household, law)
 game/content/         game content packs: data only (voievodate)
-applications/         applications (hello, regionalisme, morlaca, transilpedia, gari, voievodate)
+applications/         applications (keeper, hello, regionalisme, morlaca, transilpedia, gari, voievodate)
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -771,6 +771,24 @@ So morlaca and transilpedia, made of the same modules, have the same panel. The 
 game's panel: its servers, its land and its tools (`/admin/game`). No panel is written for an
 application, and an application without the admin module serves no admin pages (it says so at
 start). A module whose pages are all in the panel needs no route of its own (redirects).
+
+## The keeper
+
+`applications/keeper` is Nest's own application, at port 8000. It orchestrates the applications
+and covers what is generic to them. What is specific to one application is in that application's
+admin panel. The keeper finds applications in two ways:
+
+* installed packages of type application, which is how a site in a repository of its own is seen;
+* the folders of its `apps` setting (`applications` by default).
+
+For each application it shows the manifest, the plan (start order, routes, bindings, notes), any
+problems, and whether it answers its health check on its port. That check runs on this machine
+only, with a 0.3 s timeout. It also lists every package Nest can see, by type. Its pages are its
+admin panel's, for the admin role.
+
+```sh
+uv run nest run applications/keeper          # http://127.0.0.1:8000 → /admin/keeper/
+```
 
 ## Safe by default
 

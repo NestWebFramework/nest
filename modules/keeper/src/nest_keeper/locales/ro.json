@@ -1,0 +1,22 @@
+{
+ "Applications": "Aplicații",
+ "Packages": "Pachete",
+ "Every application Nest can see: installed packages and the application folders. Whether one runs is asked of its port on this machine.": "Toate aplicațiile pe care Nest le vede: pachete instalate și dosarele de aplicații. Dacă una rulează se întreabă portul ei de pe această mașină.",
+ "Application": "Aplicația",
+ "Version": "Versiunea",
+ "Port": "Portul",
+ "Runs": "Rulează",
+ "Problems": "Probleme",
+ "this one": "aceasta",
+ "runs": "rulează",
+ "stopped": "oprită",
+ "No application found.": "Nicio aplicație găsită.",
+ "port": "portul",
+ "Start order": "Ordinea pornirii",
+ "Package": "Pachetul",
+ "Type": "Tipul",
+ "Route": "Ruta",
+ "Bindings": "Legături",
+ "Notes": "Note",
+ "Description": "Descriere"
+}

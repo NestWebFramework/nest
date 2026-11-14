@@ -1,0 +1,32 @@
+#
+# keeper — Nest's own application: the applications it knows, how each is
+# planned, which run, the packages they are made of. What is specific to one
+# application is in that application's admin panel; what is generic, here.
+#
+module:
+  name: keeper
+  id: nest.app.keeper
+  type: application
+  title: Nest keeper
+  version: 0.1.0
+  description: Nest-level orchestration of its applications.
+  license: MIT
+  created: "2026-11-14"
+
+application:
+  title: Nest keeper
+  port: 8000
+  theme: base
+  languages: [ro, en]
+
+modules:
+  - name: keeper
+    route: /
+  - name: admin
+    route: /admin
+  - name: auth
+    route: /cont
+
+bind:
+  nest.db:
+    providers: [db-sqlite]

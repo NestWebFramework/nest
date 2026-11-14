@@ -34,6 +34,7 @@ members = [
     "nest-game-world",
     "nest-glossary",
     "nest-htmx",
+    "nest-keeper",
     "nest-media",
     "nest-messages",
     "nest-redirects",
@@ -835,6 +836,23 @@ dependencies = [
 requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
+name = "nest-keeper"
+version = "0.1.0"
+source = { editable = "modules/keeper" }
+dependencies = [
+    { name = "nest-admin" },
+    { name = "nest-auth" },
+    { name = "nest-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-admin", editable = "modules/admin" },
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-core", editable = "packages/nest-core" },
+]
+
+[[package]]
 name = "nest-media"
 version = "0.1.0"
 source = { editable = "modules/media" }
@@ -982,6 +1000,7 @@ dependencies = [
     { name = "nest-game-world" },
     { name = "nest-glossary" },
     { name = "nest-htmx" },
+    { name = "nest-keeper" },
     { name = "nest-media" },
     { name = "nest-messages" },
     { name = "nest-redirects" },
@@ -1032,6 +1051,7 @@ requires-dist = [
     { name = "nest-game-world", editable = "game/subsystems/world" },
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },
+    { name = "nest-keeper", editable = "modules/keeper" },
     { name = "nest-media", editable = "modules/media" },
     { name = "nest-messages", editable = "modules/messages" },
     { name = "nest-redirects", editable = "modules/redirects" },

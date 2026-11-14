@@ -1,0 +1,14 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Packages") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/">← {{ _("Applications") }}</a></p>
+<h1>{{ _("Packages") }}</h1>
+{% if problems %}<div class="notice danger" role="alert"><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>{% endif %}
+{% for type, entries in by_type.items() %}
+<h2>{{ type }} <span class="muted">· {{ entries|length }}</span></h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Package") }}</th><th>{{ _("Version") }}</th><th>Id</th><th>{{ _("Description") }}</th></tr></thead>
+  <tbody>{% for e in entries %}<tr><td>{{ e.name }}</td><td>{{ e.manifest.module.version }}</td><td class="muted">{{ e.id }}</td><td>{{ e.manifest.module.description }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endfor %}
+{% endblock %}
