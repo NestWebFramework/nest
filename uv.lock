@@ -22,6 +22,7 @@ members = [
     "nest-game",
     "nest-game-building",
     "nest-game-character",
+    "nest-game-dialogue",
     "nest-game-economy",
     "nest-game-household",
     "nest-game-inventory",
@@ -614,6 +615,27 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-dialogue"
+version = "0.1.0"
+source = { editable = "game/subsystems/dialogue" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-game" },
+    { name = "nest-game-character" },
+    { name = "nest-game-settlement" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-character", editable = "game/subsystems/character" },
+    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
+    { name = "pyyaml" },
+]
+
+[[package]]
 name = "nest-game-economy"
 version = "0.1.0"
 source = { editable = "game/subsystems/economy" }
@@ -1042,6 +1064,7 @@ dependencies = [
     { name = "nest-game" },
     { name = "nest-game-building" },
     { name = "nest-game-character" },
+    { name = "nest-game-dialogue" },
     { name = "nest-game-economy" },
     { name = "nest-game-household" },
     { name = "nest-game-inventory" },
@@ -1095,6 +1118,7 @@ requires-dist = [
     { name = "nest-game", editable = "game/engine" },
     { name = "nest-game-building", editable = "game/subsystems/building" },
     { name = "nest-game-character", editable = "game/subsystems/character" },
+    { name = "nest-game-dialogue", editable = "game/subsystems/dialogue" },
     { name = "nest-game-economy", editable = "game/subsystems/economy" },
     { name = "nest-game-household", editable = "game/subsystems/household" },
     { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
