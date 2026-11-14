@@ -21,7 +21,16 @@ from nest_auth import sessions
 from nest_auth.sessions import AccountError, CurrentUser
 
 COOKIE = "nest_session"
-SKIP_PREFIXES = ("/assets/", "/healthz", "/_nest/")
+# no session looked up for these: static files, health probes, the language switch, the docs
+# (the event stream is not skipped: a topic may be the signed-in user's own)
+SKIP_PREFIXES = (
+    "/assets/",
+    "/healthz",
+    "/_nest/health",
+    "/_nest/language",
+    "/_nest/docs",
+    "/_nest/openapi",
+)
 
 
 # --- throttling --------------------------------------------------------------------

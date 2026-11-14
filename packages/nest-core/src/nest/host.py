@@ -124,6 +124,14 @@ class Nest:
         self._shutdown: list[Hook] = []
         self._background: list[Callable[[], Awaitable[Any]]] = []
         self._versions = {u.name: u.entry.manifest.module.version for u in plan.units}
+        app_static = plan.app.manifest.folder(plan.app.manifest.static, "static")
+        if app_static is not None:  # the application's own files (a client it builds)
+            newest = max(
+                (f.stat().st_mtime for f in app_static.rglob("*") if f.is_file()), default=0
+            )
+            self._versions[plan.app.manifest.module.name] = (
+                f"{plan.app.manifest.module.version}-{int(newest)}"
+            )
         module_dirs: dict[str, Path] = {}
         for unit in plan.units:
             folder = unit.entry.manifest.folder(unit.entry.manifest.templates, "templates")
@@ -489,6 +497,14 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
             app.mount(
                 f"/assets/{unit.name}", StaticFiles(directory=static), name=f"assets:{unit.name}"
             )
+    app_name = the_plan.app.manifest.module.name
+    app_static = the_plan.app.manifest.folder(the_plan.app.manifest.static, "static")
+    if app_static is not None and app_name not in {u.name for u in the_plan.units}:
+        app.mount(
+            f"/assets/{app_name}", StaticFiles(directory=app_static), name=f"assets:{app_name}"
+        )
+    for unit in the_plan.units:
+        entry = unit.entry
         # Every package with code that runs in the application is set up: modules,
         # themes and an ecosystem's own types (a game subsystem); interfaces and
         # providers are not, they are bound.

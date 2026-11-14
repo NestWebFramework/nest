@@ -159,3 +159,28 @@ def test_two_apps_with_the_same_local_module_id_each_get_their_own_code(tmp_path
         with TestClient(app) as c:
             texts[folder] = c.get("/").text
     assert "<p>one</p>" in texts["one"] and "<p>two</p>" in texts["two"]
+
+
+def test_an_application_serves_its_own_files(tmp_path):
+    """An application's static/ folder (a client it builds) is served at /assets/<app>,
+    and asset() gives it a version that changes with its files."""
+    import shutil  # noqa: PLC0415
+
+    site = tmp_path / "hello"
+    shutil.copytree(HELLO, site)
+    (site / "static" / "play").mkdir(parents=True)
+    (site / "static" / "play" / "play.js").write_text("console.log('joc')", encoding="utf-8")
+    (site / "templates").mkdir(exist_ok=True)
+    app = create_app(site, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
+    with TestClient(app) as c:
+        assert c.get("/assets/hello/play/play.js").text == "console.log('joc')"
+        url = app.state.nest.asset("hello", "play/play.js")
+        assert url.startswith("/assets/hello/play/play.js?v=") and "-" in url.split("v=")[1]
+
+
+def test_the_event_stream_knows_who_is_asking():
+    """A topic may be the signed-in user's own: the event stream resolves the session."""
+    from nest_auth.web import SKIP_PREFIXES  # noqa: PLC0415
+
+    assert not "/_nest/events".startswith(SKIP_PREFIXES)
+    assert "/_nest/language".startswith(SKIP_PREFIXES) and "/assets/x".startswith(SKIP_PREFIXES)
