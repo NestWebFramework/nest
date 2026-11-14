@@ -469,7 +469,10 @@ so the core validates subsystems as it validates its own types.
   3. runs each subsystem's stage in the order the manifests declare (`tick.after`), at its own
      rate (`tick.every`), timed;
   4. publishes the stages' events on `game.<server>.<topic>`;
-  5. hands what changed to each subsystem's writer, run in a thread at `sync.every`.
+  5. every `checkpoint` seconds (30 by default), writes what changed in every subsystem in
+     one transaction, in a thread. That is one fsync for the whole world and a consistent
+     snapshot (a crash never leaves the inventory ahead of the characters), and the loop never
+     waits on the disk. A checkpoint that fails is kept and written before the next one.
 * **Testable by hand.** With `autostart: false` the worlds are stepped by hand (tests, the CLI)
   and behave exactly the same.
 * **Game masters** see every server's clock, tick time and stages at the module's route, and
@@ -479,7 +482,6 @@ so the core validates subsystems as it validates its own types.
 # a subsystem's module.yml
 type: subsystem
 tick: {stage: npc, after: [world, economy], every: 0}
-sync: {every: 10}
 ```
 
 ```python
@@ -490,6 +492,28 @@ class NpcSubsystem(Subsystem):
     @handles(TalkToNpc)
     def talk(self, world, command): ...  # applied on the loop, answered to the submitter
 ```
+
+**Light on small servers.** The target is 1000-2000 players on a basic machine, and
+`tools/bench_game.py` measures it. It builds a world of settlements and players, steps it, and
+reports each subsystem's tick time and the checkpoints. With 2000 players, 266 NPCs and 612
+buildings in 40 settlements:
+
+* A tick takes about 15 ms of work (4 ms characters, 2 ms NPCs, 9 ms production), once a
+  second.
+* A checkpoint takes about 100 ms every 30 seconds, off the loop. Before, it was a transaction
+  per subsystem every 5 to 10 seconds, the characters' alone 230 ms.
+
+The design choices behind that:
+
+* Writers use `nest_game.store` (`save`, `drop`). It finds existing rows with one query per few
+  hundred keys and writes with executemany INSERT and UPDATE, instead of an ORM object per row.
+* `Written` remembers what was last written, so only changed columns are sent. A character's
+  needs change hourly; its skills rarely do.
+* Needs and work advance in steps of at least one game minute. Per-tick lookups (a settlement's
+  workstations) are computed once per tick.
+* The command queue is bounded (`queue_limit`). A flooded server answers "busy" instead of
+  growing without limit.
+
 
 **`world`** is the first subsystem ported. It keeps the game calendar (a restarted world goes on
 where it was), the season by month, and each day's weather for the world and its regions, drawn
@@ -513,7 +537,7 @@ npc, a player, a household or a guild. Each stack also has a location, which def
 owner's person or vault. Alike things pile up in one stack. Tools and other items with
 durability or several uses are kept unit by unit, each with its own wear. Taking is all or
 nothing, and the most worn units go first. A water skin's last drink leaves the empty skin.
-Stacks are written by key at `sync.every`. Game masters can follow each owner's
+Stacks are written by key at each checkpoint. Game masters can follow each owner's
 `game.<server>.inventory.<type>.<id>`. The commands are `GiveItem`, `TakeItem` and
 `TransferItem`.
 
