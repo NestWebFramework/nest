@@ -53,6 +53,7 @@ dependencies = [
     "nest-game-travel",
     "nest-game-society",
     "nest-game-farm",
+    "nest-game-polity",
     "nest-content-voievodate",
 ]
 
@@ -121,6 +122,7 @@ nest-game-player = { workspace = true }
 nest-game-travel = { workspace = true }
 nest-game-society = { workspace = true }
 nest-game-farm = { workspace = true }
+nest-game-polity = { workspace = true }
 nest-content-voievodate = { workspace = true }
 
 [dependency-groups]
