@@ -65,3 +65,9 @@ locales:
 docs:
   title: Comments
   section: modules
+
+admin:
+  title: Comments
+  order: 20
+  role: moderator
+  description: Comments waiting for a moderator, and those marked spam.

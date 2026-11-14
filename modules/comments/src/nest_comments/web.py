@@ -14,13 +14,14 @@ from nest_db import Database
 from sqlalchemy import func, select
 from starlette.concurrency import run_in_threadpool
 
-from nest import bound, is_htmx, local_path, render, translator
+from nest import admin_url, bound, is_htmx, local_path, render, translator
 from nest.host import module_state
 from nest_comments import service
 from nest_comments.models import Comment, utcnow
 from nest_comments.service import CommentError
 
 router = APIRouter()
+admin = APIRouter()  # moderation: the admin panel mounts it at <admin route>/comments
 moderator = require_role("moderator")
 
 
@@ -146,7 +147,7 @@ async def post(request: Request, db: Database = bound(Database)):
     return again(notice=notice, keep=False)
 
 
-@router.get("/moderate")
+@admin.get("/")
 def moderate(
     request: Request,
     status: str = "pending",
@@ -159,11 +160,11 @@ def moderate(
         "comments/moderate.html",
         comments=service.queue(db, status),
         status=status,
-        action=_state(request)["action"],
+        action=admin_url(request, "comments"),
     )
 
 
-@router.post("/{comment_id:int}/status")
+@admin.post("/{comment_id:int}/status")
 async def change(
     request: Request,
     comment_id: int,
@@ -183,7 +184,7 @@ async def change(
             "comments/moderate.html",
             fragment="row",
             c=c,
-            action=_state(request)["action"],
+            action=admin_url(request, "comments"),
             status=c.status,
         )
-    return RedirectResponse(f"{_state(request)['action']}/moderate", status_code=303)
+    return RedirectResponse(admin_url(request, "comments") + "/", status_code=303)

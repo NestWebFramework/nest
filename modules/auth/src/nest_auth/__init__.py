@@ -16,6 +16,7 @@ from __future__ import annotations
 from nest import ModuleHost
 from nest_auth.passwords import hash_password, verify_password
 from nest_auth.sessions import CurrentUser, find_user, users_by_ids
+from nest_auth.users import admin
 from nest_auth.web import (
     AuthMiddleware,
     Throttle,
@@ -60,4 +61,6 @@ def setup(host: ModuleHost) -> None:
         return {"user": getattr(request.state, "user", None), "auth": urls}
 
     host.add_middleware(AuthMiddleware, session_days=days)
-    host.mount(router)
+    if host.route is not None:  # sign-in pages; pulled in only as a dependency, it has none
+        host.mount(router)
+    host.admin(admin)  # accounts and roles, in the admin panel

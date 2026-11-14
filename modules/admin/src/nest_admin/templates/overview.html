@@ -1,0 +1,14 @@
+{% extends "admin/layout.html" %}
+{# A module's overview in the panel, from data alone: title, intro, facts, a table.
+   A cell is text, or {"text": ..., "href": ...}. #}
+{% block title %}{{ title }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ title }}</h1>
+{% if intro %}<p class="muted">{{ intro }}</p>{% endif %}
+{% if facts %}<p>{% for label, value in facts %}<strong>{{ value }}</strong> {{ label }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+{% if head %}<div class="table-wrap"><table>
+  <thead><tr>{% for h in head %}<th{% if loop.index > 1 %} class="num"{% endif %}>{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for row in rows %}<tr>{% for cell in row %}<td{% if loop.index > 1 %} class="num"{% endif %}>{% if cell is mapping %}<a href="{{ cell.href }}">{{ cell.text }}</a>{% else %}{{ cell }}{% endif %}</td>{% endfor %}</tr>
+  {% else %}<tr><td colspan="{{ head|length }}" class="muted">{{ empty or "—" }}</td></tr>{% endfor %}</tbody>
+</table></div>{% endif %}
+{% endblock %}

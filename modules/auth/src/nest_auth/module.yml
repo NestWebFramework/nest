@@ -63,3 +63,9 @@ locales:
 docs:
   title: Accounts
   section: modules
+
+admin:
+  title: Accounts
+  order: 90
+  role: admin
+  description: Who has an account, their roles, and whether it is active.

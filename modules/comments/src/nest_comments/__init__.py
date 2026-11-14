@@ -12,7 +12,7 @@ from __future__ import annotations
 from nest import ModuleHost
 from nest.text import render_plain
 from nest_comments.service import Node, thread
-from nest_comments.web import router, thread_html
+from nest_comments.web import admin, router, thread_html
 
 __all__ = ["Node", "thread", "thread_html"]
 
@@ -37,3 +37,4 @@ def setup(host: ModuleHost) -> None:
         return {"comments": lambda subject: thread_html(request, subject)}
 
     host.mount(router)
+    host.admin(admin)  # moderation, in the admin panel

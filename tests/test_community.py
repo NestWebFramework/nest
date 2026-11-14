@@ -99,9 +99,9 @@ def test_a_page_embeds_its_thread_and_a_guest_waits_for_a_moderator(site):
         waiting.subject == f"content.entry:{site.entry.id}" and waiting.address
     )  # kept only as a hash
     sign_in(site, "mod@example.ro", ("moderator",))
-    assert "Ana" in site.get("/comentarii/moderate").text
+    assert "Ana" in site.get("/admin/comments/").text
     site.post(
-        f"/comentarii/{waiting.id}/status",
+        f"/admin/comments/{waiting.id}/status",
         data={"status": "approved"},
         headers={"X-CSRF-Token": site.cookies["nest_csrf"]},
     )
@@ -176,9 +176,9 @@ def test_without_javascript_a_post_returns_to_the_page(site):
 
 
 def test_only_moderators_moderate(site):
-    assert site.get("/comentarii/moderate", follow_redirects=False).status_code == 303
+    assert site.get("/admin/comments/", follow_redirects=False).status_code == 303
     sign_in(site, "ion@example.ro")
-    assert site.get("/comentarii/moderate").status_code == 403
+    assert site.get("/admin/comments/").status_code == 403
 
 
 def test_wordpress_comments_follow_their_posts(site, tmp_path):

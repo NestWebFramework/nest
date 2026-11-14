@@ -11,7 +11,7 @@ import hashlib
 import re
 import secrets
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import delete, func, select
@@ -191,3 +191,91 @@ def find_user(db: Any, who: str) -> CurrentUser | None:
             )
             user = matches[0] if len(matches) == 1 else None
         return _current(user) if user else None
+
+
+# -- the users page of the admin panel --
+
+ROLE = re.compile(r"^[a-z][a-z0-9-]{0,39}$")
+
+
+@dataclass
+class Account:
+    """An account as the admin panel shows it."""
+
+    id: int
+    email: str
+    name: str
+    roles: tuple[str, ...]
+    active: bool
+    created_at: datetime
+    last_login_at: datetime | None
+
+
+def _account(u: User) -> Account:
+    return Account(
+        u.id,
+        u.email,
+        u.name,
+        tuple(r for r in (u.roles or "").split(",") if r),
+        u.active,
+        u.created_at,
+        u.last_login_at,
+    )
+
+
+def list_accounts(
+    db: Any, q: str = "", *, limit: int = 50, offset: int = 0
+) -> tuple[list[Account], int]:
+    """Accounts, newest first, those whose email or name holds ``q``; and how many there are."""
+    with db.session() as s:
+        query = select(User)
+        if q:
+            like = f"%{q.lower()}%"
+            query = query.where(
+                func.lower(User.email).like(like) | func.lower(User.name).like(like)
+            )
+        total = s.scalar(select(func.count()).select_from(query.subquery())) or 0
+        rows = s.scalars(query.order_by(User.id.desc()).limit(limit).offset(offset))
+        return [_account(u) for u in rows], total
+
+
+def account(db: Any, user_id: int) -> Account | None:
+    with db.session() as s:
+        u = s.get(User, user_id)
+        return _account(u) if u else None
+
+
+def update_account(db: Any, user_id: int, *, roles: list[str], active: bool, by: int) -> Account:
+    """Change an account's roles and whether it is active, never locking the panel out.
+
+    Nobody takes away their own admin role or deactivates themselves, and the
+    last active administrator stays one. A deactivated account is signed out
+    everywhere.
+    """
+    roles = sorted({r.strip().lower() for r in roles if r.strip()})
+    bad = [r for r in roles if not ROLE.match(r)]
+    if bad:
+        raise AccountError(f"a role is a short word of letters, digits and dashes, not {bad[0]!r}")
+    with db.session() as s, s.begin():
+        u = s.get(User, user_id)
+        if u is None:
+            raise AccountError("no such account")
+        was_admin = "admin" in (u.roles or "").split(",") and u.active
+        stays_admin = "admin" in roles and active
+        if user_id == by and was_admin and not stays_admin:
+            raise AccountError(
+                "you cannot take away your own administration, or deactivate yourself"
+            )
+        if was_admin and not stays_admin:
+            admins = [
+                x
+                for x in s.scalars(select(User).where(User.active))
+                if "admin" in (x.roles or "").split(",")
+            ]
+            if len(admins) <= 1:
+                raise AccountError("this is the last administrator")
+        u.roles = ",".join(roles)
+        u.active = bool(active)
+        if not active:
+            s.execute(delete(Session).where(Session.user_id == user_id))
+        return _account(u)

@@ -1,7 +1,7 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% block title %}{{ _("Comments") }} · {{ app.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
-{% block content %}
+{% block admin_content %}
 <h1>{{ _("Comments") }}</h1>
 <nav class="row" aria-label="{{ _('Comments') }}">
   {% for s, label in [("pending", _("Waiting")), ("approved", _("Published")), ("spam", _("Spam"))] %}

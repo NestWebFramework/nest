@@ -538,6 +538,7 @@ name = "nest-gallery"
 version = "0.3.0"
 source = { editable = "modules/gallery" }
 dependencies = [
+    { name = "nest-auth" },
     { name = "nest-core" },
     { name = "nest-db" },
     { name = "nest-media" },
@@ -546,6 +547,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-media", editable = "modules/media" },
@@ -692,6 +694,7 @@ name = "nest-game-law"
 version = "0.1.0"
 source = { editable = "game/subsystems/law" }
 dependencies = [
+    { name = "nest-auth" },
     { name = "nest-db" },
     { name = "nest-game" },
     { name = "nest-game-character" },
@@ -700,6 +703,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-game", editable = "game/engine" },
     { name = "nest-game-character", editable = "game/subsystems/character" },
@@ -776,6 +780,7 @@ name = "nest-game-settlement"
 version = "0.1.0"
 source = { editable = "game/subsystems/settlement" }
 dependencies = [
+    { name = "nest-auth" },
     { name = "nest-db" },
     { name = "nest-game" },
     { name = "nest-game-character" },
@@ -783,6 +788,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-game", editable = "game/engine" },
     { name = "nest-game-character", editable = "game/subsystems/character" },
@@ -955,12 +961,14 @@ name = "nest-trains"
 version = "0.1.0"
 source = { editable = "modules/trains" }
 dependencies = [
+    { name = "nest-auth" },
     { name = "nest-core" },
     { name = "nest-db" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
 ]

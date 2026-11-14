@@ -29,6 +29,7 @@ requires:
   interfaces: [nest.db, nest.storage]
 
 deps:
+  auth: ">=0.2,<1"
   db: ">=0.2,<1"
   storage: ">=0.1,<1"
   media: ">=0.1,<1"
@@ -52,3 +53,9 @@ locales:
 docs:
   title: Galleries
   section: modules
+
+admin:
+  title: Galleries
+  order: 14
+  role: editor
+  description: "The albums and their photos."

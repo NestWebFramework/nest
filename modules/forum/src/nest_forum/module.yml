@@ -50,3 +50,9 @@ locales:
 docs:
   title: Forum
   section: modules
+
+admin:
+  title: Forum
+  order: 22
+  role: moderator
+  description: "The boards, their topics and posts."

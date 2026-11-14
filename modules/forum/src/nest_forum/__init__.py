@@ -20,6 +20,10 @@ __all__: list[str] = []
 
 
 def setup(host: ModuleHost) -> None:
+    from nest_forum.admin import admin
+
+    host.state["url"] = "" if host.route in (None, "/") else host.route
+    host.admin(admin)  # an overview in the admin panel
     s = host.settings
     public = bool(s.get("public_read"))
 

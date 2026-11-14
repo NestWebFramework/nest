@@ -15,6 +15,10 @@ __all__: list[str] = []
 
 
 def setup(host: ModuleHost) -> None:
+    from nest_gallery.admin import admin
+
+    host.state["url"] = "" if host.route in (None, "/") else host.route
+    host.admin(admin)  # an overview in the admin panel
     host.state["base"] = "" if host.route in (None, "/") else host.route
     shortcodes(host)
     if host.settings.get("index"):

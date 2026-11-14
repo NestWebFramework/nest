@@ -1,6 +1,20 @@
 {
-  "Galleries": "Galerii",
-  "No galleries yet.": "Încă nu există galerii.",
-  "{n} gallery": ["{n} galerie", "{n} galerii", "{n} de galerii"],
-  "{n} photo": ["{n} fotografie", "{n} fotografii", "{n} de fotografii"]
+ "Galleries": "Galerii",
+ "No galleries yet.": "Încă nu există galerii.",
+ "{n} gallery": [
+  "{n} galerie",
+  "{n} galerii",
+  "{n} de galerii"
+ ],
+ "{n} photo": [
+  "{n} fotografie",
+  "{n} fotografii",
+  "{n} de fotografii"
+ ],
+ "Albums come in with a site's import; here, how many and what they hold.": "Albumele vin cu importul unui site; aici, câte sunt și ce cuprind.",
+ "albums": "albume",
+ "photos": "fotografii",
+ "Album": "Albumul",
+ "Photos": "Fotografii",
+ "No album yet.": "Niciun album încă."
 }

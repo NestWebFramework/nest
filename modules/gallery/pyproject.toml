@@ -4,7 +4,7 @@ version = "0.3.0"
 description = "Photo galleries and albums: pages, embeds, a lightbox, and WordPress gallery imports."
 requires-python = ">=3.12"
 license = "MIT"
-dependencies = ["nest-core", "nest-db", "nest-storage", "nest-media"]
+dependencies = ["nest-auth", "nest-core", "nest-db", "nest-storage", "nest-media"]
 
 [project.entry-points."nest.modules"]
 gallery = "nest_gallery"

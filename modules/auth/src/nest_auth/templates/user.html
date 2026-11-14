@@ -1,0 +1,19 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ acct.email }} · {{ _("Accounts") }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/">← {{ _("Accounts") }}</a></p>
+<h1>{{ acct.name or acct.email }} <span class="muted">· {{ acct.email }}</span></h1>
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+{% if request.query_params.get("saved") %}<p class="notice ok">{{ _("Saved.") }}</p>{% endif %}
+{% if request.query_params.get("signed_out") %}<p class="notice ok">{{ _("Signed out everywhere.") }}</p>{% endif %}
+<form method="post" action="{{ base }}/{{ acct.id }}" class="stack">
+  {{ csrf_field }}
+  <label class="field">{{ _("Roles") }}
+    <input name="roles" value="{{ acct.roles|join(', ') }}">
+    <span class="hint">{{ _("By comma: admin (everything), editor, moderator, gamemaster…") }}</span></label>
+  <label class="checks"><input type="checkbox" name="active" value="1"{% if acct.active %} checked{% endif %}> {{ _("Active (an inactive account cannot sign in, and is signed out)") }}</label>
+  <button>{{ _("Save") }}</button>
+</form>
+<form method="post" action="{{ base }}/{{ acct.id }}/sign-out" class="danger-zone">{{ csrf_field }}<button class="secondary">{{ _("Sign out everywhere") }}</button></form>
+<p class="muted">{{ _("Since") }} {{ acct.created_at.strftime("%d.%m.%Y") }}{% if acct.last_login_at %} · {{ _("last sign-in") }} {{ acct.last_login_at.strftime("%d.%m.%Y %H:%M") }}{% endif %}</p>
+{% endblock %}

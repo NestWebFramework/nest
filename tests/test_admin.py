@@ -2,6 +2,7 @@
 
 import textwrap
 
+import pytest
 from fastapi.testclient import TestClient
 from nest_auth.sessions import create_user
 
@@ -54,6 +55,7 @@ def test_the_panel_gathers_the_modules_pages(tmp_path):
     ] == [
         ("content", "Content", "editor", "/admin/content"),
         ("redirects", "Redirects", "editor", "/admin/redirects"),
+        ("auth", "Accounts", "admin", "/admin/auth"),
     ]
     with TestClient(app) as c:
         assert c.get("/admin/", follow_redirects=False).status_code == 303  # sign in first
@@ -76,3 +78,43 @@ def test_without_the_panel_admin_pages_are_not_served(tmp_path, caplog):
     assert "no module is the admin panel" in caplog.text
     with TestClient(app) as c:
         assert c.get("/admin/content/").status_code == 404
+
+
+def test_accounts_in_the_panel(tmp_path):
+    from nest_auth.sessions import AccountError, account, update_account
+
+    app = make(tmp_path)
+    db = app.state.nest.bindings.get("nest.db")
+    with TestClient(app) as c:
+        sign_in(c, app, "root@example.ro", ("admin",))
+        root = account(db, 1)
+        create_user(db, "ana@example.ro", "correct horse battery", roles=("editor",))
+        listing = c.get("/admin/auth/?q=ana", headers={"HX-Request": "true"}).text  # the rows only
+        assert "ana@example.ro" in listing and "root@example.ro" not in listing
+        h = {"X-CSRF-Token": c.cookies["nest_csrf"]}
+        r = c.post(
+            "/admin/auth/2",
+            data={"roles": "editor, moderator", "active": "1"},
+            headers=h,
+            follow_redirects=False,
+        )
+        assert r.status_code == 303 and account(db, 2).roles == ("editor", "moderator")
+        r = c.post("/admin/auth/1", data={"roles": "editor", "active": "1"}, headers=h)
+        assert (
+            r.status_code == 400
+            and "own administration" in r.text
+            and "admin" in account(db, 1).roles
+        )
+        assert (
+            c.post(
+                "/admin/auth/2", data={"roles": "Bad Role!", "active": "1"}, headers=h
+            ).status_code
+            == 400
+        )
+        c.post(
+            "/admin/auth/2", data={"roles": "editor"}, headers=h
+        )  # not active: signed out, no sign-in
+        assert account(db, 2).active is False
+        with pytest.raises(AccountError, match="last administrator"):
+            update_account(db, root.id, roles=[], active=True, by=999)
+        assert c.get("/admin/auth/999").status_code == 404

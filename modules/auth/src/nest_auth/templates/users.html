@@ -1,0 +1,21 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Accounts") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ _("Accounts") }}</h1>
+<form class="row" method="get" action="{{ base }}/">
+  <label class="field">{{ _("Search") }}
+    <input type="search" name="q" value="{{ q }}" hx-get="{{ base }}/" hx-trigger="input changed delay:250ms" hx-target="#rows" hx-swap="outerHTML"></label>
+</form>
+{% block rows %}
+<div id="rows" class="table-wrap"><table>
+  <thead><tr><th>{{ _("Email") }}</th><th>{{ _("Name") }}</th><th>{{ _("Roles") }}</th><th>{{ _("Active") }}</th><th>{{ _("Last sign-in") }}</th></tr></thead>
+  <tbody>{% for a in accounts %}<tr>
+    <td><a href="{{ base }}/{{ a.id }}">{{ a.email }}</a></td><td>{{ a.name }}</td><td>{{ a.roles|join(", ") or "—" }}</td>
+    <td>{% if a.active %}<span class="better">●</span>{% else %}<span class="worse">○ {{ _("inactive") }}</span>{% endif %}</td>
+    <td class="muted">{{ a.last_login_at.strftime("%d.%m.%Y %H:%M") if a.last_login_at else "—" }}</td>
+  </tr>{% else %}<tr><td colspan="5" class="muted">{{ _("No account.") }}</td></tr>{% endfor %}</tbody>
+</table>
+<p class="muted">{{ total }} {{ _("accounts") }}{% if pages > 1 %} · {% if page > 1 %}<a href="{{ base }}/?q={{ q|urlencode }}&amp;page={{ page - 1 }}">←</a>{% endif %} {{ page }}/{{ pages }} {% if page < pages %}<a href="{{ base }}/?q={{ q|urlencode }}&amp;page={{ page + 1 }}">→</a>{% endif %}{% endif %}</p>
+</div>
+{% endblock %}
+{% endblock %}
