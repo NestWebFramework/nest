@@ -47,6 +47,8 @@ dependencies = [
     "nest-game-relationship",
     "nest-game-dialogue",
     "nest-game-guild",
+    "nest-game-quest",
+    "nest-game-chronicle",
     "nest-content-voievodate",
 ]
 
@@ -109,6 +111,8 @@ nest-game-religion = { workspace = true }
 nest-game-relationship = { workspace = true }
 nest-game-dialogue = { workspace = true }
 nest-game-guild = { workspace = true }
+nest-game-quest = { workspace = true }
+nest-game-chronicle = { workspace = true }
 nest-content-voievodate = { workspace = true }
 
 [dependency-groups]
