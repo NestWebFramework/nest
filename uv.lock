@@ -23,6 +23,7 @@ members = [
     "nest-game-building",
     "nest-game-character",
     "nest-game-chronicle",
+    "nest-game-culture",
     "nest-game-dialogue",
     "nest-game-economy",
     "nest-game-farm",
@@ -640,6 +641,27 @@ requires-dist = [
     { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-game", editable = "game/engine" },
+]
+
+[[package]]
+name = "nest-game-culture"
+version = "0.1.0"
+source = { editable = "game/subsystems/culture" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-game" },
+    { name = "nest-game-character" },
+    { name = "nest-game-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-character", editable = "game/subsystems/character" },
+    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
 ]
 
 [[package]]
@@ -1291,6 +1313,7 @@ dependencies = [
     { name = "nest-game-building" },
     { name = "nest-game-character" },
     { name = "nest-game-chronicle" },
+    { name = "nest-game-culture" },
     { name = "nest-game-dialogue" },
     { name = "nest-game-economy" },
     { name = "nest-game-farm" },
@@ -1356,6 +1379,7 @@ requires-dist = [
     { name = "nest-game-building", editable = "game/subsystems/building" },
     { name = "nest-game-character", editable = "game/subsystems/character" },
     { name = "nest-game-chronicle", editable = "game/subsystems/chronicle" },
+    { name = "nest-game-culture", editable = "game/subsystems/culture" },
     { name = "nest-game-dialogue", editable = "game/subsystems/dialogue" },
     { name = "nest-game-economy", editable = "game/subsystems/economy" },
     { name = "nest-game-farm", editable = "game/subsystems/farm" },
