@@ -38,6 +38,7 @@ members = [
     "nest-game-relationship",
     "nest-game-religion",
     "nest-game-settlement",
+    "nest-game-travel",
     "nest-game-world",
     "nest-glossary",
     "nest-htmx",
@@ -943,6 +944,21 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-game-travel"
+version = "0.1.0"
+source = { editable = "game/subsystems/travel" }
+dependencies = [
+    { name = "nest-game" },
+    { name = "nest-game-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-game", editable = "game/engine" },
+    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
+]
+
+[[package]]
 name = "nest-game-world"
 version = "0.1.0"
 source = { editable = "game/subsystems/world" }
@@ -1162,6 +1178,7 @@ dependencies = [
     { name = "nest-game-relationship" },
     { name = "nest-game-religion" },
     { name = "nest-game-settlement" },
+    { name = "nest-game-travel" },
     { name = "nest-game-world" },
     { name = "nest-glossary" },
     { name = "nest-htmx" },
@@ -1220,6 +1237,7 @@ requires-dist = [
     { name = "nest-game-relationship", editable = "game/subsystems/relationship" },
     { name = "nest-game-religion", editable = "game/subsystems/religion" },
     { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
+    { name = "nest-game-travel", editable = "game/subsystems/travel" },
     { name = "nest-game-world", editable = "game/subsystems/world" },
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },
