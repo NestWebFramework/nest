@@ -1,0 +1,21 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("API tokens") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/">← {{ _("Applications") }}</a></p>
+<h1>{{ _("API tokens") }}</h1>
+<p class="muted">{{ _("Another orchestrator reads the keeper's API (/api/v1) with a token: Authorization: Bearer … A token is shown once, when it is made, and kept only as a hash.") }}</p>
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+{% if secret %}<div class="notice ok" role="status"><p>{{ _("The new token, shown this once. Copy it now:") }}</p><p><code>{{ secret }}</code></p></div>{% endif %}
+<form method="post" action="{{ base }}/tokens" class="row">{{ csrf_field }}
+  <label class="field">{{ _("Name (who will use it)") }}<input name="name" required maxlength="120"></label>
+  <button>{{ _("Make a token") }}</button>
+</form>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Name") }}</th><th>{{ _("Token") }}</th><th>{{ _("Made") }}</th><th>{{ _("Last used") }}</th><th></th></tr></thead>
+  <tbody>{% for t in tokens %}<tr>
+    <td>{{ t.name }}</td><td><code>{{ t.prefix }}…</code></td><td class="muted">{{ t.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+    <td class="muted">{{ t.last_used_at.strftime("%d.%m.%Y %H:%M") if t.last_used_at else "—" }}</td>
+    <td>{% if t.revoked %}<span class="worse">{{ _("revoked") }}</span>{% else %}<form method="post" action="{{ base }}/tokens/{{ t.id }}/revoke">{{ csrf_field }}<button class="secondary">{{ _("Revoke") }}</button></form>{% endif %}</td>
+  </tr>{% else %}<tr><td colspan="5" class="muted">{{ _("No token yet.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

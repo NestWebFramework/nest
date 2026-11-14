@@ -18,5 +18,17 @@
  "Route": "Ruta",
  "Bindings": "Legături",
  "Notes": "Note",
- "Description": "Descriere"
+ "Description": "Descriere",
+ "API tokens": "Tokenuri API",
+ "Another orchestrator reads the keeper's API (/api/v1) with a token: Authorization: Bearer … A token is shown once, when it is made, and kept only as a hash.": "Un alt orchestrator citește API-ul keeper-ului (/api/v1) cu un token: Authorization: Bearer … Un token se arată o singură dată, la creare, și se păstrează doar ca hash.",
+ "The new token, shown this once. Copy it now:": "Tokenul nou, arătat o singură dată. Copiază-l acum:",
+ "Name (who will use it)": "Nume (cine îl va folosi)",
+ "Make a token": "Creează un token",
+ "Name": "Nume",
+ "Token": "Token",
+ "Made": "Creat",
+ "Last used": "Ultima folosire",
+ "revoked": "revocat",
+ "Revoke": "Revocă",
+ "No token yet.": "Niciun token încă."
 }

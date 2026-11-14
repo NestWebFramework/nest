@@ -790,6 +790,23 @@ admin panel's, for the admin role.
 uv run nest run applications/keeper          # http://127.0.0.1:8000 → /admin/keeper/
 ```
 
+**The keeper's REST API** tells another orchestrator what Nest is and holds. It is read-only and
+versioned, at `<keeper route>/api/v1`:
+
+| Call | Answer |
+|---|---|
+| `GET /api/v1/ecosystem` | Nest itself: name, kind (web), version, the package types it knows |
+| `GET /api/v1/apps` | every application: version, port, whether it runs, its problems |
+| `GET /api/v1/apps/{name}` | one application: its plan (start order, routes, bindings, notes) |
+| `GET /api/v1/packages` | every package Nest can see, by type |
+
+* **Tokens:** every call carries `Authorization: Bearer nk_…`. A token is made in the keeper's
+  admin panel (API tokens) or with `nest keeper token APP NAME`. It is shown once and kept only
+  as a SHA-256 hash, and it can be revoked (`nest keeper revoke`).
+* **No cookies:** they are not read, so a signed-in browser cannot be made to call the API.
+* **Throttling:** an address sending bad tokens again and again is answered 429 for a minute.
+* **No caching:** answers are marked not to be cached.
+
 ## Safe by default
 
 Responses over 1 KB are gzipped; the railway map's 292 KB travel as 50 KB. Every response

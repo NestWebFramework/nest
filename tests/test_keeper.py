@@ -83,3 +83,101 @@ def test_the_keepers_pages(tmp_path):
         assert c.get("/admin/keeper/app/nowhere").status_code == 404
         packages = c.get("/admin/keeper/packages").text
         assert "subsystem" in packages and "nest.module.admin" in packages
+
+
+def make_keeper(tmp_path):
+    root = tmp_path / "keeper"
+    root.mkdir()
+    (root / "module.yml").write_text(
+        textwrap.dedent(APP).replace("APPS", str(REPO / "applications")), encoding="utf-8"
+    )
+    return create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
+
+
+def test_the_rest_api_answers_only_to_a_token(tmp_path):
+    from nest_keeper import rest as keeper_api
+    from nest_keeper import tokens
+    from nest_keeper.models import KeeperToken
+    from sqlalchemy import select
+
+    keeper_api._failures.clear()
+    app = make_keeper(tmp_path)
+    db = app.state.nest.bindings.get("nest.db")
+    secret, t = tokens.create(db, "orchestrator")
+    with TestClient(app) as c:
+        assert c.get("/api/v1/apps").status_code == 401
+        assert c.get("/api/v1/apps").headers["www-authenticate"].startswith("Bearer")
+        assert (
+            c.get("/api/v1/apps", headers={"Authorization": "Bearer nk_wrong"}).status_code == 401
+        )
+        auth = {"Authorization": f"Bearer {secret}"}
+        r = c.get("/api/v1/", headers=auth)
+        assert (
+            r.status_code == 200
+            and r.json()["token"]["name"] == "orchestrator"
+            and r.headers["cache-control"] == "no-store"
+        )
+        eco = c.get("/api/v1/ecosystem", headers=auth).json()
+        assert (
+            eco["name"] == "nest"
+            and eco["kind"] == "web"
+            and {"module", "application", "subsystem"} <= set(eco["types"])
+        )
+        apps = {a["name"]: a for a in c.get("/api/v1/apps", headers=auth).json()["apps"]}
+        assert apps["voievodate"]["port"] == 8500 and apps["voievodate"]["running"] in (True, False)
+        one = c.get("/api/v1/apps/voievodate", headers=auth).json()
+        assert one["bindings"] == {"nest.db": ["db-sqlite"]} and any(
+            u["name"] == "economy" for u in one["units"]
+        )
+        assert c.get("/api/v1/apps/nowhere", headers=auth).status_code == 404
+        assert any(
+            p["name"] == "keeper"
+            for p in c.get("/api/v1/packages", headers=auth).json()["packages"]
+        )
+        with db.session() as s:
+            row = s.scalar(select(KeeperToken))
+            assert (
+                row.digest != secret
+                and secret not in row.prefix + row.digest
+                and row.last_used_at is not None
+            )
+        tokens.revoke(db, t.id)
+        assert c.get("/api/v1/", headers=auth).status_code == 401
+        for _ in range(25):
+            c.get("/api/v1/", headers={"Authorization": "Bearer nk_guess"})
+        assert c.get("/api/v1/", headers={"Authorization": "Bearer nk_guess"}).status_code == 429
+    keeper_api._failures.clear()
+
+
+def test_tokens_in_the_panel_are_shown_once(tmp_path):
+    from nest_keeper import rest as keeper_api
+
+    keeper_api._failures.clear()
+    app = make_keeper(tmp_path)
+    with TestClient(app) as c:
+        create_user(
+            app.state.nest.bindings.get("nest.db"),
+            "root@example.ro",
+            "correct horse battery",
+            roles=("admin",),
+        )
+        c.get("/healthz")
+        c.post(
+            "/cont/login",
+            data={
+                "csrf_token": c.cookies["nest_csrf"],
+                "email": "root@example.ro",
+                "password": "correct horse battery",
+            },
+        )
+        h = {"X-CSRF-Token": c.cookies["nest_csrf"]}
+        page = c.post("/admin/keeper/tokens", data={"name": "orchestrator"}, headers=h).text
+        import re
+
+        (secret,) = re.findall(r"<code>(nk_[A-Za-z0-9_-]{20,})</code>", page)
+        assert secret not in c.get("/admin/keeper/tokens").text  # never shown again
+        assert c.get("/api/v1/", headers={"Authorization": f"Bearer {secret}"}).status_code == 200
+        assert c.get("/api/v1/").status_code == 401  # a signed-in browser's cookie is not a token
+        c.post("/admin/keeper/tokens/1/revoke", headers=h)
+        assert c.get("/api/v1/", headers={"Authorization": f"Bearer {secret}"}).status_code == 401
+        assert c.post("/admin/keeper/tokens", data={"name": ""}, headers=h).status_code == 400

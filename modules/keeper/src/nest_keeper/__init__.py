@@ -17,18 +17,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from nest_auth import CurrentUser, require_role
+from nest_db import Database
 
-from nest import ModuleHost, admin_url, render
+from nest import ModuleHost, admin_url, bound, render
 from nest.catalog import Catalog, Entry
 from nest.contract import load_contracts
 from nest.host import module_state
 from nest.manifest import MANIFEST_FILE, ManifestError, load_manifest
 from nest.resolve import PlanError, plan
+from nest_keeper import tokens
 
-__all__ = ["applications"]
+__all__ = ["applications", "probed"]
 
 admin = APIRouter()
 router = APIRouter()
@@ -161,6 +163,62 @@ async def detail(request: Request, name: str, user: CurrentUser = Depends(keeper
     return render(request, "keeper/app.html", app=app, base=admin_url(request, "keeper"))
 
 
+@admin.get("/tokens")
+def token_list(
+    request: Request, user: CurrentUser = Depends(keeper), db: Database = bound(Database)
+):
+    return render(
+        request,
+        "keeper/tokens.html",
+        tokens=tokens.listing(db),
+        secret=None,
+        error=None,
+        base=admin_url(request, "keeper"),
+    )
+
+
+@admin.post("/tokens")
+def token_create(
+    request: Request,
+    name: str = Form(""),
+    user: CurrentUser = Depends(keeper),
+    db: Database = bound(Database),
+):
+    try:
+        secret, _t = tokens.create(db, name)
+    except ValueError as e:
+        return render(
+            request,
+            "keeper/tokens.html",
+            status_code=400,
+            tokens=tokens.listing(db),
+            secret=None,
+            error=str(e),
+            base=admin_url(request, "keeper"),
+        )
+    # Shown this once, on this answer (never stored, never in an address or a log).
+    return render(
+        request,
+        "keeper/tokens.html",
+        tokens=tokens.listing(db),
+        secret=secret,
+        error=None,
+        base=admin_url(request, "keeper"),
+    )
+
+
+@admin.post("/tokens/{token_id:int}/revoke")
+def token_revoke(
+    request: Request,
+    token_id: int,
+    user: CurrentUser = Depends(keeper),
+    db: Database = bound(Database),
+):
+    if not tokens.revoke(db, token_id):
+        raise HTTPException(404)
+    return RedirectResponse(admin_url(request, "keeper", "tokens"), status_code=303)
+
+
 @router.get("/")
 def front(request: Request):
     return RedirectResponse(admin_url(request, "keeper") + "/", status_code=303)
@@ -174,3 +232,7 @@ def setup(host: ModuleHost) -> None:
     host.admin(admin)
     if host.route is not None:
         host.mount(router)
+        host.mount(api)  # the REST API, at <route>/api/v1
+
+
+from nest_keeper.rest import api  # noqa: E402 - after applications and probed, which it uses

@@ -849,6 +849,7 @@ dependencies = [
     { name = "nest-admin" },
     { name = "nest-auth" },
     { name = "nest-core" },
+    { name = "nest-db" },
 ]
 
 [package.metadata]
@@ -856,6 +857,7 @@ requires-dist = [
     { name = "nest-admin", editable = "modules/admin" },
     { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
 ]
 
 [[package]]

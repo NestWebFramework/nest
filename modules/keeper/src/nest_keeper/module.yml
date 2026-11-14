@@ -8,7 +8,9 @@
 # problems, and whether it answers its health check on its port. The keeper's
 # pages are its admin panel's (admin role); its route sends to the panel.
 # What is generic to every application is here; what is specific to one is in
-# that application's own admin panel.
+# that application's own admin panel. Its REST API (<route>/api/v1) tells
+# another orchestrator the same, to a bearer token (made in the panel or with
+# `nest keeper token`, kept as a hash, revocable).
 #
 module:
   name: keeper
@@ -27,12 +29,20 @@ provides:
   import: nest_keeper
   exports: [applications]
 
+requires:
+  interfaces: [nest.db]
+
 deps:
+  db: ">=0.2,<1"
   auth: ">=0.2,<1"
   admin: ">=0.1,<1"
 
 settings:
   apps: {type: str, default: "applications", description: "Folders of applications, by comma (relative to where Nest runs)."}
+
+db:
+  migrations: migrations
+  metadata: "nest_keeper.models:Base"
 
 admin:
   title: Applications
