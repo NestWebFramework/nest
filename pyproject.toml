@@ -58,6 +58,7 @@ dependencies = [
     "nest-game-war",
     "nest-game-overlord",
     "nest-game-culture",
+    "nest-game-property",
     "nest-content-voievodate",
 ]
 
@@ -131,6 +132,7 @@ nest-game-justice = { workspace = true }
 nest-game-war = { workspace = true }
 nest-game-overlord = { workspace = true }
 nest-game-culture = { workspace = true }
+nest-game-property = { workspace = true }
 nest-content-voievodate = { workspace = true }
 
 [dependency-groups]
