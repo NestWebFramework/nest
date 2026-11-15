@@ -558,7 +558,8 @@ class NpcSubsystem(Subsystem):
 benchmark (`nest_saga.bench`) measures it. Game masters run it from the admin panel's **Tools** page
 (`<admin route>/saga/tools`): it shows progress while it runs, keeps each run's results in the
 workspace (`data/bench/`, the newest 50), and compares two runs in a before/after table with the
-change. From a terminal, `tools/bench_game.py` does the same.
+change. From a terminal, `tools/bench_saga.py` does the same; a game passes its own content
+with `--local` (its content pack's folder), as the Tools page passes the running game's.
 
 The benchmark runs in a child process at low priority, one run at a time, in a scratch folder with
 its own SQLite database. Its environment is cleared of `NEST_*`, so the live secret and database
@@ -618,7 +619,7 @@ player subsystems will add a mind on top.
 * **Needs:** every living character gets hungry, thirsty and tired by the game hour (settings),
   so a world runs the same at any tick or time scale. Rest and sleep restore stamina. At full
   hunger or thirst, health falls.
-* **Emotions** follow voievodate's rules: feelings fade, want brings sadness, anger and fear,
+* **Emotions** follow the old engine's rules: feelings fade, want brings sadness, anger and fear,
   and comfort brings joy.
 * **Diseases** incubate, hurt every few hours, progress, and roll once for death at 80%.
   Contagious ones spread between characters in the same place, using the world's seeded
@@ -634,8 +635,8 @@ comments name. The commands are `CreateCharacter`, `Infect`, `Treat`, `GrantExpe
 illnesses, and `saga.<server>.character.<id>` for one character's sheet.
 
 **`map`** is the land: every tile's terrain and county, and the regions above (county, duchy,
-principality, kingdom). The voievodate pack bakes them once with `tools/export_map.py`, from
-the old engine's 65 county outlines:
+principality, kingdom). A game's content pack bakes them once: Voievodate's does it with its
+`tools/export_map.py`, from the old engine's 65 county outlines:
 
 * `regions.yml` holds the regions, with outlines and colours to draw.
 * `map.bin` holds 501 × 501 tiles of two bytes each, gzipped to 9 KB. The game holds it in memory,
@@ -665,7 +666,7 @@ materials, 7 upgrades).
   inventory.
 * **Upgrades** go in order, cost their materials and gold (a character's money or a
   settlement's treasury) and take their game hours.
-* **Decay:** buildings decay by game day and year, using voievodate's odds and the world's
+* **Decay:** buildings decay by game day and year, using the old engine's odds and the world's
   generator. Storms damage roofs. Wells improve the water supply, sanitation and fire
   protection around them; the old code meant to, but no building was tagged.
 
@@ -676,7 +677,7 @@ buildings are public, so anyone may follow `saga.<server>.settlement[.<id>]` and
 The checks at start report what the original data lacks. Settlement evolution past a village
 asks for technologies no pack defines (`basic_trade`, `trade_routes`, `stone_masonry`,
 `advanced_civil_engineering`), and a city is granted a `cathedral` that is no building.
-Placement by terrain waits for the map, voievodate's 501 × 501 tiles.
+Placement by terrain waits for the map, the old engine's 501 × 501 tiles.
 
 **`npc`** gives NPCs a mind. Its data is in `npc.yml`: 26 GOAP actions, 9 conscience rules, and
 each profession's work, skill, workplace and schedule by season. Names, founders and provisions
@@ -844,12 +845,12 @@ admin: {title: Content, order: 10, role: editor, description: Pages, articles an
 ```
 
 The panel mounts each module's pages at `<admin route>/<module>`: `/admin/content`,
-`/admin/redirects`, `/admin/game`. It shows each user a menu and a front page with only the pages
+`/admin/redirects`, `/admin/saga`. It shows each user a menu and a front page with only the pages
 their roles open (the `admin` role opens all). A module's admin templates extend
 `admin/layout.html`, and links come from `admin_url(request, module, path)`.
 
-So morlaca and transilpedia, made of the same modules, have the same panel. The game has the
-game's panel: its servers, its land and its tools (`/admin/game`). No panel is written for an
+So morlaca and transilpedia, made of the same modules, have the same panel. A game made with
+the Saga engine has the engine's panel: its servers, its land and its tools (`/admin/saga`). No panel is written for an
 application, and an application without the admin module serves no admin pages (it says so at
 start). A module whose pages are all in the panel needs no route of its own (redirects).
 
@@ -859,8 +860,11 @@ start). A module whose pages are all in the panel needs no route of its own (red
 and covers what is generic to them. What is specific to one application is in that application's
 admin panel. The keeper finds applications in two ways:
 
-* installed packages of type application, which is how a site in a repository of its own is seen;
-* the folders of its `apps` setting (`applications` by default).
+* installed packages of type application;
+* the folders of its `apps` setting (`applications` by default): a folder of applications, or
+  a folder that is one application, as each site's repository is. The keeper application
+  lists Nest's own (`applications`: the keeper and hello) and the sites in their repositories
+  beside Nest: `../voievodate`, `../gari`, `../morlaca`, `../regionalisme`, `../transilpedia`.
 
 For each application it shows the manifest, the plan (start order, routes, bindings, notes), any
 problems, and whether it answers its health check on its port. That check runs on this machine
