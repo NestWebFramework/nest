@@ -242,3 +242,52 @@ def test_the_auth_command_creates_an_account(site, tmp_path, monkeypatch, capsys
     with client_for(site, tmp_path / "ws") as c:
         assert post(c, "/auth/login", email="ed@example.ro", password=PASSWORD).status_code == 303
         assert c.get("/private/admin").status_code == 403
+
+
+def test_a_member_keeps_their_own_account(site, tmp_path):
+    with client_for(site, tmp_path / "ws") as c, client_for(site, tmp_path / "ws") as elsewhere:
+        register(c)
+        post(elsewhere, "/auth/login", email="ana@example.ro", password=PASSWORD)
+        assert elsewhere.get("/private/").status_code == 200  # signed in on a second device
+        page = c.get("/auth/account").text
+        assert "ana@example.ro" in page and 'action="/auth/account/password"' in page
+        assert (
+            post(c, "/auth/account/name", name="Ana Popa").headers["location"]
+            == "/auth/account?saved=name"
+        )
+        assert "secret for Ana Popa" in c.get("/private/").text
+        wrong = post(
+            c,
+            "/auth/account/password",
+            current="nope",
+            new="a new long secret",
+            again="a new long secret",
+        )
+        assert wrong.status_code == 400 and "current password is not right" in wrong.text
+        differ = post(
+            c, "/auth/account/password", current=PASSWORD, new="a new long secret", again="another"
+        )
+        assert differ.status_code == 400 and "differ" in differ.text
+        done = post(
+            c,
+            "/auth/account/password",
+            current=PASSWORD,
+            new="a new long secret",
+            again="a new long secret",
+        )
+        assert done.headers["location"] == "/auth/account?saved=password"
+        assert c.get("/private/").status_code == 200  # here stays signed in
+        assert elsewhere.get("/private/", follow_redirects=False).status_code in (
+            302,
+            303,
+            307,
+        )  # the other is out
+        out = post(c, "/auth/account/sessions")
+        assert out.status_code == 303 and c.get(
+            "/private/", follow_redirects=False
+        ).status_code in (302, 303, 307)
+        assert post(c, "/auth/login", email="ana@example.ro", password=PASSWORD).status_code == 401
+        assert (
+            post(c, "/auth/login", email="ana@example.ro", password="a new long secret").status_code
+            == 303
+        )

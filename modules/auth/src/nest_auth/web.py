@@ -251,6 +251,60 @@ def logout(request: Request, db: Database = bound(Database)):
     return response
 
 
+@router.get("/account")
+def account_page(request: Request, saved: str = "", user: CurrentUser = Depends(require_user)):
+    """A member's own account: their name, their password, their sessions."""
+    return render(request, "auth/account.html", me=user, saved=saved, error=None)
+
+
+def _account_again(request: Request, user: CurrentUser, error: str) -> Response:
+    return render(request, "auth/account.html", me=user, saved="", error=error, status_code=400)
+
+
+@router.post("/account/name")
+def account_name(
+    request: Request,
+    name: str = Form(""),
+    user: CurrentUser = Depends(require_user),
+    db: Database = bound(Database),
+):
+    sessions.rename(db, user.id, name)
+    return RedirectResponse(f"{_state(request)['urls']['account']}?saved=name", status_code=303)
+
+
+@router.post("/account/password")
+def account_password(
+    request: Request,
+    current: str = Form(""),
+    new: str = Form(""),
+    again: str = Form(""),
+    user: CurrentUser = Depends(require_user),
+    db: Database = bound(Database),
+):
+    t = translator(request)
+    if new != again:
+        return _account_again(request, user, t("The two new passwords differ."))
+    try:
+        sessions.change_password(
+            db, user.id, current, new, min_length=_state(request)["min_password_length"]
+        )
+    except AccountError as e:
+        return _account_again(request, user, t(e.message, **e.params))
+    sessions.close_other_sessions(db, user.id, request.cookies.get(COOKIE, ""))  # here stays in
+    return RedirectResponse(f"{_state(request)['urls']['account']}?saved=password", status_code=303)
+
+
+@router.post("/account/sessions")
+def account_sessions(
+    request: Request, user: CurrentUser = Depends(require_user), db: Database = bound(Database)
+):
+    """Sign out everywhere, here too."""
+    sessions.close_all_sessions(db, user.id)
+    response = RedirectResponse("/", status_code=303)
+    response.delete_cookie(COOKIE, path="/")
+    return response
+
+
 @router.get("/register")
 def register_page(request: Request, db: Database = bound(Database)):
     if not _can_register(request, db):

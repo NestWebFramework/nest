@@ -168,6 +168,36 @@ def close_all_sessions(db: Any, user_id: int) -> None:
         s.execute(delete(Session).where(Session.user_id == user_id))
 
 
+def close_other_sessions(db: Any, user_id: int, keep_token: str) -> None:
+    """Sign a member out everywhere but here (after a new password, say)."""
+    with db.session() as s, s.begin():
+        s.execute(
+            delete(Session).where(Session.user_id == user_id, Session.id != token_id(keep_token))
+        )
+
+
+def rename(db: Any, user_id: int, name: str) -> None:
+    """A member's own name, as an account shows it (an application may name it otherwise)."""
+    with db.session() as s, s.begin():
+        user = s.get(User, user_id)
+        if user is None:
+            raise AccountError("That account no longer exists.")
+        user.name = name.strip()[:120]
+
+
+def change_password(db: Any, user_id: int, current: str, new: str, *, min_length: int = 10) -> None:
+    """A member's new password, given the one they have."""
+    if len(new) < min_length:
+        raise AccountError("A password has at least {n} characters.", n=min_length)
+    if len(new) > MAX_PASSWORD:
+        raise AccountError("That password is too long.")
+    with db.session() as s, s.begin():
+        user = s.get(User, user_id)
+        if user is None or not verify_password(current, user.password_hash):
+            raise AccountError("The current password is not right.")
+        user.password_hash = hash_password(new)
+
+
 def users_by_ids(db: Any, ids: list[int]) -> dict[int, CurrentUser]:
     """Members by id, for modules that show who wrote what."""
     if not ids:

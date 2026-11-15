@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Your account") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<section class="stack account">
+  <h1>{{ _("Your account") }}</h1>
+  <p class="muted">{{ me.email }}</p>
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  {% if saved == "name" %}<p class="notice ok" role="status">{{ _("Your name is saved.") }}</p>{% endif %}
+  {% if saved == "password" %}<p class="notice ok" role="status">{{ _("Your password is changed; you are signed out everywhere else.") }}</p>{% endif %}
+
+  <form class="stack" method="post" action="{{ auth.account }}/name">
+    {{ csrf_field }}
+    <h2>{{ _("Your name") }}</h2>
+    <div class="field"><label for="acct-name">{{ _("Name") }}</label>
+      <input id="acct-name" name="name" maxlength="120" value="{{ me.name }}" autocomplete="name"></div>
+    <button type="submit">{{ _("Save") }}</button>
+  </form>
+
+  <form class="stack" method="post" action="{{ auth.account }}/password">
+    {{ csrf_field }}
+    <h2>{{ _("Your password") }}</h2>
+    <div class="field"><label for="acct-current">{{ _("Current password") }}</label>
+      <input id="acct-current" name="current" type="password" autocomplete="current-password" required></div>
+    <div class="field"><label for="acct-new">{{ _("New password") }}</label>
+      <input id="acct-new" name="new" type="password" autocomplete="new-password" required></div>
+    <div class="field"><label for="acct-again">{{ _("New password, again") }}</label>
+      <input id="acct-again" name="again" type="password" autocomplete="new-password" required></div>
+    <button type="submit">{{ _("Change the password") }}</button>
+  </form>
+
+  <div class="stack danger-zone">
+    <h2>{{ _("Signing out") }}</h2>
+    <div class="row">
+      <form method="post" action="{{ auth.logout }}">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Sign out") }}</button></form>
+      <form method="post" action="{{ auth.account }}/sessions">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Sign out everywhere") }}</button></form>
+    </div>
+  </div>
+</section>
+{% endblock %}

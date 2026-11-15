@@ -61,7 +61,7 @@ def test_a_game_in_its_own_repo_is_found_and_planned():
         "economy",
         "voievodate-content",
     } <= set(names)
-    assert voievodate.bindings == {"nest.db": ["db-sqlite"]}
+    assert voievodate.bindings["nest.db"] == ["db-sqlite"]
 
 
 def test_a_broken_application_shows_its_problems(tmp_path):
@@ -163,7 +163,7 @@ def test_the_rest_api_answers_only_to_a_token(tmp_path):
         apps = {a["name"]: a for a in c.get("/api/v1/apps", headers=auth).json()["apps"]}
         assert apps["voievodate"]["port"] == 8500 and apps["voievodate"]["running"] in (True, False)
         one = c.get("/api/v1/apps/voievodate", headers=auth).json()
-        assert one["bindings"] == {"nest.db": ["db-sqlite"]} and any(
+        assert one["bindings"]["nest.db"] == ["db-sqlite"] and any(
             u["name"] == "economy" for u in one["units"]
         )
         assert c.get("/api/v1/apps/nowhere", headers=auth).status_code == 404

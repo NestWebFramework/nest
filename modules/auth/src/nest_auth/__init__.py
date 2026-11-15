@@ -56,7 +56,9 @@ def setup(host: ModuleHost) -> None:
         "login": host.url("login"),
         "logout": host.url("logout"),
         "register": host.url("register"),
+        "account": host.url("account"),
     }
+    host.state["urls"] = urls
 
     @host.context
     def _user(request):  # every page can say who is signed in

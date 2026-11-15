@@ -2,7 +2,7 @@
 {% if user %}
 <form class="row" method="post" action="{{ auth.logout }}">
   {{ csrf_field }}
-  <span class="muted">{{ user.label }}</span>
+  <a class="muted" href="{{ auth.account }}">{{ user.label }}</a>
   <button class="secondary" type="submit">{{ _("Sign out") }}</button>
 </form>
 {% else %}
