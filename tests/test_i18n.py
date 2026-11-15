@@ -83,9 +83,14 @@ def site(tmp_path):
               nest.db: {providers: [db-sqlite]}
             locales:
               - {locale: ro, file: locales/ro.json}
+              - {locale: en, file: locales/en.json}
         """,
-        # The application rewords one of the auth module's texts.
-        "locales/ro.json": json.dumps({"Sign in": "Intră în cont"}, ensure_ascii=False),
+        # The application rewords the auth module: a text anywhere, and one in auth alone
+        # ("auth::"), in Romanian and in English alike.
+        "locales/ro.json": json.dumps(
+            {"Sign in": "Intră în cont", "auth::Email": "Adresa ta"}, ensure_ascii=False
+        ),
+        "locales/en.json": json.dumps({"auth::Password": "Secret word"}),
     }
     root = tmp_path / "site"
     for rel, body in files.items():
@@ -101,7 +106,7 @@ def test_pages_speak_the_visitors_language(site):
         assert '<html lang="ro">' in ro
         assert "Intră în cont" in ro and "Parolă" in ro  # the app's wording, the module's catalog
         en = c.get("/auth/login", headers={"Accept-Language": "en-US,en"}).text
-        assert '<html lang="en">' in en and "Password" in en and "Parolă" not in en
+        assert '<html lang="en">' in en and "Secret word" in en and "Parolă" not in en
 
 
 def test_messages_from_python_are_translated(site):
@@ -133,3 +138,20 @@ def test_the_language_switch(site):
         assert r.headers["location"] == "/" and "set-cookie" not in r.headers
         page = c.get("/auth/login").text
         assert 'value="ro"' in page and 'aria-current="true" lang="en"' in page
+
+
+def test_an_application_rewords_one_module_in_any_language(site):
+    with site as c:
+        ro = c.get("/auth/login").text
+        assert "Adresa ta" in ro and ">Email<" not in ro  # auth's "Email", reworded for auth only
+        en = c.get("/auth/login", headers={"Accept-Language": "en"}).text
+        assert "Secret word" in en and ">Password<" not in en  # English is reworded the same way
+
+
+def test_a_page_embedded_in_an_applications_screen_is_only_its_content(site):
+    with site as c:
+        r = c.get("/auth/login", headers={"X-Nest-Embed": "content"})
+        assert r.status_code == 200 and "<html" not in r.text and 'id="auth-form"' in r.text
+        assert "X-Nest-Embed" in r.headers["vary"]  # a cache keeps the page and the part apart
+        assert "<html" in c.get("/auth/login").text  # without the header, the whole page
+        assert c.get("/auth/login", headers={"X-Nest-Embed": "nowhere"}).status_code == 400

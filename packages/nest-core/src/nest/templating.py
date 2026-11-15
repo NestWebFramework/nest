@@ -50,6 +50,11 @@ def make_environment(
     )
 
 
+# A page asked with this header answers only one of its blocks (``content`` by default), so
+# an application can show any module's page inside its own screen: a game's drawer.
+EMBED_HEADER = "X-Nest-Embed"
+
+
 def is_htmx(request: Request) -> bool:
     """An htmx request that wants a fragment (a boosted one wants the page)."""
     return (
@@ -93,10 +98,26 @@ def render(
     and ``headers`` are taken by ``render`` itself (the first three parameters
     are positional-only, so ``name=`` or ``request=`` reach the template).
     """
+    from nest.i18n import translator  # noqa: PLC0415 - the host imports this module first
+
     nest = request.app.state.nest
     ctx = {**nest.template_context(request), **(context or {}), **values}
-    if fragment and is_htmx(request):
+    if "/" in template:  # a module's template: the application may reword that module alone
+        ctx["_"], ctx["ngettext"] = translator(request).scoped(template.split("/", 1)[0])
+    out_headers = dict(headers or {})
+    embed = request.headers.get(EMBED_HEADER)
+    if embed is not None:
+        # an application shows this page inside its own screen (a game's drawer): only its
+        # content, the block it names (content by default), never the frame
+        block = embed.strip() or "content"
+        if block not in nest.templates.get_template(template).blocks:
+            return HTMLResponse(f"no block '{block}' to embed", status_code=400)
+        body = render_block(nest.templates, template, block, ctx)
+    elif fragment and is_htmx(request):
         body = render_block(nest.templates, template, fragment, ctx)
     else:
         body = nest.templates.get_template(template).render(ctx)
-    return HTMLResponse(body, status_code=status_code, headers=dict(headers or {}))
+    out_headers["vary"] = ", ".join(
+        filter(None, [out_headers.get("vary"), "HX-Request", EMBED_HEADER])
+    )
+    return HTMLResponse(body, status_code=status_code, headers=out_headers)

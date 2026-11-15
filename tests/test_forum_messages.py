@@ -279,3 +279,32 @@ def test_each_module_brings_its_own_look_after_the_theme(app):
     assert c.get("/assets/forum/forum.css").status_code == 200
     theme = c.get("/assets/base/nest.css").text
     assert ".post-meta" not in theme and ".message.mine" not in theme  # each module keeps its own
+
+
+def test_an_application_names_its_people_and_emails_never_show(app):
+    # an application (a game) knows its members by its own names: people.label and people.find
+    nest = app.state.nest
+    alice = client(app, "alice@example.ro")
+    bob = client(app, "bob@example.ro")
+    from nest_auth.sessions import find_user  # noqa: PLC0415
+
+    a_id = find_user(alice.db, "alice@example.ro").id
+    b_id = find_user(alice.db, "bob@example.ro").id
+    names = {a_id: "Radu Oieru", b_id: "Maria"}
+    nest._lookups.setdefault("people.label", []).append(("test", names.get))
+    nest._lookups.setdefault("people.find", []).append(
+        ("test", lambda who: {v.casefold(): k for k, v in names.items()}.get(who.casefold()))
+    )
+    token = alice.cookies["nest_csrf"]
+    by_email = alice.post(
+        "/mesaje/new", data={"csrf_token": token, "to": "bob@example.ro", "body": "Hi"}
+    )
+    assert by_email.status_code == 400  # not by email, where the application names its people
+    sent = alice.post(
+        "/mesaje/new",
+        data={"csrf_token": token, "to": "maria", "body": "Bună ziua"},
+        follow_redirects=False,
+    )
+    assert sent.status_code == 303
+    page = bob.get("/mesaje/").text
+    assert "Radu Oieru" in page and "alice@example.ro" not in page

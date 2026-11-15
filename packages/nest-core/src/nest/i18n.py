@@ -79,6 +79,24 @@ class Translator:
 
     __call__ = gettext
 
+    def scoped(self, scope: str) -> tuple[Callable[..., str], Callable[..., str]]:
+        """gettext and ngettext for one module's templates: an application's catalog may
+        reword that module alone ("messages::Messages": "Letters"), else the text as anywhere."""
+
+        def gettext(message: str, **params: Any) -> str:
+            key = f"{scope}::{message}"
+            if key in self._messages:
+                return self.gettext(key, **params)
+            return self.gettext(message, **params)
+
+        def ngettext(singular: str, plural: str, n: int, **params: Any) -> str:
+            key = f"{scope}::{singular}"
+            if key in self._messages:
+                return self.ngettext(key, plural, n, **params)
+            return self.ngettext(singular, plural, n, **params)
+
+        return gettext, ngettext
+
     def ngettext(self, singular: str, plural: str, n: int, **params: Any) -> str:
         entry = self._messages.get(singular)
         if isinstance(entry, list) and entry:

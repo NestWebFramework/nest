@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
-from nest_auth import CurrentUser, find_user, require_user, users_by_ids
+from nest_auth import CurrentUser, find_person, known_as, require_user
 from nest_db import Database
 from starlette.concurrency import run_in_threadpool
 
@@ -30,8 +30,10 @@ def inbox(
     db: Database = bound(Database),
 ):
     rows = service.inbox(db, user.id, archived=bool(archived))
-    names = users_by_ids(
-        db, [uid for r in rows for uid in r.others] + [r.last.sender_id for r in rows if r.last]
+    names = known_as(
+        request.app.state.nest,
+        db,
+        [uid for r in rows for uid in r.others] + [r.last.sender_id for r in rows if r.last],
     )
     return render(
         request,
@@ -78,7 +80,7 @@ async def create(
         return again(t("At most {n} people in one conversation.", n=state["max_recipients"]))
     found = []
     for name in names:
-        member = await run_in_threadpool(find_user, db, name)
+        member = await run_in_threadpool(find_person, request.app.state.nest, db, name)
         if member is None:
             return again(t("Nobody here is called “{name}”.", name=name))
         found.append(member.id)
@@ -112,7 +114,7 @@ def conversation(
         "messages/conversation.html",
         conversation=c,
         messages=rows,
-        names=users_by_ids(db, people),
+        names=known_as(request.app.state.nest, db, people),
         people=people,
         me=user,
         me_id=user.id,
@@ -124,7 +126,7 @@ def conversation(
 
 def message_html(request: Request, m: Any, viewer_id: int) -> str:
     nest = request.app.state.nest
-    names = users_by_ids(nest.bindings.get("nest.db"), [m.sender_id])
+    names = known_as(nest, nest.bindings.get("nest.db"), [m.sender_id])
     return nest.render_block(
         "messages/conversation.html", "message", m=m, names=names, me_id=viewer_id
     )

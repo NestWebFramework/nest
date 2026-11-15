@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -279,3 +279,32 @@ def update_account(db: Any, user_id: int, *, roles: list[str], active: bool, by:
         if not active:
             s.execute(delete(Session).where(Session.user_id == user_id))
         return _account(u)
+
+
+# -- people as an application shows them --
+#
+# Community modules (messages, the forum, comments) show members and find them by name. An
+# application may have its own way of naming them: a game knows its players by their
+# characters. It answers two lookups, "people.label" (account id -> the name shown) and
+# "people.find" (a name -> account id); then the modules use those, and never show or match an
+# email. Without answers, members are shown and found by their account.
+
+
+def known_as(nest: Any, db: Any, ids: list[int]) -> dict[int, CurrentUser]:
+    """Members by id, labelled as the application shows them (people.label), else by account."""
+    found = users_by_ids(db, ids)
+    if not nest.answered("people.label"):
+        return found
+    out = {}
+    for uid, user in found.items():
+        label = nest.lookup("people.label", uid)
+        out[uid] = replace(user, name=label or "?", email="")  # the email never shows
+    return out
+
+
+def find_person(nest: Any, db: Any, who: str) -> CurrentUser | None:
+    """A member by the name the application knows them by (people.find), else by account."""
+    if nest.answered("people.find"):
+        uid = nest.lookup("people.find", (who or "").strip())
+        return known_as(nest, db, [uid]).get(uid) if uid is not None else None
+    return find_user(db, who)

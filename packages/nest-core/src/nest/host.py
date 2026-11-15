@@ -204,6 +204,10 @@ class Nest:
                 return answer
         return None
 
+    def answered(self, name: str) -> bool:
+        """Whether any module answers ``name`` (so another may rely on it instead of its own way)."""
+        return bool(self._lookups.get(name))
+
     def render_block(self, name: str, block: str, **context: Any) -> str:
         """A fragment rendered outside a request, for an SSE event."""
         return render_block(self.templates, name, block, context)
