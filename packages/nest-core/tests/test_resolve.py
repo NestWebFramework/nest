@@ -69,6 +69,68 @@ def test_every_problem_is_reported_at_once(app_dir):
     assert "blog requires nest.search; bind it in demo's module.yml" in text
 
 
+def test_an_applications_deps_are_its_contract(app_dir):
+    def app(deps):
+        return module_yml(
+            "demo",
+            "application",
+            extra=f"""
+    application:
+      port: 8000
+    modules:
+      - name: blog
+        route: /blog
+    deps:
+{deps}
+""",
+        )
+
+    files = {"modules/blog/module.yml": module_yml("blog", version="1.2.0")}
+    kept = make_plan(app_dir({"module.yml": app("      nest:\n        blog: '>=1.2,<2'"), **files}))
+    assert [u.name for u in kept.units] == ["blog"]
+    with pytest.raises(PlanError) as e:
+        make_plan(
+            app_dir(
+                {
+                    "module.yml": app(
+                        "      nest:\n        blog: '>=2'\n        gone: '>=1'\n      parts: '>=1'"
+                    ),
+                    **files,
+                }
+            )
+        )
+    text = str(e.value)
+    assert "demo needs blog >=2, but 1.2.0 is installed" in text
+    assert "demo depends on 'gone', which is not installed" in text
+    assert "demo depends on 'parts' without saying whose" in text
+
+
+def test_an_applications_deps_name_each_ecosystem_and_every_package(app_dir):
+    root = app_dir(
+        {
+            "module.yml": module_yml(
+                "demo",
+                "application",
+                extra="""
+    application: {port: 8000, theme: base}
+    deps:
+      saga:
+        blog: '>=0.1'
+    modules:
+      - name: blog
+        route: /blog
+""",
+            ),
+            "modules/blog/module.yml": module_yml("blog"),
+        }
+    )
+    with pytest.raises(PlanError) as e:
+        make_plan(root)
+    text = str(e.value)
+    assert "demo uses 'base' but its deps give no version range for it" in text
+    assert "demo lists 'blog' under saga, but it is nest's" in text
+
+
 def test_a_cycle_is_named(app_dir):
     root = app_dir(
         {

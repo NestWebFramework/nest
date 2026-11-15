@@ -67,6 +67,19 @@ class Plan:
         return next((u for u in self.units if u.name == name), None)
 
 
+def ecosystem_of(entry: Entry, contract: Contract) -> str:
+    """Whose a package is: the ecosystem that defines its type (a subsystem is the game
+    engine's), or the one its id names (nest.saga.engine is saga's); else Nest's own."""
+    core = contract.ecosystems[0] if contract.ecosystems else "nest"
+    rule = contract.types.get(entry.type)
+    if rule is not None and rule.ecosystem and rule.ecosystem != core:
+        return rule.ecosystem
+    for eco in contract.ecosystems:
+        if eco != core and entry.id.startswith(f"{core}.{eco}."):
+            return eco
+    return core
+
+
 def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
     problems: list[str] = []
     notes: list[str] = []
@@ -168,6 +181,39 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
                 continue
             edges[entry.name].add(dep_entry.name)
             queue.append(dep_entry)
+
+    # 2b. An application's own deps are its contract with Nest: each version range is kept
+    # by what is installed, and once it declares any, it declares every package it uses
+    # (the modules it mounts, its theme, the interfaces it binds and their providers);
+    # its own local modules (its folder's modules/) are part of it and need none.
+    if manifest.deps:
+        for dep, spec in manifest.deps.items():
+            dep_entry, _ = catalog.find(dep)
+            listed = manifest.dep_ecosystems.get(dep)
+            if listed is None:
+                problems.append(
+                    f"{app.name} depends on '{dep}' without saying whose: list it under its "
+                    f"ecosystem (nest: {{{dep}: ...}})"
+                )
+            if dep_entry is None:
+                problems.append(f"{app.name} depends on '{dep}', which is not installed")
+                continue
+            owner = ecosystem_of(dep_entry, contract)
+            if listed is not None and listed != owner:
+                problems.append(f"{app.name} lists '{dep}' under {listed}, but it is {owner}'s")
+            if spec and not SpecifierSet(spec).contains(
+                dep_entry.manifest.version, prereleases=True
+            ):
+                problems.append(
+                    f"{app.name} needs {dep_entry.name} {spec}, "
+                    f"but {dep_entry.manifest.module.version} is installed"
+                )
+        declared = set(manifest.deps)
+        for entry in roots:
+            if entry.source != "local" and entry.name not in declared:
+                problems.append(
+                    f"{app.name} uses '{entry.name}' but its deps give no version range for it"
+                )
 
     # 3. Every included package keeps its contract and asks only for what exists.
     bound = set(manifest.bind)

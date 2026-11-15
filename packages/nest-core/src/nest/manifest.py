@@ -17,7 +17,15 @@ from typing import Any, Literal
 import yaml
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.version import InvalidVersion, Version
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 MANIFEST_FILE = "module.yml"
 
@@ -224,6 +232,33 @@ class Manifest(BaseModel):
     _root: Path = PrivateAttr(default=Path("."))
     _raw: dict[str, Any] = PrivateAttr(default_factory=dict)
     _source: str = PrivateAttr(default="<memory>")
+
+    # deps grouped by ecosystem, as RoboHub's are: `nest: {auth: ">=0.3,<1"}`, `saga: {farm:
+    # ">=0.1,<0.2"}`. They are flattened into deps for the plan; which ecosystem each was
+    # listed under is kept here, so the plan can check it is that ecosystem's.
+    dep_ecosystems: dict[str, str] = Field(default_factory=dict, exclude=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _grouped_deps(cls, data: Any) -> Any:
+        if not isinstance(data, dict) or not isinstance(data.get("deps"), dict):
+            return data
+        flat: dict[str, Any] = {}
+        where: dict[str, str] = {}
+        for key, value in data["deps"].items():
+            if isinstance(value, dict):  # an ecosystem's group
+                if not _NAME.match(str(key)):
+                    raise ValueError(f"deps: '{key}' is no ecosystem name")
+                for name, spec in value.items():
+                    if name in flat:
+                        raise ValueError(f"deps: '{name}' is listed twice")
+                    flat[name] = spec
+                    where[str(name)] = str(key)
+            else:
+                if key in flat:
+                    raise ValueError(f"deps: '{key}' is listed twice")
+                flat[key] = value
+        return {**data, "deps": flat, "dep_ecosystems": where}
 
     @field_validator("deps")
     @classmethod

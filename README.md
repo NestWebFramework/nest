@@ -17,8 +17,27 @@ modules that own no port. The design is in
 | `application` | Composes modules, binds each interface to providers, runs on one port with its own workspace. |
 
 Each package is described by a `module.yml`, checked against the contract for its type
-(`packages/nest-core/src/nest/contracts/core.v1.yml`). An ecosystem, such as the game,
-can publish its own contract to add types.
+(`packages/nest-core/src/nest/contracts/core.v1.yml`). An ecosystem, such as the Saga
+engine, can publish its own contract to add types.
+
+An application in a repository of its own states what it needs of Nest in its `deps`, by
+ecosystem and with versions, as RoboHub's manifests do:
+
+```yaml
+deps:
+  nest:                  # Nest's own modules, providers and theme
+    auth: ">=0.3,<1"
+    db-sqlite: ">=0.1,<1"
+  saga:                  # the Saga engine and its subsystems
+    saga: ">=0.1,<1"
+    farm: ">=0.1,<1"
+```
+
+Once an application declares deps, the plan holds it to them: each package it uses (the
+modules it mounts, its theme, the interfaces it binds and their providers) must be listed,
+under the ecosystem it belongs to (the one that defines its type, or names it in its id), at
+a version installed; its own local modules need not be. Its `pyproject.toml` asks for the
+same versions.
 
 ## Running
 
