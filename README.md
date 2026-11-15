@@ -20,6 +20,12 @@ Each package is described by a `module.yml`, checked against the contract for it
 (`packages/nest-core/src/nest/contracts/core.v1.yml`). An ecosystem, such as the Saga
 engine, can publish its own contract to add types.
 
+Every package keeps two files side by side at its root, for two purposes: `module.yml`, what
+Nest knows it as (identity, what it gives and needs), and `pyproject.toml`, how Python builds
+and installs it. Its code is in `src/<package>/`, and the manifest's paths (templates,
+migrations, data) start there. An application folder has the same pair: its `module.yml`,
+and a `pyproject.toml` that only gathers the Nest packages it runs on.
+
 An application in a repository of its own states what it needs of Nest in its `deps`, by
 ecosystem and with versions, as RoboHub's manifests do:
 
@@ -39,11 +45,11 @@ its own, with its identity, that names its host and depends on it, so a part mad
 another repository, joins the host the same way:
 
 ```yaml
-# the host (engines/saga/src/nest_saga/module.yml)
+# the host (engines/saga/module.yml)
 subsystems:
   types: [subsystem, content]
   bundled: [world, map, item, ...]
-# a part (engines/saga/subsystems/farm/src/nest_saga_farm/module.yml)
+# a part (engines/saga/subsystems/farm/module.yml)
 part_of: saga
 deps: {saga: ">=0.1,<1"}
 ```
@@ -77,7 +83,7 @@ modules/              reusable modules (htmx, auth, forms, glossary, content, me
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
-engines/saga/             the Saga engine, a package like any module (pyproject.toml, src/nest_saga/module.yml)
+engines/saga/             the Saga engine, a package like any module (module.yml and pyproject.toml, code in src/nest_saga/)
 engines/saga/subsystems/  its subsystems, each a package of its own that names the engine (part_of: saga)
 applications/             applications (keeper, hello, regionalisme, morlaca, transilpedia, gari)
 ```

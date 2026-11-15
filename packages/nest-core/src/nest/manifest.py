@@ -362,4 +362,27 @@ def load_manifest(path: Path) -> Manifest:
         raise ManifestError(str(path), ["no such file"]) from None
     except yaml.YAMLError as e:
         raise ManifestError(str(path), [f"not valid YAML: {e}"]) from None
-    return parse_manifest(raw, str(path), path.parent.resolve())
+    return parse_manifest(raw, str(path), package_root(path.parent.resolve(), raw))
+
+
+def package_root(folder: Path, raw: Any) -> Path:
+    """Where a manifest's relative paths start. A package keeps its module.yml beside its
+    pyproject.toml (one for Nest, one for Python); its templates, migrations and data are
+    in its Python package, src/<package>/ (the one it names in main or provides.import, or
+    the only one there). An application's or a local module's folder is its own root."""
+    src = folder / "src"
+    if not ((folder / "pyproject.toml").is_file() and src.is_dir()):
+        return folder
+    named = []
+    if isinstance(raw, dict):
+        provides = raw.get("provides") if isinstance(raw.get("provides"), dict) else {}
+        named = [
+            str(x).split(":")[0].split(".")[0]
+            for x in (raw.get("main"), provides.get("import"))
+            if x
+        ]
+    for name in named:
+        if (src / name).is_dir():
+            return src / name
+    packages = [d for d in src.iterdir() if d.is_dir() and (d / "__init__.py").is_file()]
+    return packages[0] if len(packages) == 1 else folder

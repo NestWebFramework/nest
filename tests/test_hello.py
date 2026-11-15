@@ -138,8 +138,8 @@ def test_a_scaffolded_app_runs(tmp_path):
 
 
 def test_vendored_htmx_matches_its_recorded_sums():
-    root = ROOT / "modules" / "htmx" / "src" / "nest_htmx"
-    manifest = yaml.safe_load((root / "module.yml").read_text())
+    root = ROOT / "modules" / "htmx" / "src" / "nest_htmx"  # the manifest's paths start here
+    manifest = yaml.safe_load((ROOT / "modules" / "htmx" / "module.yml").read_text())
     for item in manifest["vendored"]:
         digest = hashlib.sha256((root / item["file"]).read_bytes()).hexdigest()
         assert digest == item["sha256"], item["file"]

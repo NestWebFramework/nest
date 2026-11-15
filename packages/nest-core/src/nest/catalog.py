@@ -2,8 +2,10 @@
 
 Packages are found two ways, as RoboHub finds its modules by a discovery glob:
 
-* installed Python packages that declare a ``nest.modules`` entry point (the
-  manifest sits inside the package, so it ships with the wheel);
+* installed Python packages that declare a ``nest.modules`` entry point: the
+  manifest sits beside the project's pyproject.toml (one for Nest, one for Python),
+  its paths starting in the Python package (manifest.package_root); a built wheel may
+  carry it inside the package instead;
 * an application's own folder, ``<app>/modules/*/module.yml``, for code that
   belongs to one application only.
 
@@ -124,5 +126,10 @@ def _packaged() -> list[tuple[str, Path]]:
         spec = find_spec(package)
         if spec is None or not spec.submodule_search_locations:
             continue
-        found.append((package, Path(list(spec.submodule_search_locations)[0]) / MANIFEST_FILE))
+        home = Path(list(spec.submodule_search_locations)[0])
+        # beside the project's pyproject.toml (src/<package>/ is two below it); a package
+        # that carries it inside (a built wheel) is read there
+        project = home.parents[1] if home.parent.name == "src" else home.parent
+        beside = project / MANIFEST_FILE
+        found.append((package, beside if beside.is_file() else home / MANIFEST_FILE))
     return found

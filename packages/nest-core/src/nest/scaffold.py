@@ -42,7 +42,7 @@ dependencies = ["nest-core"]
 requires = ["uv_build>=0.9,<0.14"]
 build-backend = "uv_build"
 """,
-            src / "module.yml": f"""module:
+            root / "module.yml": f"""module:
   name: {name}
   id: nest.module.{name}
   type: module
