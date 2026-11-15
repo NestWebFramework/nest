@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
-from nest_auth import CurrentUser, current_user, require_role, require_user, users_by_ids
+from nest_auth import CurrentUser, current_user, known_as, require_role, require_user
 from nest_db import Database
 from starlette.concurrency import run_in_threadpool
 
@@ -45,8 +45,10 @@ def _page(request: Request) -> int:
 def index(request: Request, db: Database = bound(Database)):
     _readable(request)
     rows = service.boards(db)
-    names = users_by_ids(
-        db, [r.last.last_author_id for r in rows if r.last and r.last.last_author_id]
+    names = known_as(
+        request.app.state.nest,
+        db,
+        [r.last.last_author_id for r in rows if r.last and r.last.last_author_id],
     )
     return render(request, "forum/index.html", rows=rows, names=names, base=_state(request)["base"])
 
@@ -62,8 +64,10 @@ def board_page(request: Request, slug: str, db: Database = bound(Database)):
     rows, total = service.topics(
         db, b.id, page=page, per_page=per_page, include_hidden=bool(user and user.has("moderator"))
     )
-    names = users_by_ids(
-        db, [t.author_id for t in rows] + [t.last_author_id for t in rows if t.last_author_id]
+    names = known_as(
+        request.app.state.nest,
+        db,
+        [t.author_id for t in rows] + [t.last_author_id for t in rows if t.last_author_id],
     )
     return render(
         request,
@@ -150,7 +154,7 @@ def topic_page(request: Request, topic_id: int, slug: str = "", db: Database = b
     rows, _ = service.posts(db, t.id, page=page, per_page=per_page, include_hidden=moderating)
     service.count_view(db, t.id)
     b = service.board_by_id(db, t.board_id)
-    names = users_by_ids(db, [p.author_id for p in rows])
+    names = known_as(request.app.state.nest, db, [p.author_id for p in rows])
     return render(
         request,
         "forum/topic.html",
@@ -172,7 +176,7 @@ def topic_page(request: Request, topic_id: int, slug: str = "", db: Database = b
 
 def post_html(request: Request, p: Any, *, controls: bool) -> str:
     nest = request.app.state.nest
-    names = users_by_ids(nest.bindings.get("nest.db"), [p.author_id])
+    names = known_as(nest, nest.bindings.get("nest.db"), [p.author_id])
     user = current_user(request) if controls else None
     state = _state(request)
     return nest.render_block(
