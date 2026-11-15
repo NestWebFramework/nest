@@ -26,13 +26,28 @@ bind:
 """
 
 
+GAME = REPO.parent / "voievodate"  # voievodate's repo, checked out beside nest
+SITES = [
+    "gari",
+    "morlaca",
+    "regionalisme",
+    "transilpedia",
+]  # each in a repo of its own, beside nest
+OWN = [REPO.parent / s for s in SITES if (REPO.parent / s / "module.yml").exists()]
+
+
 def test_every_application_is_found_and_planned():
     apps = {a.name: a for a in applications([REPO / "applications"])}
-    assert {"gari", "morlaca", "transilpedia", "regionalisme", "keeper"} <= set(apps)
-    assert "voievodate" not in apps  # the game lives in a repo of its own
+    assert {"hello", "keeper"} <= set(apps)
+    assert not ({"voievodate", *SITES} & set(apps))  # they live in repos of their own
 
 
-GAME = REPO.parent / "voievodate"  # voievodate's repo, checked out beside nest
+@pytest.mark.skipif(len(OWN) < len(SITES), reason="not every site's repo is checked out")
+def test_the_sites_in_their_own_repos_are_found_and_planned():
+    apps = {a.name: a for a in applications([REPO / "applications", *OWN])}
+    for site in SITES:
+        assert site in apps and not apps[site].problems, (site, apps[site].problems)
+    assert apps["gari"].port == 8400 and "trains" in [u["name"] for u in apps["gari"].units]
 
 
 @pytest.mark.skipif(not (GAME / "module.yml").exists(), reason="no voievodate checkout")
@@ -65,7 +80,10 @@ def test_the_keepers_pages(tmp_path):
     root = tmp_path / "keeper"
     root.mkdir()
     (root / "module.yml").write_text(
-        textwrap.dedent(APP).replace("APPS", f"{REPO / 'applications'},{GAME}"), encoding="utf-8"
+        textwrap.dedent(APP).replace(
+            "APPS", ",".join(map(str, [REPO / "applications", GAME, *OWN]))
+        ),
+        encoding="utf-8",
     )
     app = create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
     with TestClient(app) as c:
@@ -92,7 +110,7 @@ def test_the_keepers_pages(tmp_path):
         sign_in("root@example.ro")
         page = c.get("/admin/keeper/").text
         assert "Voievodate" in page or "voievodate" in page
-        assert "/admin/keeper/app/gari" in page and ("runs" in page or "stopped" in page)
+        assert "/admin/keeper/app/hello" in page and ("runs" in page or "stopped" in page)
         detail = c.get("/admin/keeper/app/voievodate").text
         assert "Start order" in detail and "economy" in detail and "nest.db" in detail
         assert c.get("/admin/keeper/app/nowhere").status_code == 404
@@ -104,7 +122,10 @@ def make_keeper(tmp_path):
     root = tmp_path / "keeper"
     root.mkdir()
     (root / "module.yml").write_text(
-        textwrap.dedent(APP).replace("APPS", f"{REPO / 'applications'},{GAME}"), encoding="utf-8"
+        textwrap.dedent(APP).replace(
+            "APPS", ",".join(map(str, [REPO / "applications", GAME, *OWN]))
+        ),
+        encoding="utf-8",
     )
     return create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
 

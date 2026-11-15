@@ -100,7 +100,7 @@ providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariad
 themes/               themes (base)
 engines/saga/             the Saga engine, a package like any module (module.yml and pyproject.toml, code in src/nest_saga/)
 engines/saga/subsystems/  its subsystems, each a package of its own that names the engine (part_of: saga)
-applications/             applications (keeper, hello, regionalisme, morlaca, transilpedia, gari)
+applications/             Nest's own applications (keeper, hello); the sites live in repos of their own beside it
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -327,16 +327,16 @@ usage, synonyms, antonyms, see-also, source, translation, abbreviation), the sha
 * **Definitions** are plain text, never HTML: a blank line starts a paragraph, `[[word]]` links a
   term, and an address becomes a link.
 
-`applications/regionalisme` is regionalisme.ro on Nest. With `legacy_glossword: true` in the
+regionalisme.ro is on Nest, in its own repository (`../regionalisme`). With `legacy_glossword: true` in the
 application's manifest, Glossword's `/index.php/term/Graiul+moldovenesc,cuvânt.xhtml` addresses
 redirect permanently to the new ones.
 
 ```sh
-uv run nest glossary import-glossword applications/regionalisme export.txt --dictionary "Graiul moldovenesc"
-uv run nest glossary dictionaries applications/regionalisme
-uv run nest glossary export applications/regionalisme backup.json     # and `import` to restore
-uv run nest auth create-user applications/regionalisme ana@example.ro --role editor
-uv run nest run applications/regionalisme                             # http://127.0.0.1:8200
+uv run nest glossary import-glossword ../regionalisme export.txt --dictionary "Graiul moldovenesc"
+uv run nest glossary dictionaries ../regionalisme
+uv run nest glossary export ../regionalisme backup.json     # and `import` to restore
+uv run nest auth create-user ../regionalisme ana@example.ro --role editor
+uv run nest run ../regionalisme                             # http://127.0.0.1:8200
 ```
 
 The import reads Glossword's own text export (Admin → Export). It is safe to run again:
@@ -376,8 +376,8 @@ A WordPress site moves in from its mysqldump and uploads folder. No MySQL server
 `nest_db.mysqldump` reads the dump as data.
 
 ```sh
-uv run nest content import-wordpress applications/morlaca ~/projects/morlaca/db/morlaca.sql \
-    --uploads ~/projects/morlaca/wp-content/uploads
+uv run nest content import-wordpress ../morlaca ~/projects/morlaca-legacy/db/morlaca.sql \
+    --uploads ~/projects/morlaca-legacy/wp-content/uploads
 ```
 
 What the importer brings over:
@@ -416,9 +416,9 @@ at a route; they share nothing but the core's interfaces.
   failing handler renders nothing.
 
 ```sh
-uv run nest gallery import-wordpress applications/morlaca ~/projects/morlaca/db/morlaca.sql \
-    --uploads ~/projects/morlaca/wp-content/uploads        # --all for galleries no page uses
-uv run nest gallery list applications/morlaca
+uv run nest gallery import-wordpress ../morlaca ~/projects/morlaca-legacy/db/morlaca.sql \
+    --uploads ~/projects/morlaca-legacy/wp-content/uploads        # --all for galleries no page uses
+uv run nest gallery list ../morlaca
 ```
 
 The import moves Photo Gallery (10Web) and NextGEN galleries and albums with their photos and
@@ -502,12 +502,12 @@ A route is kept as ordered stops whose times count past midnight (`07:40 (+1)`),
 trains stay in order.
 
 ```sh
-uv run nest trains import-geticus applications/gari ~/projects/gari/gari/db/gari.sql
-uv run nest gallery import-geticus applications/gari ~/projects/gari/gari/db/gari.sql --root ~/projects/gari/gari
-uv run nest trains journeys applications/gari "Cluj Napoca" "Bucuresti Nord"
+uv run nest trains import-geticus ../gari ~/projects/gari-legacy/gari/db/gari.sql
+uv run nest gallery import-geticus ../gari ~/projects/gari-legacy/gari/db/gari.sql --root ~/projects/gari-legacy/gari
+uv run nest trains journeys ../gari "Cluj Napoca" "Bucuresti Nord"
 ```
 
-`applications/gari` mounts the timetable at `/cfr`, where gari.ro had it (`/cfr/gara/…`,
+`../gari` mounts the timetable at `/cfr`, where gari.ro had it (`/cfr/gara/…`,
 `/cfr/tren/…`, `/cfr/itinerariu`, `/cfr/companie/…`), and the galleries at `/galerii-foto`, as
 Geticus routed them.
 

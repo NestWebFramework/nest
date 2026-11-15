@@ -22,8 +22,8 @@ application:
 modules:
   - name: keeper
     route: /
-    # nest's own applications, and the games in repos of their own beside it
-    config: {apps: "applications,../voievodate"}
+    # nest's own applications, and those in repos of their own beside it
+    config: {apps: "applications,../voievodate,../gari,../morlaca,../regionalisme,../transilpedia"}
   - name: admin
     route: /admin
   - name: auth
