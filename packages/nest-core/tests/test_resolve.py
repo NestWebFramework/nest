@@ -226,3 +226,57 @@ def test_a_disabled_module_is_left_out(app_dir):
         }
     )
     assert make_plan(root).units == []
+
+
+def test_a_part_joins_the_host_it_names(app_dir):
+    host = module_yml("engine", extra="subsystems:\n  types: [module]\n  bundled: [wheel]\n")
+    wheel = module_yml("wheel", extra="part_of: engine\ndeps:\n  engine: '>=0.1'\n")
+    app = module_yml(
+        "demo",
+        "application",
+        extra="""
+    application: {port: 8000}
+    modules:
+      - {name: engine, route: /e}
+      - {name: wheel, route: /w}
+""",
+    )
+    kept = make_plan(
+        app_dir(
+            {
+                "module.yml": app,
+                "modules/engine/module.yml": host,
+                "modules/wheel/module.yml": wheel,
+            }
+        )
+    )
+    assert [u.name for u in kept.units] == ["engine", "wheel"]
+    assert kept.unit("engine").entry.manifest.subsystems.bundled == ["wheel"]
+
+
+def test_a_part_without_its_host_or_unwelcome_there_is_refused(app_dir):
+    app = module_yml(
+        "demo",
+        "application",
+        extra="""
+    application: {port: 8000}
+    modules:
+      - {name: plain, route: /p}
+      - {name: stray, route: /s}
+      - {name: orphan, route: /o}
+""",
+    )
+    root = app_dir(
+        {
+            "module.yml": app,
+            "modules/plain/module.yml": module_yml("plain"),
+            "modules/stray/module.yml": module_yml("stray", extra="part_of: plain\n"),
+            "modules/orphan/module.yml": module_yml("orphan", extra="part_of: gone\n"),
+        }
+    )
+    with pytest.raises(PlanError) as e:
+        make_plan(root)
+    text = str(e.value)
+    assert "stray is part of 'plain', which takes no parts" in text
+    assert "stray is part of 'plain' but does not depend on it (deps)" in text
+    assert "orphan is part of 'gone', which demo does not include" in text

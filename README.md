@@ -33,6 +33,24 @@ deps:
     farm: ">=0.1,<1"
 ```
 
+A module may be the host of parts: an engine and its subsystems, a module and its
+extensions. The host declares what it takes and what comes with it; each part is a package of
+its own, with its identity, that names its host and depends on it, so a part made later, in
+another repository, joins the host the same way:
+
+```yaml
+# the host (engines/saga/src/nest_saga/module.yml)
+subsystems:
+  types: [subsystem, content]
+  bundled: [world, map, item, ...]
+# a part (engines/saga/subsystems/farm/src/nest_saga_farm/module.yml)
+part_of: saga
+deps: {saga: ">=0.1,<1"}
+```
+
+The plan refuses a part whose host the application does not include, a host that takes no
+parts or not of that type, and a part that does not depend on its host.
+
 Once an application declares deps, the plan holds it to them: each package it uses (the
 modules it mounts, its theme, the interfaces it binds and their providers) must be listed,
 under the ecosystem it belongs to (the one that defines its type, or names it in its id), at
@@ -59,8 +77,8 @@ modules/              reusable modules (htmx, auth, forms, glossary, content, me
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
-engines/saga/engine/      the Saga engine (worlds, the game loop, the subsystem contract)
-engines/saga/subsystems/  its subsystems (world, map, item, inventory, character, settlement, household, polity, ...)
+engines/saga/             the Saga engine, a package like any module (pyproject.toml, src/nest_saga/module.yml)
+engines/saga/subsystems/  its subsystems, each a package of its own that names the engine (part_of: saga)
 applications/             applications (keeper, hello, regionalisme, morlaca, transilpedia, gari)
 ```
 

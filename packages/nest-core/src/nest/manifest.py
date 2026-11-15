@@ -196,6 +196,14 @@ class Locale(_Section):
     file: str
 
 
+class Subsystems(_Section):
+    """A module that is the host of parts: an engine and its subsystems, a module and its
+    extensions. The parts come as packages of their own, each naming it in ``part_of``."""
+
+    types: list[str] = Field(default_factory=lambda: ["subsystem"])  # what its parts are
+    bundled: list[str] = Field(default_factory=list)  # the parts that come with it, by name
+
+
 class Manifest(BaseModel):
     """A whole module.yml. Unknown top-level sections are kept for the contract to judge."""
 
@@ -216,6 +224,10 @@ class Manifest(BaseModel):
     modules: list[Instance] = Field(default_factory=list)
     bind: dict[str, Binding] = Field(default_factory=dict)
     deploy: Deploy | None = None
+    # The parts it hosts (an engine's subsystems), and the host a part belongs to: a part
+    # names its host, so one made later, elsewhere, joins it the same way.
+    subsystems: Subsystems | None = None
+    part_of: str | None = None
     docs: dict[str, Any] = Field(default_factory=dict)
     system_deps: dict[str, Any] = Field(default_factory=dict)
     # Called as fn(nest) once bindings exist and before any module is set up,

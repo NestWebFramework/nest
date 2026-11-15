@@ -670,7 +670,7 @@ requires-dist = [
 [[package]]
 name = "nest-saga"
 version = "0.1.0"
-source = { editable = "engines/saga/engine" }
+source = { editable = "engines/saga" }
 dependencies = [
     { name = "nest-auth" },
     { name = "nest-core" },
@@ -697,10 +697,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -717,10 +717,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-item" },
     { name = "pyyaml" },
 ]
 
@@ -736,9 +736,9 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
 ]
 
 [[package]]
@@ -755,11 +755,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -776,10 +776,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
     { name = "pyyaml" },
 ]
 
@@ -798,12 +798,12 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
-    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -820,11 +820,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
 ]
 
 [[package]]
@@ -841,11 +841,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -862,11 +862,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -883,11 +883,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -904,11 +904,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-npc", editable = "engines/saga/subsystems/npc" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-npc" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -924,10 +924,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-item" },
 ]
 
 [[package]]
@@ -941,7 +941,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]
 
@@ -959,11 +959,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -980,11 +980,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -998,7 +998,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga" },
     { name = "pyyaml" },
 ]
 
@@ -1016,11 +1016,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1039,13 +1039,13 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
-    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-building" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1060,9 +1060,9 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
 ]
 
 [[package]]
@@ -1079,11 +1079,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1100,11 +1100,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1123,13 +1123,13 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
-    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
-    { name = "nest-saga-npc", editable = "engines/saga/subsystems/npc" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-building" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-npc" },
 ]
 
 [[package]]
@@ -1146,11 +1146,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1166,10 +1166,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
 ]
 
 [[package]]
@@ -1186,11 +1186,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1207,11 +1207,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1227,10 +1227,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
 ]
 
 [[package]]
@@ -1247,11 +1247,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1265,8 +1265,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-saga" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1283,11 +1283,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
-    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
-    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
 ]
 
 [[package]]
@@ -1301,8 +1301,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
 ]
 
 [[package]]
@@ -1465,7 +1465,7 @@ requires-dist = [
     { name = "nest-media", editable = "modules/media" },
     { name = "nest-messages", editable = "modules/messages" },
     { name = "nest-redirects", editable = "modules/redirects" },
-    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga", editable = "engines/saga" },
     { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },
     { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
     { name = "nest-saga-chronicle", editable = "engines/saga/subsystems/chronicle" },

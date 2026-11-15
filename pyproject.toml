@@ -74,7 +74,7 @@ members = [
     "interfaces/*",
     "providers/*",
     "themes/*",
-    "engines/saga/engine",
+    "engines/saga",
     "engines/saga/subsystems/*",
 ]
 

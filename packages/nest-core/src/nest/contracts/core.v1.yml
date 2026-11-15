@@ -50,3 +50,5 @@ types:
       implements: an application is not a provider
       provides: an application exports nothing; put shared code in a module
       interface: an application is not an interface
+      part_of: an application is no part of a module; it composes them
+      subsystems: an application takes no parts; its modules may

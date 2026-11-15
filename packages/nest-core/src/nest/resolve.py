@@ -219,6 +219,24 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
     bound = set(manifest.bind)
     for entry in included.values():
         problems += [f"{entry.name}: {p}" for p in contract.validate(entry.manifest)]
+        host_name = entry.manifest.part_of
+        if host_name:  # a part (an engine's subsystem) joins the host it names
+            host = included.get(host_name)
+            if host is None:
+                problems.append(
+                    f"{entry.name} is part of '{host_name}', which {app.name} does not include"
+                )
+            elif host.manifest.subsystems is None:
+                problems.append(f"{entry.name} is part of '{host_name}', which takes no parts")
+            elif entry.type not in host.manifest.subsystems.types:
+                kinds = ", ".join(host.manifest.subsystems.types)
+                problems.append(
+                    f"{entry.name} is a {entry.type}, but '{host_name}' takes parts of type {kinds}"
+                )
+            if host_name not in entry.manifest.deps:
+                problems.append(
+                    f"{entry.name} is part of '{host_name}' but does not depend on it (deps)"
+                )
         for facility in entry.manifest.requires.host:
             if facility not in HOST_FACILITIES:
                 known = ", ".join(sorted(HOST_FACILITIES))
