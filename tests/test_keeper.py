@@ -35,9 +35,7 @@ def test_every_application_is_found_and_planned():
 GAME = REPO.parent / "voievodate"  # voievodate's repo, checked out beside nest
 
 
-@pytest.mark.skipif(
-    not (GAME / "module.yml").exists(), reason="no voievodate checkout"
-)
+@pytest.mark.skipif(not (GAME / "module.yml").exists(), reason="no voievodate checkout")
 def test_a_game_in_its_own_repo_is_found_and_planned():
     apps = {a.name: a for a in applications([REPO / "applications", GAME])}
     voievodate = apps["voievodate"]
@@ -62,9 +60,7 @@ def test_a_broken_application_shows_its_problems(tmp_path):
     assert broken.problems and "nowhere" in " ".join(broken.problems)
 
 
-@pytest.mark.skipif(
-    not (GAME / "module.yml").exists(), reason="no voievodate checkout"
-)
+@pytest.mark.skipif(not (GAME / "module.yml").exists(), reason="no voievodate checkout")
 def test_the_keepers_pages(tmp_path):
     root = tmp_path / "keeper"
     root.mkdir()
@@ -113,9 +109,7 @@ def make_keeper(tmp_path):
     return create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
 
 
-@pytest.mark.skipif(
-    not (GAME / "module.yml").exists(), reason="no voievodate checkout"
-)
+@pytest.mark.skipif(not (GAME / "module.yml").exists(), reason="no voievodate checkout")
 def test_the_rest_api_answers_only_to_a_token(tmp_path):
     from nest_keeper import rest as keeper_api
     from nest_keeper import tokens

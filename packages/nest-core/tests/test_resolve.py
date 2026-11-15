@@ -280,3 +280,20 @@ def test_a_part_without_its_host_or_unwelcome_there_is_refused(app_dir):
     assert "stray is part of 'plain', which takes no parts" in text
     assert "stray is part of 'plain' but does not depend on it (deps)" in text
     assert "orphan is part of 'gone', which demo does not include" in text
+
+
+def test_a_stylesheet_named_must_be_there(app_dir):
+    app = module_yml(
+        "demo",
+        "application",
+        extra="application: {port: 8000}\nmodules:\n  - {name: blog, route: /b}\n",
+    )
+    blog = module_yml("blog", extra="styles: [blog.css, gone.css]\n")
+    root = app_dir(
+        {"module.yml": app, "modules/blog/module.yml": blog, "modules/blog/static/blog.css": "p {}"}
+    )
+    with pytest.raises(PlanError) as e:
+        make_plan(root)
+    text = str(e.value)
+    assert "blog names the stylesheet 'gone.css', which its static folder lacks" in text
+    assert "'blog.css'" not in text

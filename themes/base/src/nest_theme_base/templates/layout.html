@@ -6,6 +6,9 @@
   <meta name="color-scheme" content="light dark">
   <title>{% block title %}{{ app.title }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ asset('base', 'nest.css') }}">
+  {# each module's own look, then the application's: the later restyles the earlier #}
+  {% for href in styles %}<link rel="stylesheet" href="{{ href }}">
+  {% endfor %}
   {% include "htmx/head.html" %}
   {% block head %}{% endblock %}
 </head>

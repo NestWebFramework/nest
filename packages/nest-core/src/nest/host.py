@@ -157,7 +157,15 @@ class Nest:
             ngettext=fallback.ngettext,
             locale=fallback.locale,
             languages=self.catalogs.languages,
+            styles=self._styles(plan),
         )
+
+    def _styles(self, plan: Plan) -> list[str]:
+        """Every stylesheet a page loads after the theme's: each module's own, in the plan's
+        order, then the application's, so the application restyles any module."""
+        out = [self.asset(u.name, f) for u in plan.units for f in u.entry.manifest.styles]
+        out += [self.asset(self.name, f) for f in self.manifest.styles]
+        return out
 
     def asset(self, module: str, path: str) -> str:
         """The URL of a module's static file, versioned so caches can keep it."""

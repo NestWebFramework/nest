@@ -1,0 +1,9 @@
+/* messages.css — the base look of messages: the inbox and a conversation.
+   Built only on the theme's tokens (--surface, --border, --accent, --radius...), so an
+   application restyles it by its own tokens, or by its own stylesheet loaded after this. */
+ul.inbox { list-style: none; padding: 0; } ul.inbox li { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem 0; border-bottom: 1px solid var(--border); }
+ul.inbox li a { text-decoration: none; color: inherit; } ul.inbox li.unread strong { color: var(--accent); }
+ol.thread { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.message { max-width: min(36rem, 90%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; }
+.message.mine { align-self: flex-end; border-color: var(--accent); }
+.message-meta { margin: 0; font-size: .85rem; } .message p { margin: .25rem 0; }

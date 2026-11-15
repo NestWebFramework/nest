@@ -1,0 +1,9 @@
+/* comments.css — the base look of comments: the thread, its replies and the spam trap.
+   Built only on the theme's tokens (--surface, --border, --accent, --radius...), so an
+   application restyles it by its own tokens, or by its own stylesheet loaded after this. */
+.comments { margin-top: 2.5rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+ol.comment-list, ol.comment-replies { list-style: none; padding-left: 0; }
+ol.comment-replies { padding-left: 1.25rem; border-left: 2px solid var(--border); }
+.comment { margin-bottom: 1rem; } .comment-meta { margin: 0 0 .25rem; } .comment-body p { margin: .25rem 0; }
+.comment-reply summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+.trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

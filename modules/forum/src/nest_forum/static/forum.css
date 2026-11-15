@@ -1,0 +1,5 @@
+/* forum.css — the base look of the forum: its posts.
+   Built only on the theme's tokens (--surface, --border, --accent, --radius...), so an
+   application restyles it by its own tokens, or by its own stylesheet loaded after this. */
+ol.posts { list-style: none; padding: 0; } .post { border-bottom: 1px solid var(--border); padding: .75rem 0; }
+.post-meta { margin: 0 0 .25rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }

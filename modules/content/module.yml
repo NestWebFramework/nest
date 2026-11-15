@@ -24,6 +24,7 @@ module:
   created: "2026-11-13"
 
 main: nest_content
+styles: [content.css]  # its base look; an application restyles it
 
 provides:
   import: nest_content

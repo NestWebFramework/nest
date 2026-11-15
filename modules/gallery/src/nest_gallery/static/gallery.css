@@ -14,3 +14,6 @@ dialog.lightbox figcaption { max-width: 60ch; text-align: center; }
 dialog.lightbox .lightbox-bar { display: flex; gap: .5rem; justify-content: center; }
 dialog.lightbox button { background: rgb(255 255 255 / .15); color: #fff; border: 1px solid rgb(255 255 255 / .3); min-width: 3rem; }
 dialog.lightbox .lightbox-count { align-self: center; opacity: .8; }
+/* the grid of a gallery's photos (from the base theme) */
+.gallery { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
+.gallery figure { margin: 0; } .gallery img { aspect-ratio: 1; object-fit: cover; width: 100%; border-radius: var(--radius); }

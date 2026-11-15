@@ -19,6 +19,7 @@ module:
   created: "2026-11-13"
 
 main: nest_forum
+styles: [forum.css]  # its base look; an application restyles it
 
 provides:
   import: nest_forum

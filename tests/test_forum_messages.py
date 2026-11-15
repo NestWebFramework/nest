@@ -268,3 +268,14 @@ def test_archiving_hides_until_the_next_message(app):
         )
         messages.reply(ana.db, c.id, forum_user(ana), "din nou")
         assert "Arhivă" in ion.get("/mesaje/").text
+
+
+def test_each_module_brings_its_own_look_after_the_theme(app):
+    c = client(app)
+    page = c.get("/forum/").text
+    sheets = re.findall(r'<link rel="stylesheet" href="([^"?]+)', page)
+    assert sheets[0] == "/assets/base/nest.css"  # the theme's tokens and shared classes first
+    assert "/assets/forum/forum.css" in sheets and "/assets/messages/messages.css" in sheets
+    assert c.get("/assets/forum/forum.css").status_code == 200
+    theme = c.get("/assets/base/nest.css").text
+    assert ".post-meta" not in theme and ".message.mine" not in theme  # each module keeps its own

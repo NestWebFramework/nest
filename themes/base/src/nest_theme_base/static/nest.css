@@ -1,4 +1,6 @@
-/* nest.css — the base theme. No framework: tokens, a layout, and the elements. */
+/* nest.css — the base theme: tokens, the elements, and the classes modules share (card, stack,
+   row, field, notice, badge, tile...). Each module keeps its own look in its own stylesheet
+   (its manifest's styles), built on these tokens; an application restyles both. */
 :root {
   --bg: #f8f7f4; --surface: #ffffff; --text: #1d1c1a; --muted: #5f5b53;
   --border: #dedad0; --accent: #8a2b1f; --accent-text: #ffffff; --focus: #1f4f8a;
@@ -96,75 +98,15 @@ form.search input { flex: 1; }
 .letters a { min-width: 2.25rem; text-align: center; padding: .35rem .5rem; border: 1px solid var(--border);
   border-radius: var(--radius); text-decoration: none; background: var(--surface); }
 .letters a[aria-current="page"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-ul.terms { columns: 16rem; column-gap: 2rem; padding-left: 1.1rem; }
-ul.inline-list { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; padding: 0; }
 ol.results { padding-left: 1.25rem; } ol.results li { margin-bottom: 1rem; } ol.results p { margin: .25rem 0; }
 mark { background: color-mix(in srgb, var(--accent) 25%, transparent); color: inherit; border-radius: 2px; }
-.senses { padding-left: 1.25rem; } .sense { margin-bottom: 1.25rem; }
-.usage { border-left: 3px solid var(--border); margin: .5rem 0; padding-left: 1rem; color: var(--muted); font-style: italic; }
-dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: .5rem 0; }
-dl.facts dt { color: var(--muted); } dl.facts dd { margin: 0; }
-.transcription { font-weight: 400; font-size: .7em; }
 .pager { margin-top: 1.5rem; }
-fieldset.sense-fields { margin-bottom: 1rem; padding: 1rem; }
 .danger-zone { margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-ul.menu { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; margin: 0; padding: 0; }
-ul.menu li { position: relative; }
-ul.menu ul { display: none; position: absolute; z-index: 5; min-width: 12rem; list-style: none; margin: 0; padding: .5rem;
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-ul.menu li:hover > ul, ul.menu li:focus-within > ul { display: block; }
-@media (max-width: 40rem) { ul.menu ul { position: static; display: block; border: none; padding-left: 1rem; } }
-.entry .body img { border-radius: var(--radius); }
-.entry .body .aligncenter { display: block; margin-inline: auto; }
-.entry .body .alignleft { float: left; margin: 0 1rem .5rem 0; } .entry .body .alignright { float: right; margin: 0 0 .5rem 1rem; }
-@media (max-width: 40rem) { .entry .body .alignleft, .entry .body .alignright { float: none; margin: 0 0 .5rem; } }
-.featured img { width: 100%; max-height: 28rem; object-fit: cover; border-radius: var(--radius); }
-.gallery { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
-.gallery figure { margin: 0; } .gallery img { aspect-ratio: 1; object-fit: cover; width: 100%; border-radius: var(--radius); }
-.summary h2 { margin-top: 0; }
 .checks { display: flex; flex-wrap: wrap; gap: .25rem 1rem; } label.check { font-weight: 400; display: inline-flex; gap: .35rem; align-items: center; }
 label.check input { width: auto; min-height: auto; }
-textarea.code { font-family: var(--mono); font-size: .9rem; }
-.comments { margin-top: 2.5rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-ol.comment-list, ol.comment-replies { list-style: none; padding-left: 0; }
-ol.comment-replies { padding-left: 1.25rem; border-left: 2px solid var(--border); }
-.comment { margin-bottom: 1rem; } .comment-meta { margin: 0 0 .25rem; } .comment-body p { margin: .25rem 0; }
-.comment-reply summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
-.trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .badge { display: inline-block; font-size: .75rem; padding: .05rem .45rem; border-radius: 999px; background: var(--border); color: var(--text); vertical-align: middle; }
-ol.posts { list-style: none; padding: 0; } .post { border-bottom: 1px solid var(--border); padding: .75rem 0; }
-.post-meta { margin: 0 0 .25rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
 form.inline { display: inline; }
-ul.inbox { list-style: none; padding: 0; } ul.inbox li { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem 0; border-bottom: 1px solid var(--border); }
-ul.inbox li a { text-decoration: none; color: inherit; } ul.inbox li.unread strong { color: var(--accent); }
-ol.thread { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-.message { max-width: min(36rem, 90%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .75rem; }
-.message.mine { align-self: flex-end; border-color: var(--accent); }
-.message-meta { margin: 0; font-size: .85rem; } .message p { margin: .25rem 0; }
-ul.columns { columns: 14rem; column-gap: 2rem; padding-left: 1.1rem; }
-.journey-form { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); align-items: end; margin-block: 1rem; }
-.journey-form .field { margin: 0; }
-table.board td, table.board th { white-space: nowrap; } table.board td:nth-child(3) { white-space: normal; }
-ol.route { list-style: none; padding-left: 0; border-left: 3px solid var(--accent); margin-left: .5rem; }
-ol.route li { position: relative; padding: .2rem 0 .2rem 1rem; display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
-ol.route li::before { content: ""; position: absolute; left: -.45rem; top: .65rem; width: .6rem; height: .6rem; border-radius: 50%; background: var(--accent); }
-ol.route li.through { font-size: .85rem; color: var(--muted); } ol.route li.through::before { background: var(--border); width: .4rem; height: .4rem; left: -.35rem; }
-ol.route .times { min-width: 7.5rem; font-variant-numeric: tabular-nums; }
-.railway-map { margin: 1rem 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-.railway-map svg { width: 100%; height: auto; display: block; color: var(--muted); }
-.railway-map .links line { stroke-width: .5; opacity: .45; }
-.railway-map circle { fill: var(--accent); } .railway-map circle.r0 { opacity: .55; }
-.railway-map a:hover circle, .railway-map a:focus circle { fill: var(--text); }
-.railway-map text { font-size: 9px; fill: var(--text); pointer-events: none; }
 /* numbers in tables, and a change for the better or the worse (the game's benchmark) */
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .better { color: var(--ok); } .worse { color: var(--danger); }
 progress { width: 100%; max-width: 32rem; }
-/* a map drawn as SVG (the game's land) */
-svg.land { width: 100%; height: auto; max-height: 75vh; display: block; margin: 0 auto 1rem; }
-/* the admin panel: a column of its pages beside the page */
-.admin { display: grid; grid-template-columns: 12rem 1fr; gap: 1.5rem; align-items: start; }
-.admin-nav { display: flex; flex-direction: column; gap: .35rem; position: sticky; top: 1rem; }
-.admin-nav a[aria-current="page"] { font-weight: 600; }
-.admin-main { min-width: 0; }
-@media (max-width: 48rem) { .admin { grid-template-columns: 1fr; } .admin-nav { flex-direction: row; flex-wrap: wrap; position: static; } }

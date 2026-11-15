@@ -22,6 +22,7 @@ module:
   created: "2026-11-14"
 
 main: nest_admin
+styles: [admin.css]  # its base look; an application restyles it
 
 provides:
   import: nest_admin

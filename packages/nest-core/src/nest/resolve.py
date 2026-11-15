@@ -248,6 +248,14 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
                 problems.append(
                     f"{entry.name} requires {iface}; bind it in {app.name}'s module.yml"
                 )
+    for entry in [*included.values(), app]:  # a stylesheet it names is in its static folder
+        if entry.manifest.styles:
+            static = entry.manifest.folder(entry.manifest.static, "static")
+            for sheet in entry.manifest.styles:
+                if static is None or not (static / sheet).is_file():
+                    problems.append(
+                        f"{entry.name} names the stylesheet '{sheet}', which its static folder lacks"
+                    )
     for name, inst in instances.items():
         # A module serves pages, so it needs a route; an ecosystem's part (a game
         # subsystem) may run without one, and so may a module whose pages are all

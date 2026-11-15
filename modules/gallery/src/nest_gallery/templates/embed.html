@@ -1,5 +1,4 @@
 {% block embed %}
-<link rel="stylesheet" href="{{ asset('gallery', 'gallery.css') }}">
 <script src="{{ asset('gallery', 'lightbox.js') }}" defer></script>
 <section class="gallery-embed">
   {% if cards %}{% include "gallery/_tiles.html" %}{% else %}{% include "gallery/_photos.html" %}{% endif %}

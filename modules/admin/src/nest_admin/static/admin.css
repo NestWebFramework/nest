@@ -1,0 +1,8 @@
+/* admin.css — the base look of the admin panel: a column of its pages beside the page.
+   Built only on the theme's tokens (--surface, --border, --accent, --radius...), so an
+   application restyles it by its own tokens, or by its own stylesheet loaded after this. */
+.admin { display: grid; grid-template-columns: 12rem 1fr; gap: 1.5rem; align-items: start; }
+.admin-nav { display: flex; flex-direction: column; gap: .35rem; position: sticky; top: 1rem; }
+.admin-nav a[aria-current="page"] { font-weight: 600; }
+.admin-main { min-width: 0; }
+@media (max-width: 48rem) { .admin { grid-template-columns: 1fr; } .admin-nav { flex-direction: row; flex-wrap: wrap; position: static; } }

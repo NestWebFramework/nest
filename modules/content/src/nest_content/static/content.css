@@ -1,0 +1,16 @@
+/* content.css — the base look of the CMS: its menus, entries, featured images and summaries.
+   Built only on the theme's tokens (--surface, --border, --accent, --radius...), so an
+   application restyles it by its own tokens, or by its own stylesheet loaded after this. */
+ul.menu { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; margin: 0; padding: 0; }
+ul.menu li { position: relative; }
+ul.menu ul { display: none; position: absolute; z-index: 5; min-width: 12rem; list-style: none; margin: 0; padding: .5rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+ul.menu li:hover > ul, ul.menu li:focus-within > ul { display: block; }
+@media (max-width: 40rem) { ul.menu ul { position: static; display: block; border: none; padding-left: 1rem; } }
+.entry .body img { border-radius: var(--radius); }
+.entry .body .aligncenter { display: block; margin-inline: auto; }
+.entry .body .alignleft { float: left; margin: 0 1rem .5rem 0; } .entry .body .alignright { float: right; margin: 0 0 .5rem 1rem; }
+@media (max-width: 40rem) { .entry .body .alignleft, .entry .body .alignright { float: none; margin: 0 0 .5rem; } }
+.featured img { width: 100%; max-height: 28rem; object-fit: cover; border-radius: var(--radius); }
+.summary h2 { margin-top: 0; }
+textarea.code { font-family: var(--mono); font-size: .9rem; }

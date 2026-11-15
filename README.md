@@ -26,6 +26,21 @@ and installs it. Its code is in `src/<package>/`, and the manifest's paths (temp
 migrations, data) start there. An application folder has the same pair: its `module.yml`,
 and a `pyproject.toml` that only gathers the Nest packages it runs on.
 
+**How things look, in three layers**, each restyling the one before:
+
+1. the theme (`themes/base/static/nest.css`): the tokens (`--bg`, `--surface`, `--accent`,
+   `--font`, `--radius`...), the elements, and the classes modules share (`card`, `stack`,
+   `row`, `field`, `notice`, `badge`, `tile`, `pager`);
+2. each module's own stylesheet, its base look for its own markup, built only on those
+   tokens: the manifest names it (`styles: [forum.css]`, in its `static/`), and every page of
+   an application that includes the module loads it;
+3. the application's own: its `styles:` (in its `static/`) load last, so it can change the
+   tokens for every module at once or restyle one module's classes; its `templates/` override
+   the theme's `layout.html` (its frame) or any one module's template.
+
+So morlaca, transilpedia or a game use the same forum, comments or sign-in, each in its own
+look, without forking them.
+
 An application in a repository of its own states what it needs of Nest in its `deps`, by
 ecosystem and with versions, as RoboHub's manifests do:
 
