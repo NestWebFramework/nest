@@ -53,6 +53,7 @@ dependencies = [
     "nest-game-travel",
     "nest-game-society",
     "nest-game-farm",
+    "nest-game-equipment",
     "nest-game-polity",
     "nest-game-justice",
     "nest-game-war",
@@ -129,6 +130,7 @@ nest-game-player = { workspace = true }
 nest-game-travel = { workspace = true }
 nest-game-society = { workspace = true }
 nest-game-farm = { workspace = true }
+nest-game-equipment = { workspace = true }
 nest-game-polity = { workspace = true }
 nest-game-justice = { workspace = true }
 nest-game-war = { workspace = true }
