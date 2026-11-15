@@ -10,7 +10,6 @@ members = [
     "nest-cache-memory",
     "nest-comments",
     "nest-content",
-    "nest-content-voievodate",
     "nest-core",
     "nest-db",
     "nest-db-mariadb",
@@ -19,44 +18,44 @@ members = [
     "nest-forms",
     "nest-forum",
     "nest-gallery",
-    "nest-game",
-    "nest-game-building",
-    "nest-game-character",
-    "nest-game-chronicle",
-    "nest-game-culture",
-    "nest-game-dialogue",
-    "nest-game-economy",
-    "nest-game-equipment",
-    "nest-game-farm",
-    "nest-game-guild",
-    "nest-game-history",
-    "nest-game-household",
-    "nest-game-inventory",
-    "nest-game-item",
-    "nest-game-justice",
-    "nest-game-law",
-    "nest-game-map",
-    "nest-game-monastery",
-    "nest-game-npc",
-    "nest-game-overlord",
-    "nest-game-player",
-    "nest-game-polity",
-    "nest-game-production",
-    "nest-game-property",
-    "nest-game-quest",
-    "nest-game-relationship",
-    "nest-game-religion",
-    "nest-game-settlement",
-    "nest-game-society",
-    "nest-game-travel",
-    "nest-game-war",
-    "nest-game-world",
     "nest-glossary",
     "nest-htmx",
     "nest-keeper",
     "nest-media",
     "nest-messages",
     "nest-redirects",
+    "nest-saga",
+    "nest-saga-building",
+    "nest-saga-character",
+    "nest-saga-chronicle",
+    "nest-saga-culture",
+    "nest-saga-dialogue",
+    "nest-saga-economy",
+    "nest-saga-equipment",
+    "nest-saga-farm",
+    "nest-saga-guild",
+    "nest-saga-history",
+    "nest-saga-household",
+    "nest-saga-inventory",
+    "nest-saga-item",
+    "nest-saga-justice",
+    "nest-saga-law",
+    "nest-saga-map",
+    "nest-saga-monastery",
+    "nest-saga-npc",
+    "nest-saga-overlord",
+    "nest-saga-player",
+    "nest-saga-polity",
+    "nest-saga-production",
+    "nest-saga-property",
+    "nest-saga-quest",
+    "nest-saga-relationship",
+    "nest-saga-religion",
+    "nest-saga-settlement",
+    "nest-saga-society",
+    "nest-saga-travel",
+    "nest-saga-war",
+    "nest-saga-world",
     "nest-search",
     "nest-search-sqlite",
     "nest-storage",
@@ -441,11 +440,6 @@ requires-dist = [
 ]
 
 [[package]]
-name = "nest-content-voievodate"
-version = "0.1.0"
-source = { editable = "game/content/voievodate" }
-
-[[package]]
 name = "nest-core"
 version = "0.2.0"
 source = { editable = "packages/nest-core" }
@@ -574,644 +568,6 @@ requires-dist = [
 ]
 
 [[package]]
-name = "nest-game"
-version = "0.1.0"
-source = { editable = "game/engine" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-core" },
-    { name = "nest-db" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-core", editable = "packages/nest-core" },
-    { name = "nest-db", editable = "interfaces/db" },
-]
-
-[[package]]
-name = "nest-game-building"
-version = "0.1.0"
-source = { editable = "game/subsystems/building" }
-dependencies = [
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-item" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-item", editable = "game/subsystems/item" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-character"
-version = "0.1.0"
-source = { editable = "game/subsystems/character" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-item" },
-    { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-item", editable = "game/subsystems/item" },
-    { name = "pyyaml" },
-]
-
-[[package]]
-name = "nest-game-chronicle"
-version = "0.1.0"
-source = { editable = "game/subsystems/chronicle" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-]
-
-[[package]]
-name = "nest-game-culture"
-version = "0.1.0"
-source = { editable = "game/subsystems/culture" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-dialogue"
-version = "0.1.0"
-source = { editable = "game/subsystems/dialogue" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-    { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-    { name = "pyyaml" },
-]
-
-[[package]]
-name = "nest-game-economy"
-version = "0.1.0"
-source = { editable = "game/subsystems/economy" }
-dependencies = [
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-inventory" },
-    { name = "nest-game-item" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
-    { name = "nest-game-item", editable = "game/subsystems/item" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-equipment"
-version = "0.1.0"
-source = { editable = "game/subsystems/equipment" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-inventory" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
-]
-
-[[package]]
-name = "nest-game-farm"
-version = "0.1.0"
-source = { editable = "game/subsystems/farm" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-guild"
-version = "0.1.0"
-source = { editable = "game/subsystems/guild" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-history"
-version = "0.1.0"
-source = { editable = "game/subsystems/history" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-household"
-version = "0.1.0"
-source = { editable = "game/subsystems/household" }
-dependencies = [
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-npc" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-npc", editable = "game/subsystems/npc" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-inventory"
-version = "0.1.0"
-source = { editable = "game/subsystems/inventory" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-item" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-item", editable = "game/subsystems/item" },
-]
-
-[[package]]
-name = "nest-game-item"
-version = "0.1.0"
-source = { editable = "game/subsystems/item" }
-dependencies = [
-    { name = "nest-game" },
-    { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-game", editable = "game/engine" },
-    { name = "pyyaml", specifier = ">=6.0" },
-]
-
-[[package]]
-name = "nest-game-justice"
-version = "0.1.0"
-source = { editable = "game/subsystems/justice" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-law"
-version = "0.1.0"
-source = { editable = "game/subsystems/law" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-map"
-version = "0.1.0"
-source = { editable = "game/subsystems/map" }
-dependencies = [
-    { name = "nest-game" },
-    { name = "pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-game", editable = "game/engine" },
-    { name = "pyyaml" },
-]
-
-[[package]]
-name = "nest-game-monastery"
-version = "0.1.0"
-source = { editable = "game/subsystems/monastery" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-npc"
-version = "0.1.0"
-source = { editable = "game/subsystems/npc" }
-dependencies = [
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-building" },
-    { name = "nest-game-character" },
-    { name = "nest-game-inventory" },
-    { name = "nest-game-item" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-building", editable = "game/subsystems/building" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
-    { name = "nest-game-item", editable = "game/subsystems/item" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-overlord"
-version = "0.1.0"
-source = { editable = "game/subsystems/overlord" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-]
-
-[[package]]
-name = "nest-game-player"
-version = "0.1.0"
-source = { editable = "game/subsystems/player" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-polity"
-version = "0.1.0"
-source = { editable = "game/subsystems/polity" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-production"
-version = "0.1.0"
-source = { editable = "game/subsystems/production" }
-dependencies = [
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-building" },
-    { name = "nest-game-character" },
-    { name = "nest-game-inventory" },
-    { name = "nest-game-item" },
-    { name = "nest-game-npc" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-building", editable = "game/subsystems/building" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
-    { name = "nest-game-item", editable = "game/subsystems/item" },
-    { name = "nest-game-npc", editable = "game/subsystems/npc" },
-]
-
-[[package]]
-name = "nest-game-property"
-version = "0.1.0"
-source = { editable = "game/subsystems/property" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-quest"
-version = "0.1.0"
-source = { editable = "game/subsystems/quest" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-]
-
-[[package]]
-name = "nest-game-relationship"
-version = "0.1.0"
-source = { editable = "game/subsystems/relationship" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-religion"
-version = "0.1.0"
-source = { editable = "game/subsystems/religion" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-settlement"
-version = "0.1.0"
-source = { editable = "game/subsystems/settlement" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-]
-
-[[package]]
-name = "nest-game-society"
-version = "0.1.0"
-source = { editable = "game/subsystems/society" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-travel"
-version = "0.1.0"
-source = { editable = "game/subsystems/travel" }
-dependencies = [
-    { name = "nest-game" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-war"
-version = "0.1.0"
-source = { editable = "game/subsystems/war" }
-dependencies = [
-    { name = "nest-auth" },
-    { name = "nest-db" },
-    { name = "nest-game" },
-    { name = "nest-game-character" },
-    { name = "nest-game-settlement" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-auth", editable = "modules/auth" },
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-]
-
-[[package]]
-name = "nest-game-world"
-version = "0.1.0"
-source = { editable = "game/subsystems/world" }
-dependencies = [
-    { name = "nest-db" },
-    { name = "nest-game" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-db", editable = "interfaces/db" },
-    { name = "nest-game", editable = "game/engine" },
-]
-
-[[package]]
 name = "nest-glossary"
 version = "0.1.0"
 source = { editable = "modules/glossary" }
@@ -1312,6 +668,644 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-saga"
+version = "0.1.0"
+source = { editable = "engines/saga/engine" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
+name = "nest-saga-building"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/building" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-character"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/character" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-item" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "nest-saga-chronicle"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/chronicle" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+]
+
+[[package]]
+name = "nest-saga-culture"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/culture" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-dialogue"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/dialogue" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "nest-saga-economy"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/economy" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
+    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-equipment"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/equipment" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
+]
+
+[[package]]
+name = "nest-saga-farm"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/farm" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-guild"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/guild" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-history"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/history" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-household"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/household" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-npc" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-npc", editable = "engines/saga/subsystems/npc" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-inventory"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/inventory" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-item" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+]
+
+[[package]]
+name = "nest-saga-item"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/item" }
+dependencies = [
+    { name = "nest-saga" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
+
+[[package]]
+name = "nest-saga-justice"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/justice" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-law"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/law" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-map"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/map" }
+dependencies = [
+    { name = "nest-saga" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "pyyaml" },
+]
+
+[[package]]
+name = "nest-saga-monastery"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/monastery" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-npc"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/npc" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-building" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
+    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-overlord"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/overlord" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+]
+
+[[package]]
+name = "nest-saga-player"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/player" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-polity"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/polity" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-production"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/production" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-building" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-npc" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
+    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "nest-saga-npc", editable = "engines/saga/subsystems/npc" },
+]
+
+[[package]]
+name = "nest-saga-property"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/property" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-quest"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/quest" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+]
+
+[[package]]
+name = "nest-saga-relationship"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/relationship" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-religion"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/religion" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-settlement"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/settlement" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+]
+
+[[package]]
+name = "nest-saga-society"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/society" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-travel"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/travel" }
+dependencies = [
+    { name = "nest-saga" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-war"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/war" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+]
+
+[[package]]
+name = "nest-saga-world"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/world" }
+dependencies = [
+    { name = "nest-db" },
+    { name = "nest-saga" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+]
+
+[[package]]
 name = "nest-search"
 version = "0.1.0"
 source = { editable = "interfaces/search" }
@@ -1388,7 +1382,6 @@ dependencies = [
     { name = "nest-cache-memory" },
     { name = "nest-comments" },
     { name = "nest-content" },
-    { name = "nest-content-voievodate" },
     { name = "nest-core" },
     { name = "nest-db" },
     { name = "nest-db-mariadb" },
@@ -1397,44 +1390,44 @@ dependencies = [
     { name = "nest-forms" },
     { name = "nest-forum" },
     { name = "nest-gallery" },
-    { name = "nest-game" },
-    { name = "nest-game-building" },
-    { name = "nest-game-character" },
-    { name = "nest-game-chronicle" },
-    { name = "nest-game-culture" },
-    { name = "nest-game-dialogue" },
-    { name = "nest-game-economy" },
-    { name = "nest-game-equipment" },
-    { name = "nest-game-farm" },
-    { name = "nest-game-guild" },
-    { name = "nest-game-history" },
-    { name = "nest-game-household" },
-    { name = "nest-game-inventory" },
-    { name = "nest-game-item" },
-    { name = "nest-game-justice" },
-    { name = "nest-game-law" },
-    { name = "nest-game-map" },
-    { name = "nest-game-monastery" },
-    { name = "nest-game-npc" },
-    { name = "nest-game-overlord" },
-    { name = "nest-game-player" },
-    { name = "nest-game-polity" },
-    { name = "nest-game-production" },
-    { name = "nest-game-property" },
-    { name = "nest-game-quest" },
-    { name = "nest-game-relationship" },
-    { name = "nest-game-religion" },
-    { name = "nest-game-settlement" },
-    { name = "nest-game-society" },
-    { name = "nest-game-travel" },
-    { name = "nest-game-war" },
-    { name = "nest-game-world" },
     { name = "nest-glossary" },
     { name = "nest-htmx" },
     { name = "nest-keeper" },
     { name = "nest-media" },
     { name = "nest-messages" },
     { name = "nest-redirects" },
+    { name = "nest-saga" },
+    { name = "nest-saga-building" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-chronicle" },
+    { name = "nest-saga-culture" },
+    { name = "nest-saga-dialogue" },
+    { name = "nest-saga-economy" },
+    { name = "nest-saga-equipment" },
+    { name = "nest-saga-farm" },
+    { name = "nest-saga-guild" },
+    { name = "nest-saga-history" },
+    { name = "nest-saga-household" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-justice" },
+    { name = "nest-saga-law" },
+    { name = "nest-saga-map" },
+    { name = "nest-saga-monastery" },
+    { name = "nest-saga-npc" },
+    { name = "nest-saga-overlord" },
+    { name = "nest-saga-player" },
+    { name = "nest-saga-polity" },
+    { name = "nest-saga-production" },
+    { name = "nest-saga-property" },
+    { name = "nest-saga-quest" },
+    { name = "nest-saga-relationship" },
+    { name = "nest-saga-religion" },
+    { name = "nest-saga-settlement" },
+    { name = "nest-saga-society" },
+    { name = "nest-saga-travel" },
+    { name = "nest-saga-war" },
+    { name = "nest-saga-world" },
     { name = "nest-search" },
     { name = "nest-search-sqlite" },
     { name = "nest-storage" },
@@ -1458,7 +1451,6 @@ requires-dist = [
     { name = "nest-cache-memory", editable = "providers/cache-memory" },
     { name = "nest-comments", editable = "modules/comments" },
     { name = "nest-content", editable = "modules/content" },
-    { name = "nest-content-voievodate", editable = "game/content/voievodate" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-db-mariadb", editable = "providers/db-mariadb" },
@@ -1467,44 +1459,44 @@ requires-dist = [
     { name = "nest-forms", editable = "modules/forms" },
     { name = "nest-forum", editable = "modules/forum" },
     { name = "nest-gallery", editable = "modules/gallery" },
-    { name = "nest-game", editable = "game/engine" },
-    { name = "nest-game-building", editable = "game/subsystems/building" },
-    { name = "nest-game-character", editable = "game/subsystems/character" },
-    { name = "nest-game-chronicle", editable = "game/subsystems/chronicle" },
-    { name = "nest-game-culture", editable = "game/subsystems/culture" },
-    { name = "nest-game-dialogue", editable = "game/subsystems/dialogue" },
-    { name = "nest-game-economy", editable = "game/subsystems/economy" },
-    { name = "nest-game-equipment", editable = "game/subsystems/equipment" },
-    { name = "nest-game-farm", editable = "game/subsystems/farm" },
-    { name = "nest-game-guild", editable = "game/subsystems/guild" },
-    { name = "nest-game-history", editable = "game/subsystems/history" },
-    { name = "nest-game-household", editable = "game/subsystems/household" },
-    { name = "nest-game-inventory", editable = "game/subsystems/inventory" },
-    { name = "nest-game-item", editable = "game/subsystems/item" },
-    { name = "nest-game-justice", editable = "game/subsystems/justice" },
-    { name = "nest-game-law", editable = "game/subsystems/law" },
-    { name = "nest-game-map", editable = "game/subsystems/map" },
-    { name = "nest-game-monastery", editable = "game/subsystems/monastery" },
-    { name = "nest-game-npc", editable = "game/subsystems/npc" },
-    { name = "nest-game-overlord", editable = "game/subsystems/overlord" },
-    { name = "nest-game-player", editable = "game/subsystems/player" },
-    { name = "nest-game-polity", editable = "game/subsystems/polity" },
-    { name = "nest-game-production", editable = "game/subsystems/production" },
-    { name = "nest-game-property", editable = "game/subsystems/property" },
-    { name = "nest-game-quest", editable = "game/subsystems/quest" },
-    { name = "nest-game-relationship", editable = "game/subsystems/relationship" },
-    { name = "nest-game-religion", editable = "game/subsystems/religion" },
-    { name = "nest-game-settlement", editable = "game/subsystems/settlement" },
-    { name = "nest-game-society", editable = "game/subsystems/society" },
-    { name = "nest-game-travel", editable = "game/subsystems/travel" },
-    { name = "nest-game-war", editable = "game/subsystems/war" },
-    { name = "nest-game-world", editable = "game/subsystems/world" },
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-htmx", editable = "modules/htmx" },
     { name = "nest-keeper", editable = "modules/keeper" },
     { name = "nest-media", editable = "modules/media" },
     { name = "nest-messages", editable = "modules/messages" },
     { name = "nest-redirects", editable = "modules/redirects" },
+    { name = "nest-saga", editable = "engines/saga/engine" },
+    { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },
+    { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },
+    { name = "nest-saga-chronicle", editable = "engines/saga/subsystems/chronicle" },
+    { name = "nest-saga-culture", editable = "engines/saga/subsystems/culture" },
+    { name = "nest-saga-dialogue", editable = "engines/saga/subsystems/dialogue" },
+    { name = "nest-saga-economy", editable = "engines/saga/subsystems/economy" },
+    { name = "nest-saga-equipment", editable = "engines/saga/subsystems/equipment" },
+    { name = "nest-saga-farm", editable = "engines/saga/subsystems/farm" },
+    { name = "nest-saga-guild", editable = "engines/saga/subsystems/guild" },
+    { name = "nest-saga-history", editable = "engines/saga/subsystems/history" },
+    { name = "nest-saga-household", editable = "engines/saga/subsystems/household" },
+    { name = "nest-saga-inventory", editable = "engines/saga/subsystems/inventory" },
+    { name = "nest-saga-item", editable = "engines/saga/subsystems/item" },
+    { name = "nest-saga-justice", editable = "engines/saga/subsystems/justice" },
+    { name = "nest-saga-law", editable = "engines/saga/subsystems/law" },
+    { name = "nest-saga-map", editable = "engines/saga/subsystems/map" },
+    { name = "nest-saga-monastery", editable = "engines/saga/subsystems/monastery" },
+    { name = "nest-saga-npc", editable = "engines/saga/subsystems/npc" },
+    { name = "nest-saga-overlord", editable = "engines/saga/subsystems/overlord" },
+    { name = "nest-saga-player", editable = "engines/saga/subsystems/player" },
+    { name = "nest-saga-polity", editable = "engines/saga/subsystems/polity" },
+    { name = "nest-saga-production", editable = "engines/saga/subsystems/production" },
+    { name = "nest-saga-property", editable = "engines/saga/subsystems/property" },
+    { name = "nest-saga-quest", editable = "engines/saga/subsystems/quest" },
+    { name = "nest-saga-relationship", editable = "engines/saga/subsystems/relationship" },
+    { name = "nest-saga-religion", editable = "engines/saga/subsystems/religion" },
+    { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
+    { name = "nest-saga-society", editable = "engines/saga/subsystems/society" },
+    { name = "nest-saga-travel", editable = "engines/saga/subsystems/travel" },
+    { name = "nest-saga-war", editable = "engines/saga/subsystems/war" },
+    { name = "nest-saga-world", editable = "engines/saga/subsystems/world" },
     { name = "nest-search", editable = "interfaces/search" },
     { name = "nest-search-sqlite", editable = "providers/search-sqlite" },
     { name = "nest-storage", editable = "interfaces/storage" },

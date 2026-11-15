@@ -90,7 +90,7 @@ def test_an_ecosystem_contract_adds_and_refines_types():
     contract = load_contracts()
     contract.merge(
         Contract.from_mapping(
-            {"ecosystem": "game", "types": {"subsystem": {"required": ["main", "tick"]}}}, "game"
+            {"ecosystem": "saga", "types": {"subsystem": {"required": ["main", "tick"]}}}, "saga"
         )
     )
     raw = base(main="x")
@@ -98,4 +98,4 @@ def test_an_ecosystem_contract_adds_and_refines_types():
     assert contract.validate(parse(raw)) == ["a subsystem must declare 'tick'"]
     raw["tick"] = {"stage": "npc"}
     assert contract.validate(parse(raw)) == []
-    assert contract.ecosystems == ["nest", "game"]
+    assert contract.ecosystems == ["nest", "saga"]

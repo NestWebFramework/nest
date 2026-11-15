@@ -61,7 +61,9 @@ def applications(folders: list[Path]) -> list[Application]:
     for entry in Catalog.discover().of_type("application"):
         roots.append((entry.root, "package"))
     for folder in folders:
-        if folder.is_dir():
+        if (folder / MANIFEST_FILE).is_file():  # a folder that is an application (a repo of its own)
+            roots.append((folder, str(folder)))
+        elif folder.is_dir():
             for path in sorted(folder.glob(f"*/{MANIFEST_FILE}")):
                 roots.append((path.parent, str(folder)))
     for root, source in roots:

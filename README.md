@@ -40,10 +40,9 @@ modules/              reusable modules (htmx, auth, forms, glossary, content, me
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
-game/engine/          the nest-game engine (worlds, the game loop, the subsystem contract)
-game/subsystems/      game subsystems (world, map, item, inventory, character, settlement, building, npc, production, economy, household, law, religion)
-game/content/         game content packs: data only (voievodate)
-applications/         applications (keeper, hello, regionalisme, morlaca, transilpedia, gari, voievodate)
+engines/saga/engine/      the Saga engine (worlds, the game loop, the subsystem contract)
+engines/saga/subsystems/  its subsystems (world, map, item, inventory, character, settlement, household, polity, ...)
+applications/             applications (keeper, hello, regionalisme, morlaca, transilpedia, gari)
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -454,10 +453,14 @@ uv run nest trains journeys applications/gari "Cluj Napoca" "Bucuresti Nord"
 `/cfr/tren/…`, `/cfr/itinerariu`, `/cfr/companie/…`), and the galleries at `/galerii-foto`, as
 Geticus routed them.
 
-## The game: nest-game
+## The Saga engine
 
-The voievodate.ro simulation is the **nest-game ecosystem**. Its engine (`game/engine`, the
-`game` module) publishes a contract adding the **`subsystem`** type, which must declare `tick:`,
+**Saga** is Nest's engine for life-simulation games: characters, households, settlements and
+realms over generations, a text browser game with many players on one server. It is generic:
+a game made with it is an application in a repo of its own, with its content pack (its data)
+and its client. The first is voievodate.ro (`../voievodate`, a life in the medieval Romanian
+lands); Nest may grow other engines beside it in `engines/`. Saga is the **nest-saga
+ecosystem**: its engine (`engines/saga/engine`, the `saga` module) publishes a contract adding the **`subsystem`** type, which must declare `tick:`,
 so the core validates subsystems as it validates its own types.
 
 * **One World per game server** (`servers`). A world holds what each subsystem keeps, its own
@@ -468,7 +471,7 @@ so the core validates subsystems as it validates its own types.
   2. advances the clock;
   3. runs each subsystem's stage in the order the manifests declare (`tick.after`), at its own
      rate (`tick.every`), timed;
-  4. publishes the stages' events on `game.<server>.<topic>`;
+  4. publishes the stages' events on `saga.<server>.<topic>`;
   5. every `checkpoint` seconds (30 by default), writes what changed in every subsystem in
      one transaction, in a thread. That is one fsync for the whole world and a consistent
      snapshot (a crash never leaves the inventory ahead of the characters), and the loop never
@@ -494,8 +497,8 @@ class NpcSubsystem(Subsystem):
 ```
 
 **Light on small servers.** The target is 1000-2000 players on a basic machine, and the
-benchmark (`nest_game.bench`) measures it. Game masters run it from the admin panel's **Tools** page
-(`<admin route>/game/tools`): it shows progress while it runs, keeps each run's results in the
+benchmark (`nest_saga.bench`) measures it. Game masters run it from the admin panel's **Tools** page
+(`<admin route>/saga/tools`): it shows progress while it runs, keeps each run's results in the
 workspace (`data/bench/`, the newest 50), and compares two runs in a before/after table with the
 change. From a terminal, `tools/bench_game.py` does the same.
 
@@ -513,7 +516,7 @@ buildings in 40 settlements:
 
 The design choices behind that:
 
-* Writers use `nest_game.store` (`save`, `drop`). It finds existing rows with one query per few
+* Writers use `nest_saga.store` (`save`, `drop`). It finds existing rows with one query per few
   hundred keys and writes with executemany INSERT and UPDATE, instead of an ORM object per row.
 * `Written` remembers what was last written, so only changed columns are sent. A character's
   needs change hourly; its skills rarely do.
@@ -525,15 +528,14 @@ The design choices behind that:
 
 **`world`** is the first subsystem ported. It keeps the game calendar (a restarted world goes on
 where it was), the season by month, and each day's weather for the world and its regions, drawn
-with the world's seeded generator. Clients follow `game.<server>.world` for `clock` and
+with the world's seeded generator. Clients follow `saga.<server>.world` for `clock` and
 `weather`.
 
 **Content packs** (type `content`) are the game's data as YAML: no code, no tick, read once at
-start. `game/content/voievodate` carries the original game's 260 items. Packs load in the order
-the application lists them, and a later pack redefines an item by its slug, so a server can
-override the voievodate data without copying it. The pack's tools rebuild the YAML from
-flasknest-core's seeds: `tools/seed_all.py` runs them into a SQLite file, and `tools/export.py`
-turns that file into `data/items.yml`.
+start. A game keeps its pack in its own repo, as a local module of its application
+(voievodate's is `modules/voievodate-content`, with the tools that rebuild its YAML from
+flasknest-core's seeds). Packs load in the order the application lists them, and a later pack
+redefines an item by its slug, so a server can override a game's data without copying it.
 
 **`item`** reads every pack's `items:` into one catalogue: weight, value, durability and wear,
 uses, effects, what an item is made of, and what a container leaves when it is empty. The other
@@ -546,7 +548,7 @@ owner's person or vault. Alike things pile up in one stack. Tools and other item
 durability or several uses are kept unit by unit, each with its own wear. Taking is all or
 nothing, and the most worn units go first. A water skin's last drink leaves the empty skin.
 Stacks are written by key at each checkpoint. Game masters can follow each owner's
-`game.<server>.inventory.<type>.<id>`. The commands are `GiveItem`, `TakeItem` and
+`saga.<server>.inventory.<type>.<id>`. The commands are `GiveItem`, `TakeItem` and
 `TransferItem`.
 
 **`character`** is what NPCs and players are. Its definitions come from the packs' `characters:`
@@ -570,8 +572,8 @@ player subsystems will add a mind on top.
 The old seed list forgot the diseases. The seed tool now runs that seed too, and the export
 maps the treatments' placeholder item (`item_id=16`, the iron hammer) to the items their
 comments name. The commands are `CreateCharacter`, `Infect`, `Treat`, `GrantExperience` and
-`ChangeAttribute`. Game masters follow `game.<server>.character` for births, deaths and
-illnesses, and `game.<server>.character.<id>` for one character's sheet.
+`ChangeAttribute`. Game masters follow `saga.<server>.character` for births, deaths and
+illnesses, and `saga.<server>.character.<id>` for one character's sheet.
 
 **`map`** is the land: every tile's terrain and county, and the regions above (county, duchy,
 principality, kingdom). The voievodate pack bakes them once with `tools/export_map.py`, from
@@ -585,7 +587,7 @@ The old engine kept 251,001 tile rows in a table and parsed the outlines with sh
 boot. Other subsystems ask `map_of(host)`: `at(x, y)`, `region(x, y)`, `tiles_of(county)`. A
 settlement's region is the county it stands in. With `places: true` (voievodate sets it), a new
 world begins with one settlement in each county, named for its seat; their founders arrive with
-them. Game masters see the land in the admin panel (`<admin route>/game/map`): the counties in their duchies' colours, and
+them. Game masters see the land in the admin panel (`<admin route>/saga/map`): the counties in their duchies' colours, and
 a dot for each settlement sized by its people, refreshed while the page is open.
 
 **`settlement`** keeps the hamlets, villages and towns: where each is (map tiles), its
@@ -610,8 +612,8 @@ materials, 7 upgrades).
   protection around them; the old code meant to, but no building was tagged.
 
 The commands are `RaiseBuilding`, `StartUpgrade` and `RepairBuilding`. Settlements and
-buildings are public, so anyone may follow `game.<server>.settlement[.<id>]` and
-`game.<server>.building[.<settlement id>]`.
+buildings are public, so anyone may follow `saga.<server>.settlement[.<id>]` and
+`saga.<server>.building[.<settlement id>]`.
 
 The checks at start report what the original data lacks. Settlement evolution past a village
 asks for technologies no pack defines (`basic_trade`, `trade_routes`, `stone_masonry`,
@@ -641,7 +643,7 @@ season. The old GOAP list had no way to eat or drink before there was a market; 
 actions from the old game's own data: the well's "Drink Water" and the "Gather Food" activity
 (foraging). The seeds' schedule-skip rules on work said to skip working while fed
 (`hunger_min: 20`); those are dropped, because the preconditions already stop a hungry worker.
-Buying waits for the economy. Anyone may follow `game.<server>.npc.<settlement id>`: where each
+Buying waits for the economy. Anyone may follow `saga.<server>.npc.<settlement id>`: where each
 NPC is and what it does, with its walk (from, to, depart, arrive) for a client to animate.
 
 **`production`** is what workers make. Its data is `production.yml`: 82 recipes, what each
@@ -672,7 +674,7 @@ never produced. The original data also had these gaps:
 * Tools still break by the old arithmetic (a bow lasts six hunts). Replacing them waits for the
   economy and the blacksmith.
 
-Anyone may follow `game.<server>.production.<settlement id>` to watch the store.
+Anyone may follow `saga.<server>.production.<settlement id>` to watch the store.
 
 **`economy`** sets what things are worth and gives every settlement a market. Its data is
 `economy.yml`: the wage, the spread, the seasons and the old price limits.
@@ -695,7 +697,7 @@ Anyone may follow `game.<server>.production.<settlement id>` to watch the store.
 The old engine began every item's price at 1.0, with limits for eleven, and its market paid
 sellers from nothing. Not yet here: taxes (with the settlement's laws), and demand for logs,
 clay and wool, which wait for builders and crafts. Anyone may follow
-`game.<server>.economy.<settlement id>` for the market's goods and prices, at most once a game
+`saga.<server>.economy.<settlement id>` for the market's goods and prices, at most once a game
 hour.
 
 **`household`** makes families. Every resident NPC belongs to a household, with the roles from
@@ -760,11 +762,17 @@ and the Banat 30% Catholic) or from their household's head.
 
 Game masters see each settlement's faiths, their piety and the year's feasts in the admin panel.
 
+A game runs from its own repo (with Nest checked out beside it), for voievodate:
+
 ```sh
-uv run nest game status applications/voievodate
-uv run nest game step applications/voievodate voievodate 3600     # one game day at 24×
-uv run nest run applications/voievodate                            # http://127.0.0.1:8500/joc
+cd ../voievodate
+uv run nest saga status .
+uv run nest saga step . voievodate 3600     # one game day at 24×
+uv run nest run .                            # http://127.0.0.1:8500/joc
 ```
+
+The keeper still sees it: its `apps` setting lists `../voievodate`, a folder that is an
+application, so the game is planned, checked and probed with Nest's own applications.
 
 ## The admin panel
 

@@ -3,6 +3,7 @@
 import textwrap
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from nest_auth.sessions import create_user
 from nest_keeper import applications
@@ -27,11 +28,26 @@ bind:
 
 def test_every_application_is_found_and_planned():
     apps = {a.name: a for a in applications([REPO / "applications"])}
-    assert {"voievodate", "gari", "morlaca", "transilpedia", "regionalisme", "keeper"} <= set(apps)
+    assert {"gari", "morlaca", "transilpedia", "regionalisme", "keeper"} <= set(apps)
+    assert "voievodate" not in apps  # the game lives in a repo of its own
+
+
+GAME = REPO.parent / "voievodate"  # voievodate's repo, checked out beside nest
+
+
+@pytest.mark.skipif(
+    not (GAME / "module.yml").exists(), reason="no voievodate checkout"
+)
+def test_a_game_in_its_own_repo_is_found_and_planned():
+    apps = {a.name: a for a in applications([REPO / "applications", GAME])}
     voievodate = apps["voievodate"]
-    assert voievodate.port == 8500 and not voievodate.problems
+    assert voievodate.port == 8500 and not voievodate.problems, voievodate.problems
     names = [u["name"] for u in voievodate.units]
-    assert names.index("game") < names.index("npc") and {"admin", "economy"} <= set(names)
+    assert names.index("saga") < names.index("npc") and {
+        "admin",
+        "economy",
+        "voievodate-content",
+    } <= set(names)
     assert voievodate.bindings == {"nest.db": ["db-sqlite"]}
 
 
@@ -46,11 +62,14 @@ def test_a_broken_application_shows_its_problems(tmp_path):
     assert broken.problems and "nowhere" in " ".join(broken.problems)
 
 
+@pytest.mark.skipif(
+    not (GAME / "module.yml").exists(), reason="no voievodate checkout"
+)
 def test_the_keepers_pages(tmp_path):
     root = tmp_path / "keeper"
     root.mkdir()
     (root / "module.yml").write_text(
-        textwrap.dedent(APP).replace("APPS", str(REPO / "applications")), encoding="utf-8"
+        textwrap.dedent(APP).replace("APPS", f"{REPO / 'applications'},{GAME}"), encoding="utf-8"
     )
     app = create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
     with TestClient(app) as c:
@@ -89,11 +108,14 @@ def make_keeper(tmp_path):
     root = tmp_path / "keeper"
     root.mkdir()
     (root / "module.yml").write_text(
-        textwrap.dedent(APP).replace("APPS", str(REPO / "applications")), encoding="utf-8"
+        textwrap.dedent(APP).replace("APPS", f"{REPO / 'applications'},{GAME}"), encoding="utf-8"
     )
     return create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
 
 
+@pytest.mark.skipif(
+    not (GAME / "module.yml").exists(), reason="no voievodate checkout"
+)
 def test_the_rest_api_answers_only_to_a_token(tmp_path):
     from nest_keeper import rest as keeper_api
     from nest_keeper import tokens

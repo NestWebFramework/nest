@@ -30,39 +30,38 @@ dependencies = [
     "nest-forum",
     "nest-messages",
     "nest-trains",
-    "nest-game",
-    "nest-game-world",
-    "nest-game-item",
-    "nest-game-inventory",
-    "nest-game-character",
-    "nest-game-settlement",
-    "nest-game-building",
-    "nest-game-npc",
-    "nest-game-production",
-    "nest-game-economy",
-    "nest-game-map",
-    "nest-game-household",
-    "nest-game-law",
-    "nest-game-religion",
-    "nest-game-relationship",
-    "nest-game-dialogue",
-    "nest-game-guild",
-    "nest-game-quest",
-    "nest-game-chronicle",
-    "nest-game-player",
-    "nest-game-travel",
-    "nest-game-society",
-    "nest-game-farm",
-    "nest-game-equipment",
-    "nest-game-polity",
-    "nest-game-justice",
-    "nest-game-war",
-    "nest-game-overlord",
-    "nest-game-culture",
-    "nest-game-property",
-    "nest-game-monastery",
-    "nest-game-history",
-    "nest-content-voievodate",
+    "nest-saga",
+    "nest-saga-world",
+    "nest-saga-item",
+    "nest-saga-inventory",
+    "nest-saga-character",
+    "nest-saga-settlement",
+    "nest-saga-building",
+    "nest-saga-npc",
+    "nest-saga-production",
+    "nest-saga-economy",
+    "nest-saga-map",
+    "nest-saga-household",
+    "nest-saga-law",
+    "nest-saga-religion",
+    "nest-saga-relationship",
+    "nest-saga-dialogue",
+    "nest-saga-guild",
+    "nest-saga-quest",
+    "nest-saga-chronicle",
+    "nest-saga-player",
+    "nest-saga-travel",
+    "nest-saga-society",
+    "nest-saga-farm",
+    "nest-saga-equipment",
+    "nest-saga-polity",
+    "nest-saga-justice",
+    "nest-saga-war",
+    "nest-saga-overlord",
+    "nest-saga-culture",
+    "nest-saga-property",
+    "nest-saga-monastery",
+    "nest-saga-history",
 ]
 
 [tool.uv]
@@ -75,9 +74,8 @@ members = [
     "interfaces/*",
     "providers/*",
     "themes/*",
-    "game/engine",
-    "game/subsystems/*",
-    "game/content/*",
+    "engines/saga/engine",
+    "engines/saga/subsystems/*",
 ]
 
 [tool.uv.sources]
@@ -107,39 +105,38 @@ nest-keeper = { workspace = true }
 nest-forum = { workspace = true }
 nest-messages = { workspace = true }
 nest-trains = { workspace = true }
-nest-game = { workspace = true }
-nest-game-world = { workspace = true }
-nest-game-item = { workspace = true }
-nest-game-inventory = { workspace = true }
-nest-game-character = { workspace = true }
-nest-game-settlement = { workspace = true }
-nest-game-building = { workspace = true }
-nest-game-npc = { workspace = true }
-nest-game-production = { workspace = true }
-nest-game-economy = { workspace = true }
-nest-game-map = { workspace = true }
-nest-game-household = { workspace = true }
-nest-game-law = { workspace = true }
-nest-game-religion = { workspace = true }
-nest-game-relationship = { workspace = true }
-nest-game-dialogue = { workspace = true }
-nest-game-guild = { workspace = true }
-nest-game-quest = { workspace = true }
-nest-game-chronicle = { workspace = true }
-nest-game-player = { workspace = true }
-nest-game-travel = { workspace = true }
-nest-game-society = { workspace = true }
-nest-game-farm = { workspace = true }
-nest-game-equipment = { workspace = true }
-nest-game-polity = { workspace = true }
-nest-game-justice = { workspace = true }
-nest-game-war = { workspace = true }
-nest-game-overlord = { workspace = true }
-nest-game-culture = { workspace = true }
-nest-game-property = { workspace = true }
-nest-game-monastery = { workspace = true }
-nest-game-history = { workspace = true }
-nest-content-voievodate = { workspace = true }
+nest-saga = { workspace = true }
+nest-saga-world = { workspace = true }
+nest-saga-item = { workspace = true }
+nest-saga-inventory = { workspace = true }
+nest-saga-character = { workspace = true }
+nest-saga-settlement = { workspace = true }
+nest-saga-building = { workspace = true }
+nest-saga-npc = { workspace = true }
+nest-saga-production = { workspace = true }
+nest-saga-economy = { workspace = true }
+nest-saga-map = { workspace = true }
+nest-saga-household = { workspace = true }
+nest-saga-law = { workspace = true }
+nest-saga-religion = { workspace = true }
+nest-saga-relationship = { workspace = true }
+nest-saga-dialogue = { workspace = true }
+nest-saga-guild = { workspace = true }
+nest-saga-quest = { workspace = true }
+nest-saga-chronicle = { workspace = true }
+nest-saga-player = { workspace = true }
+nest-saga-travel = { workspace = true }
+nest-saga-society = { workspace = true }
+nest-saga-farm = { workspace = true }
+nest-saga-equipment = { workspace = true }
+nest-saga-polity = { workspace = true }
+nest-saga-justice = { workspace = true }
+nest-saga-war = { workspace = true }
+nest-saga-overlord = { workspace = true }
+nest-saga-culture = { workspace = true }
+nest-saga-property = { workspace = true }
+nest-saga-monastery = { workspace = true }
+nest-saga-history = { workspace = true }
 
 [dependency-groups]
 dev = [

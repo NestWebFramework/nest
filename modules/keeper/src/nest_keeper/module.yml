@@ -38,7 +38,7 @@ deps:
   admin: ">=0.1,<1"
 
 settings:
-  apps: {type: str, default: "applications", description: "Folders of applications, by comma (relative to where Nest runs)."}
+  apps: {type: str, default: "applications", description: "Folders of applications, or an application's own folder (a repo of its own), by comma (relative to where Nest runs)."}
 
 db:
   migrations: migrations
