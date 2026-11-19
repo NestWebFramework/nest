@@ -192,6 +192,31 @@ class Application(_Section):
         return int(v) if isinstance(v, str) and v.isdigit() else v
 
 
+class Serve(_Section):
+    """How ``nest serve`` runs an application: gunicorn's master and its workers.
+
+    workers: processes ("auto": the CPUs this process may use); threads: a worker's
+    pool for synchronous handlers; timeout: a silent worker is replaced after it;
+    graceful_timeout: what a stopping worker has to finish its requests; max_requests:
+    a worker is replaced after so many (with jitter), so slow leaks never pile up.
+    """
+
+    workers: int | Literal["auto"] = "auto"
+    threads: int = 16
+    timeout: int = 30
+    graceful_timeout: int = 20
+    keepalive: int = 5
+    max_requests: int = 5000
+    max_requests_jitter: int = 500
+
+    @field_validator("workers", "threads", "timeout", "graceful_timeout", "max_requests")
+    @classmethod
+    def _positive(cls, v: Any) -> Any:
+        if v != "auto" and int(v) < 1:
+            raise ValueError("must be 1 or more")
+        return v
+
+
 class Deploy(_Section):
     port: int | None = None
     service: str | None = None
@@ -236,6 +261,10 @@ class Manifest(BaseModel):
     modules: list[Instance] = Field(default_factory=list)
     bind: dict[str, Binding] = Field(default_factory=dict)
     deploy: Deploy | None = None
+    serve: Serve | None = None
+    # a module whose state lives in its process (a game engine's worlds, kept in
+    # memory and ticked there): the application runs as one process while it has it
+    one_process: bool = False
     # The parts it hosts (an engine's subsystems), and the host a part belongs to: a part
     # names its host, so one made later, elsewhere, joins it the same way.
     subsystems: Subsystems | None = None

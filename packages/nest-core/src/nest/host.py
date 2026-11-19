@@ -400,6 +400,13 @@ class Nest:
 
     @asynccontextmanager
     async def lifespan(self, _app: FastAPI):
+        threads = self.environ.get("NEST_THREADS", "")
+        if threads.isdigit() and int(threads) > 0:
+            # the pool the synchronous handlers run in: under Python's lock more threads
+            # bring no speed, only waiting turns; nest serve sizes it (serve: threads)
+            import anyio.to_thread  # noqa: PLC0415
+
+            anyio.to_thread.current_default_thread_limiter().total_tokens = int(threads)
         for hook in self._startup:
             await _maybe(hook())
         tasks = [

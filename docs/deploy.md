@@ -31,12 +31,43 @@ docker compose run --rm app nest auth create-user /src/app you@example.ro --role
 | `NEST_TRUSTED_PROXIES` | whose `X-Forwarded-*` headers are believed (`*` only when the port is reachable from the proxy alone) |
 | `PORT`, `NEST_WORKERS`, `NEST_LOG_LEVEL` | the port, processes, log level |
 
-Workers: each is a process with its own Python, so pages are made in parallel; SQLite
-reads well from several (WAL), and settings saved in one are seen by the others within
-two seconds. A site serves several times the pages with as many workers as cores
-(morlaca: about 60 category pages a second with one, 280 with four). An application
-that pushes live updates between visitors (the game's realtime) needs one worker, or
-a shared broker.
+## Workers: nest serve
+
+`nest serve APP` runs an application as gunicorn runs a Flask one: a master process
+and its workers. The master makes the application once before it forks (migrations,
+or in production the refusal to start behind them; its checks), then each worker
+makes its own and serves it with uvicorn's asyncio server, synchronous handlers in a
+pool of `threads`. gunicorn replaces a worker that dies or stays silent past
+`timeout`, renews each after `max_requests` (with jitter), reloads them one by one
+on `kill -HUP <master>` (no request lost), and stops them gracefully on SIGTERM.
+`nest run` stays the development server (one process, reloading on changes).
+
+```yaml
+serve:                 # in the application's module.yml; all optional
+  workers: auto        # processes: the CPUs this process may use     (NEST_WORKERS)
+  threads: 16          # each worker's pool for synchronous handlers  (NEST_THREADS)
+  timeout: 30          # seconds before a silent worker is replaced   (NEST_TIMEOUT)
+  graceful_timeout: 20
+  keepalive: 5
+  max_requests: 5000   # requests before a worker is renewed          (NEST_MAX_REQUESTS)
+  max_requests_jitter: 500
+```
+
+The environment overrides the manifest, the command line both (`nest serve . --workers
+4 --threads 8`); `--dry-run` shows the plan and gunicorn's settings. Python runs one
+thread at a time in a process, so pages are made in parallel by workers (about one
+per core), while threads let a slow request not hold up the others; a few per
+worker is plenty. Each worker uses about 85 MB.
+
+Settings saved in one worker are seen by the others within two seconds; SQLite
+reads well from several (each worker lets one thread at a time into it). A module
+that keeps its state in its process says so (`one_process: true`, as Saga's worlds
+do), and `nest serve` then runs one worker and says why; live updates between
+visitors of different workers need a shared broker (the next step).
+
+Measured with morlaca (4 workers x 8 threads): about 280 category pages a second
+and 320 feeds, a worker killed is replaced in seconds, and 3,000 requests made
+during a HUP reload all succeeded.
 
 Secrets live in the environment or the workspace `.env`, never in `module.yml`.
 

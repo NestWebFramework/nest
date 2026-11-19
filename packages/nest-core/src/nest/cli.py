@@ -115,6 +115,49 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    """gunicorn's master and its workers: an application in production."""
+    from nest.serve import ServeError, gunicorn_options, one_process_modules, plan, preflight, run  # noqa: PLC0415
+
+    root = Path(args.app).resolve()
+    os.environ["NEST_APP_DIR"] = str(root)
+    environ = {**os.environ}
+    try:
+        nest = preflight(root, environ)  # migrations and checks, once, before any fork
+        the_plan = plan(
+            root,
+            nest.manifest,
+            environ,
+            {
+                "host": args.host,
+                "port": args.port,
+                "workers": args.workers,
+                "threads": args.threads,
+                "timeout": args.timeout,
+                "max_requests": args.max_requests,
+                "forwarded_allow_ips": args.forwarded_allow_ips,
+                "log_level": args.log_level,
+            },
+            one_process_modules(nest),
+        )
+    except ServeError as e:
+        print(f"✗ {e}")
+        return 2
+    os.environ["NEST_MIGRATE"] = "off"  # done above: the workers do not race at it
+    os.environ["NEST_THREADS"] = str(the_plan.threads)
+    for note in the_plan.notes:
+        print(f"! {note}")
+    print(
+        f"nest serve: {the_plan.name} on {the_plan.host}:{the_plan.port}, "
+        f"{the_plan.workers} worker{'s' if the_plan.workers != 1 else ''} x {the_plan.threads} threads"
+    )
+    if args.dry_run:
+        for key, value in sorted(gunicorn_options(the_plan).items()):
+            print(f"  {key} = {value}")
+        return 0
+    return run(the_plan)
+
+
 def _open(app: str):
     from nest.host import create_app  # noqa: PLC0415
 
@@ -204,6 +247,23 @@ def main(argv: list[str] | None = None) -> int:
         help="the proxies whose X-Forwarded-* headers are believed (default $NEST_TRUSTED_PROXIES)",
     )
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser(
+        "serve", help="run an application in production: gunicorn's master and workers"
+    )
+    p.add_argument("app")
+    p.add_argument("--host", help="address to listen on (default $NEST_HOST, else 127.0.0.1)")
+    p.add_argument("--port", type=int, help="default $PORT, else the application's port")
+    p.add_argument("--workers", help="processes, or auto: the CPUs (default serve: workers)")
+    p.add_argument("--threads", type=int, help="each worker's threads for synchronous handlers")
+    p.add_argument("--timeout", type=int, help="seconds before a silent worker is replaced")
+    p.add_argument("--max-requests", type=int, help="requests before a worker is renewed")
+    p.add_argument("--forwarded-allow-ips", help="proxies whose X-Forwarded-* are believed")
+    p.add_argument("--log-level", help="debug, info, warning, error")
+    p.add_argument(
+        "--dry-run", action="store_true", help="show the plan and the settings, run nothing"
+    )
+    p.set_defaults(func=cmd_serve)
 
     p = sub.add_parser("check", help="what running an application in production needs")
     p.add_argument("app")

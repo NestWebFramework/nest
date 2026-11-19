@@ -84,6 +84,7 @@ same versions.
 uv sync                                   # Python 3.13 and every workspace package
 uv run nest plan applications/hello       # what the application is made of, in start order
 uv run nest run applications/hello        # http://127.0.0.1:8100  (--reload while developing)
+uv run nest serve applications/hello      # production: gunicorn's master and workers (docs/deploy.md)
 uv run pytest                             # the tests
 uv run nest validate .                    # every manifest against its contract
 uv run nest new app myapp --into applications
@@ -123,7 +124,8 @@ Any declared setting can be overridden as `NEST_<APP>__<OWNER>__<KEY>`, for exam
 | `NEST_APP_WORKSPACE` | where the application keeps its data |
 | `NEST_<APP>__DB_<ENGINE>__<KEY>` | a database provider's settings, e.g. `NEST_GLOSSARY__DB_POSTGRES__PASSWORD` |
 | `NEST_ALLOWED_HOSTS` | the hosts it answers, comma-separated; any other gets 400 |
-| `NEST_TRUSTED_PROXIES` | the proxies whose `X-Forwarded-*` headers `nest run` believes |
+| `NEST_TRUSTED_PROXIES` | the proxies whose `X-Forwarded-*` headers `nest run` and `nest serve` believe |
+| `NEST_WORKERS`, `NEST_THREADS` | `nest serve`'s processes and each one's threads (or the manifest's `serve:`) |
 
 Running one for real (the image, `nest check`, `nest backup`/`restore`, Caddy in front)
 is in [docs/deploy.md](docs/deploy.md).
