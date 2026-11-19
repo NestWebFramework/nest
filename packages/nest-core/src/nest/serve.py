@@ -76,6 +76,7 @@ def plan(
     options: dict[str, Any],
     one_process: list[str] | None = None,
     process_local: list[str] | None = None,
+    unrelayed: list[str] | None = None,
 ) -> Plan:
     """The manifest's serve: section, the environment over it, the options over both.
     ``one_process`` names the modules that keep their state in one process."""
@@ -102,7 +103,12 @@ def plan(
     if process_local and workers > 1:
         notes.append(
             f"{', '.join(process_local)}: each worker keeps its own values "
-            "(bind cache-redis to share them)"
+            "(bind nest.cache to redis to share them)"
+        )
+    if unrelayed and workers > 1:
+        notes.append(
+            f"{', '.join(unrelayed)}: live updates reach only the visitors of the worker "
+            "that made them (bind nest.pubsub to redis to relay them)"
         )
     return Plan(
         app_dir=app_dir,
@@ -170,6 +176,18 @@ def process_local_providers(nest: Any) -> list[str]:
         for n in dict.fromkeys(names)
         if (u := nest.plan.unit(n)) is not None
         and getattr(u.entry.manifest, "process_local", False)
+    ]
+
+
+def unrelayed_modules(nest: Any) -> list[str]:
+    """The modules with live updates, when nothing relays them between workers."""
+    if nest.bindings.by_interface.get("nest.pubsub"):
+        return []
+    return [
+        u.name
+        for u in nest.plan.units
+        if "realtime" in u.entry.manifest.requires.host
+        and not getattr(u.entry.manifest, "one_process", False)
     ]
 
 

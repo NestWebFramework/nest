@@ -153,3 +153,70 @@ def test_a_setting_changed_by_another_process_is_seen(tmp_path, monkeypatch):
 
     os.utime(path, (path.stat().st_atime, path.stat().st_mtime + 5))  # a later write
     assert two.get("maps.provider") == "maptiler"
+
+
+class FakeRelay:
+    """nest.pubsub in one process: every listener hears every message, its own included."""
+
+    def __init__(self):
+        self.listeners: list[asyncio.Queue] = []
+
+    async def publish(self, channel, message):
+        for q in self.listeners:
+            q.put_nowait(message)
+
+    async def messages(self, channel):
+        q: asyncio.Queue = asyncio.Queue()
+        self.listeners.append(q)
+        try:
+            while True:
+                yield await q.get()
+        finally:
+            self.listeners.remove(q)
+
+
+def test_brokers_relay_events_to_each_others_visitors_in_order():
+    async def scenario():
+        relay = FakeRelay()
+        one, two = Broker(), Broker()  # two workers
+        tasks = []
+        for b in (one, two):
+            b.register("t", "m", public=True)
+            tasks += [asyncio.create_task(fn()) for fn in b.tasks(relay, "realtime:app")]
+        await asyncio.sleep(0.01)
+        here, there = one.stream(FakeRequest(), ["t"]), two.stream(FakeRequest(), ["t"])
+        for gen in (here, there):
+            assert await gen.__anext__() == "retry: 3000\n\n"
+        for i in range(5):
+            one.publish("t", "e", str(i))
+        for gen in (here, there):  # once each, in order: none twice to the worker that made it
+            assert [await gen.__anext__() for _ in range(5)] == [
+                f"event: e\ndata: {i}\n\n" for i in range(5)
+            ]
+        one.publish("t", "tick", "x", local=True)  # this worker's only
+        two.publish("t", "e", "back")
+        assert await there.__anext__() == "event: e\ndata: back\n\n"
+        assert await here.__anext__() == "event: tick\ndata: x\n\n"
+        assert await here.__anext__() == "event: e\ndata: back\n\n"
+        assert one.listening("nobody") and not Broker().listening("nobody")
+        for gen in (here, there):
+            await gen.aclose()
+        for t in tasks:
+            t.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    asyncio.run(scenario())
+
+
+def test_a_handlers_thread_may_publish():
+    async def scenario():
+        broker = Broker()
+        broker.register("t", "m", public=True)
+        broker.tasks(None, "")
+        gen = broker.stream(FakeRequest(), ["t"])
+        await gen.__anext__()
+        await asyncio.to_thread(broker.publish, "t", "e", "from a thread")
+        assert await asyncio.wait_for(gen.__anext__(), 2) == "event: e\ndata: from a thread\n\n"
+        await gen.aclose()
+
+    asyncio.run(scenario())

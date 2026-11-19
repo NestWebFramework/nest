@@ -409,9 +409,11 @@ class Nest:
             anyio.to_thread.current_default_thread_limiter().total_tokens = int(threads)
         for hook in self._startup:
             await _maybe(hook())
+        relays = self.bindings.by_interface.get("nest.pubsub") or []
+        relay = relays[0].impl if relays else None
         tasks = [
             asyncio.create_task(fn(), name=getattr(fn, "__name__", "task"))
-            for fn in self._background
+            for fn in [*self.broker.tasks(relay, f"realtime:{self.name}"), *self._background]
         ]
         try:
             yield
@@ -481,16 +483,22 @@ class ModuleRealtime:
     def topic(self, name: str, **kwargs: Any) -> Topic:
         return self._broker.register(name, self._owner, **kwargs)
 
-    def publish(self, topic: str, event: str, data: str) -> None:
+    def publish(self, topic: str, event: str, data: str, *, local: bool = False) -> None:
+        """To everyone following ``topic`` on every worker (``local``: on this one only)."""
         registered = self._broker.find(topic)
         if registered is not None and registered.owner != self._owner:
             raise HostError(
                 f"{self._owner} cannot publish to '{topic}', which {registered.owner} owns"
             )
-        self._broker.publish(topic, event, data)
+        self._broker.publish(topic, event, data, local=local)
 
     def subscribers(self, topic: str) -> int:
+        """Who follows ``topic`` on this worker (see listening)."""
         return self._broker.subscribers(topic)
+
+    def listening(self, topic: str) -> bool:
+        """Whether anyone may follow ``topic``, on any worker."""
+        return self._broker.listening(topic)
 
 
 class ModuleHost:

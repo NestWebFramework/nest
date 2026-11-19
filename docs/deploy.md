@@ -64,17 +64,23 @@ What the workers must agree on, they share:
 - **Settings** saved in one worker are seen by the others within two seconds; SQLite
   reads well from several (each worker lets one thread at a time into it).
 - **Sign-in limits** are counted where every worker sees them: in the shared cache when
-  the application binds one (cache-redis), otherwise in the database (`auth_failure`,
+  the application binds one (redis), otherwise in the database (`auth_failure`,
   hashed keys, a row per failure, kept for the window). A guesser gets
   `login_attempts`, not that many times the workers.
-- **A shared cache**: bind `nest.cache` to `cache-redis` (Redis or Valkey) and every
+- **A shared cache**: bind `nest.cache` to `redis` (Redis or Valkey) and every
   worker, on every machine, sees the same values. `cache-memory` keeps its values in
   each worker; with more than one, `nest serve` says so.
+- **Live updates** (a forum post, a message, over SSE): bind `nest.pubsub` to `redis`
+  and each worker relays what it publishes over one channel, so readers on every
+  worker get it, once and in order. Without it, an event reaches only the visitors of
+  the worker that made it, and `nest serve` says so. An event each worker makes for
+  its own visitors (a clock) is published with `local=True` and not relayed.
 
   ```yaml
   bind:
-    nest.cache: {providers: [cache-redis]}
-  # NEST_<APP>__CACHE_REDIS__URL=redis://:password@cache.lan:6379/0   (the environment)
+    nest.cache: {providers: [redis]}
+    nest.pubsub: {providers: [redis]}
+  # NEST_<APP>__REDIS__URL=redis://:password@cache.lan:6379/0   (the environment)
   ```
 
 - **Background tasks** run in every worker; `@host.background(single=True)` runs one
@@ -83,8 +89,7 @@ What the workers must agree on, they share:
   workspaces each run their own.
 
 A module that keeps its state in its process says so (`one_process: true`, as Saga's
-worlds do), and `nest serve` then runs one worker and says why; live updates between
-visitors of different workers need a shared broker (the next step).
+worlds do), and `nest serve` then runs one worker and says why.
 
 Measured with morlaca (4 workers x 8 threads): about 280 category pages a second
 and 320 feeds, a worker killed is replaced in seconds, and 3,000 requests made

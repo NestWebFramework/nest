@@ -13,7 +13,7 @@ module:
 main: nest_cache_memory
 implements: [nest.cache]
 # each process has its own: under nest serve's workers, a value one worker stored is
-# not there for the others (bind cache-redis to share them)
+# not there for the others (bind nest.cache to redis to share them)
 process_local: true
 
 deps:

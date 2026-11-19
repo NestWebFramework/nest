@@ -125,6 +125,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         preflight,
         process_local_providers,
         run,
+        unrelayed_modules,
     )
 
     root = Path(args.app).resolve()
@@ -148,6 +149,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
             },
             one_process_modules(nest),
             process_local_providers(nest),
+            unrelayed_modules(nest),
         )
     except ServeError as e:
         print(f"✗ {e}")
@@ -164,6 +166,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         for key, value in sorted(gunicorn_options(the_plan).items()):
             print(f"  {key} = {value}")
         return 0
+    sys.stdout.flush()  # before the fork: a buffered line would be printed by each worker
     return run(the_plan)
 
 

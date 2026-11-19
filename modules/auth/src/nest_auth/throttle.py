@@ -2,7 +2,7 @@
 
 Under ``nest serve`` an application runs as several processes, and a count kept in one
 process's memory would let a guesser try (limit x workers) passwords. So the count lives
-in the application's shared cache when it binds one every worker shares (cache-redis), and
+in the application's shared cache when it binds one every worker shares (redis), and
 otherwise in its database, which every worker shares by nature. Only a failure writes;
 a sign-in reads one indexed count.
 

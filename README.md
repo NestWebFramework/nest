@@ -96,8 +96,8 @@ uv run nest new module glossary --into modules
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
 modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, maps, comments, redirects, forum, messages, trains)
-interfaces/           interfaces (cache, db, search, storage)
-providers/            providers (cache-memory, cache-redis, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
+interfaces/           interfaces (cache, db, pubsub, search, storage)
+providers/            providers (cache-memory, redis, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 engines/saga/             the Saga engine, a package like any module (module.yml and pyproject.toml, code in src/nest_saga/)
 engines/saga/subsystems/  its subsystems, each a package of its own that names the engine (part_of: saga)

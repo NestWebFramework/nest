@@ -8,7 +8,6 @@ members = [
     "nest-auth",
     "nest-cache",
     "nest-cache-memory",
-    "nest-cache-redis",
     "nest-comments",
     "nest-content",
     "nest-core",
@@ -26,7 +25,9 @@ members = [
     "nest-media",
     "nest-messages",
     "nest-notifications",
+    "nest-pubsub",
     "nest-redirects",
+    "nest-redis",
     "nest-saga",
     "nest-saga-building",
     "nest-saga-character",
@@ -409,21 +410,6 @@ dependencies = [
 requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
 
 [[package]]
-name = "nest-cache-redis"
-version = "0.1.0"
-source = { editable = "providers/cache-redis" }
-dependencies = [
-    { name = "nest-cache" },
-    { name = "redis" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nest-cache", editable = "interfaces/cache" },
-    { name = "redis", specifier = ">=5.0,<9" },
-]
-
-[[package]]
 name = "nest-comments"
 version = "0.1.0"
 source = { editable = "modules/comments" }
@@ -713,6 +699,11 @@ dependencies = [
 requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
+name = "nest-pubsub"
+version = "0.1.0"
+source = { editable = "interfaces/pubsub" }
+
+[[package]]
 name = "nest-redirects"
 version = "0.1.0"
 source = { editable = "modules/redirects" }
@@ -727,6 +718,23 @@ requires-dist = [
     { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
+name = "nest-redis"
+version = "0.1.0"
+source = { editable = "providers/redis" }
+dependencies = [
+    { name = "nest-cache" },
+    { name = "nest-pubsub" },
+    { name = "redis" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-cache", editable = "interfaces/cache" },
+    { name = "nest-pubsub", editable = "interfaces/pubsub" },
+    { name = "redis", specifier = ">=5.0,<9" },
 ]
 
 [[package]]
@@ -1459,7 +1467,6 @@ dependencies = [
     { name = "nest-auth" },
     { name = "nest-cache" },
     { name = "nest-cache-memory" },
-    { name = "nest-cache-redis" },
     { name = "nest-comments" },
     { name = "nest-content" },
     { name = "nest-core" },
@@ -1477,7 +1484,9 @@ dependencies = [
     { name = "nest-media" },
     { name = "nest-messages" },
     { name = "nest-notifications" },
+    { name = "nest-pubsub" },
     { name = "nest-redirects" },
+    { name = "nest-redis" },
     { name = "nest-saga" },
     { name = "nest-saga-building" },
     { name = "nest-saga-character" },
@@ -1532,7 +1541,6 @@ requires-dist = [
     { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-cache", editable = "interfaces/cache" },
     { name = "nest-cache-memory", editable = "providers/cache-memory" },
-    { name = "nest-cache-redis", editable = "providers/cache-redis" },
     { name = "nest-comments", editable = "modules/comments" },
     { name = "nest-content", editable = "modules/content" },
     { name = "nest-core", editable = "packages/nest-core" },
@@ -1550,7 +1558,9 @@ requires-dist = [
     { name = "nest-media", editable = "modules/media" },
     { name = "nest-messages", editable = "modules/messages" },
     { name = "nest-notifications", editable = "modules/notifications" },
+    { name = "nest-pubsub", editable = "interfaces/pubsub" },
     { name = "nest-redirects", editable = "modules/redirects" },
+    { name = "nest-redis", editable = "providers/redis" },
     { name = "nest-saga", editable = "engines/saga" },
     { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },
     { name = "nest-saga-character", editable = "engines/saga/subsystems/character" },

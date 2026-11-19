@@ -32,11 +32,12 @@ def clock_event() -> tuple[str, str]:
 
 
 async def tick() -> None:
-    """Publish the time each second, only while someone is watching."""
+    """Publish the time each second, only while someone is watching. Every worker ticks
+    for its own visitors, so the tick is not relayed to the others."""
     while True:
         await asyncio.sleep(1)
         if host.realtime.subscribers("clock"):
-            host.realtime.publish("clock", *clock_event())
+            host.realtime.publish("clock", *clock_event(), local=True)
 
 
 def setup(module_host: ModuleHost) -> None:

@@ -3,7 +3,7 @@
 #
 # Passwords are hashed with the standard library's scrypt. The browser holds a
 # random session token; the database holds only its SHA-256. Sign-in is
-# throttled per email and address, counted in a shared cache (cache-redis) when
+# throttled per email and address, counted in a shared cache (redis) when
 # the application binds one, else in the database, so every worker agrees; ?next= goes only to a path on this site.
 # Registration is closed unless allowed, except for the very first account,
 # which becomes the administrator.

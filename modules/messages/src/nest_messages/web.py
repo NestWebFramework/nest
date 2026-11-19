@@ -138,7 +138,7 @@ def deliver(request: Request, conversation_id: int, m: Any) -> None:
     realtime = _state(request)["realtime"]
     for uid in service.participants(db, conversation_id):
         channel = f"messages.user.{uid}"
-        if not realtime.subscribers(channel):
+        if not realtime.listening(channel):
             continue
         realtime.publish(channel, f"conversation-{conversation_id}", message_html(request, m, uid))
         realtime.publish(channel, "inbox", str(service.unread_count(db, uid)))

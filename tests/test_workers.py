@@ -113,8 +113,8 @@ def redis_url():
     proc.wait(10)
 
 
-def test_the_redis_cache(redis_url):
-    from nest_cache_redis import create  # noqa: PLC0415
+def test_the_redis_cache_and_its_channels(redis_url):
+    from nest_redis import create  # noqa: PLC0415
 
     async def go():
         settings = SimpleNamespace(url=redis_url, prefix="", timeout=2.0, max_connections=4)
@@ -136,6 +136,13 @@ def test_the_redis_cache(redis_url):
             await asyncio.sleep(1.2)
             assert await cache.get("t") is None
             assert await cache.incr("plain") == 1 and await cache._r.ttl("demo:plain") == -1
+            heard = cache.messages("news")
+            listening = asyncio.ensure_future(heard.__anext__())
+            await asyncio.sleep(0.3)  # subscribed
+            await cache.publish("news", "hello")
+            assert await asyncio.wait_for(listening, 3) == "hello"
+            assert await cache._r.pubsub_numsub("demo:news") == [(b"demo:news", 1)]
+            await heard.aclose()
         finally:
             await cache._r.flushdb()
             await cache.aclose()
@@ -148,10 +155,10 @@ def test_with_redis_bound_the_workers_count_in_the_cache(site, tmp_path, redis_u
     manifest.write_text(
         manifest.read_text().replace(
             "nest.db: {providers: [db-sqlite]}",
-            "nest.db: {providers: [db-sqlite]}\n  nest.cache: {providers: [cache-redis]}",
+            "nest.db: {providers: [db-sqlite]}\n  nest.cache: {providers: [redis]}",
         )
     )
-    ws, env = tmp_path / "ws", {"NEST_SITE__CACHE_REDIS__URL": redis_url}
+    ws, env = tmp_path / "ws", {"NEST_SITE__REDIS__URL": redis_url}
     with client_for(site, ws, **env) as c:
         register(c)
     with client_for(site, ws, **env) as one, client_for(site, ws, **env) as two:
@@ -166,6 +173,53 @@ def test_with_redis_bound_the_workers_count_in_the_cache(site, tmp_path, redis_u
             assert s.scalars(select(Failure)).all() == []  # counted in Redis, not the database
         # the right password, from another address: refused for neither
         assert wrong(one, "maria@example.ro").status_code == 401
+
+
+def test_with_redis_bound_live_updates_cross_workers(site, tmp_path, redis_url):
+    from nest.realtime import format_event  # noqa: PLC0415
+
+    manifest = site / "module.yml"
+    manifest.write_text(
+        manifest.read_text().replace(
+            "nest.db: {providers: [db-sqlite]}",
+            "nest.db: {providers: [db-sqlite]}\n  nest.pubsub: {providers: [redis]}",
+        )
+    )
+    ws, env = tmp_path / "ws", {"NEST_SITE__REDIS__URL": redis_url}
+    with client_for(site, ws, **env) as one, client_for(site, ws, **env) as two:
+        brokers = [c.app.state.nest.broker for c in (one, two)]
+        assert all(b.relay is not None for b in brokers)
+        for b in brokers:
+            b.register("news", "test", public=True)
+
+        async def follow():  # a visitor of worker two, in worker two's loop
+            gen = brokers[1].stream(type("R", (), {"is_disconnected": _never})(), ["news"])
+            await gen.__anext__()
+            await asyncio.sleep(0.5)  # worker one publishes meanwhile (below)
+            try:
+                return await asyncio.wait_for(gen.__anext__(), 5)
+            finally:
+                await gen.aclose()
+
+        import threading  # noqa: PLC0415
+
+        result = {}
+        t = threading.Thread(
+            target=lambda: result.update(got=two.portal.call(follow))  # type: ignore[union-attr]
+        )
+        t.start()
+        time.sleep(0.3)
+        one.portal.call(_publish, brokers[0])  # type: ignore[union-attr]
+        t.join(10)
+        assert result["got"] == format_event("e", "from worker one")
+
+
+async def _never():
+    return False
+
+
+async def _publish(broker):
+    broker.publish("news", "e", "from worker one")
 
 
 # --- one worker runs it ------------------------------------------------------------
