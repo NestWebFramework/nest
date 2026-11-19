@@ -94,7 +94,7 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, comments, redirects, forum, messages, trains)
+modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, maps, comments, redirects, forum, messages, trains)
 interfaces/           interfaces (cache, db, search, storage)
 providers/            providers (cache-memory, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
@@ -122,6 +122,11 @@ Any declared setting can be overridden as `NEST_<APP>__<OWNER>__<KEY>`, for exam
 | `NEST_SECRET_KEY` | the signing key (32+ characters); generated into the workspace in development |
 | `NEST_APP_WORKSPACE` | where the application keeps its data |
 | `NEST_<APP>__DB_<ENGINE>__<KEY>` | a database provider's settings, e.g. `NEST_GLOSSARY__DB_POSTGRES__PASSWORD` |
+| `NEST_ALLOWED_HOSTS` | the hosts it answers, comma-separated; any other gets 400 |
+| `NEST_TRUSTED_PROXIES` | the proxies whose `X-Forwarded-*` headers `nest run` believes |
+
+Running one for real (the image, `nest check`, `nest backup`/`restore`, Caddy in front)
+is in [docs/deploy.md](docs/deploy.md).
 
 ## Databases
 

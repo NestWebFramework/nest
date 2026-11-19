@@ -23,6 +23,9 @@ dependencies = [
     "nest-content",
     "nest-media",
     "nest-gallery",
+    "nest-maps",
+    "nest-notifications",
+    "nest-seo",
     "nest-comments",
     "nest-redirects",
     "nest-admin",
@@ -98,6 +101,9 @@ nest-storage-local = { workspace = true }
 nest-content = { workspace = true }
 nest-media = { workspace = true }
 nest-gallery = { workspace = true }
+nest-maps = { workspace = true }
+nest-notifications = { workspace = true }
+nest-seo = { workspace = true }
 nest-comments = { workspace = true }
 nest-redirects = { workspace = true }
 nest-admin = { workspace = true }

@@ -1,0 +1,12 @@
+# What Nest's own context leaves out of an application's image.
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+.git
+tests
+**/tests
+applications/*/data
+docs
