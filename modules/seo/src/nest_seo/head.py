@@ -1,0 +1,228 @@
+"""The head of a page, as search engines and shared links read it.
+
+``head(request, subject, title=..., ...)`` writes the description, keywords, robots,
+canonical, Open Graph, Twitter card and structured data (JSON-LD) of a page: what the
+editors said about it (its subject's row) first, then what the module knows (its title,
+its excerpt, its picture), then the site's defaults (the module's settings). Every value
+is escaped; the JSON-LD cannot close its script element.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime
+from typing import Any
+from urllib.parse import quote
+
+from markupsafe import Markup, escape
+
+from nest import translator
+from nest.host import module_state
+from nest_seo import service
+
+
+def _settings(request: Any) -> Any:
+    return module_state(request, "seo")["settings"]
+
+
+def site_url(request: Any) -> str:
+    configured = str(_settings(request).get("site_url") or "")
+    return (configured or str(request.base_url)).rstrip("/")
+
+
+def absolute(request: Any, path: str) -> str:
+    if not path or path.startswith(("https://", "http://")):
+        return path
+    return site_url(request) + (path if path.startswith("/") else "/" + path)
+
+
+def picture(request: Any, key: str, width: int | None = 1280) -> str:
+    """A stored picture's (or an https picture's) absolute address."""
+    if not key:
+        return ""
+    if key.startswith("https://"):
+        return key
+    base = (
+        module_state(request, "media").get("base", "/media")
+        if "media" in request.app.state.nest.module_state
+        else "/media"
+    )
+    return absolute(request, f"{base}/{quote(key)}" + (f"?w={width}" if width else ""))
+
+
+def _meta(request: Any, subject: str) -> Any:
+    cache = request.scope.setdefault("state", {}).setdefault("seo_meta", {})
+    if subject not in cache:
+        db = request.app.state.nest.bindings.get("nest.db")
+        cache[subject] = service.get(db, subject) if subject else None
+    return cache[subject]
+
+
+def title(request: Any, subject: str, default: str) -> str:
+    """A page's title in search results and the browser tab, as the site writes them."""
+    m = _meta(request, subject)
+    own = (m.title if m and m.title else default) or ""
+    site = request.app.state.nest.title
+    if not own or own == site:
+        return site
+    pattern = str(_settings(request).get("title_pattern") or "{title}")
+    try:
+        return pattern.format(title=own, site=site)
+    except (KeyError, IndexError, ValueError):
+        return f"{own} · {site}"
+
+
+def _ld(data: dict[str, Any]) -> str:
+    text = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    text = text.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    return f'<script type="application/ld+json">{text}</script>'
+
+
+def _iso(when: Any) -> str:
+    return when.isoformat() if isinstance(when, datetime) else str(when or "")
+
+
+def head(
+    request: Any,
+    subject: str = "",
+    *,
+    title: str = "",
+    description: str = "",
+    path: str | None = None,
+    image: str = "",
+    image_alt: str = "",
+    kind: str = "website",
+    published: Any = None,
+    modified: Any = None,
+    images: list[dict[str, str]] | None = None,
+    keywords: str = "",
+) -> Markup:
+    s = _settings(request)
+    nest = request.app.state.nest
+    m = _meta(request, subject)
+    page_title = (m.title if m and m.title else title) or nest.title
+    desc = (m.description if m and m.description else description) or str(
+        s.get("description") or ""
+    )
+    desc = " ".join(desc.split())[:300]
+    words = service.keywords(
+        ", ".join(
+            x for x in ((m.keywords if m else ""), keywords, str(s.get("keywords") or "")) if x
+        )
+    )
+    path = path if path is not None else request.url.path
+    canonical = absolute(request, (m.canonical if m and m.canonical else "") or path)
+    pic = picture(request, (m.image if m and m.image else "") or image or str(s.get("image") or ""))
+    noindex = bool(m and m.noindex)
+    og_type = "article" if kind == "article" else "website"
+    locale = translator(request).locale or "ro"
+
+    tags = [f'<link rel="canonical" href="{escape(canonical)}">']
+    if desc:
+        tags.append(f'<meta name="description" content="{escape(desc)}">')
+    if words:
+        tags.append(f'<meta name="keywords" content="{escape(words)}">')
+    tags.append(
+        '<meta name="robots" content="noindex, follow">'
+        if noindex
+        else '<meta name="robots" content="index, follow, max-image-preview:large">'
+    )
+    tags += [
+        f'<meta property="og:site_name" content="{escape(nest.title)}">',
+        f'<meta property="og:title" content="{escape(page_title)}">',
+        f'<meta property="og:url" content="{escape(canonical)}">',
+        f'<meta property="og:type" content="{og_type}">',
+        f'<meta property="og:locale" content="{escape(str(locale).replace("-", "_"))}">',
+    ]
+    if desc:
+        tags.append(f'<meta property="og:description" content="{escape(desc)}">')
+    if pic:
+        tags.append(f'<meta property="og:image" content="{escape(pic)}">')
+        if image_alt:
+            tags.append(f'<meta property="og:image:alt" content="{escape(image_alt)}">')
+    tags.append(
+        f'<meta name="twitter:card" content="{"summary_large_image" if pic else "summary"}">'
+    )
+    if s.get("twitter"):
+        tags.append(f'<meta name="twitter:site" content="{escape(str(s.get("twitter")))}">')
+    if kind == "article" and published:
+        tags.append(f'<meta property="article:published_time" content="{escape(_iso(published))}">')
+        if modified:
+            tags.append(
+                f'<meta property="article:modified_time" content="{escape(_iso(modified))}">'
+            )
+    if path == "/":  # the home page proves the site is ours
+        if s.get("google_verification"):
+            tags.append(
+                f'<meta name="google-site-verification" content="{escape(str(s.get("google_verification")))}">'
+            )
+        if s.get("bing_verification"):
+            tags.append(
+                f'<meta name="msvalidate.01" content="{escape(str(s.get("bing_verification")))}">'
+            )
+
+    if not noindex:
+        tags.append(
+            _ld(
+                _schema(
+                    request,
+                    kind,
+                    page_title,
+                    desc,
+                    canonical,
+                    pic,
+                    published,
+                    modified,
+                    images or [],
+                )
+            )
+        )
+    return Markup("\n".join(tags))
+
+
+def _schema(request, kind, name, desc, url, pic, published, modified, images) -> dict[str, Any]:
+    nest = request.app.state.nest
+    publisher = {"@type": "Organization", "name": nest.title, "url": site_url(request) + "/"}
+    if kind == "article":
+        data: dict[str, Any] = {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": name[:110],
+            "mainEntityOfPage": url,
+            "publisher": publisher,
+        }
+        if published:
+            data["datePublished"] = _iso(published)
+        if modified:
+            data["dateModified"] = _iso(modified)
+    elif kind == "gallery":
+        data = {
+            "@context": "https://schema.org",
+            "@type": "ImageGallery",
+            "name": name,
+            "url": url,
+            "image": [
+                {
+                    "@type": "ImageObject",
+                    "contentUrl": picture(request, i.get("key", ""), None) or i.get("url", ""),
+                    **({"name": i["title"]} if i.get("title") else {}),
+                    **({"caption": i["caption"]} if i.get("caption") else {}),
+                }
+                for i in images[:100]
+            ],
+        }
+    elif url.rstrip("/") == site_url(request):
+        data = {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": nest.title,
+            "url": url,
+            "publisher": publisher,
+        }
+    else:
+        data = {"@context": "https://schema.org", "@type": "WebPage", "name": name, "url": url}
+    if desc:
+        data["description"] = desc
+    if pic and kind != "gallery":
+        data["image"] = pic
+    return data

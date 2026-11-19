@@ -1,0 +1,107 @@
+"""SEO for every module of an application: what search engines and shared links are told.
+
+Modules take part through lookups, so none depends on this one:
+
+* ``nest.lookup("seo.save", {"subject": "content.entry:12", "form": form})`` keeps the
+  seo_* fields of an edit form (``{{ seo_fields(subject) }}`` writes them);
+* ``nest.lookup("seo.forget", subject)`` when the record is gone;
+* a module answers ``"seo.urls"`` with its public pages for the sitemap;
+* a page's head is ``{{ seo_head(subject, title=..., description=..., image=...) }}``
+  and its title ``{{ seo_page_title(subject, title) }}``.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from markupsafe import Markup
+
+from nest import ModuleHost
+from nest_seo import service
+from nest_seo.head import head, title
+from nest_seo.service import SeoError
+
+__all__ = ["SUBJECT_FIELDS"]
+
+SUBJECT_FIELDS = (
+    "seo_title",
+    "seo_description",
+    "seo_keywords",
+    "seo_image",
+    "seo_canonical",
+    "seo_noindex",
+)
+
+
+def setup(host: ModuleHost) -> None:
+    from nest_seo.web import admin, root
+
+    host.state["settings"] = host.settings
+    db = host.bound("nest.db")
+
+    def save(request_data: dict[str, Any]) -> bool | None:
+        form = request_data.get("form") or {}
+        if not form.get("seo_present"):
+            return None  # the form had no seo fields: nothing to say
+        values = service.clean({k[4:]: form.get(k, "") for k in SUBJECT_FIELDS})
+        service.save(db, str(request_data["subject"]), values)
+        return True
+
+    def check(request_data: dict[str, Any]) -> str | None:
+        """The problem with a form's seo fields, or None (asked before the module saves)."""
+        form = request_data.get("form") or {}
+        if not form.get("seo_present"):
+            return None
+        try:
+            service.clean({k[4:]: form.get(k, "") for k in SUBJECT_FIELDS})
+        except SeoError as e:
+            return e.message
+        return None
+
+    host.answer("seo.save", save)
+    host.answer("seo.check", check)
+    host.answer("seo.forget", lambda subject: service.forget(db, str(subject)) or True)
+    host.answer("seo.meta", lambda subject: service.get(db, str(subject)))
+
+    @host.context
+    def _seo(request: Any) -> dict[str, Any]:
+        def fields(
+            subject: str,
+            *,
+            path: str = "",
+            default_title: str = "",
+            default_description: str = "",
+            form: Any = None,
+            picker: dict[str, str] | None = None,
+        ) -> Markup:
+            meta = service.get(db, subject) if subject else None
+            if form is not None and form.get("seo_present"):  # the form came back: what was typed
+                values = {k[4:]: form.get(k, "") for k in SUBJECT_FIELDS}
+            else:
+                values = {n: getattr(meta, n) if meta else "" for n in service.FIELDS}
+            from nest_seo.head import site_url
+
+            nest = request.app.state.nest
+            context = {
+                **nest.template_context(request),
+                "values": values,
+                "subject": subject,
+                "path": path,
+                "default_title": default_title,
+                "default_description": default_description
+                or str(host.settings.get("description") or ""),
+                "site": nest.title,
+                "base_url": site_url(request),
+                "picker": picker,
+            }
+            return Markup(nest.templates.get_template("seo/fields.html").render(context))
+
+        return {
+            "seo_head": lambda subject="", **kw: head(request, subject, **kw),
+            "seo_page_title": lambda subject, default: title(request, subject, default),
+            "seo_fields": fields,
+            "seo_meta": lambda subject: service.get(db, subject) if subject else None,
+        }
+
+    host.serve_at_root(root)
+    host.admin(admin)

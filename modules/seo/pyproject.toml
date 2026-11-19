@@ -1,0 +1,14 @@
+[project]
+name = "nest-seo"
+version = "0.1.0"
+description = "SEO for every Nest module: titles, descriptions, keywords, sharing pictures, JSON-LD, a sitemap with photos, robots.txt."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-auth"]
+
+[project.entry-points."nest.modules"]
+seo = "nest_seo"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

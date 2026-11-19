@@ -1,0 +1,38 @@
+{% extends "admin/layout.html" %}
+{% block title %}SEO · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<div class="row between"><h1>{{ _("Search engines") }}</h1>
+  <p class="row">
+    <a href="/sitemap.xml">sitemap.xml</a> · <a href="/robots.txt">robots.txt</a>
+    {% if user and user.has("admin") %} · <a href="{{ admin_root }}/settings/seo">{{ _("Site-wide settings") }}</a>{% endif %}
+  </p></div>
+<p class="hint">{{ _("Every public page of the site, as the sitemap gives it to search engines. A page without a description shows whatever a search engine picks from it.") }}</p>
+<div class="grid seo-facts">
+  <div class="card"><strong>{{ total }}</strong> {{ _("pages in the sitemap") }}</div>
+  <div class="card"><strong>{{ photos }}</strong> {{ _("photos in the sitemap") }}</div>
+  <div class="card"><strong>{{ undescribed }}</strong> {{ _("without a description") }}</div>
+  <div class="card"><strong>{{ hidden }}</strong> {{ _("hidden from search engines") }}</div>
+</div>
+<nav class="tabs" aria-label="{{ _('Kinds of pages') }}">
+  {% for name, g in groups.items() %}
+  <a href="?group={{ name | urlencode }}"{% if name == current %} aria-current="page"{% endif %}>{{ _(name) }}
+    <span class="count">{{ g.pages }}</span>{% if g.missing %}<span class="count warn" title="{{ _('without a description') }}">{{ g.missing }}</span>{% endif %}</a>
+  {% endfor %}
+</nav>
+<div class="row between seo-tab-tools">
+  <p>{% if missing %}<a href="?group={{ current | urlencode }}">{{ _("All pages") }}</a>{% else %}<a href="?group={{ current | urlencode }}&amp;missing=1">{{ _("Only those without a description") }}</a>{% endif %}</p>
+  <a class="button secondary" href="{{ admin_root }}/seo/batch?group={{ current | urlencode }}">{{ _("Propose for many pages at once…") }}</a>
+</div>
+<div class="table-wrap"><table class="seo-audit">
+  <thead><tr><th>{{ _("Page") }}</th><th>{{ _("Description") }}</th><th>{{ _("Photos") }}</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td><a href="{{ r.item.path }}">{{ r.meta.title if r.meta and r.meta.title else (r.item.get('title') or r.item.path) }}</a>
+        {% if r.meta and r.meta.noindex %}<span class="badge">noindex</span>{% endif %}<br><small class="muted">{{ r.item.path }}</small></td>
+      <td class="{{ '' if r.described else 'missing' }}">{{ (r.meta.description if r.meta and r.meta.description else r.item.get('description') or "") | truncate(110) if r.described else _("missing") }}</td>
+      <td>{{ r.pictures or "" }}</td>
+      <td>{% if r.item.get('edit') %}<a href="{{ r.item.get('edit') }}">{{ _("Edit") }}</a>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

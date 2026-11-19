@@ -1,0 +1,42 @@
+{#- The SEO fields inside a module's edit form: {{ seo_fields(subject) }}. Their names
+    start with seo_; the module's save hands them to the seo module. -#}
+<fieldset class="seo-fields" data-seo-site="{{ site }}" data-seo-base="{{ base_url }}">
+  <legend>{{ _("Search engines and sharing") }}</legend>
+  <div class="row seo-propose-row">
+    <button type="button" class="button secondary seo-propose" data-url="{{ admin_root }}/seo/suggest" data-subject="{{ subject }}"
+      data-use="{{ _('Use the proposal') }}" data-use-all="{{ _('Use all the proposals') }}" data-proposal="{{ _('Proposal:') }}"
+      data-kept="{{ _('Where you had written something, the proposal is under the field.') }}"
+      data-failed="{{ _('No proposal now; try again.') }}" data-filled="{{ _('Filled in: {fields}. Read them, change what is wrong, then save.') }}"
+      data-names="{{ {'seo_title': _('title'), 'seo_description': _('description'), 'seo_keywords': _('keywords')} | tojson | forceescape }}"
+      data-nothing="{{ _('The text gave nothing new to propose.') }}">{{ _("Propose from the text") }}</button>
+    <span class="seo-propose-status muted" role="status"></span>
+  </div>
+  <div class="seo-preview" aria-hidden="true">
+    <span class="seo-preview-url">{{ base_url }}{{ path or "/…" }}</span>
+    <span class="seo-preview-title" data-default="{{ default_title }}">{{ values.title or default_title }}</span>
+    <span class="seo-preview-desc" data-default="{{ default_description }}">{{ values.description or default_description }}</span>
+  </div>
+  <div class="field"><label for="seo_title">{{ _("Title in search results") }}</label>
+    <input id="seo_title" name="seo_title" value="{{ values.title }}" maxlength="200" data-seo-count="60">
+    <small class="hint">{% if default_title %}{{ _("If left empty: {text}", text=default_title) }} · {% endif %}{{ _("About 60 characters show in Google.") }} <span class="seo-count" aria-live="polite"></span></small></div>
+  <div class="field"><label for="seo_description">{{ _("Description") }}</label>
+    <textarea id="seo_description" name="seo_description" rows="3" maxlength="400" data-seo-count="160">{{ values.description }}</textarea>
+    <small class="hint">{{ _("What a search result and a shared link say about the page; about 160 characters show.") }}
+      {% if default_description %}{{ _("If left empty: {text}", text=default_description | truncate(120)) }}{% endif %} <span class="seo-count" aria-live="polite"></span></small></div>
+  <div class="field"><label for="seo_keywords">{{ _("Keywords") }}</label>
+    <input id="seo_keywords" name="seo_keywords" value="{{ values.keywords }}" maxlength="400" placeholder="{{ _('word, another word') }}">
+    <small class="hint">{{ _("Separated by commas; the site's own are added.") }}</small></div>
+  <details{% if values.image or values.canonical or values.noindex %} open{% endif %}>
+    <summary>{{ _("More") }}</summary>
+    <div class="field"><label for="seo_image">{{ _("Sharing picture") }}</label>
+      <input id="seo_image" name="seo_image" value="{{ values.image }}" maxlength="500" placeholder="uploads/2026/11/…jpg"{% if picker %} data-media-pick data-labels="{{ picker.labels }}" data-media-list="{{ picker.list }}" data-media-upload="{{ picker.upload }}" data-media-base="{{ picker.base }}"{% endif %}>
+      <small class="hint">{{ _("The picture a shared link shows (Facebook, WhatsApp); empty: the page's own picture.") }}</small></div>
+    <div class="field"><label for="seo_canonical">{{ _("Canonical address") }}</label>
+      <input id="seo_canonical" name="seo_canonical" value="{{ values.canonical }}" maxlength="500" placeholder="{{ path or '/…' }}">
+      <small class="hint">{{ _("Only when the same text is also at another address that should be the one listed.") }}</small></div>
+    <div class="field check"><input id="seo_noindex" name="seo_noindex" type="checkbox" value="1"{% if values.noindex %} checked{% endif %}>
+      <label for="seo_noindex">{{ _("Hide from search engines (noindex)") }}</label></div>
+  </details>
+  <input type="hidden" name="seo_present" value="1">
+</fieldset>
+<script src="{{ asset('seo', 'seo.js') }}" defer></script>
