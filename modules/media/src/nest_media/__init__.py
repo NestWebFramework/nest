@@ -23,7 +23,7 @@ from nest_storage import Storage, StorageError
 from nest import ModuleHost, bound
 from nest.host import module_state
 
-__all__ = ["SIZES", "forget_sizes", "media_srcset", "media_url", "responsive_images"]
+__all__ = ["SIZES", "forget_sizes", "media_base", "media_srcset", "media_url", "responsive_images"]
 
 router = APIRouter()
 ACTIVE = ("text/html", "image/svg", "application/xhtml", "text/xml", "application/xml")
@@ -51,6 +51,11 @@ def _url(base: str, key: str, width: int | None = None) -> str:
 
 def _srcset(base: str, key: str) -> str:
     return ", ".join(f"{_url(base, key, s)} {s}w" for s in SIZES) if key else ""
+
+
+def media_base(request: Request) -> str:
+    """Where stored files are served in this application ("" when media is at /)."""
+    return module_state(request, "media")["base"]
 
 
 def media_url(request: Request, key: str, width: int | None = None) -> str:
@@ -168,6 +173,7 @@ def responsive_images(markup: str, base: str) -> str:
 def setup(host: ModuleHost) -> None:
     base = "" if host.route in (None, "/") else host.route
     host.state["base"] = base
+    host.answer("media.base", lambda _key: base)  # for modules that do not depend on media
 
     @host.context
     def _media(request: Request) -> dict[str, Any]:

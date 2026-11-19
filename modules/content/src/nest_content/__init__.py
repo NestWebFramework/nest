@@ -23,9 +23,9 @@ def seo_pages(host: ModuleHost, db: object, registry: Registry) -> list[dict]:
     from nest_content import service as svc
     from nest_content.seo import summary
 
-    admin_root = host._nest.admin_root
+    admin_root = host.admin_root
     home = host.settings.get("home")
-    out: list[dict] = [{"path": "/", "title": host._nest.title, "kind": "home", "group": "Home"}]
+    out: list[dict] = [{"path": "/", "title": host.app_title, "kind": "home", "group": "Home"}]
     for e in svc.published_entries(db):
         out.append(
             {

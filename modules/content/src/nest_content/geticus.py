@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote, unquote
 
-from nest_db.mysqldump import Dump
+from nest_db import Dump
 
 from nest.text import slugify
 from nest_content import service

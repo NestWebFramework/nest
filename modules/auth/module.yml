@@ -25,7 +25,7 @@ main: nest_auth
 
 provides:
   import: nest_auth
-  exports: [CurrentUser, current_user, require_user, require_role, hash_password, verify_password, find_user, users_by_ids]
+  exports: [CurrentUser, current_user, require_user, require_role, hash_password, verify_password, find_user, find_person, known_as, users_by_ids]
 
 requires:
   interfaces: [nest.db]
@@ -44,6 +44,7 @@ settings:
     default: false
     description: Whether anyone may create an account (the first account always may).
   session_days:
+    restart: true
     type: int
     default: 14
     description: A session ends after this many days without use.
@@ -51,10 +52,12 @@ settings:
     type: int
     default: 10
   login_attempts:
+    restart: true
     type: int
     default: 5
     description: Failed sign-ins allowed per email and address before a pause.
   lockout_minutes:
+    restart: true
     type: int
     default: 15
 

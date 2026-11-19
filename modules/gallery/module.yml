@@ -41,6 +41,7 @@ db:
 
 settings:
   index:
+    restart: true
     type: bool
     default: true
     description: >

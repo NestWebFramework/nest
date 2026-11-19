@@ -42,11 +42,8 @@ def picture(request: Any, key: str, width: int | None = 1280) -> str:
         return ""
     if key.startswith("https://"):
         return key
-    base = (
-        module_state(request, "media").get("base", "/media")
-        if "media" in request.app.state.nest.module_state
-        else "/media"
-    )
+    base = request.app.state.nest.lookup("media.base", None)
+    base = "/media" if base is None else base
     return absolute(request, f"{base}/{quote(key)}" + (f"?w={width}" if width else ""))
 
 

@@ -37,6 +37,7 @@ def setup(host: ModuleHost) -> None:
     from nest_seo.web import admin, root
 
     host.state["settings"] = host.settings
+    host.answer("seo.site_url", lambda _key: str(host.settings.get("site_url") or "") or None)
     db = host.bound("nest.db")
 
     def save(request_data: dict[str, Any]) -> bool | None:
@@ -62,6 +63,8 @@ def setup(host: ModuleHost) -> None:
     host.answer("seo.check", check)
     host.answer("seo.forget", lambda subject: service.forget(db, str(subject)) or True)
     host.answer("seo.meta", lambda subject: service.get(db, str(subject)))
+    # a module uninstalled from the application: what was said about its pages goes too
+    host.answer("module.removed", lambda name: service.forget_module(db, str(name)))
 
     @host.context
     def _seo(request: Any) -> dict[str, Any]:

@@ -162,3 +162,12 @@ def set_status(db: Any, comment_id: int, status: str) -> Comment | None:
         if c is not None:
             c.status = status
         return c
+
+
+def forget_module(db: Any, module: str) -> int:
+    """Every comment on a module's records (subjects "module.kind:id"); how many went."""
+    from sqlalchemy import delete  # noqa: PLC0415
+
+    with db.session() as s, s.begin():
+        gone = s.execute(delete(Comment).where(Comment.subject.like(f"{module}.%")))
+    return int(gone.rowcount or 0)

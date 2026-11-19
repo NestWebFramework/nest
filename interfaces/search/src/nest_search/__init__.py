@@ -14,7 +14,7 @@ from typing import Protocol, runtime_checkable
 
 from markupsafe import Markup, escape
 
-__all__ = ["Search", "Document", "Hit", "terms_of", "highlight", "fold"]
+__all__ = ["MARK_END", "MARK_START", "Document", "Hit", "Search", "fold", "highlight", "terms_of"]
 
 # The markers a provider puts around a match in a snippet. They cannot occur in
 # text, so highlighting is applied after escaping, never inside markup.

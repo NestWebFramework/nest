@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from nest_db.mysqldump import Dump
+from nest_db import Dump
 
 from nest.shortcodes import attributes
 from nest_gallery import service, texts

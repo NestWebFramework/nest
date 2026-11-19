@@ -85,6 +85,8 @@ uv sync                                   # Python 3.13 and every workspace pack
 uv run nest plan applications/hello       # what the application is made of, in start order
 uv run nest run applications/hello        # http://127.0.0.1:8100  (--reload while developing)
 uv run nest serve applications/hello      # production: gunicorn's master and workers (docs/deploy.md)
+uv run nest modules applications/hello    # its modules: core, enabled, disabled (docs/modules.md)
+uv run nest validate --strict modules     # manifests, and the code keeping to them
 uv run pytest                             # the tests
 uv run nest validate .                    # every manifest against its contract
 uv run nest new app myapp --into applications

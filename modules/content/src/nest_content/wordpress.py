@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
-from nest_db.mysqldump import Dump
+from nest_db import Dump
 from sqlalchemy import select
 
 from nest_content import service

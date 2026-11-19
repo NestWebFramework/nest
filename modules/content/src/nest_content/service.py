@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import html
 import re
+import weakref
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -1029,7 +1030,11 @@ def clear_menu(db: Any, menu_id: int) -> None:
 # (a second worker, the command line) keeps its own, made again after MENU_TTL.
 _generation = 0
 MENU_TTL = 30.0
-_menus: dict[tuple[int, str, int], tuple[float, list[Any]]] = {}
+# by the database object (an application made again has a new one: nothing stale is kept
+# for it, and id() reuse cannot hand one application another's menus)
+_menus: weakref.WeakKeyDictionary[Any, dict[tuple[str, int], tuple[float, list[Any]]]] = (
+    weakref.WeakKeyDictionary()
+)
 
 
 def changed() -> None:
@@ -1043,13 +1048,17 @@ def cached_menu(db: Any, slug: str) -> list[MenuNode]:
     """menu_tree, kept a while: a page asks for its menu on every view."""
     import time  # noqa: PLC0415
 
-    key = (id(db), slug, _generation)
+    key = (slug, _generation)
     now = time.monotonic()
-    found = _menus.get(key)
+    try:
+        kept = _menus.setdefault(db, {})
+    except TypeError:  # a database object that cannot be weakly referenced: no cache
+        return menu_tree(db, slug)
+    found = kept.get(key)
     if found and found[0] > now:
         return found[1]
     tree = menu_tree(db, slug)
-    _menus[key] = (now + MENU_TTL, tree)
+    kept[key] = (now + MENU_TTL, tree)
     return tree
 
 

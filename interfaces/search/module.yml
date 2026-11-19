@@ -22,4 +22,4 @@ interface:
 
 provides:
   import: nest_search
-  exports: [Search, Document, Hit, terms_of, highlight]
+  exports: [Search, Document, Hit, terms_of, highlight, MARK_START, MARK_END]

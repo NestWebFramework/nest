@@ -54,6 +54,22 @@ def cmd_validate(args: argparse.Namespace) -> int:
         else:
             print(f"✓ {manifest.id} {manifest.module.version} ({manifest.type})  {path}")
     print(f"\n{len(files)} manifests, {failures} with problems")
+    if args.strict:
+        from nest.boundaries import check  # noqa: PLC0415
+
+        entries = []
+        for path in files:
+            try:
+                entries.append(Entry(manifest=load_manifest(path), source="local"))
+            except ManifestError:
+                continue
+        known = [*Catalog.discover(None), *entries]
+        findings = check(entries, known)
+        errors = [f for f in findings if f.level == "error"]
+        for f in findings:
+            print(f)
+        print(f"boundaries: {len(errors)} errors, {len(findings) - len(errors)} warnings")
+        failures += len(errors)
     return 1 if failures else 0
 
 
@@ -181,11 +197,59 @@ def cmd_serve(args: argparse.Namespace) -> int:
         print("✗ the engine process did not start; see its output above")
         engine.stop()
         return 1
+    from nest.modules import write_pid  # noqa: PLC0415
+
+    pid_file = write_pid(nest.workspace)  # a module change reloads this master
     try:
-        return run(the_plan)
+        return run(the_plan, on_reload=engine.restart if engine is not None else None)
     finally:
+        pid_file.unlink(missing_ok=True)
         if engine is not None:
             engine.stop(the_plan.graceful_timeout + 10)
+
+
+def cmd_modules(args: argparse.Namespace) -> int:
+    """An application's modules: list them, or enable, disable, uninstall one."""
+    from nest.modules import ChangeError, change, status  # noqa: PLC0415
+
+    root = Path(args.app).resolve()
+    if args.action == "list":
+        rows = status(root)
+        width = max((len(r.name) for r in rows), default=4)
+        for r in rows:
+            mark = "🔒" if r.locked else "  "
+            extra = []
+            if r.needed_by and r.state != "available":
+                extra.append("needed by " + ", ".join(r.needed_by))
+            if r.data:
+                extra.append("keeps data")
+            print(
+                f"{mark} {r.state:9} {r.name:{width}}  {r.version:8} {r.route or '':14} "
+                f"{r.title}" + (f"  ({'; '.join(extra)})" if extra else "")
+            )
+        return 0
+    if not args.name:
+        print(f"✗ nest modules {args.action} needs a module's name")
+        return 2
+    if args.action == "uninstall" and not args.yes:
+        print(
+            f"Uninstalling {args.name} removes its data and settings (after a backup). "
+            "Run again with --yes."
+        )
+        return 2
+    kwargs = {args.action: [args.name]}
+    routes = {args.name: args.route} if args.route else None
+    try:
+        result = change(root, routes=routes, reload=not args.no_reload, say=print, **kwargs)
+    except ChangeError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    done = {"enable": "enabled", "disable": "disabled", "uninstall": "uninstalled"}[args.action]
+    print(f"✓ {args.name} {done}" + ("; the application is reloading" if result.reloaded else ""))
+    for note in result.notes:
+        print(f"! {note}")
+    return 0
 
 
 def cmd_engine(args: argparse.Namespace) -> int:
@@ -279,6 +343,11 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("validate", help="check manifests against their contracts")
     p.add_argument("paths", nargs="*")
+    p.add_argument(
+        "--strict",
+        action="store_true",
+        help="also check the code keeps to the manifests (boundaries)",
+    )
     p.set_defaults(func=cmd_validate)
 
     p = sub.add_parser("catalog", help="list the packages Nest can see")
@@ -319,6 +388,17 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="show the plan and the settings, run nothing"
     )
     p.set_defaults(func=cmd_serve)
+
+    p = sub.add_parser("modules", help="an application's modules: list, enable, disable, uninstall")
+    p.add_argument("app")
+    p.add_argument(
+        "action", nargs="?", default="list", choices=["list", "enable", "disable", "uninstall"]
+    )
+    p.add_argument("name", nargs="?")
+    p.add_argument("--route", help="where an added module serves its pages")
+    p.add_argument("--yes", action="store_true", help="uninstall: yes, remove its data")
+    p.add_argument("--no-reload", action="store_true", help="change it, reload nothing")
+    p.set_defaults(func=cmd_modules)
 
     p = sub.add_parser(
         "engine", help="the engine process: the worlds of a one-process module, for nest serve"

@@ -162,16 +162,10 @@ def gunicorn_options(p: Plan) -> dict[str, Any]:
 
 def preflight(app_dir: Path, environ: dict[str, str]) -> Any:
     """The application made once in the master: migrations, checks; then closed."""
-    from nest.host import create_app  # noqa: PLC0415
+    from nest.host import close_providers, create_app  # noqa: PLC0415
 
     nest = create_app(app_dir, environ=environ).state.nest
-    for provider in nest.bindings.providers():
-        for name in ("dispose", "close"):
-            closing = getattr(provider.impl, name, None)
-            if callable(closing):
-                with contextlib.suppress(Exception):  # best effort, before the fork
-                    closing()
-                break
+    close_providers(nest)  # a connection must not cross the fork
     return nest
 
 
@@ -222,11 +216,14 @@ except ImportError:  # pragma: no cover - nest-core depends on it
     NestWorker = None  # type: ignore[assignment,misc]
 
 
-def run(p: Plan) -> int:
-    """gunicorn's master, with Nest's application and settings; returns when it stops."""
+def run(p: Plan, on_reload: Any = None) -> int:
+    """gunicorn's master, with Nest's application and settings; returns when it stops.
+    ``on_reload`` runs in the master on SIGHUP, before the workers are made again."""
     from gunicorn.app.base import BaseApplication  # noqa: PLC0415
 
     options = gunicorn_options(p)
+    if on_reload is not None:
+        options["on_reload"] = lambda _arbiter: on_reload()
 
     class Application(BaseApplication):
         def load_config(self) -> None:
@@ -325,6 +322,12 @@ class EngineProcess:
             if self._stopping.wait(pause):
                 return
             self._spawn()
+
+    def restart(self) -> None:
+        """TERM: it writes its worlds and stops; the watcher starts it again (a reload)."""
+        if self.proc is not None and self.proc.poll() is None:
+            print("nest serve: restarting the engine", flush=True)
+            self.proc.terminate()
 
     def stop(self, timeout: float = 30.0) -> None:
         """TERM, so it writes its worlds before it goes; KILL if it takes too long."""

@@ -11,26 +11,28 @@ from __future__ import annotations
 
 from nest import ModuleHost
 from nest.text import render_plain
-from nest_comments.service import Node, thread
+from nest_comments.service import Node, forget_module, thread
 from nest_comments.web import admin, router, thread_html
 
 __all__ = ["Node", "thread", "thread_html"]
 
 
 def setup(host: ModuleHost) -> None:
-    s = host.settings
     base = "" if host.route in (None, "/") else host.route
     host.state.update(
         action=base,
-        allow_guests=bool(s.get("allow_guests")),
-        moderation=s.get("moderation"),
-        max_depth=int(s.get("max_depth")),
-        min_seconds=float(s.get("min_seconds")),
-        per_hour=int(s.get("per_hour")),
+        allow_guests=host.live("allow_guests", bool),
+        moderation=host.live("moderation"),
+        max_depth=host.live("max_depth", int),
+        min_seconds=host.live("min_seconds", float),
+        per_hour=host.live("per_hour", int),
         login="/",
     )
 
     host.template_filter("plain", render_plain)
+    # a module uninstalled from the application: the threads on its records go too
+    db = host.bound("nest.db")
+    host.answer("module.removed", lambda name: forget_module(db, str(name)))
 
     @host.context
     def _comments(request):

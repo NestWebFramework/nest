@@ -20,7 +20,7 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 from markupsafe import Markup
 from nest_auth import CurrentUser, require_role
 from nest_db import Database
-from nest_media import responsive_images
+from nest_media import media_base, responsive_images
 from nest_search import Search
 from starlette.concurrency import run_in_threadpool
 
@@ -189,7 +189,7 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
                     embed_videos(e.body, translator(request)("Play the video")),
                     Context(db, e, request),
                 ),
-                module_state(request, "media").get("base", "/media"),
+                media_base(request),
             )
         ),
         description=seo.summary(e),
@@ -679,7 +679,7 @@ def admin_edit(
 
 
 def _authors(db: Any, revisions: list[Any]) -> dict[int, str]:
-    from nest_auth.sessions import users_by_ids
+    from nest_auth import users_by_ids
 
     found = users_by_ids(db, [r.author_id for r in revisions if r.author_id])
     return {uid: (u.name or u.email) for uid, u in found.items()}

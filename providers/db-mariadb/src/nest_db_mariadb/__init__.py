@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from nest_db import SqlDatabase
-from nest_db.server import build_url, require_driver
+from nest_db import SqlDatabase, build_url, require_driver
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 

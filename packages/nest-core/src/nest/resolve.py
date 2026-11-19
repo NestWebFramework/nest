@@ -62,6 +62,10 @@ class Plan:
     bindings: dict[str, Binding]
     interfaces: dict[str, Entry]
     notes: list[str] = field(default_factory=list)
+    # the core modules and everything they depend on: never disabled nor uninstalled
+    locked: set[str] = field(default_factory=set)
+    # the modules the application lists but does not run now
+    disabled: set[str] = field(default_factory=set)
 
     def unit(self, name: str) -> Unit | None:
         return next((u for u in self.units if u.name == name), None)
@@ -113,7 +117,10 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
     # 1. The roots: the modules the application mounts, its theme, its providers.
     instances: dict[str, Instance] = {}
     roots: list[Entry] = []
+    disabled = {inst.name for inst in manifest.modules if not inst.enabled}
     for inst in manifest.modules:
+        if inst.core and not inst.enabled:
+            problems.append(f"{inst.name} is a core module of {app.name}; it cannot be disabled")
         if not inst.enabled:
             continue
         entry = find(inst.name, INCLUDABLE, f"{app.name} includes '{inst.name}'")
@@ -169,6 +176,12 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
             if dep_entry is None:
                 problems.append(f"{entry.name} depends on '{dep}', which is not installed")
                 continue
+            if dep_entry.name in disabled:  # never pulled back in behind the administrator
+                problems.append(
+                    f"{entry.name} needs {dep_entry.name}, which is disabled; "
+                    f"enable {dep_entry.name} or disable {entry.name}"
+                )
+                continue
             if spec and not SpecifierSet(spec).contains(
                 dep_entry.manifest.version, prereleases=True
             ):
@@ -209,8 +222,9 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
                     f"but {dep_entry.manifest.module.version} is installed"
                 )
         declared = set(manifest.deps)
+        added = {i.name for i in manifest.modules if i.added}  # chosen in the workspace
         for entry in roots:
-            if entry.source != "local" and entry.name not in declared:
+            if entry.source != "local" and entry.name not in declared | added:
                 problems.append(
                     f"{app.name} uses '{entry.name}' but its deps give no version range for it"
                 )
@@ -286,6 +300,15 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
     if problems:
         raise PlanError(app.name, problems + [f"note: {n}" for n in notes])
     units = [Unit(entry=included[name], instance=instances.get(name)) for name in order]
+    locked: set[str] = set()
+    stack = [i.name for i in manifest.modules if i.core and i.name in included]
+    if theme is not None:
+        stack.append(theme.name)  # the theme, and what it needs, are the frame of every page
+    while stack:
+        name = stack.pop()
+        if name not in locked:
+            locked.add(name)
+            stack += [d for d in edges.get(name, ()) if d not in locked]
     return Plan(
         app=app,
         units=units,
@@ -293,6 +316,8 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
         bindings=dict(manifest.bind),
         interfaces=interfaces,
         notes=notes,
+        locked=locked,
+        disabled=disabled,
     )
 
 

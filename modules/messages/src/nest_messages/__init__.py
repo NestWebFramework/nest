@@ -32,8 +32,8 @@ def setup(host: ModuleHost) -> None:
     host.state.update(
         base=base,
         realtime=host.realtime,
-        max_recipients=int(host.settings.get("max_recipients")),
-        per_hour=int(host.settings.get("per_hour")),
+        max_recipients=host.live("max_recipients", int),
+        per_hour=host.live("per_hour", int),
     )
     host.template_filter("message_text", render_plain)
 

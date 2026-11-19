@@ -122,6 +122,9 @@ class SettingSpec(_Section):
     description: str | None = None
     label: str | None = None  # what the admin panel's settings page calls it
     editable: bool = True  # shown there to change (False: set in module.yml or the environment)
+    # read when the module is set up (its routes depend on it): a change made in the admin
+    # panel applies when the application is made again (nest serve reloads it at once)
+    restart: bool = False
 
 
 class InterfaceSpec(_Section):
@@ -151,8 +154,15 @@ class Instance(_Section):
     name: str
     route: str | None = None
     enabled: bool = True
+    # core: the application cannot run without it; it is never disabled or uninstalled
+    # (nor is anything it depends on). The others are managed in the admin panel.
+    core: bool = False
+    # optional: if its setup fails, the application starts without it (degraded)
     optional: bool = False
     config: dict[str, Any] = Field(default_factory=dict)
+    # set by the workspace's choices (nest.composition), not written in module.yml: a
+    # module the administrator added that the manifest does not list
+    added: bool = False
 
     @field_validator("route")
     @classmethod
@@ -277,12 +287,15 @@ class Manifest(BaseModel):
     # Called as fn(nest) once bindings exist and before any module is set up,
     # for packages that prepare the application (the db interface migrates).
     startup: str | None = None
+    # Called as fn(nest, entry) for every package uninstalled from the application, by
+    # the packages that keep data for others (the db interface drops its tables).
+    forget: str | None = None
 
-    @field_validator("startup")
+    @field_validator("startup", "forget")
     @classmethod
     def _startup(cls, v: str | None) -> str | None:
         if v is not None and ":" not in v:
-            raise ValueError("a startup hook is written 'package.module:function'")
+            raise ValueError("a hook is written 'package.module:function'")
         return v
 
     _root: Path = PrivateAttr(default=Path("."))

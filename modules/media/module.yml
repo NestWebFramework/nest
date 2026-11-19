@@ -24,7 +24,7 @@ main: nest_media
 
 provides:
   import: nest_media
-  exports: [media_url, media_srcset, responsive_images, forget_sizes, SIZES]
+  exports: [media_base, media_url, media_srcset, responsive_images, forget_sizes, SIZES]
 
 requires:
   interfaces: [nest.storage]

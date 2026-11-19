@@ -45,8 +45,8 @@ def setup(host: ModuleHost) -> None:
     days = int(settings.get("session_days"))
     host.state.update(
         session_days=days,
-        allow_registration=bool(settings.get("allow_registration")),
-        min_password_length=int(settings.get("min_password_length")),
+        allow_registration=host.live("allow_registration", bool),
+        min_password_length=host.live("min_password_length", int),
         # counted where every worker sees it: a shared cache, else the database
         throttle=make_throttle(
             host.bound("nest.db"),

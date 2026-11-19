@@ -113,3 +113,12 @@ def save(db: Any, subject: str, values: Values) -> Meta | None:
 def forget(db: Any, subject: str) -> None:
     with db.session() as s, s.begin():
         s.execute(delete(Meta).where(Meta.subject == subject))
+
+
+def forget_module(db: Any, module: str) -> int:
+    """Every subject of a module ("gallery.collection:7" is gallery's); how many went."""
+    from sqlalchemy import delete  # noqa: PLC0415
+
+    with db.session() as s, s.begin():
+        gone = s.execute(delete(Meta).where(Meta.subject.like(f"{module}.%")))
+    return int(gone.rowcount or 0)

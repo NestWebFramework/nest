@@ -41,8 +41,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from nest import composition
 from nest.bind import Bindings, ProviderContext, build
 from nest.catalog import Catalog, Entry
+from nest.composition import Choice
 from nest.contract import load_contracts
 from nest.engine import ROLES, EngineGate, EngineProxy
 from nest.i18n import ADMIN_LOCALE_COOKIE, LOCALE_COOKIE, Catalogs, LocaleMiddleware, translator
@@ -97,6 +99,28 @@ class _Token:
 
 class HostError(Exception):
     pass
+
+
+class Live:
+    """A value read again each time (a setting, see ModuleHost.live)."""
+
+    __slots__ = ("read",)
+
+    def __init__(self, read: Callable[[], Any]):
+        self.read = read
+
+
+class LiveState(dict):
+    """A module's state: as a dict, but a Live value is read when it is asked for."""
+
+    def __getitem__(self, key: str) -> Any:
+        value = super().__getitem__(key)
+        return value.read() if isinstance(value, Live) else value
+
+    def get(self, key: str, default: Any = None) -> Any:  # noqa: SIM401 - reads a Live value
+        if key not in self:
+            return default
+        return self[key]
 
 
 @dataclass
@@ -526,6 +550,17 @@ class ModuleHost:
         return self._nest.production
 
     @property
+    def admin_root(self) -> str | None:
+        """Where the admin panel is ("" at /; None without one). Known once every module is
+        set up: read it in a request or a lookup, not while setting up."""
+        return self._nest.admin_root
+
+    @property
+    def app_title(self) -> str:
+        """The application's title."""
+        return self._nest.title
+
+    @property
     def role(self) -> str:
         """ "engine" (this process holds the one-process modules' state and serves them),
         "web" (a worker: it passes their requests to the engine and must not open their
@@ -674,8 +709,18 @@ class ModuleHost:
 
     @property
     def state(self) -> dict[str, Any]:
-        """This module's run-time state in this application (instead of globals)."""
-        return self._nest.module_state.setdefault(self.name, {})
+        """This module's run-time state in this application (instead of globals). A value
+        made with ``host.live`` is read again each time it is asked for."""
+        found = self._nest.module_state.get(self.name)
+        if not isinstance(found, LiveState):
+            found = self._nest.module_state[self.name] = LiveState(found or {})
+        return found
+
+    def live(self, key: str, kind: Callable[[Any], Any] = lambda v: v) -> Live:
+        """A setting for ``host.state``, read when it is used, so a change made in the admin
+        panel applies at once: ``host.state.update(per_page=host.live("per_page", int))``."""
+        settings = self.settings
+        return Live(lambda: kind(settings.get(key)))
 
     def context(self, fn: Callable[[Request], Mapping[str, Any]]) -> Callable:
         """Add values to every page's template context (``user``, for the auth module)."""
@@ -770,9 +815,56 @@ def module_state(request: Request, module: str) -> dict[str, Any]:
     return request.app.state.nest.module_state.setdefault(module, {})
 
 
-def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None) -> FastAPI:
+class _OptionalFailed(Exception):
+    def __init__(self, name: str, reason: str):
+        self.name, self.reason = name, reason
+        super().__init__(f"{name}: {reason}")
+
+
+def create_app(
+    app_dir: str | Path,
+    *,
+    environ: Mapping[str, str] | None = None,
+    choices: dict[str, Choice] | None = None,
+) -> FastAPI:
+    """The application in ``app_dir``, with the modules its workspace chose (``choices``
+    instead, to try a composition before keeping it). An optional module that fails to set
+    up is left out: the application is made again without it, and says so."""
+    without: dict[str, str] = {}
+    while True:
+        try:
+            app = _create_app(app_dir, environ, choices, without)
+        except _OptionalFailed as e:
+            if e.name in without:
+                raise HostError(f"{e.name} failed to set up: {e.reason}") from e
+            log.error(
+                "%s failed to set up (%s); it is optional: starting without it", e.name, e.reason
+            )
+            without[e.name] = e.reason
+            continue
+        nest = app.state.nest
+        for name, reason in without.items():
+            nest.states[name] = ModuleState(name, "module", "", None, "degraded", reason)
+        return app
+
+
+def _create_app(
+    app_dir: str | Path,
+    environ: Mapping[str, str] | None,
+    choices: dict[str, Choice] | None,
+    without: dict[str, str],
+) -> FastAPI:
     app_root = Path(app_dir).resolve()
     manifest = load_manifest(app_root)
+    base_env = dict(os.environ if environ is None else environ)
+    workspace = resolve_workspace(manifest.name, base_env)
+    chosen = dict(composition.load(workspace) if choices is None else choices)
+    for name in without:
+        chosen[name] = Choice(enabled=False)
+    try:
+        manifest = manifest.model_copy(update={"modules": composition.compose(manifest, chosen)})
+    except composition.CompositionError as e:
+        raise HostError(str(e)) from e
     app_entry = Entry(manifest=manifest, source="application")
     catalog = Catalog.discover(app_root)
     for problem in catalog.problems:
@@ -781,8 +873,6 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
     for note in the_plan.notes:
         log.warning("%s", note)
 
-    base_env = dict(os.environ if environ is None else environ)
-    workspace = resolve_workspace(manifest.name, base_env)
     env = environment(workspace, base_env)
     context = ProviderContext(app=manifest.name, workspace=workspace, production=is_production(env))
     bindings = build(the_plan, env, context)
@@ -838,7 +928,11 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
             nest.settings.declare(
                 unit.name, entry.manifest.settings, unit.instance.config if unit.instance else None
             )
-            _setup(nest, unit)
+            try:
+                _setup(nest, unit)
+            except _OptionalFailed:
+                close_providers(nest)  # this attempt is thrown away; the next opens its own
+                raise
         else:
             nest.states[unit.name].state = "ready"
 
@@ -896,10 +990,24 @@ def _setup(nest: Nest, unit: Unit) -> None:
         state.state = "ready"
     except Exception as e:
         if unit.instance is not None and unit.instance.optional:
-            state.state, state.reason = "degraded", f"{type(e).__name__}: {e}"
-            log.exception("%s failed to set up; it is optional and starts degraded", unit.name)
-            return
+            # what it registered before failing must not stay: the application is made
+            # again without it (create_app)
+            raise _OptionalFailed(unit.name, f"{type(e).__name__}: {e}") from e
         raise HostError(f"{unit.name} failed to set up: {type(e).__name__}: {e}") from e
+
+
+def close_providers(nest: Nest) -> None:
+    """Close what the providers opened, outside the event loop (a database's pool before a
+    fork, an application made only to be checked)."""
+    import contextlib  # noqa: PLC0415
+
+    for provider in nest.bindings.providers():
+        for name in ("dispose", "close"):
+            closing = getattr(provider.impl, name, None)
+            if callable(closing):
+                with contextlib.suppress(Exception):
+                    closing()
+                break
 
 
 class VersionedStatic(StaticFiles):

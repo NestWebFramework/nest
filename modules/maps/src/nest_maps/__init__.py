@@ -28,7 +28,7 @@ def setup(host: ModuleHost) -> None:
     def seo_pages(_key: object = None) -> list[dict]:
         from nest_maps import service
 
-        base, root = host.state["base"], host._nest.admin_root
+        base, root = host.state["base"], host.admin_root
         out = [
             {
                 "path": f"{base}/",

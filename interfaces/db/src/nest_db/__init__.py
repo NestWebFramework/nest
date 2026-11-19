@@ -26,7 +26,30 @@ from typing import Any, Protocol, runtime_checkable
 from sqlalchemy import Engine, MetaData, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-__all__ = ["Database", "SqlDatabase", "model_base", "NAMING_CONVENTION"]
+__all__ = [
+    "NAMING_CONVENTION",
+    "Database",
+    "Dump",
+    "SqlDatabase",
+    "build_url",
+    "model_base",
+    "require_driver",
+]
+
+
+def __getattr__(name: str) -> object:
+    """The helpers other packages use, loaded when first asked for: Dump (reading a MySQL
+    dump, for the importers), build_url and require_driver (for a server's provider)."""
+    if name == "Dump":
+        from nest_db.mysqldump import Dump  # noqa: PLC0415
+
+        return Dump
+    if name in ("build_url", "require_driver"):
+        from nest_db import server  # noqa: PLC0415
+
+        return getattr(server, name)
+    raise AttributeError(f"module 'nest_db' has no attribute {name!r}")
+
 
 # Constraint names chosen by convention, not by the engine, so a migration
 # written against SQLite drops the same constraint on PostgreSQL or MariaDB.

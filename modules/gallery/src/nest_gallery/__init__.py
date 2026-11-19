@@ -33,7 +33,7 @@ def setup(host: ModuleHost) -> None:
 
         db = host.bound("nest.db")
         base = host.state["base"]
-        root = host._nest.admin_root
+        root = host.admin_root
         out = []
         if host.settings.get("index"):
             out.append(

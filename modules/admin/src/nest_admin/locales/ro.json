@@ -17,5 +17,7 @@
  "As the application's manifest sets it.": "Cum o setează manifestul aplicației.",
  "The default.": "Valoarea implicită.",
  "Save": "Salvează",
- "Settings saved: {section}.": "Setări salvate: {section}."
+ "Settings saved: {section}.": "Setări salvate: {section}.",
+ "The site is reloading to apply it.": "Site-ul se reîncarcă pentru a aplica schimbarea.",
+ "It applies when the site is restarted.": "Se aplică la repornirea site-ului."
 }

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from nest_db.mysqldump import Dump
+from nest_db import Dump
 
 from nest_maps import service
 from nest_maps.service import MapData, MapsError, MarkerData

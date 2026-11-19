@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from nest_db.mysqldump import Dump
+from nest_db import Dump
 
 from nest.text import html_to_text
 from nest_gallery import service, texts

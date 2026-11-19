@@ -80,22 +80,36 @@ class ModuleMigrations:
         return bool(name) and name.startswith(self.prefix) and name != self.version_table
 
 
+def for_entry(entry: Any) -> ModuleMigrations | None:
+    """A package's migrations, or None when it keeps no tables."""
+    section = entry.manifest.raw.get("db")
+    if not isinstance(section, dict) or not section.get("migrations"):
+        return None
+    return ModuleMigrations(
+        name=entry.name,
+        location=entry.root / str(section["migrations"]),
+        metadata=section.get("metadata"),
+        entry=entry,
+    )
+
+
 def discover(plan: Any) -> list[ModuleMigrations]:
     """Every module in the plan that declares migrations, in start order."""
-    found = []
-    for unit in plan.units:
-        section = unit.entry.manifest.raw.get("db")
-        if not isinstance(section, dict) or not section.get("migrations"):
-            continue
-        found.append(
-            ModuleMigrations(
-                name=unit.name,
-                location=unit.entry.root / str(section["migrations"]),
-                metadata=section.get("metadata"),
-                entry=unit.entry,
-            )
-        )
-    return found
+    return [m for unit in plan.units if (m := for_entry(unit.entry)) is not None]
+
+
+def on_forget(nest: Any, entry: Any) -> None:
+    """The db interface's forget hook: a module uninstalled from the application loses its
+    tables (its migrations taken down to nothing) and its version table."""
+    m = for_entry(entry)
+    if m is None or "nest.db" not in nest.bindings.by_interface:
+        return
+    db = nest.bindings.get("nest.db")
+    if current(db, m):
+        log.info("dropping %s's tables", m.name)
+        downgrade(db, m, "base")
+    with db.engine().begin() as conn:
+        conn.exec_driver_sql(f"DROP TABLE IF EXISTS {m.version_table}")
 
 
 def _configure(env: EnvironmentContext, conn: Any, m: ModuleMigrations, **extra: Any) -> None:

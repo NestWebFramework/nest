@@ -160,6 +160,16 @@ class SettingsStore:
             if self._values.pop(key, None) is not None:
                 self._write()
 
+    def forget(self, owner: str) -> None:
+        """Every stored value of a module (it was uninstalled), declared or not."""
+        with self._lock:
+            self._values = self._read()
+            gone = [k for k in self._values if k.startswith(f"{owner}.")]
+            for key in gone:
+                del self._values[key]
+            if gone:
+                self._write()
+
     def _write(self) -> None:
         tmp = self._path.with_suffix(".tmp")
         body = "".join(f"{k}={v}\n" for k, v in sorted(self._values.items()))

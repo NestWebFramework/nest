@@ -35,9 +35,7 @@ FEED_SIZE = 20
 def site_url(request: Request) -> str:
     """The site's public address, without a trailing slash (the seo module's, when the
     application includes it and sets one)."""
-    configured = ""
-    if "seo" in request.app.state.nest.module_state:
-        configured = str(module_state(request, "seo")["settings"].get("site_url") or "")
+    configured = request.app.state.nest.lookup("seo.site_url", None) or ""
     configured = configured or str(
         module_state(request, "content")["settings"].get("site_url") or ""
     )

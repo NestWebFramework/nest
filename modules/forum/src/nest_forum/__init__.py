@@ -24,20 +24,18 @@ def setup(host: ModuleHost) -> None:
 
     host.state["url"] = "" if host.route in (None, "/") else host.route
     host.admin(admin)  # an overview in the admin panel
-    s = host.settings
-    public = bool(s.get("public_read"))
 
     def may_follow(request: Any, name: str) -> bool:
-        return public or current_user(request) is not None
+        return host.state["public_read"] or current_user(request) is not None
 
     host.realtime.topic("forum.topic.*", authorize=may_follow)
     host.state.update(
         base="" if host.route in (None, "/") else host.route,
-        public_read=public,
-        edit_minutes=int(s.get("edit_minutes")),
-        posts_per_page=int(s.get("posts_per_page")),
-        topics_per_page=int(s.get("topics_per_page")),
-        posts_per_minute=int(s.get("posts_per_minute")),
+        public_read=host.live("public_read", bool),
+        edit_minutes=host.live("edit_minutes", int),
+        posts_per_page=host.live("posts_per_page", int),
+        topics_per_page=host.live("topics_per_page", int),
+        posts_per_minute=host.live("posts_per_minute", int),
         realtime=host.realtime,
     )
     host.template_filter("forum_text", render_plain)

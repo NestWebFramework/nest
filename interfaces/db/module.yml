@@ -24,10 +24,12 @@ interface:
 # Migrates (or checks) every module that declares db.migrations, before any
 # module is set up. NEST_MIGRATE=auto|check|off; see nest_db/migrate.py.
 startup: "nest_db.migrate:on_startup"
+# a module uninstalled from the application: its tables go with it
+forget: "nest_db.migrate:on_forget"
 
 provides:
   import: nest_db
-  exports: [Database, SqlDatabase, model_base, NAMING_CONVENTION]
+  exports: [Database, SqlDatabase, model_base, NAMING_CONVENTION, Dump, build_url, require_driver]
 
 docs:
   title: Database
