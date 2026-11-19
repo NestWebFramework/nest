@@ -3,7 +3,7 @@ module:
   id: nest.interface.cache
   type: interface
   title: Cache
-  version: 0.1.0
+  version: 0.2.0
   description: A key-value cache with optional expiry. Code depends on this, never on a provider.
   license: MIT
   created: "2026-11-13"

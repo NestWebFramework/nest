@@ -3,7 +3,8 @@
 #
 # Passwords are hashed with the standard library's scrypt. The browser holds a
 # random session token; the database holds only its SHA-256. Sign-in is
-# throttled per email and address; ?next= goes only to a path on this site.
+# throttled per email and address, counted in a shared cache (cache-redis) when
+# the application binds one, else in the database, so every worker agrees; ?next= goes only to a path on this site.
 # Registration is closed unless allowed, except for the very first account,
 # which becomes the administrator.
 #
@@ -13,7 +14,7 @@ module:
   type: module
   title: Accounts
   category: security
-  version: 0.3.0
+  version: 0.4.0
   description: >
     Accounts with roles, sign-in and sign-out, server-side sessions on the
     bound database, and the dependencies other modules protect routes with.

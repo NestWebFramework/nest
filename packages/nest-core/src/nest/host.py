@@ -435,6 +435,38 @@ class Nest:
                         break
 
 
+SINGLE_RETRY_S = 5.0
+
+
+def _single(
+    task: Callable[[], Awaitable[Any]], path: Path, name: str
+) -> Callable[[], Awaitable[Any]]:
+    """The task, run only while this process holds the lock file (an flock: the system
+    lets it go when the process ends, however it ends). Elsewhere the task just runs."""
+
+    async def run() -> Any:
+        try:
+            import fcntl  # noqa: PLC0415 - POSIX; elsewhere there is one process anyway
+        except ImportError:
+            return await task()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a") as handle:
+            while True:
+                try:
+                    fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    await asyncio.sleep(SINGLE_RETRY_S)  # another worker has it
+            log.info("%s: this worker (pid %d) runs it", name, os.getpid())
+            try:
+                return await task()
+            finally:
+                fcntl.flock(handle, fcntl.LOCK_UN)
+
+    run.__name__ = getattr(task, "__name__", "task")
+    return run
+
+
 async def _maybe(value: Any) -> Any:
     return await value if inspect.isawaitable(value) else value
 
@@ -530,6 +562,19 @@ class ModuleHost:
             raise HostError(f"{self.name} uses {name}; add it to requires.interfaces")
         return self._nest.bindings.get(name)
 
+    def bound_if(self, name: str, *, shared: bool = False) -> Any:
+        """The provider bound to an interface the module can do without, or None when the
+        application binds none. ``shared``: only one every worker sees, not one that keeps
+        its values in each process (cache-memory), for what several workers must agree on."""
+        providers = self._nest.bindings.by_interface.get(name) or []
+        if not providers:
+            return None
+        if shared:
+            unit = self._nest.plan.unit(providers[0].name)
+            if unit is not None and getattr(unit.entry.manifest, "process_local", False):
+                return None
+        return providers[0].impl
+
     def mount(self, router: APIRouter) -> None:
         """Serve ``router`` at the route the application chose for this module."""
         if self.route is None:
@@ -586,10 +631,25 @@ class ModuleHost:
         self._nest._shutdown.append(fn)
         return fn
 
-    def background(self, fn: Callable[[], Awaitable[Any]]) -> Callable[[], Awaitable[Any]]:
-        """A task that runs from startup until shutdown."""
-        self._nest._background.append(fn)
-        return fn
+    def background(
+        self, fn: Callable[[], Awaitable[Any]] | None = None, *, single: bool = False
+    ) -> Any:
+        """A task that runs from startup until shutdown: ``@host.background``.
+
+        Under nest serve each worker runs it. ``@host.background(single=True)`` runs it in
+        one worker of the workspace at a time (a nightly clean-up, a feed fetched every
+        hour): the others wait, and one takes over if that worker stops."""
+
+        def register(task: Callable[[], Awaitable[Any]]) -> Callable[[], Awaitable[Any]]:
+            if single:
+                name = f"{self.name}.{getattr(task, '__name__', 'task')}"
+                lock = self._nest.workspace / "run" / f"{name}.lock"
+                self._nest._background.append(_single(task, lock, name))
+            else:
+                self._nest._background.append(task)
+            return task
+
+        return register(fn) if fn is not None else register
 
     @property
     def state(self) -> dict[str, Any]:

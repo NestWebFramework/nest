@@ -41,10 +41,14 @@ class MemoryCache:
     async def delete(self, key: str) -> None:
         self._data.pop(key, None)
 
-    async def incr(self, key: str, amount: int = 1) -> int:
+    async def incr(self, key: str, amount: int = 1, ttl: int | None = None) -> int:
         async with self._lock:
-            value = int(self._live(key) or 0) + amount
-            self._put(key, str(value), None)
+            current = self._live(key)
+            if current is None:
+                self._put(key, str(amount), ttl)
+                return amount
+            value = int(current) + amount
+            self._data[key] = (str(value), self._data[key][1])  # keeps its expiry
             return value
 
 

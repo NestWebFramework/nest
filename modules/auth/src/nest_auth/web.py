@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import threading
-import time
-from collections import deque
 from http.cookies import SimpleCookie
 from typing import Any
 from urllib.parse import quote
@@ -31,40 +28,6 @@ SKIP_PREFIXES = (
     "/_nest/docs",
     "/_nest/openapi",
 )
-
-
-# --- throttling --------------------------------------------------------------------
-
-
-class Throttle:
-    """Failed sign-ins per (email, address) in a sliding window. One process's memory."""
-
-    def __init__(self, limit: int, window_s: int):
-        self.limit, self.window = limit, window_s
-        self._failures: dict[str, deque[float]] = {}
-        self._lock = threading.Lock()
-
-    def _recent(self, key: str, now: float) -> deque[float]:
-        hits = self._failures.setdefault(key, deque())
-        while hits and hits[0] <= now - self.window:
-            hits.popleft()
-        return hits
-
-    def blocked(self, key: str) -> bool:
-        with self._lock:
-            return len(self._recent(key, time.monotonic())) >= self.limit
-
-    def fail(self, key: str) -> None:
-        with self._lock:
-            now = time.monotonic()
-            self._recent(key, now).append(now)
-            if len(self._failures) > 10_000:  # forget the oldest keys rather than grow forever
-                for old in list(self._failures)[:1000]:
-                    del self._failures[old]
-
-    def clear(self, key: str) -> None:
-        with self._lock:
-            self._failures.pop(key, None)
 
 
 # --- who is asking -----------------------------------------------------------------

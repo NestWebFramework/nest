@@ -59,10 +59,31 @@ thread at a time in a process, so pages are made in parallel by workers (about o
 per core), while threads let a slow request not hold up the others; a few per
 worker is plenty. Each worker uses about 85 MB.
 
-Settings saved in one worker are seen by the others within two seconds; SQLite
-reads well from several (each worker lets one thread at a time into it). A module
-that keeps its state in its process says so (`one_process: true`, as Saga's worlds
-do), and `nest serve` then runs one worker and says why; live updates between
+What the workers must agree on, they share:
+
+- **Settings** saved in one worker are seen by the others within two seconds; SQLite
+  reads well from several (each worker lets one thread at a time into it).
+- **Sign-in limits** are counted where every worker sees them: in the shared cache when
+  the application binds one (cache-redis), otherwise in the database (`auth_failure`,
+  hashed keys, a row per failure, kept for the window). A guesser gets
+  `login_attempts`, not that many times the workers.
+- **A shared cache**: bind `nest.cache` to `cache-redis` (Redis or Valkey) and every
+  worker, on every machine, sees the same values. `cache-memory` keeps its values in
+  each worker; with more than one, `nest serve` says so.
+
+  ```yaml
+  bind:
+    nest.cache: {providers: [cache-redis]}
+  # NEST_<APP>__CACHE_REDIS__URL=redis://:password@cache.lan:6379/0   (the environment)
+  ```
+
+- **Background tasks** run in every worker; `@host.background(single=True)` runs one
+  in one worker of the workspace at a time (a file lock in `run/`), and another takes
+  over within seconds if that worker stops. Several machines with their own
+  workspaces each run their own.
+
+A module that keeps its state in its process says so (`one_process: true`, as Saga's
+worlds do), and `nest serve` then runs one worker and says why; live updates between
 visitors of different workers need a shared broker (the next step).
 
 Measured with morlaca (4 workers x 8 threads): about 280 category pages a second

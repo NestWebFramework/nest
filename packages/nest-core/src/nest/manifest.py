@@ -265,6 +265,9 @@ class Manifest(BaseModel):
     # a module whose state lives in its process (a game engine's worlds, kept in
     # memory and ticked there): the application runs as one process while it has it
     one_process: bool = False
+    # a provider whose values live in each process (cache-memory): with several workers
+    # each has its own, so what must be shared (sign-in limits) looks elsewhere
+    process_local: bool = False
     # The parts it hosts (an engine's subsystems), and the host a part belongs to: a part
     # names its host, so one made later, elsewhere, joins it the same way.
     subsystems: Subsystems | None = None

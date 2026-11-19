@@ -75,6 +75,7 @@ def plan(
     environ: dict[str, str],
     options: dict[str, Any],
     one_process: list[str] | None = None,
+    process_local: list[str] | None = None,
 ) -> Plan:
     """The manifest's serve: section, the environment over it, the options over both.
     ``one_process`` names the modules that keep their state in one process."""
@@ -98,6 +99,11 @@ def plan(
             f"(asked for {workers})"
         )
         workers = 1
+    if process_local and workers > 1:
+        notes.append(
+            f"{', '.join(process_local)}: each worker keeps its own values "
+            "(bind cache-redis to share them)"
+        )
     return Plan(
         app_dir=app_dir,
         name=manifest.name,
@@ -154,6 +160,17 @@ def preflight(app_dir: Path, environ: dict[str, str]) -> Any:
                     closing()
                 break
     return nest
+
+
+def process_local_providers(nest: Any) -> list[str]:
+    """The bound providers that keep their values in each process."""
+    names = [p.name for p in nest.bindings.providers()]
+    return [
+        n
+        for n in dict.fromkeys(names)
+        if (u := nest.plan.unit(n)) is not None
+        and getattr(u.entry.manifest, "process_local", False)
+    ]
 
 
 def one_process_modules(nest: Any) -> list[str]:

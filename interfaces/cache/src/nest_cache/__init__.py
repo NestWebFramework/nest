@@ -15,6 +15,7 @@ class Cache(Protocol):
 
     async def delete(self, key: str) -> None: ...
 
-    async def incr(self, key: str, amount: int = 1) -> int:
-        """Add ``amount`` to an integer value (0 when absent) and return it."""
+    async def incr(self, key: str, amount: int = 1, ttl: int | None = None) -> int:
+        """Add ``amount`` to an integer value (0 when absent) and return it; a value made
+        now expires after ``ttl`` seconds when given (a counter over a window)."""
         ...

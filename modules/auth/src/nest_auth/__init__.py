@@ -16,10 +16,10 @@ from __future__ import annotations
 from nest import ModuleHost
 from nest_auth.passwords import hash_password, verify_password
 from nest_auth.sessions import CurrentUser, find_person, find_user, known_as, users_by_ids
+from nest_auth.throttle import make_throttle
 from nest_auth.users import admin
 from nest_auth.web import (
     AuthMiddleware,
-    Throttle,
     current_user,
     require_role,
     require_user,
@@ -47,8 +47,12 @@ def setup(host: ModuleHost) -> None:
         session_days=days,
         allow_registration=bool(settings.get("allow_registration")),
         min_password_length=int(settings.get("min_password_length")),
-        throttle=Throttle(
-            int(settings.get("login_attempts")), 60 * int(settings.get("lockout_minutes"))
+        # counted where every worker sees it: a shared cache, else the database
+        throttle=make_throttle(
+            host.bound("nest.db"),
+            host.bound_if("nest.cache", shared=True),
+            int(settings.get("login_attempts")),
+            60 * int(settings.get("lockout_minutes")),
         ),
         login_url=host.url("login"),
     )

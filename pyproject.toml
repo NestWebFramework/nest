@@ -9,6 +9,7 @@ dependencies = [
     "nest-theme-base",
     "nest-cache",
     "nest-cache-memory",
+    "nest-cache-redis",
     "nest-db",
     "nest-db-sqlite",
     "nest-db-postgres",
@@ -87,6 +88,7 @@ nest-htmx = { workspace = true }
 nest-theme-base = { workspace = true }
 nest-cache = { workspace = true }
 nest-cache-memory = { workspace = true }
+nest-cache-redis = { workspace = true }
 nest-db = { workspace = true }
 nest-db-sqlite = { workspace = true }
 nest-db-postgres = { workspace = true }

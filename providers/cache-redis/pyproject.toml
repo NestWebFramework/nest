@@ -1,0 +1,14 @@
+[project]
+name = "nest-cache-redis"
+version = "0.1.0"
+description = "Redis (or Valkey) as a provider of nest.cache."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-cache", "redis>=5.0,<9"]
+
+[project.entry-points."nest.modules"]
+cache-redis = "nest_cache_redis"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

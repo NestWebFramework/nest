@@ -1,0 +1,43 @@
+#
+# cache-redis — Redis (or Valkey, the same protocol) as nest.cache.
+#
+# One cache for every worker of nest serve and every machine that runs the
+# application: what one worker stores (a sign-in limit's count) the others see.
+# The address is a secret, from the environment:
+#   NEST_<APP>__CACHE_REDIS__URL=redis://:password@cache.lan:6379/0
+# Every key is prefixed with the application's name, so applications can share one.
+#
+module:
+  name: cache-redis
+  id: nest.provider.cache-redis
+  type: provider
+  title: Redis cache
+  version: 0.1.0
+  description: Redis or Valkey through redis-py's asyncio client, shared by every worker.
+  license: MIT
+  created: "2026-11-19"
+
+main: nest_cache_redis
+implements: [nest.cache]
+
+deps:
+  cache: ">=0.2,<1"
+
+settings:
+  url:
+    type: str
+    secret: true
+    required: true
+    description: redis://[:password@]host:port/db (rediss:// for TLS).
+  prefix:
+    type: str
+    default: ""
+    description: Put before every key; the application's name when empty.
+  timeout:
+    type: float
+    default: 2.0
+    description: Seconds to wait for the server before a request fails.
+  max_connections:
+    type: int
+    default: 20
+    description: Connections each worker keeps open at most.

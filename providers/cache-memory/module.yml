@@ -3,7 +3,7 @@ module:
   id: nest.provider.cache-memory
   type: provider
   title: Memory cache
-  version: 0.1.0
+  version: 0.2.0
   description: >
     Keeps values in the application's own memory: nothing to run, gone on
     restart, one process only. For development and small applications.
@@ -12,9 +12,12 @@ module:
 
 main: nest_cache_memory
 implements: [nest.cache]
+# each process has its own: under nest serve's workers, a value one worker stored is
+# not there for the others (bind cache-redis to share them)
+process_local: true
 
 deps:
-  cache: ">=0.1,<1"
+  cache: ">=0.2,<1"
 
 settings:
   max_items:

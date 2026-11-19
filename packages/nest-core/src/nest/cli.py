@@ -117,7 +117,15 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_serve(args: argparse.Namespace) -> int:
     """gunicorn's master and its workers: an application in production."""
-    from nest.serve import ServeError, gunicorn_options, one_process_modules, plan, preflight, run  # noqa: PLC0415
+    from nest.serve import (  # noqa: PLC0415
+        ServeError,
+        gunicorn_options,
+        one_process_modules,
+        plan,
+        preflight,
+        process_local_providers,
+        run,
+    )
 
     root = Path(args.app).resolve()
     os.environ["NEST_APP_DIR"] = str(root)
@@ -139,6 +147,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
                 "log_level": args.log_level,
             },
             one_process_modules(nest),
+            process_local_providers(nest),
         )
     except ServeError as e:
         print(f"✗ {e}")
