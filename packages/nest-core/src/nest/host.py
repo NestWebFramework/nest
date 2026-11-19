@@ -17,6 +17,8 @@ import hmac
 import inspect
 import logging
 import os
+import re
+import time
 from collections.abc import Awaitable, Callable, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -63,6 +65,33 @@ from nest.workspace import environment, is_production, resolve_workspace, secret
 log = logging.getLogger("nest")
 
 Hook = Callable[[], Any | Awaitable[Any]]
+
+
+_CSS_URL = re.compile(r"""url\(\s*(['"]?)([^'")]+)\1\s*\)""")
+
+
+class _Token:
+    """The form token, written into a page only when the page writes it: then (and only
+    then) the response sets its cookie, and the page is no reader's page to cache."""
+
+    __slots__ = ("_state", "_value")
+
+    def __init__(self, state: dict[str, Any], value: str) -> None:
+        self._state, self._value = state, value
+
+    def _used(self) -> str:
+        self._state["csrf_used"] = True
+        return self._value
+
+    def __str__(self) -> str:
+        return str(self._used())
+
+    def __html__(self) -> str:
+        value = self._used()
+        return value if isinstance(value, Markup) else str(escape(value))
+
+    def __bool__(self) -> bool:
+        return bool(self._value)
 
 
 class HostError(Exception):
@@ -135,6 +164,8 @@ class Nest:
         self._background: list[Callable[[], Awaitable[Any]]] = []
         # an asset's address carries its module's version and its files' last change, so a
         # browser that keeps it a year (immutable) still gets a changed stylesheet at once
+        self._bundles: dict[str, tuple[str, bytes, float]] = {}
+        self._bundle_checked: dict[str, float] = {}
         self._versions = {}
         for u in plan.units:
             folder = u.entry.manifest.folder(u.entry.manifest.static, "static")
@@ -177,7 +208,9 @@ class Nest:
         theme_dir = None
         if plan.theme is not None:
             theme_dir = plan.theme.manifest.folder(plan.theme.manifest.templates, "templates")
-        self.templates = make_environment(plan.app.root, theme_dir, module_dirs)
+        self.templates = make_environment(
+            plan.app.root, theme_dir, module_dirs, reload=not self.production
+        )
         languages = application.languages if application else ["en"]
         default = (application.default_language if application else None) or languages[0]
         self.site_languages = list(languages)
@@ -198,15 +231,81 @@ class Nest:
             ngettext=fallback.ngettext,
             locale=fallback.locale,
             languages=self.catalogs.languages,
-            styles=self._styles(plan),
+            styles=[self.bundle_url("site")],
         )
 
-    def _styles(self, plan: Plan) -> list[str]:
-        """Every stylesheet a page loads after the theme's: each module's own, in the plan's
-        order, then the application's, so the application restyles any module."""
-        out = [self.asset(u.name, f) for u in plan.units for f in u.entry.manifest.styles]
-        out += [self.asset(self.name, f) for f in self.manifest.styles]
-        return out
+    # --- stylesheets: one file a page ---------------------------------------------------
+    #
+    # A page loads one stylesheet: the theme's, then each module's (in the plan's order),
+    # then the application's, put together when the application starts (so the later
+    # restyles the earlier, as separate files did). The admin panel's has the modules'
+    # admin_styles too, before the application's. Each is served at /assets/_bundle/<name>.css?v=<its hash>
+    # and kept a year; while developing, a changed stylesheet makes it again.
+
+    def _style_files(self, kind: str) -> list[tuple[str, str, Path]]:
+        """(module, its path in the module's static folder, the file), in loading order."""
+        plan = self.plan
+        files: list[tuple[str, str, Path]] = []
+
+        def add(entry: Any, sheets: list[str]) -> None:
+            folder = entry.manifest.folder(entry.manifest.static, "static")
+            if folder is None:
+                return
+            name = entry.manifest.name
+            files.extend((name, s, folder / s) for s in sheets if (folder / s).is_file())
+
+        # the theme, each module's look, (in the admin panel, each module's admin look,)
+        # and the application's own last: it restyles everything before it
+        if plan.theme is not None:
+            add(plan.theme, plan.theme.manifest.styles)
+        for u in plan.units:
+            if u.entry is not plan.theme:
+                add(u.entry, u.entry.manifest.styles)
+        if kind == "admin":
+            for u in plan.units:
+                add(u.entry, u.entry.manifest.admin_styles)
+            add(plan.app, self.manifest.admin_styles)
+        add(plan.app, self.manifest.styles)
+        return files
+
+    def _build_bundle(self, kind: str) -> tuple[str, bytes, float]:
+        files = self._style_files(kind)
+        parts = []
+        for module, rel, f in files:
+            # a stylesheet's relative url() (its fonts, its pictures) is made absolute: the
+            # combined file is served from another folder
+            base = rel.rsplit("/", 1)[0] + "/" if "/" in rel else ""
+
+            def absolute(m: re.Match[str], module: str = module, base: str = base) -> str:
+                target = m.group(2).strip()
+                if target.startswith(("data:", "http:", "https:", "/", "#")):
+                    return m.group(0)
+                return f'url("{self.asset(module, base + target)}")'
+
+            text = _CSS_URL.sub(absolute, f.read_text(encoding="utf-8"))
+            parts.append(f"/* {module}: {rel} */\n{text}\n")
+        body = "".join(parts).encode("utf-8")
+        newest = max((f.stat().st_mtime for _m, _r, f in files), default=0.0)
+        return hashlib.sha256(body).hexdigest()[:12], body, newest
+
+    def bundle(self, kind: str) -> tuple[str, bytes]:
+        """The stylesheet ``kind`` ("site" or "admin"): its hash and its text."""
+        found = self._bundles.get(kind)
+        if found is None or (not self.production and self._bundle_stale(kind, found[2])):
+            found = self._bundles[kind] = self._build_bundle(kind)
+        return found[0], found[1]
+
+    def _bundle_stale(self, kind: str, built: float) -> bool:
+        now = time.monotonic()
+        if now - self._bundle_checked.get(kind, 0.0) < 1.0:
+            return False
+        self._bundle_checked[kind] = now
+        return (
+            max((f.stat().st_mtime for _m, _r, f in self._style_files(kind)), default=0.0) > built
+        )
+
+    def bundle_url(self, kind: str) -> str:
+        return f"/assets/_bundle/{kind}.css?v={self.bundle(kind)[0]}"
 
     def asset(self, module: str, path: str) -> str:
         """The URL of a module's static file, versioned so caches can keep it."""
@@ -215,16 +314,25 @@ class Nest:
         return f"/assets/{module}/{path}?v={self._versions[module]}"
 
     def template_context(self, request: Request) -> dict[str, Any]:
-        token = request.state.csrf_token
-        field = Markup(f'<input type="hidden" name="{CSRF_FIELD}" value="{escape(token)}">')
+        state = request.scope.setdefault("state", {})
+        token = _Token(state, request.state.csrf_token)
+        field = _Token(
+            state,
+            Markup(
+                f'<input type="hidden" name="{CSRF_FIELD}" value="{escape(request.state.csrf_token)}">'
+            ),
+        )
         context: dict[str, Any] = {}
         for provide in self._context:
             context.update(provide(request))
         t = translator(request)
+        in_admin = bool(request.scope.get("state", {}).get("in_admin"))
+        styles = [self.bundle_url("admin" if in_admin else "site")]  # one file, either way
         context.update(
             languages=self.site_languages,  # the site's switch offers these
             admin_languages=self.admin_languages,  # the admin panel's switch, these
-            in_admin=bool(request.scope.get("state", {}).get("in_admin")),
+            in_admin=in_admin,
+            styles=styles,  # the site's stylesheet, and in the admin panel its own
         )
         context.update(
             # any module's shortcode, where an application's template wants it:
@@ -742,6 +850,21 @@ def _core_routes(app: FastAPI, nest: Nest) -> None:
                     return answer
         return _error_page(request, nest, exc)
 
+    @app.get("/assets/_bundle/{kind}.css", include_in_schema=False)
+    async def stylesheet(kind: str, request: Request) -> Response:
+        if kind not in ("site", "admin"):
+            return Response(status_code=404)
+        digest, body = await run_in_threadpool(nest.bundle, kind)
+        versioned = request.query_params.get("v") == digest
+        return Response(
+            body,
+            media_type="text/css; charset=utf-8",
+            headers={
+                "Cache-Control": "public, max-age=31536000, immutable" if versioned else "no-cache",
+                "ETag": f'"{digest}"',
+            },
+        )
+
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
@@ -771,9 +894,17 @@ def _core_routes(app: FastAPI, nest: Nest) -> None:
             status_code=200 if all(checks.values()) else 503,
         )
 
+    @app.get("/_nest/language", include_in_schema=False)
+    async def choose_language_link(request: Request) -> RedirectResponse:
+        """The language switch as links: no form, so a reader's page carries no token (a
+        language is no secret to forge)."""
+        return _language(request, dict(request.query_params))
+
     @app.post("/_nest/language", include_in_schema=False, dependencies=[Depends(csrf_protect)])
     async def choose_language(request: Request) -> RedirectResponse:
-        form = await request.form()
+        return _language(request, dict(await request.form()))
+
+    def _language(request: Request, form: dict[str, Any]) -> RedirectResponse:
         chosen = str(form.get("language", ""))
         target = local_path(str(form.get("next", "/")))
         response = RedirectResponse(target, status_code=303)

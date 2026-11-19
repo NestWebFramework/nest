@@ -249,9 +249,10 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
                     f"{entry.name} requires {iface}; bind it in {app.name}'s module.yml"
                 )
     for entry in [*included.values(), app]:  # a stylesheet it names is in its static folder
-        if entry.manifest.styles:
+        sheets = [*entry.manifest.styles, *entry.manifest.admin_styles]
+        if sheets:
             static = entry.manifest.folder(entry.manifest.static, "static")
-            for sheet in entry.manifest.styles:
+            for sheet in sheets:
                 if static is None or not (static / sheet).is_file():
                     problems.append(
                         f"{entry.name} names the stylesheet '{sheet}', which its static folder lacks"

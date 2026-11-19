@@ -26,3 +26,5 @@ locales:
 docs:
   title: Base theme
   section: themes
+
+styles: [nest.css]

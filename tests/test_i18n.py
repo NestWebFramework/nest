@@ -137,7 +137,7 @@ def test_the_language_switch(site):
         )
         assert r.headers["location"] == "/" and "set-cookie" not in r.headers
         page = c.get("/auth/login").text
-        assert 'value="ro"' in page and 'aria-current="true" lang="en"' in page
+        assert "/_nest/language?language=ro&amp;" in page and 'aria-current="true"' in page
 
 
 def test_an_application_rewords_one_module_in_any_language(site):

@@ -273,12 +273,18 @@ def test_archiving_hides_until_the_next_message(app):
 def test_each_module_brings_its_own_look_after_the_theme(app):
     c = client(app)
     page = c.get("/forum/").text
-    sheets = re.findall(r'<link rel="stylesheet" href="([^"?]+)', page)
-    assert sheets[0] == "/assets/base/nest.css"  # the theme's tokens and shared classes first
-    assert "/assets/forum/forum.css" in sheets and "/assets/messages/messages.css" in sheets
-    assert c.get("/assets/forum/forum.css").status_code == 200
-    theme = c.get("/assets/base/nest.css").text
-    assert ".post-meta" not in theme and ".message.mine" not in theme  # each module keeps its own
+    sheets = re.findall(r'<link rel="stylesheet" href="([^"]+)', page)
+    assert len(sheets) == 1 and sheets[0].startswith("/assets/_bundle/site.css?v=")  # one file
+    css = c.get(sheets[0])
+    assert css.headers["cache-control"] == "public, max-age=31536000, immutable"
+    text = css.text
+    # the theme's tokens and shared classes first, then each module's own look
+    assert text.index("/* base: nest.css */") < text.index("/* forum: forum.css */")
+    assert "/* messages: messages.css */" in text and ".post-meta" in text
+    assert "/* admin: admin.css */" not in text  # the admin panel's look stays in the panel
+    assert c.get("/assets/_bundle/site.css").headers["cache-control"] == "no-cache"  # unversioned
+    assert c.get("/assets/forum/forum.css").status_code == 200  # each file is still there
+    assert 'hx-ext="sse"' not in page or "htmx/sse.js" in page
 
 
 def test_an_application_names_its_people_and_emails_never_show(app):

@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% block head %}{% include "htmx/sse.html" %}{% endblock %}
 {% block title %}{{ conversation.subject or _("Conversation") }} · {{ _("Messages") }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
 {% block content %}

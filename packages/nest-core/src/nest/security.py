@@ -145,8 +145,10 @@ class SecurityMiddleware:
         fresh = None
         if not _valid(self.secret, token):
             token = fresh = _sign(self.secret, secrets.token_urlsafe(24))
-        scope.setdefault("state", {})["csrf_token"] = token
-        scope["state"]["csrf_cookie_valid"] = fresh is None
+        state = scope.setdefault("state", {})
+        state["csrf_token"] = token
+        state["csrf_cookie_valid"] = fresh is None
+        reading = scope.get("method") in ("GET", "HEAD")
 
         async def send_with_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
@@ -156,9 +158,22 @@ class SecurityMiddleware:
                         headers[key] = value
                 if "content-security-policy" not in headers:
                     headers["content-security-policy"] = self.csp()
-                if fresh:
+                page = headers.get("content-type", "").startswith("text/html")
+                # A page that holds no form (it never wrote the token) gives no cookie: a
+                # reader's page is the same for every reader, and a cache may keep it.
+                quiet = reading and page and not state.get("csrf_used")
+                if fresh and not quiet:
                     cookie = f"{CSRF_COOKIE}={fresh}; Path=/; HttpOnly; SameSite=Lax"
                     headers.append("set-cookie", cookie + ("; Secure" if self.secure else ""))
+                if (
+                    quiet
+                    and message.get("status") == 200
+                    and not state.get("user")
+                    and "set-cookie" not in headers
+                    and "cache-control" not in headers
+                ):
+                    headers["cache-control"] = "public, max-age=60, stale-while-revalidate=300"
+                    headers.append("vary", "Cookie")  # the reader's language is a cookie
             await send(message)
 
         await self.app(scope, receive, send_with_headers)

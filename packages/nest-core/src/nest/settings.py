@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import threading
+import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,7 @@ from nest.bind import env_name
 from nest.manifest import SettingSpec
 
 _MISSING = object()
+CHECK_EVERY = 2.0  # seconds between looks at the settings file
 
 
 class SettingsError(Exception):
@@ -58,6 +60,8 @@ class SettingsStore:
         self._instance: dict[str, Any] = {}
         self._lock = threading.Lock()
         self._values = self._read()
+        self._seen = self._stamp()
+        self._checked = time.monotonic()
 
     def declare(
         self,
@@ -81,6 +85,25 @@ class SettingsStore:
                     values[key.strip()] = value.strip()
         return values
 
+    def _stamp(self) -> float:
+        try:
+            return self._path.stat().st_mtime
+        except OSError:
+            return 0.0
+
+    def _fresh(self) -> None:
+        """Another process (a second worker, the command line) may have changed the file:
+        it is read again when it did, looked at no more than every CHECK_EVERY seconds."""
+        now = time.monotonic()
+        if now - self._checked < CHECK_EVERY:
+            return
+        self._checked = now
+        stamp = self._stamp()
+        if stamp != self._seen:
+            with self._lock:
+                self._values = self._read()
+                self._seen = stamp
+
     def _spec(self, key: str) -> tuple[str, str, SettingSpec]:
         if key not in self._specs:
             raise SettingsError(f"'{key}' is not a declared setting")
@@ -88,6 +111,7 @@ class SettingsStore:
 
     def get(self, key: str, default: Any = _MISSING) -> Any:
         owner, name, spec = self._spec(key)
+        self._fresh()
         var = env_name(self._app, owner, name)
         if var in self._environ:
             return _coerce(spec, self._environ[var], key)
@@ -142,6 +166,7 @@ class SettingsStore:
         tmp.write_text(body, encoding="utf-8")
         os.chmod(tmp, 0o600)
         os.replace(tmp, self._path)
+        self._seen = self._stamp()
 
     def items(self) -> list[tuple[str, Any]]:
         return [(key, self.get(key)) for key in sorted(self._specs)]

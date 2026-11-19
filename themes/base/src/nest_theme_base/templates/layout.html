@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>{% block title %}{{ app.title }}{% endblock %}</title>
-  <link rel="stylesheet" href="{{ asset('base', 'nest.css') }}">
   {# each module's own look, then the application's: the later restyles the earlier #}
   {% for href in styles %}<link rel="stylesheet" href="{{ href }}">
   {% endfor %}
   {% include "htmx/head.html" %}
   {% block head %}{% endblock %}
 </head>
-<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+<body{% if (user is defined and user) or in_admin %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
   <a class="skip" href="#main">{{ _("Skip to content") }}</a>
   <header class="site-header">
     <div class="container bar">

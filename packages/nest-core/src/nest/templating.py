@@ -31,8 +31,15 @@ from jinja2 import (
 
 
 def make_environment(
-    app_root: Path, theme_dir: Path | None, module_dirs: Mapping[str, Path]
+    app_root: Path,
+    theme_dir: Path | None,
+    module_dirs: Mapping[str, Path],
+    *,
+    reload: bool = True,
 ) -> Environment:
+    """The templates: the application's, then the theme's, then each module's. ``reload``
+    looks at each file again before using it (while developing); in production a
+    template is read once."""
     loaders: list[BaseLoader] = []
     if (app_root / "templates").is_dir():
         loaders.append(FileSystemLoader(app_root / "templates"))
@@ -47,6 +54,8 @@ def make_environment(
         undefined=StrictUndefined,
         trim_blocks=True,
         lstrip_blocks=True,
+        auto_reload=reload,
+        cache_size=1000,
     )
 
 

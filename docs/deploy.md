@@ -29,7 +29,14 @@ docker compose run --rm app nest auth create-user /src/app you@example.ro --role
 | `NEST_SECRET_KEY` | required in production, 32+ characters: signs sessions and forms |
 | `NEST_ALLOWED_HOSTS` | the hosts it answers (`morlaca.ro,www.morlaca.ro`); others get 400 |
 | `NEST_TRUSTED_PROXIES` | whose `X-Forwarded-*` headers are believed (`*` only when the port is reachable from the proxy alone) |
-| `PORT`, `NEST_WORKERS`, `NEST_LOG_LEVEL` | the port, processes (keep 1 with SQLite), log level |
+| `PORT`, `NEST_WORKERS`, `NEST_LOG_LEVEL` | the port, processes, log level |
+
+Workers: each is a process with its own Python, so pages are made in parallel; SQLite
+reads well from several (WAL), and settings saved in one are seen by the others within
+two seconds. A site serves several times the pages with as many workers as cores
+(morlaca: about 60 category pages a second with one, 280 with four). An application
+that pushes live updates between visitors (the game's realtime) needs one worker, or
+a shared broker.
 
 Secrets live in the environment or the workspace `.env`, never in `module.yml`.
 

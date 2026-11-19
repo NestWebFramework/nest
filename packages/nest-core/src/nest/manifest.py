@@ -229,6 +229,8 @@ class Manifest(BaseModel):
     # Its stylesheets, in its static folder: a module's base look for its own markup, built on
     # the theme's tokens; an application's own, loaded last so it can restyle any module.
     styles: list[str] = Field(default_factory=list)
+    # stylesheets for the admin panel only (its pages, the editors' fields)
+    admin_styles: list[str] = Field(default_factory=list)
     locales: list[Locale] = Field(default_factory=list)
     application: Application | None = None
     modules: list[Instance] = Field(default_factory=list)

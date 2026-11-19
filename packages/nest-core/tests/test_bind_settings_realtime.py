@@ -136,3 +136,20 @@ def test_stream_sends_snapshot_then_live_events_and_drops_slow_clients():
         await gen.aclose()
 
     asyncio.run(scenario())
+
+
+def test_a_setting_changed_by_another_process_is_seen(tmp_path, monkeypatch):
+    import nest.settings as st
+    from nest.manifest import SettingSpec
+
+    path = tmp_path / "settings.conf"
+    one = st.SettingsStore(path, "app", {})
+    two = st.SettingsStore(path, "app", {})  # another worker
+    for s in (one, two):
+        s.declare("maps", {"provider": SettingSpec(type="str", default="osm")})
+    monkeypatch.setattr(st, "CHECK_EVERY", 0.0)
+    one.set("maps.provider", "maptiler")
+    import os
+
+    os.utime(path, (path.stat().st_atime, path.stat().st_mtime + 5))  # a later write
+    assert two.get("maps.provider") == "maptiler"

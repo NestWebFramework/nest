@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% block head %}{% include "htmx/sse.html" %}{% endblock %}
 {% block title %}{{ topic.title }} · {{ board.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
 {% block content %}
