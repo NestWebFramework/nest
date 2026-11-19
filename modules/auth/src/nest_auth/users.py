@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from nest_db import Database
 
-from nest import admin_url, bound, render, translator
+from nest import admin_url, bound, render, toast, translator
 from nest_auth.sessions import (
     AccountError,
     CurrentUser,
@@ -84,6 +84,7 @@ def save(
             error=_(e.message, **e.params),
             base=admin_url(request, "auth"),
         )
+    toast(request, translator(request)("Saved."))
     return RedirectResponse(admin_url(request, "auth", f"{user_id}?saved=1"), status_code=303)
 
 

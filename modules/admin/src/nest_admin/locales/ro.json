@@ -3,5 +3,19 @@
  "Admin panel": "Panou de administrare",
  "Nothing here is open to you.": "Nimic de aici nu îți este deschis.",
  "No module of this application has admin pages.": "Niciun modul al acestei aplicații nu are pagini de administrare.",
- "Site": "Site"
+ "Site": "Site",
+ "Settings": "Setări",
+ "Every module's settings, for this application.": "Setările fiecărui modul, pentru această aplicație.",
+ "What is changed here is kept with this application's data and wins over its manifest. A value set in the server's environment is shown, not changed here.": "Ce schimbi aici se păstrează cu datele acestei aplicații și are întâietate față de manifestul ei. O valoare setată în mediul serverului se vede, dar nu se schimbă aici.",
+ "No module of this application has settings to change here.": "Niciun modul al acestei aplicații nu are setări de schimbat aici.",
+ "Sections": "Secțiuni",
+ "set in the environment": "setată în mediul serverului",
+ "not set": "nesetată",
+ "Set in the server's environment.": "Setată în mediul serverului.",
+ "Changed here.": "Schimbată aici.",
+ "back to the default": "înapoi la valoarea implicită",
+ "As the application's manifest sets it.": "Cum o setează manifestul aplicației.",
+ "The default.": "Valoarea implicită.",
+ "Save": "Salvează",
+ "Settings saved: {section}.": "Setări salvate: {section}."
 }

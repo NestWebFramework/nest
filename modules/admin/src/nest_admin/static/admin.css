@@ -6,3 +6,25 @@
 .admin-nav a[aria-current="page"] { font-weight: 600; }
 .admin-main { min-width: 0; }
 @media (max-width: 48rem) { .admin { grid-template-columns: 1fr; } .admin-nav { flex-direction: row; flex-wrap: wrap; position: static; } }
+/* the settings page */
+.settings-toc { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin: .5rem 0 1rem; }
+.settings-section { scroll-margin-top: 1rem; }
+.settings-section h2 { margin-top: 0; }
+.setting .setting-source { display: block; font-size: .82rem; }
+.setting label.inline { display: inline; font-weight: normal; margin-left: .5rem; }
+/* tabs: a page's sections, one shown at a time */
+.tabs { display: flex; flex-wrap: wrap; gap: .25rem .25rem; border-bottom: 1px solid var(--border); margin: 1rem 0 1.25rem; }
+.tabs a { padding: .5rem .85rem; color: var(--muted); text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.tabs a:hover { color: var(--text); }
+.tabs a[aria-current="page"] { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
+.tabs .count { display: inline-block; min-width: 1.4rem; padding: 0 .35rem; margin-left: .35rem; border-radius: 999px; font-size: .78rem; text-align: center;
+  background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--muted); }
+.tabs .count.warn { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+.admin-nav .language-admin { flex-direction: column; align-items: flex-start; gap: .1rem; margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--border); }
+.admin-nav .language-admin .current { font-weight: 600; color: var(--text); }
+/* long addresses and titles break inside their cell: a table fits its column, no scrolling */
+.admin-main table { width: 100%; }
+.admin-main td { overflow-wrap: break-word; }
+.admin-main td small { overflow-wrap: anywhere; }  /* an address breaks where it must */
+/* a last column that is only an action (Modifică, a button) stays whole and narrow */
+.admin-main td:last-child:has(> a:only-child), .admin-main td:last-child:has(> form:only-child) { overflow-wrap: normal; white-space: nowrap; width: 1%; }

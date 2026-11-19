@@ -15,7 +15,7 @@ from nest_db import Database
 from starlette.concurrency import run_in_threadpool
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from nest import bound, is_htmx, local_path, render, translator
+from nest import bound, is_htmx, local_path, render, toast, translator
 from nest.host import module_state
 from nest_auth import sessions
 from nest_auth.sessions import AccountError, CurrentUser
@@ -269,6 +269,7 @@ def account_name(
     db: Database = bound(Database),
 ):
     sessions.rename(db, user.id, name)
+    toast(request, translator(request)("Your name is saved."))
     return RedirectResponse(f"{_state(request)['urls']['account']}?saved=name", status_code=303)
 
 
@@ -291,6 +292,10 @@ def account_password(
     except AccountError as e:
         return _account_again(request, user, t(e.message, **e.params))
     sessions.close_other_sessions(db, user.id, request.cookies.get(COOKIE, ""))  # here stays in
+    toast(
+        request,
+        translator(request)("Your password is changed; you are signed out everywhere else."),
+    )
     return RedirectResponse(f"{_state(request)['urls']['account']}?saved=password", status_code=303)
 
 

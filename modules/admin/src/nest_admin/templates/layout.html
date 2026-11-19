@@ -5,8 +5,10 @@
 <div class="admin">
   <nav class="admin-nav" aria-label="{{ _('Admin panel') }}">
     <a href="{{ admin_root or '' }}/"><strong>{{ _("Admin") }}</strong></a>
+    {% if user and user.has("admin") %}<a href="{{ admin_root }}/settings"{% if request.url.path.startswith((admin_root or '') ~ '/settings') %} aria-current="page"{% endif %}>{{ _("Settings") }}</a>{% endif %}
     {% for p in admin_nav %}<a href="{{ p.base }}/"{% if request.url.path.startswith(p.base) %} aria-current="page"{% endif %}>{{ p.title }}</a>{% endfor %}
     <a class="muted" href="/">{{ _("Site") }} ↗</a>
+    {% set language_scope = "admin" %}{% include "widgets/language.html" ignore missing %}
   </nav>
   <div class="admin-main">{% block admin_content %}{% endblock %}</div>
 </div>

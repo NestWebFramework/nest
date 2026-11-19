@@ -1,0 +1,49 @@
+{% extends "admin/layout.html" %}
+{#- Every module's settings, a section each; saved in the application's workspace. -#}
+{% block title %}{{ _("Settings") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ _("Settings") }} <span class="muted">· {{ app.title }}</span></h1>
+<p class="hint">{{ _("What is changed here is kept with this application's data and wins over its manifest. A value set in the server's environment is shown, not changed here.") }}</p>
+{% if not sections %}<p class="muted">{{ _("No module of this application has settings to change here.") }}</p>{% endif %}
+<nav class="tabs" aria-label="{{ _('Sections') }}">
+  {% for s in sections %}<a href="{{ admin_root }}/settings/{{ s.owner }}"{% if current and s.owner == current.owner %} aria-current="page"{% endif %}>{{ _(s.title) }}</a>{% endfor %}
+</nav>
+{% if current %}{% set s = current %}
+<section class="card settings-section" id="{{ s.owner }}" aria-labelledby="h-{{ s.owner }}">
+  <h2 id="h-{{ s.owner }}">{{ _(s.title) }}</h2>
+  {% for p in errors.get(s.owner, []) %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
+  <form method="post" action="{{ admin_root }}/settings/{{ s.owner }}" class="stack">
+    {{ csrf_field }}
+    {% for i in s["items"] %}
+    {%- set spec = i.spec %}{% set fid = "s-" ~ i.key | replace(".", "-") %}
+    <div class="field setting{% if spec.type == 'bool' %} check{% endif %}">
+      {% if spec.type == "bool" %}
+      <input id="{{ fid }}" name="{{ i.key }}" type="checkbox" value="1"{% if i.value %} checked{% endif %}{% if i.locked %} disabled{% endif %}>
+      <label for="{{ fid }}">{{ _(spec.label or i.name) }}</label>
+      {% else %}
+      <label for="{{ fid }}">{{ _(spec.label or i.name) }}</label>
+      {% if spec.secret %}
+      <input id="{{ fid }}" value="{{ _('set in the environment') if i.source == 'environment' else _('not set') }}" disabled>
+      {% elif spec.choices %}
+      <select id="{{ fid }}" name="{{ i.key }}"{% if i.locked %} disabled{% endif %}>
+        {% for c in spec.choices %}<option value="{{ c }}"{% if c == i.value %} selected{% endif %}>{{ _(c | string) }}</option>{% endfor %}
+      </select>
+      {% else %}
+      <input id="{{ fid }}" name="{{ i.key }}" value="{{ i.value if i.value is not none else '' }}"
+        {%- if spec.type in ('int', 'float') %} type="number"{% if spec.type == 'float' %} step="any"{% endif %}{% endif %}{% if i.locked %} disabled{% endif %} autocomplete="off" spellcheck="false">
+      {% endif %}
+      {% endif %}
+      {% if spec.description %}<small class="hint">{{ _(spec.description | trim) }}</small>{% endif %}
+      <small class="setting-source muted">
+        {%- if i.source == "environment" %}{{ _("Set in the server's environment.") }}
+        {%- elif i.source == "store" %}{{ _("Changed here.") }} <label class="inline"><input type="checkbox" name="reset:{{ i.key }}" value="1"> {{ _("back to the default") }}</label>
+        {%- elif i.source == "manifest" %}{{ _("As the application's manifest sets it.") }}
+        {%- else %}{{ _("The default.") }}{% endif %}
+      </small>
+    </div>
+    {% endfor %}
+    <button type="submit">{{ _("Save") }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

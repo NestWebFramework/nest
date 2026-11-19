@@ -6,6 +6,7 @@
 {% elif not pages %}<p class="muted">{{ _("Nothing here is open to you.") }}</p>
 {% else %}
 <div class="grid">
+  {% if user and user.has("admin") %}<a class="card tile" href="{{ admin_root }}/settings"><strong>{{ _("Settings") }}</strong><span class="muted">{{ _("Every module's settings, for this application.") }}</span></a>{% endif %}
   {% for p in pages %}<a class="card tile" href="{{ p.base }}/"><strong>{{ p.title }}</strong>{% if p.description %}<span class="muted">{{ p.description }}</span>{% endif %}</a>{% endfor %}
 </div>
 {% endif %}
