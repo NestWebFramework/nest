@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from typing import Any
 
 from nest_db import SqlDatabase
@@ -10,6 +11,10 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.pool import StaticPool
 
 CAPABILITIES = frozenset({"json", "fts", "returning"})
+
+# One gate for every SQLite database of the process: what makes many threads slow is
+# Python's lock, which they all share, so they take their turns in all databases at once.
+GATE = threading.RLock()
 
 
 def create(settings: Any, context: Any) -> SqlDatabase:
@@ -41,4 +46,4 @@ def create(settings: Any, context: Any) -> SqlDatabase:
         cur.close()
 
     caps = CAPABILITIES if sqlite3.sqlite_version_info >= (3, 35) else CAPABILITIES - {"returning"}
-    return SqlDatabase(engine, caps)
+    return SqlDatabase(engine, caps, gate=GATE if settings.one_at_a_time else None)

@@ -34,6 +34,12 @@ settings:
     type: str
     default: NORMAL
     choices: [OFF, NORMAL, FULL, EXTRA]
+  one_at_a_time:
+    type: bool
+    default: true
+    description: >
+      Let one thread at a time into the database: under load, far faster than many
+      at once (SQLite and Python hand their work round between rows).
   busy_timeout_ms:
     type: int
     default: 5000

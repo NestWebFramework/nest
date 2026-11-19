@@ -21,7 +21,7 @@ provider's business.
 from __future__ import annotations
 
 import re
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from sqlalchemy import Engine, MetaData, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -66,13 +66,50 @@ class Database(Protocol):
         ...
 
 
-class SqlDatabase:
-    """The engine-independent half of every provider: give it an engine."""
+class GatedSession(Session):
+    """A session that holds a gate while it is open, so only so many threads work in the
+    database at once. SQLite gives its work back to Python between rows; with many
+    threads asking at the same time, handing it round costs far more than the work
+    itself (ten threads read 45 times slower than one waiting its turn). The gate is
+    re-entrant: a session opened inside another, on the same thread, does not wait for
+    itself."""
 
-    def __init__(self, engine: Engine, capabilities: frozenset[str] = frozenset()):
+    def __init__(self, *args: Any, gate: Any = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._gate = gate
+        self._holding = 0
+
+    def __enter__(self) -> GatedSession:
+        if self._gate is not None:
+            self._gate.acquire()
+            self._holding += 1
+        return super().__enter__()
+
+    def close(self) -> None:
+        try:
+            super().close()
+        finally:
+            while self._holding:
+                self._holding -= 1
+                self._gate.release()
+
+
+class SqlDatabase:
+    """The engine-independent half of every provider: give it an engine; ``gate`` (a
+    re-entrant lock) lets one thread at a time into the database (SQLite's provider
+    gives one; a database server needs none)."""
+
+    def __init__(
+        self, engine: Engine, capabilities: frozenset[str] = frozenset(), *, gate: Any = None
+    ):
         self._engine = engine
         self._capabilities = frozenset(capabilities)
-        self._sessions = sessionmaker(engine, expire_on_commit=False)
+        if gate is not None:
+            self._sessions = sessionmaker(
+                engine, expire_on_commit=False, class_=GatedSession, gate=gate
+            )
+        else:
+            self._sessions = sessionmaker(engine, expire_on_commit=False)
 
     def engine(self) -> Engine:
         return self._engine
