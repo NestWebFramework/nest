@@ -10,7 +10,7 @@ from nest_media import media_url
 
 from nest import bound, render, translator
 from nest.host import module_state
-from nest_gallery import service
+from nest_gallery import service, texts
 
 router = APIRouter()
 index_router = APIRouter()  # mounted unless the application keeps its own page at the route
@@ -31,14 +31,33 @@ def collection(request: Request, slug: str, db: Database = bound(Database)):
     if c is None:
         raise HTTPException(404)
     children = service.cards(db, c.id)
+    shown = [] if children else service.photos(db, c.id)
     return render(
         request,
         "gallery/collection.html",
         collection=c,
         cards=children,
-        photos=[] if children else service.photos(db, c.id),
+        photos=shown,
+        photo_items=items(c, shown),
         base=_base(request),
     )
+
+
+def items(c: Any, photos: list[Any]) -> list[dict[str, str]]:
+    """Each photo as search engines are told of it: its real words, or its gallery's title
+    and number (never a file name or a camera's record)."""
+    out = []
+    for i, p in enumerate(photos, 1):
+        words = texts.alt(p.alt) or texts.describes(p.caption)[:120]
+        out.append(
+            {
+                "key": p.key,
+                "title": words or f"{c.title} ({i})",
+                "caption": texts.caption(p.caption),
+                "alt": words or f"{c.title} ({i})",
+            }
+        )
+    return out
 
 
 def embed(host: Any, request: Any, c: Any) -> str:
@@ -53,7 +72,7 @@ def embed(host: Any, request: Any, c: Any) -> str:
         cards=children,
         photos=[] if children else service.photos(db, c.id),
         base=host.state["base"],
-        media=lambda key: media_url(request, key),
+        media=lambda key, width=None: media_url(request, key, width),
         _=t.gettext,
         ngettext=t.ngettext,
     )

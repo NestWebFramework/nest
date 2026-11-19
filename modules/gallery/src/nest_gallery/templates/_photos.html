@@ -1,8 +1,13 @@
 {# A gallery's photos, opened in the lightbox when scripts run, as plain links when not. #}
 <div class="gallery-grid">
   {% for p in photos %}
-  <a href="{{ media(p.key) }}" data-lightbox="g{{ collection.id }}"{% if p.caption %} data-caption="{{ p.caption }}"{% endif %}>
-    <img src="{{ media(p.thumb or p.key) }}" alt="{{ p.alt }}" loading="lazy">
+  {#- the photo, made from the original at the width a screen needs: a tile at 320 or 640
+      pixels (a phone's sharp screen), the lightbox at 1920 #}
+  {#- its words, never a file name or a camera's record; else its gallery's title and number #}
+  {%- set said = p.caption | photo_caption %}
+  {%- set words = (p.alt | photo_alt) or (p.caption | photo_describes | striptags | truncate(120, end='…')) %}
+  <a href="{{ media(p.key, 1920) }}" data-lightbox="g{{ collection.id }}"{% if said %} data-caption="{{ said }}"{% endif %}>
+    <img src="{{ media(p.key, 320) }}" srcset="{{ media(p.key, 320) }} 320w, {{ media(p.key, 640) }} 640w" sizes="(max-width: 40rem) 50vw, 16rem" alt="{{ words or collection.title ~ ' (' ~ loop.index ~ ')' }}" loading="lazy" decoding="async">
   </a>
   {% endfor %}
 </div>

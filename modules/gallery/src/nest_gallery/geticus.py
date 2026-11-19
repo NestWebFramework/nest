@@ -15,7 +15,7 @@ from typing import Any
 from nest_db.mysqldump import Dump
 
 from nest.text import html_to_text
-from nest_gallery import service
+from nest_gallery import service, texts
 
 
 @dataclass
@@ -86,8 +86,8 @@ def import_dump(db: Any, storage: Any, dump_path: Path, *, root: Path) -> Report
             {
                 "key": rel,
                 "thumb": thumb,
-                "caption": _clean(img["title"]),
-                "alt": _clean(img["alt"]) or _clean(img["title"]),
+                "caption": texts.caption(_clean(img["title"])),
+                "alt": texts.alt(_clean(img["alt"])) or texts.alt(_clean(img["title"])),
             }
         )
     for gid, photos in by_gallery.items():

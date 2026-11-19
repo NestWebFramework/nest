@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
-{% block title %}{{ _("Galleries") }} · {{ app.title }}{% endblock %}
+{% block title %}{{ seo_page_title("gallery.index", _("Galleries")) if seo_page_title is defined else _("Galleries") ~ " · " ~ app.title }}{% endblock %}
+{% block head %}{% if seo_head is defined %}{{ seo_head("gallery.index", title=_("Galleries"), path=request.url.path,
+    image=cards[0].cover if cards else "") }}{% endif %}{% endblock %}
 {% block content %}
 <h1>{{ _("Galleries") }}</h1>
 {% set media = media_url %}

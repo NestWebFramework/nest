@@ -1,7 +1,14 @@
 {% extends "layout.html" %}
-{% block title %}{{ collection.title }} · {{ app.title }}{% endblock %}
+{% set subject = "gallery.collection:" ~ collection.id %}
+{% block title %}{{ seo_page_title(subject, collection.title) if seo_page_title is defined else collection.title ~ " · " ~ app.title }}{% endblock %}
 {% block head %}
 <script src="{{ asset('gallery', 'lightbox.js') }}" defer></script>
+{% if seo_head is defined %}
+{#- a photo gallery, to search engines: each photo with its description and caption -#}
+{{ seo_head(subject, title=collection.title, description=collection.description, path=request.url.path,
+    image=collection.cover or (photos[0].key if photos else ""), image_alt=(photos[0].alt if photos else ""),
+    kind="gallery", images=photo_items) }}
+{% endif %}
 {% endblock %}
 {% block content %}
 <p class="muted"><a href="{{ base or '/' }}/">{{ _("Galleries") }}</a></p>

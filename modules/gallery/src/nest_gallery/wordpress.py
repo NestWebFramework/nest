@@ -21,7 +21,7 @@ from typing import Any
 from nest_db.mysqldump import Dump
 
 from nest.shortcodes import attributes
-from nest_gallery import service
+from nest_gallery import service, texts
 
 
 @dataclass
@@ -180,8 +180,8 @@ def _bwg(
                 {
                     "key": key,
                     "thumb": thumb_key,
-                    "caption": _text(img["description"]),
-                    "alt": _text(img["alt"]),
+                    "caption": texts.caption(_text(img["description"])),
+                    "alt": texts.alt(_text(img["alt"])),
                 }
             )
         report.photos += service.set_photos(db, cid, photos)
@@ -246,8 +246,8 @@ def _ngg(
                 {
                     "key": key,
                     "thumb": thumb_key,
-                    "caption": _text(p["description"]),
-                    "alt": _text(p["alttext"]),
+                    "caption": texts.caption(_text(p["description"])),
+                    "alt": texts.alt(_text(p["alttext"])),
                 }
             )
         report.photos += service.set_photos(db, c.id, photos)

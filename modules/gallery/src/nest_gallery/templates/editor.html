@@ -1,0 +1,45 @@
+{% extends "admin/layout.html" %}
+{#- A gallery's editor: its words, each photo's alt text and caption, its search fields. -#}
+{% block title %}{{ collection.title }} · {{ _("Galleries") }}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/gallery/">{{ _("Galleries") }}</a></p>
+<div class="row between"><h1>{{ collection.title }}</h1><a class="button secondary" href="{{ public }}">{{ _("View") }}</a></div>
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+<form method="post" class="stack gallery-editor">
+  {{ csrf_field }}
+  <div class="field"><label for="title">{{ _("Title") }}</label>
+    <input id="title" name="title" value="{{ posted.get('title') if posted else collection.title }}" required maxlength="300"></div>
+  <div class="field"><label for="description">{{ _("Description") }}</label>
+    <textarea id="description" name="description" rows="3">{{ posted.get('description') if posted else collection.description }}</textarea>
+    <small class="hint">{{ _("Shown above the photos, and to search engines when the search description is empty.") }}</small></div>
+  <div class="grid">
+    <div class="field"><label for="cover">{{ _("Cover") }}</label>
+      <input id="cover" name="cover" value="{{ collection.cover }}" placeholder="{{ _('the first photo') }}"></div>
+    <div class="field check"><input id="published" name="published" type="checkbox" value="1"{% if collection.published %} checked{% endif %}>
+      <label for="published">{{ _("Shown on the site") }}</label></div>
+  </div>
+  {% if children %}
+  <p class="muted">{{ _("An album: its galleries are described each on its own page.") }}
+    {% for card in children %}<a href="{{ admin_root }}/gallery/{{ card.collection.id }}">{{ card.collection.title }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
+  {% if photos %}
+  <fieldset class="gallery-photos"><legend>{{ ngettext("{n} photo", "{n} photos", photos | length) }}</legend>
+    <p class="hint">{{ _("The description of a photo is what a reader who cannot see it hears, and what search engines know of it; the caption is shown under it in the lightbox.") }}</p>
+    {% for p in photos %}
+    <div class="gallery-photo-row">
+      <a href="{{ media_url(p.key) }}"><img src="{{ media_url(p.key, 320) }}" alt="" loading="lazy" width="160" height="107"></a>
+      <div class="stack">
+        <label>{{ _("Description of the photo") }}<input name="alt_{{ p.id }}" value="{{ posted.get('alt_' ~ p.id) if posted else p.alt }}" maxlength="300"></label>
+        <label>{{ _("Caption") }}<textarea name="caption_{{ p.id }}" rows="2">{{ posted.get('caption_' ~ p.id) if posted else p.caption }}</textarea></label>
+      </div>
+    </div>
+    {% endfor %}
+  </fieldset>
+  {% endif %}
+  {% if seo_fields is defined %}
+  {{ seo_fields("gallery.collection:" ~ collection.id, path=public, default_title=collection.title,
+      default_description=collection.description | truncate(160), form=posted) }}
+  {% endif %}
+  <button type="submit">{{ _("Save") }}</button>
+</form>
+{% endblock %}

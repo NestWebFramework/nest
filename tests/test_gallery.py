@@ -152,7 +152,7 @@ def test_a_gallery_application_without_content(tmp_path):
         assert 'href="/galerii/vara-2026/"' in index and "1 galerie" in index
         page = c.get("/galerii/la-munte/").text
         assert (
-            'href="/media/foto/a.jpg" data-lightbox="g' in page
+            'href="/media/foto/a.jpg?w=1920" data-lightbox="g' in page
             and 'data-caption="Vlădeasa"' in page
         )
         assert 'alt="munte"' in page and "lightbox.js" in page
@@ -217,7 +217,7 @@ def test_wordpress_galleries_come_in_and_old_shortcodes_keep_working(tmp_path):
         assert "Ulița &lt;b&gt;mare&lt;/b&gt;" in gallery_page
         vechi = c.get("/vechi/").text
         assert (
-            'href="/media/wp-content/gallery/vechi/x.jpg"' in vechi and "y.jpg" not in vechi
+            'href="/media/wp-content/gallery/vechi/x.jpg?w=1920"' in vechi and "y.jpg" not in vechi
         )  # excluded
 
 
@@ -282,8 +282,8 @@ def test_albums_inside_albums_come_in_with_their_galleries(tmp_path):
         assert transilvania.is_album and transilvania.count == 2
         # An album has no photos of its own: its cover is its first child's.
         assert (
-            transilvania.cover == "uploads/photo-gallery/hram/thumb/c.jpg"
-        )  # via album 1, whose first is Hramul
+            transilvania.cover == "uploads/photo-gallery/hram/c.jpg"
+        )  # via album 1, whose first is Hramul (media makes it the tile's size)
         inner = service.cards(c.db, transilvania.collection.id)
         assert [x.collection.slug for x in inner] == ["fotografii-vechi-si-noi", "nefolosita"]
         assert service.by_alias(c.db, "bwg_shortcode", 2).slug == "transilvania"
@@ -298,3 +298,19 @@ def test_a_site_page_can_keep_the_gallery_route(tmp_path):
         service.ensure(c.db, "Vara")
         assert c.get("/galerii/").status_code == 404  # left to whatever page the site has there
         assert c.get("/galerii/vara/").status_code == 200
+
+
+def test_file_names_and_camera_data_are_not_a_photos_words():
+    from nest_gallery import texts
+
+    assert texts.alt("morlaca035 20121226 1435168974") == ""
+    assert texts.alt("10305595 813343468711245 6668984871612725693 n 20140910 1486621918") == ""
+    assert texts.alt("DSC_0042.JPG") == ""
+    assert texts.alt("Biserica văzută din deal") == "Biserica văzută din deal"
+    assert texts.alt("Zilele satului 2014") == "Zilele satului 2014"  # a year is words
+    assert texts.caption("Aperture: 7.1\nCamera: NIKON D40\nIso: 200\nOrientation: 1") == ""
+    assert texts.caption("Ulița mare, iarna") == "Ulița mare, iarna"
+    assert texts.caption("Notă: fotografie de Marcel C.") == "Notă: fotografie de Marcel C."
+    assert texts.caption("Author: Andreea Nechita") == "Author: Andreea Nechita"  # kept, a credit
+    assert texts.describes("Author: Andreea Nechita") == ""  # but it does not say what is shown
+    assert texts.describes("Hora la nedeie") == "Hora la nedeie"

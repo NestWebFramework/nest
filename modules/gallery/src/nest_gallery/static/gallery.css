@@ -17,3 +17,8 @@ dialog.lightbox .lightbox-count { align-self: center; opacity: .8; }
 /* the grid of a gallery's photos (from the base theme) */
 .gallery { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
 .gallery figure { margin: 0; } .gallery img { aspect-ratio: 1; object-fit: cover; width: 100%; border-radius: var(--radius); }
+/* the gallery's editor */
+.gallery-photo-row { display: grid; grid-template-columns: 10rem 1fr; gap: 1rem; align-items: start; padding: .75rem 0; border-top: 1px solid var(--border); }
+.gallery-photo-row img { width: 10rem; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 6px; }
+.gallery-photo-row label { font-weight: 500; }
+@media (max-width: 40rem) { .gallery-photo-row { grid-template-columns: 1fr; } }

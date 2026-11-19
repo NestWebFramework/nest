@@ -90,6 +90,51 @@ def by_slug(db: Any, slug: str) -> Collection | None:
         return s.scalar(select(Collection).where(Collection.slug == slug, Collection.published))
 
 
+def by_id(db: Any, collection_id: int) -> Collection | None:
+    with db.session() as s:
+        return s.get(Collection, collection_id)
+
+
+def published(db: Any) -> list[Collection]:
+    with db.session() as s:
+        return list(
+            s.scalars(
+                select(Collection)
+                .where(Collection.published)
+                .order_by(Collection.position, Collection.title)
+            )
+        )
+
+
+def update(
+    db: Any,
+    collection_id: int,
+    *,
+    title: str,
+    description: str,
+    is_published: bool,
+    cover: str,
+    photo_texts: dict[int, tuple[str, str]],
+) -> Collection:
+    """A collection's own words, and each photo's alt text and caption."""
+    title = " ".join(title.split())[:300]
+    if not title:
+        raise ValueError("A gallery needs a title.")
+    with db.session() as s, s.begin():
+        c = s.get(Collection, collection_id)
+        if c is None:
+            raise ValueError("That gallery no longer exists.")
+        c.title, c.description = title, description.strip()
+        c.published, c.cover = is_published, cover.strip()[:500]
+        for p in s.scalars(select(Photo).where(Photo.collection_id == collection_id)):
+            if p.id in photo_texts:
+                alt, caption = photo_texts[p.id]
+                p.alt = " ".join(alt.split())[:300]
+                p.caption = caption.strip()
+        s.flush()
+        return c
+
+
 def photos(db: Any, collection_id: int) -> list[Photo]:
     with db.session() as s:
         return list(
@@ -150,7 +195,9 @@ def _first_cover(s: Any, collection_id: int, depth: int = 0) -> str:
         select(Photo).where(Photo.collection_id == collection_id).order_by(Photo.position).limit(1)
     )
     if first is not None:
-        return first.thumb or first.key
+        return (
+            first.key
+        )  # media makes it the tile's size; the old small thumbnail is a fallback no longer needed
     if depth > 5:
         return ""
     children = s.scalars(

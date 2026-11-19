@@ -61,6 +61,33 @@ def _geticus(args: argparse.Namespace) -> int:
     return 0
 
 
+def _tidy(args: argparse.Namespace) -> int:
+    from sqlalchemy import select
+
+    from nest_gallery import texts
+    from nest_gallery.models import Photo
+
+    db = _app(args.app).bindings.get("nest.db")
+    names = camera = 0
+    with db.session() as s:
+        for p in s.scalars(select(Photo)):
+            if p.alt and not texts.alt(p.alt):
+                names += 1
+                if args.apply:
+                    p.alt = ""
+            if p.caption and not texts.caption(p.caption):
+                camera += 1
+                if args.apply:
+                    p.caption = ""
+        if args.apply:
+            s.commit()
+    verb = "cleared" if args.apply else "would clear (run again with --apply)"
+    print(
+        f"✓ {verb}: {names} descriptions that are file names, {camera} captions that are camera data"
+    )
+    return 0
+
+
 def _list(args: argparse.Namespace) -> int:
     from nest_gallery import service
 
@@ -94,6 +121,14 @@ def register(sub: Any) -> None:
     p.add_argument("dump")
     p.add_argument("--root", required=True, help="the site's folder (where assets/ is)")
     p.set_defaults(func=_geticus)
+    p = actions.add_parser(
+        "tidy",
+        help="clear photo descriptions that are file names, and captions that are camera data",
+    )
+    p.add_argument("app")
+    p.add_argument("--apply", action="store_true", help="change them (without it: only count)")
+    p.set_defaults(func=_tidy)
+
     p = actions.add_parser("list", help="the albums and galleries")
     p.add_argument("app")
     p.set_defaults(func=_list)
