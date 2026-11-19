@@ -107,5 +107,9 @@
  "The roads between a world's settlements, and the way from one to another.": "Drumurile dintre așezările unei lumi și calea de la una la alta.",
  "Raids on the realms, the hosts they call, battles and plunder.": "Prădăciuni asupra țărilor, oștile chemate, bătălii și pradă.",
  "The game calendar, seasons, and daily weather for the world and its regions.": "Calendarul jocului, anotimpurile și vremea zilnică a lumii și a regiunilor ei.",
- "A backup was made: {path}": "S-a făcut o copie de siguranță: {path}"
+ "A backup was made: {path}": "S-a făcut o copie de siguranță: {path}",
+ "Works with": "Lucrează cu",
+ "Used by": "Folosit de",
+ "Used when the application has them; it works without.": "Folosite când aplicația le are; merge și fără ele.",
+ "They carry on without it.": "Merg mai departe și fără el."
 }

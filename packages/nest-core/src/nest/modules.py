@@ -65,6 +65,8 @@ class ModuleInfo:
     route: str | None
     deps: list[str] = field(default_factory=list)  # the managed modules it needs
     needed_by: list[str] = field(default_factory=list)  # the enabled modules that need it
+    uses: list[str] = field(default_factory=list)  # optional partners it works with
+    used_by: list[str] = field(default_factory=list)  # the enabled ones that use it, if there
     data: bool = False  # it keeps tables (an uninstall removes them)
     listed: bool = True  # in module.yml (else added from the workspace, or only installed)
     part_of: str | None = None
@@ -107,9 +109,12 @@ def status(app_dir: str | Path, environ: Mapping[str, str] | None = None) -> lis
     running = {u.name: u for u in the_plan.units}
     composed = {i.name: i for i in composition.compose(manifest, choices)}
     needed_by: dict[str, set[str]] = {}
+    used_by: dict[str, set[str]] = {}
     for u in the_plan.units:
         for dep in u.entry.manifest.deps:
             needed_by.setdefault(dep, set()).add(u.name)
+        for partner in u.entry.manifest.uses:
+            used_by.setdefault(partner, set()).add(u.name)
     names = list(composed) + sorted(
         e.name
         for e in catalog
@@ -144,6 +149,8 @@ def status(app_dir: str | Path, environ: Mapping[str, str] | None = None) -> lis
                     if (catalog.find(d)[0] or entry).type in MANAGED_TYPES and d != name
                 ),
                 needed_by=sorted(needed_by.get(name, set()) - {name}),
+                uses=sorted(set(m.uses) - {name}),
+                used_by=sorted(used_by.get(name, set()) - {name}),
                 data=_has_data(entry),
                 listed=inst is not None and not inst.added,
                 part_of=m.part_of,
@@ -247,12 +254,6 @@ def _change(
             problems.append(f"no package '{name}' is installed")
         elif entry.type not in MANAGED_TYPES:
             problems.append(f"'{name}' is a {entry.type}; only modules are managed here")
-        elif entry.manifest.part_of:
-            # a game's subsystems are managed once their manifests name every subsystem
-            # they rely on (today some only find out at run time)
-            problems.append(
-                f"{name} is part of {entry.manifest.part_of}; its parts are not managed here yet"
-            )
         elif name in listed and listed[name].core and name not in enable:
             problems.append(f"{name} is a core module of {manifest.name}")
     if problems:

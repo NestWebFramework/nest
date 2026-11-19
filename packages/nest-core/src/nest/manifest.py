@@ -256,6 +256,9 @@ class Manifest(BaseModel):
     provides: Provides = Field(default_factory=Provides)
     requires: Requires = Field(default_factory=Requires)
     deps: dict[str, str] = Field(default_factory=dict)
+    # optional partners: used when the application includes them (and started before it
+    # then), never pulled in by it; the package works without them
+    uses: list[str] = Field(default_factory=list)
     implements: list[str] = Field(default_factory=list)
     interface: InterfaceSpec | None = None
     settings: dict[str, SettingSpec] = Field(default_factory=dict)

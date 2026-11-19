@@ -33,10 +33,12 @@
           {% if r.part_of %}<span class="badge">{{ _("part of {host}", host=r.part_of) }}</span>{% endif %}
         </div>
         {% if r.description %}<p class="muted module-text">{{ _(r.description) }}</p>{% endif %}
-        {% if r.deps or r.needed_by %}
+        {% if r.deps or r.needed_by or r.uses or r.used_by %}
         <p class="module-links">
           {% if r.deps %}<span>{{ _("Needs") }}: {{ r.deps | join(", ") }}</span>{% endif %}
           {% if r.needed_by and r.state != "available" %}<span>{{ _("Needed by") }}: {{ r.needed_by | join(", ") }}</span>{% endif %}
+          {% if r.uses %}<span title="{{ _('Used when the application has them; it works without.') }}">{{ _("Works with") }}: {{ r.uses | join(", ") }}</span>{% endif %}
+          {% if r.used_by and r.state != "available" %}<span title="{{ _('They carry on without it.') }}">{{ _("Used by") }}: {{ r.used_by | join(", ") }}</span>{% endif %}
         </p>
         {% endif %}
         {% if not r.locked and not r.part_of %}

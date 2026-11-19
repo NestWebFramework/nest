@@ -65,9 +65,11 @@ the manifest) reload the application when changed.
 - **Use other packages only by their front door**: the names in their manifest's
   `provides.exports`, imported from the package itself (`from nest_auth import known_as`),
   never their internals (`nest_auth.sessions`).
-- **Depend on what it imports** (`deps:`). An optional partner is asked with a lookup
-  (`host.lookup`, `host.gather`, `nest.answered`), never imported: the content module asks
-  `seo.site_url`, the seo module asks `media.base`.
+- **Depend on what it imports** (`deps:`). An optional partner is named in `uses:` and
+  asked with a lookup (`host.lookup`, `host.gather`, `nest.answered`), or imported only
+  where it is used, never at load: the content module asks `seo.site_url`, the seo module
+  asks `media.base`. What it `uses` is never pulled in; when the application has it, it
+  is set up first.
 - **Never read another module's state** (`module_state(request, "media")`) or the host's
   private `_nest`; `host.admin_root`, `host.app_title` are public.
 - **Own its tables** (its prefix, its migrations with a working `downgrade()`), and keep
@@ -80,9 +82,32 @@ the manifest) reload the application when changed.
 `nest validate --strict` checks the first three in the code, and Nest's tests run it over
 every package: a package that reaches into another fails the build.
 
+## A game's subsystems
+
+Saga's subsystems are managed the same way: the game marks its core (voievodate: world,
+map, item, inventory, character, settlement, building, npc, player and its content), the
+others are turned off and on in the panel, and the engine process is restarted with the
+site (its worlds written first). Each subsystem's manifest says what it relies on:
+
+- `deps:` what it cannot run without: it reads that one's state (`world.state["character"]`,
+  `world.of("character")`);
+- `uses:` what it works with when the game runs it: guarded reads
+  (`world.state.get("farm")`, `"farm" in world.state`), lookups another answers
+  (`host.lookup("saga.recipes")`), the names in its `tick.after`;
+- `facts:` the facts it gives conditions (`dialogue.facts`): without it, content asking
+  them (a dialogue line, a quest stage) is false. The game master is told how many, by
+  subsystem, when the world opens.
+
+`nest validate --strict` checks the first two in the code (Saga adds its own check
+through the `nest.checks` entry point), and the game's tests run the world without each
+subsystem that is not core.
+
+A subsystem turned back on in a world that ran without it is told how long it was away
+(`Subsystem.resume(world, away)`; `away` is None when it never ran there), from the game
+time each one last ran to, kept at every checkpoint. What it kept may be stale (people
+died, houses changed hands): that is where it sets it right.
+
 ## Not yet
 
-- A game's subsystems (Saga) are listed but not managed: some only discover at run time
-  the subsystems they rely on. Their manifests are made truthful first.
 - Packages are installed with the application (its `pyproject.toml`, its image), not from
   the admin panel: the panel enables what is installed, it never runs `pip`.

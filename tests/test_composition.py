@@ -222,3 +222,54 @@ def test_the_checker_sees_a_package_reaching_in(tmp_path):
     assert "uses seo without depending on it" in text  # a warning: lazy, optional
     assert "reads media's run-time state" in text
     assert "host's private _nest" in text
+
+
+def _local(root, name, extra=""):
+    folder = root / "modules" / name
+    (folder / f"m_{name}").mkdir(parents=True)
+    (folder / "module.yml").write_text(
+        f"module: {{name: {name}, id: test.module.{name}, type: module, version: 0.1.0}}\n"
+        f"main: m_{name}\npages: false\n{extra}",
+        encoding="utf-8",
+    )
+    (folder / f"m_{name}" / "__init__.py").write_text(
+        "def setup(host):\n    pass\n", encoding="utf-8"
+    )
+
+
+def test_an_optional_partner_is_never_pulled_in_and_starts_first_when_there(tmp_path):
+    root = tmp_path / "app"
+    root.mkdir()
+    _local(root, "aaa", "uses: [zzz]\n")
+    _local(root, "zzz")
+    base = (
+        "module: {name: app, id: test.app.app, type: application, version: 0.1.0}\n"
+        "application: {title: App, port: 8000, theme: base}\nmodules:\n  - {name: aaa}\n"
+    )
+    (root / "module.yml").write_text(base, encoding="utf-8")
+    env = {"NEST_APP_WORKSPACE": str(tmp_path / "ws")}
+    names = [u.name for u in create_app(root, environ=env).state.nest.plan.units]
+    assert "aaa" in names and "zzz" not in names  # used if there, never brought
+    (root / "module.yml").write_text(base + "  - {name: zzz}\n", encoding="utf-8")
+    names = [u.name for u in create_app(root, environ=env).state.nest.plan.units]
+    assert names.index("zzz") < names.index("aaa")  # there: set up first
+
+
+def test_a_used_package_is_imported_where_it_is_used(tmp_path):
+    from nest.boundaries import check  # noqa: PLC0415
+    from nest.catalog import Catalog, Entry  # noqa: PLC0415
+
+    root = tmp_path / "polite"
+    (root / "polite").mkdir(parents=True)
+    (root / "module.yml").write_text(
+        "module: {name: polite, id: test.module.polite, type: module, version: 0.1.0}\n"
+        "main: polite\nuses: [seo]\n",
+        encoding="utf-8",
+    )
+    (root / "polite" / "__init__.py").write_text(
+        "import nest_seo\ndef later():\n    import nest_seo as later_seo  # noqa: F401\n",
+        encoding="utf-8",
+    )
+    entry = Entry(manifest=load_manifest(root), source="local")
+    found = [f for f in check([entry], [*Catalog.discover(None), entry]) if f.package == "polite"]
+    assert len(found) == 1 and "imports seo at load, but only uses it" in found[0].message

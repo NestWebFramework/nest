@@ -9,7 +9,8 @@ reports where it crosses into another package other than by the front door:
 * importing a name the other package does not export;
 * importing a package it does not depend on (``deps``): at the top of a file that is an
   error; inside a function it is a hidden optional dependency, a warning (ask with a
-  lookup, or declare it);
+  lookup, or declare it in ``uses``). A package it only ``uses`` is imported where it is
+  used, never at load;
 * reading another module's run-time state (``module_state(request, "media")``), or the
   host's private ``_nest``.
 
@@ -21,6 +22,7 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
+from importlib.metadata import entry_points
 from pathlib import Path
 
 from nest.catalog import Entry
@@ -79,6 +81,7 @@ def check(entries: list[Entry], known: list[Entry]) -> list[Finding]:
             continue
         mine = _root(entry)
         deps = set(entry.manifest.deps)
+        uses = set(entry.manifest.uses)
         for path in _files(folder):
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
@@ -87,7 +90,14 @@ def check(entries: list[Entry], known: list[Entry]) -> list[Finding]:
                     Finding("error", entry.name, f"{path}:{e.lineno}", "cannot be read")
                 )
                 continue
-            findings += _check_file(entry, mine, deps, roots, path, tree)
+            findings += _check_file(entry, mine, deps, uses, roots, path, tree)
+    for ep in entry_points(group="nest.checks"):  # an ecosystem's own (saga: world state)
+        try:
+            extra = ep.load()
+        except Exception as e:  # noqa: BLE001 - reported, the others still run
+            findings.append(Finding("error", ep.name, ep.value, f"its check cannot load: {e}"))
+            continue
+        findings += extra(entries, known)
     return findings
 
 
@@ -95,6 +105,7 @@ def _check_file(
     entry: Entry,
     mine: str | None,
     deps: set[str],
+    uses: set[str],
     roots: dict[str, Entry],
     path: Path,
     tree: ast.AST,
@@ -112,7 +123,17 @@ def _check_file(
         if other is None or base == mine or other.name == entry.name:
             return
         lazy = id(node) not in top_level and not _in_type_checking(tree, node)
-        if other.name not in deps and other.type not in ("interface",):
+        if other.name in uses and other.name not in deps:
+            if not lazy:
+                out.append(
+                    Finding(
+                        "error",
+                        entry.name,
+                        at(node),
+                        f"imports {other.name} at load, but only uses it when present: import it where it is used",
+                    )
+                )
+        elif other.name not in deps and other.type not in ("interface",):
             if lazy:
                 out.append(
                     Finding(

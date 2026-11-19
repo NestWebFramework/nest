@@ -296,7 +296,14 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
                     f"{app.name} sets {name}.{key}, a secret; set it in the environment instead"
                 )
 
-    order = _order(edges, problems)
+    # an optional partner that is included starts first, unless that would make a cycle
+    # (the engine uses its subsystems, which depend on it: that edge is left out)
+    ordering = {n: set(e) for n, e in edges.items()}
+    for name in sorted(edges):
+        for partner in sorted(included[name].manifest.uses):
+            if partner in included and partner != name and not _reaches(ordering, partner, name):
+                ordering[name].add(partner)
+    order = _order(ordering, problems)
     if problems:
         raise PlanError(app.name, problems + [f"note: {n}" for n in notes])
     units = [Unit(entry=included[name], instance=instances.get(name)) for name in order]
@@ -319,6 +326,19 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
         locked=locked,
         disabled=disabled,
     )
+
+
+def _reaches(edges: dict[str, set[str]], start: str, goal: str) -> bool:
+    """Whether ``goal`` is among what ``start`` (transitively) starts after."""
+    seen, stack = set(), [start]
+    while stack:
+        name = stack.pop()
+        if name == goal:
+            return True
+        if name not in seen:
+            seen.add(name)
+            stack += edges.get(name, ())
+    return False
 
 
 def _order(edges: dict[str, set[str]], problems: list[str]) -> list[str]:
