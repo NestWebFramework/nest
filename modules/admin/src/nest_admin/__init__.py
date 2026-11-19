@@ -43,7 +43,9 @@ def setup(host: ModuleHost) -> None:
         user = current_user(request)
         return {"admin_root": root, "admin_nav": visible_pages(request, user) if user else []}
 
+    from nest_admin.modules import router as modules
     from nest_admin.settings import router as settings
 
     host.mount(settings)
+    host.mount(modules)
     host.mount(router)

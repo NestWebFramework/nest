@@ -42,6 +42,7 @@ log = logging.getLogger("nest.modules")
 
 MANAGED_TYPES = ("module", "subsystem", "content")
 PID_FILE = Path("run") / "serve.pid"
+LOG_FILE = Path("data") / "modules.log"
 
 
 class ChangeError(Exception):
@@ -133,7 +134,7 @@ def status(app_dir: str | Path, environ: Mapping[str, str] | None = None) -> lis
                 type=entry.type,
                 version=m.module.version,
                 title=m.module.title or name,
-                description=(m.module.description or "").strip(),
+                description=" ".join((m.module.description or "").split()),
                 state=state,
                 locked=name in the_plan.locked,
                 route=inst.route if inst is not None else None,
@@ -164,8 +165,69 @@ def change(
     routes: Mapping[str, str] | None = None,
     reload: bool = True,
     say: Callable[[str], None] = log.info,
+    who: str = "",
 ) -> Result:
-    """Enable, disable or uninstall modules, as one change (see the module's doc)."""
+    """Enable, disable or uninstall modules, as one change (see the module's doc). Each
+    change, done or refused, is written in the workspace's ``data/modules.log``."""
+    asked = {"enable": list(enable), "disable": list(disable), "uninstall": list(uninstall)}
+    workspace = resolve_workspace(
+        load_manifest(Path(app_dir).resolve()).name,
+        dict(os.environ if environ is None else environ),
+    )
+    try:
+        result = _change(app_dir, environ, enable, disable, uninstall, routes, reload, say)
+    except ChangeError as e:
+        _record(workspace, who, asked, "refused", e.problems)
+        raise
+    _record(workspace, who, asked, "done", [str(result.backup)] if result.backup else [])
+    return result
+
+
+def _record(
+    workspace: Path, who: str, asked: dict[str, list[str]], outcome: str, details: list[str]
+) -> None:
+    import json  # noqa: PLC0415
+    from datetime import UTC, datetime  # noqa: PLC0415
+
+    entry = {
+        "at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "who": who,
+        **{k: v for k, v in asked.items() if v},
+        "outcome": outcome,
+        "details": details,
+    }
+    path = workspace / LOG_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def history(workspace: Path, last: int = 20) -> list[dict[str, Any]]:
+    """The latest changes, newest first."""
+    import json  # noqa: PLC0415
+
+    path = workspace / LOG_FILE
+    if not path.is_file():
+        return []
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines()[-last:]:
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            continue
+    return out[::-1]
+
+
+def _change(
+    app_dir: str | Path,
+    environ: Mapping[str, str] | None,
+    enable: Iterable[str],
+    disable: Iterable[str],
+    uninstall: Iterable[str],
+    routes: Mapping[str, str] | None,
+    reload: bool,
+    say: Callable[[str], None],
+) -> Result:
     from nest.host import close_providers, create_app  # noqa: PLC0415
     from nest.ops import backup  # noqa: PLC0415
 
@@ -322,6 +384,25 @@ def write_pid(workspace: Path) -> Path:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     path.write_text(str(os.getpid()), encoding="utf-8")
     return path
+
+
+def reload_app(nest: Any) -> str:
+    """Apply a change to the running application: nest serve's workers reloaded ("serve"),
+    or, under nest run, the application made again in place ("process", soon after this
+    returns, so the request asking finishes first); "" when neither can be done."""
+    if reload_running(nest.workspace):
+        return "serve"
+    reloader = getattr(nest, "reloader", None)
+    if reloader is None:
+        return ""
+    import asyncio  # noqa: PLC0415
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return ""
+    loop.call_later(0.3, lambda: asyncio.ensure_future(reloader.reload()))
+    return "process"
 
 
 def reload_running(workspace: Path) -> bool:

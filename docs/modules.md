@@ -20,6 +20,13 @@ The others are managed in the admin panel or with `nest modules`.
 
 ## What the administrator chooses
 
+In the admin panel, **Modules** (`<admin>/modules`, administrators only) shows every
+module: the core ones locked, the enabled, the disabled, and those installed but not
+used, each with what it needs and what needs it. A module is disabled, enabled again,
+added at an address, or uninstalled (its name typed to confirm) from there; the page
+shows each step of the change and the latest changes (who, what, when, done or
+refused, kept in `data/modules.log`). The command line does the same:
+
 The choices are kept in the workspace, `data/modules.yml`, laid over `module.yml` when
 the application is made: the manifest is the code's (a deploy brings it), the choices are
 the site's (a backup keeps them).
@@ -45,7 +52,9 @@ A change is never patched into the running application. It is:
    `module.removed` lookup), the db interface drops its tables (its migrations down to
    nothing, through its `forget:` hook), its settings go;
 5. **reloaded**: under `nest serve`, its workers are made again one by one (and the
-   engine process with them), so no request is lost. `nest run` is restarted by hand.
+   engine process with them), so no request is lost; under `nest run`, a change made in
+   the panel makes the application again in place. A change made with the command line
+   reloads `nest serve`; `nest run` is then restarted by hand.
 
 Settings work the same way. Most are read when used (`host.live`), so a change in the
 admin panel applies at once; the few that decide which routes exist (`restart: true` in

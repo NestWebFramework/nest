@@ -182,6 +182,7 @@ class Nest:
         # time here, never in module-level globals, so two applications in one
         # process (or one test after another) never share it.
         self.module_state: dict[str, dict[str, Any]] = {}
+        self.reloader: Any = None  # a Reloadable, when the server runs one (nest run)
         self.app: FastAPI | None = None
         self._context: list[Callable[[Request], Mapping[str, Any]]] = []
         self.admin_pages: list[AdminPage] = []  # what modules give the admin panel
@@ -1159,9 +1160,58 @@ def _error_page(request: Request, nest: Nest, exc: StarletteHTTPException) -> Re
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=headers)
 
 
-def app_from_env() -> FastAPI:
-    """The factory ``nest run`` hands uvicorn, so reload rebuilds the whole app."""
+def app_from_env() -> Reloadable:
+    """The factory ``nest run``, nest serve's workers and the engine hand uvicorn."""
     app_dir = os.environ.get("NEST_APP_DIR")
     if not app_dir:
         raise HostError("NEST_APP_DIR is not set")
-    return create_app(app_dir)
+    return Reloadable(lambda: create_app(app_dir))
+
+
+class Reloadable:
+    """The application, made again in place when its modules change (``nest run``, where no
+    master reloads workers): the new one is made and started beside the old, then takes
+    the next requests, and the old one is stopped. A request already under way finishes
+    on the application it began on."""
+
+    def __init__(self, factory: Callable[[], FastAPI]):
+        self.factory = factory
+        self.app = self._make()
+        self._running: Any = None
+        self._lock = asyncio.Lock()
+
+    def _make(self) -> FastAPI:
+        app = self.factory()
+        app.state.nest.reloader = self
+        return app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "lifespan":
+            await self.app(scope, receive, send)
+            return
+        while True:  # the server's own start and stop
+            message = await receive()
+            if message["type"] == "lifespan.startup":
+                try:
+                    self._running = self.app.router.lifespan_context(self.app)
+                    await self._running.__aenter__()
+                except Exception as e:  # noqa: BLE001 - told to the server, which stops
+                    await send({"type": "lifespan.startup.failed", "message": str(e)})
+                    return
+                await send({"type": "lifespan.startup.complete"})
+            elif message["type"] == "lifespan.shutdown":
+                if self._running is not None:
+                    await self._running.__aexit__(None, None, None)
+                await send({"type": "lifespan.shutdown.complete"})
+                return
+
+    async def reload(self) -> None:
+        """Make the application again (its workspace's composition, as it is now)."""
+        async with self._lock:
+            new = await run_in_threadpool(self._make)
+            running = new.router.lifespan_context(new)
+            await running.__aenter__()
+            old, self.app, self._running, old_running = self.app, new, running, self._running
+            log.info("%s: made again with its modules as they are now", old.state.nest.name)
+            if old_running is not None:
+                await old_running.__aexit__(None, None, None)

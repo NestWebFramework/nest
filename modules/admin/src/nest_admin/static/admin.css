@@ -28,3 +28,24 @@
 .admin-main td small { overflow-wrap: anywhere; }  /* an address breaks where it must */
 /* a last column that is only an action (Modifică, a button) stays whole and narrow */
 .admin-main td:last-child:has(> a:only-child), .admin-main td:last-child:has(> form:only-child) { overflow-wrap: normal; white-space: nowrap; width: 1%; }
+/* the modules page: a card per module, grouped by state; locked ones say so */
+.module-group { margin-top: 1.5rem; }
+.module-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; }
+.module-list > .card.module { padding: .85rem 1rem; margin: 0; }
+.module-head { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; }
+.module-head code { font-size: .82rem; color: var(--muted); }
+.module .badge.lock { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.module-text { margin: .4rem 0 0; }
+.module-links { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin: .4rem 0 0; font-size: .88rem; color: var(--muted); }
+.module-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem 1rem; margin-top: .65rem; }
+.module-actions form.add { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.module-actions form.add input { width: 12rem; }
+.module-actions details.uninstall summary { cursor: pointer; color: var(--danger); padding: .4rem 0; }
+.module-actions details.uninstall form { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .4rem; }
+.module-actions details.uninstall .hint { flex-basis: 100%; margin: 0; }
+.modules button.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.modules .steps { margin: 0; padding-left: 1.1rem; }
+.modules .busy.htmx-indicator { display: none; }
+.modules .busy.htmx-request { display: block; opacity: 1; }
+.module.disabled { opacity: .85; }
+.module-log { font-size: .88rem; }

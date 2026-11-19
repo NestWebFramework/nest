@@ -17,7 +17,7 @@ from fastapi.responses import RedirectResponse
 from nest_auth import CurrentUser, require_role
 
 from nest import render, toast, translator
-from nest.modules import reload_running
+from nest.modules import reload_app
 from nest.settings import SettingsError
 
 router = APIRouter()
@@ -125,7 +125,7 @@ async def save_settings(request: Request, owner: str, user: CurrentUser = Depend
     toast(request, t("Settings saved: {section}.", section=t(section["title"])))
     specs = {key: spec for key, _o, _n, spec in nest.settings.specs()}
     if any(specs[k].restart for k in changed if k in specs):  # its routes depend on it
-        if reload_running(nest.workspace):
+        if reload_app(nest):
             toast(request, t("The site is reloading to apply it."))
         else:
             toast(request, t("It applies when the site is restarted."), "warning")
