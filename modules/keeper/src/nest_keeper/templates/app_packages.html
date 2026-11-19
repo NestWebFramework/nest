@@ -1,0 +1,38 @@
+{% extends "admin/layout.html" %}
+{#- What an application has installed, and what this server's registry offers it. -#}
+{% block title %}{{ _("Packages") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/app/{{ app.name }}">← {{ app.title }}</a></p>
+<h1>{{ _("Packages") }} <span class="muted">· {{ app.title }}</span></h1>
+<p class="hint">{{ _("Install a package this server trusts (Nest's own, or one pinned in its registry file) into the application; its administrator then adds it in the admin panel's Modules page. A package the application uses is uninstalled there before it can be removed here.") }}</p>
+{% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
+{% if steps %}<div class="notice ok" role="status"><ul>{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ul></div>{% endif %}
+{% if not managed %}
+<p class="notice">{{ _("This application has no pyproject.toml of its own: its packages are installed with Nest's.") }}</p>
+{% else %}
+{% set headings = {"used": _("In use"), "installed": _("Installed, not used"), "with": _("Installed with another package"), "available": _("Available to install")} %}
+{% for group, rows in groups.items() if rows %}
+<h2>{{ headings[group] }} <span class="muted">({{ rows | length }})</span></h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Package") }}</th><th>{{ _("Type") }}</th><th>{{ _("Version") }}</th><th>{{ _("What it is") }}</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td><strong>{{ _(r.offer.title) }}</strong><br><code>{{ r.offer.name }}</code>{% if r.offer.source != "nest" %} <span class="badge">{{ _("registry") }}</span>{% endif %}</td>
+    <td>{{ r.offer.type }}</td>
+    <td>{{ r.offer.version }}</td>
+    <td><small>{{ _(r.offer.description) }}</small>{% if r.needed_by %}<br><small class="muted">{{ _("Needed by") }}: {{ r.needed_by | join(", ") }}</small>{% endif %}</td>
+    <td>
+      {% if group == "available" %}
+      <form method="post" action="{{ base }}/app/{{ app.name }}/packages/{{ r.offer.name }}/add">{{ csrf_field }}<button type="submit">{{ _("Install") }}</button></form>
+      {% elif group == "installed" %}
+      <form method="post" action="{{ base }}/app/{{ app.name }}/packages/{{ r.offer.name }}/remove">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Remove") }}</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endfor %}
+{% endif %}
+{% endblock %}

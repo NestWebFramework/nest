@@ -3,7 +3,8 @@
 {% block title %}{{ _("Modules") }} · {{ app.title }}{% endblock %}
 {% block admin_content %}
 <h1>{{ _("Modules") }} <span class="muted">· {{ app.title }}</span></h1>
-<p class="hint">{{ _("Core modules are what this application cannot run without. The others may be disabled (their data is kept), enabled again, or uninstalled (their data and settings are removed, after a backup). Every change is checked first and applied without stopping the site.") }}</p>
+<p class="hint">{{ _("Core modules are what this application cannot run without. The others may be disabled (their data is kept), enabled again, or uninstalled (their data and settings are removed, after a backup). Every change is checked first and applied without stopping the site.") }}
+  {{ _("New modules are installed on the server by its administrator (the keeper, or nest packages); they then appear here, ready to add.") }}</p>
 {% block panel %}
 <div id="modules-panel" class="modules">
   {% if pending %}<p class="notice" role="status">{{ _("Waiting for the site to restart: {names}.", names=pending | join(", ")) }}</p>{% endif %}

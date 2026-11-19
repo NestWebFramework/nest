@@ -119,7 +119,36 @@ class Catalog:
         self.add(Entry(manifest=manifest, source=source, package=package))
 
 
+def refresh_paths() -> None:
+    """Let a running process see packages installed since it started (``nest packages``,
+    the keeper): the path files (.pth) an editable install writes are read when Python
+    starts only, so their folders are added here, and the import caches dropped."""
+    import importlib  # noqa: PLC0415
+    import os  # noqa: PLC0415
+    import site  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    for folder in [*site.getsitepackages(), site.getusersitepackages()]:
+        base = Path(folder)
+        if not base.is_dir():
+            continue
+        for pth in base.glob("*.pth"):
+            try:
+                lines = pth.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                continue
+            for line in lines:
+                line = line.strip()
+                if not line or line.startswith(("#", "import ", "import\t")):
+                    continue
+                target = Path(line) if os.path.isabs(line) else (base / line).resolve()
+                if target.is_dir() and str(target) not in sys.path:
+                    sys.path.append(str(target))
+    importlib.invalidate_caches()
+
+
 def _packaged() -> list[tuple[str, Path]]:
+    refresh_paths()
     found = []
     for ep in sorted(entry_points(group="nest.modules"), key=lambda e: e.name):
         package = ep.value.split(":")[0]

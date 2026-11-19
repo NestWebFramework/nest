@@ -107,7 +107,36 @@ A subsystem turned back on in a world that ran without it is told how long it wa
 time each one last ran to, kept at every checkpoint. What it kept may be stale (people
 died, houses changed hands): that is where it sets it right.
 
-## Not yet
+## Installing packages
 
-- Packages are installed with the application (its `pyproject.toml`, its image), not from
-  the admin panel: the panel enables what is installed, it never runs `pip`.
+An application's admin panel enables what is installed; it never installs. Installing is
+the server administrator's, from the **registry**: the packages this server trusts.
+
+- Nest's own: every package in the Nest checkout it runs from (`$NEST_HOME`, else found
+  from nest-core): its modules, engines and subsystems, providers, interfaces, themes.
+- Others, in a registry file (`$NEST_REGISTRY`, else `~/.config/nest/registry.yml`), each
+  pinned so what was vetted is what comes: a git source at a commit (40 hex digits, never
+  a branch), or a package index at an exact version, over https.
+
+```yaml
+packages:
+  - {name: shop, dist: nest-shop, version: "1.2.0", type: module, title: Shop,
+     git: "https://example.org/nest-shop.git", rev: "3f2c…(40 hex)"}
+```
+
+```
+nest packages APP                 # the registry: in use, installed, with another, available
+nest packages APP add forum       # into pyproject.toml and module.yml's deps, then uv sync
+nest packages APP remove forum    # refused while the application uses it
+```
+
+The keeper app does the same from its pages (an application, then **Packages**). To
+install is to add the package to the application's contract: the dependency and where it
+comes from in `pyproject.toml`, its version range under its ecosystem in `module.yml`,
+then `uv sync`; if any step fails, both files are put back. It is not added to the
+application's modules: it arrives *installed, not used*, and appears in the admin panel's
+Modules page, ready to add, without restarting the site (a running process reads the new
+package's path when it next looks). A package the application uses is uninstalled there
+before it can be removed; one that came with others goes with them.
+
+In a container the environment is the image's: install in development, commit, build.

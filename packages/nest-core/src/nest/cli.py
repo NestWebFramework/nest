@@ -252,6 +252,46 @@ def cmd_modules(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_packages(args: argparse.Namespace) -> int:
+    """The packages this server trusts, installed in an application or not; add, remove."""
+    from nest.packages import PackageError, add, remove, status  # noqa: PLC0415
+
+    root = Path(args.app).resolve()
+    try:
+        if args.action == "list":
+            rows = status(root)
+            width = max((len(r.offer.name) for r in rows), default=4)
+            for r in rows:
+                state = "in use" if r.used else ("installed" if r.installed else "available")
+                if r.installed and not r.direct and not r.used:
+                    state = "with " + ", ".join(r.needed_by[:1])
+                if args.installed and not r.installed:
+                    continue
+                print(
+                    f"{state:10} {r.offer.name:{width}}  {r.offer.version:8} {r.offer.type:10} "
+                    f"{r.offer.title}" + ("" if r.offer.source == "nest" else "  [registry]")
+                )
+            return 0
+        if not args.name:
+            print(f"✗ nest packages {args.action} needs a package's name")
+            return 2
+        if args.action == "add":
+            offer = add(root, args.name)
+            print(f"✓ {offer.name} installed: add it in the admin panel's Modules page, or")
+            print(
+                f"  nest modules {args.app} enable {offer.name}"
+                + ("" if offer.type != "module" else " --route /" + offer.name)
+            )
+        else:
+            remove(root, args.name)
+            print(f"✓ {args.name} removed")
+    except PackageError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    return 0
+
+
 def cmd_engine(args: argparse.Namespace) -> int:
     """The engine process: the application with its one-process modules' state, answering
     the workers of nest serve (on a Unix socket, or a port for an engine run as a service)."""
@@ -388,6 +428,15 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="show the plan and the settings, run nothing"
     )
     p.set_defaults(func=cmd_serve)
+
+    p = sub.add_parser(
+        "packages", help="install packages this server trusts into an application, or remove them"
+    )
+    p.add_argument("app")
+    p.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove"])
+    p.add_argument("name", nargs="?")
+    p.add_argument("--installed", action="store_true", help="list: only those installed")
+    p.set_defaults(func=cmd_packages)
 
     p = sub.add_parser("modules", help="an application's modules: list, enable, disable, uninstall")
     p.add_argument("app")

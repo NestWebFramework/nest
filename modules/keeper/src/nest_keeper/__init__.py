@@ -167,6 +167,77 @@ async def detail(request: Request, name: str, user: CurrentUser = Depends(keeper
     return render(request, "keeper/app.html", app=app, base=admin_url(request, "keeper"))
 
 
+def _app_or_404(request: Request, name: str) -> Application:
+    apps = {a.name: a for a in applications(_folders(request))}
+    if name not in apps:
+        raise HTTPException(404)
+    return apps[name]
+
+
+def _packages_page(
+    request: Request, app: Application, *, steps=None, problems=None, status_code=200
+):
+    from nest.packages import PackageError, status  # noqa: PLC0415
+
+    rows, trouble = [], list(problems or [])
+    managed = (app.root / "pyproject.toml").is_file()
+    if managed:
+        try:
+            rows = status(app.root)
+        except PackageError as e:
+            trouble += e.problems
+    present = {r.offer.name for r in rows if r.installed}
+    rows = [
+        r for r in rows if not r.offer.part_of or r.offer.part_of in present
+    ]  # a game's parts with its engine
+    groups = {
+        "used": [r for r in rows if r.used],
+        "installed": [r for r in rows if r.installed and r.direct and not r.used],
+        "with": [r for r in rows if r.installed and not r.direct and not r.used],
+        "available": [r for r in rows if not r.installed],
+    }
+    return render(
+        request,
+        "keeper/app_packages.html",
+        app=app,
+        managed=managed,
+        groups=groups,
+        steps=steps or [],
+        problems=trouble,
+        base=admin_url(request, "keeper"),
+        status_code=status_code,
+    )
+
+
+@admin.get("/app/{name}/packages")
+async def app_packages(request: Request, name: str, user: CurrentUser = Depends(keeper)):
+    app = await asyncio.to_thread(_app_or_404, request, name)
+    return await asyncio.to_thread(_packages_page, request, app)
+
+
+@admin.post("/app/{name}/packages/{package}/{action}")
+async def app_package_change(
+    request: Request, name: str, package: str, action: str, user: CurrentUser = Depends(keeper)
+):
+    """Install a package of this server's registry into the application, or remove it:
+    its pyproject.toml and module.yml, then uv sync (nest.packages)."""
+    from nest.packages import PackageError, add, remove  # noqa: PLC0415
+
+    if action not in ("add", "remove"):
+        raise HTTPException(404)
+    app = await asyncio.to_thread(_app_or_404, request, name)
+    steps: list[str] = []
+    try:
+        await asyncio.to_thread(
+            (add if action == "add" else remove), app.root, package, say=steps.append
+        )
+    except PackageError as e:
+        return await asyncio.to_thread(
+            _packages_page, request, app, problems=e.problems, status_code=400
+        )
+    return await asyncio.to_thread(_packages_page, request, app, steps=steps)
+
+
 @admin.get("/tokens")
 def token_list(
     request: Request, user: CurrentUser = Depends(keeper), db: Database = bound(Database)

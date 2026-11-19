@@ -30,5 +30,16 @@
  "Last used": "Ultima folosire",
  "revoked": "revocat",
  "Revoke": "Revocă",
- "No token yet.": "Niciun token încă."
+ "No token yet.": "Niciun token încă.",
+ "Install a package this server trusts (Nest's own, or one pinned in its registry file) into the application; its administrator then adds it in the admin panel's Modules page. A package the application uses is uninstalled there before it can be removed here.": "Instalează în aplicație un pachet în care serverul are încredere (al lui Nest, sau unul fixat în fișierul registrului); administratorul aplicației îl adaugă apoi în pagina Module din panoul ei. Un pachet pe care aplicația îl folosește se dezinstalează acolo înainte să poată fi scos aici.",
+ "This application has no pyproject.toml of its own: its packages are installed with Nest's.": "Aplicația nu are un pyproject.toml propriu: pachetele ei se instalează cu ale lui Nest.",
+ "In use": "Folosite",
+ "Installed, not used": "Instalate, nefolosite",
+ "Installed with another package": "Instalate împreună cu alt pachet",
+ "Available to install": "De instalat",
+ "What it is": "Ce este",
+ "registry": "registru",
+ "Needed by": "Necesar pentru",
+ "Install": "Instalează",
+ "Remove": "Scoate"
 }

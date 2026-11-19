@@ -111,5 +111,6 @@
  "Works with": "Lucrează cu",
  "Used by": "Folosit de",
  "Used when the application has them; it works without.": "Folosite când aplicația le are; merge și fără ele.",
- "They carry on without it.": "Merg mai departe și fără el."
+ "They carry on without it.": "Merg mai departe și fără el.",
+ "New modules are installed on the server by its administrator (the keeper, or nest packages); they then appear here, ready to add.": "Modulele noi se instalează pe server de administratorul lui (din keeper sau cu nest packages); apoi apar aici, gata de adăugat."
 }

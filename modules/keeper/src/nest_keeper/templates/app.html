@@ -4,7 +4,8 @@
 <p><a href="{{ base }}/">← {{ _("Applications") }}</a></p>
 <h1>{{ app.title }} <span class="muted">· {{ app.name }} {{ app.version }}</span></h1>
 <p>{% if app.running %}<span class="better">● {{ _("runs") }}</span>{% elif app.running is false %}<span class="muted">○ {{ _("stopped") }}</span>{% endif %}
-  {% if app.port %}· {{ _("port") }} {{ app.port }}{% endif %} · <span class="muted">{{ app.root }}</span></p>
+  {% if app.port %}· {{ _("port") }} {{ app.port }}{% endif %} · <span class="muted">{{ app.root }}</span>
+  · <a href="{{ base }}/app/{{ app.name }}/packages">{{ _("Packages") }}</a></p>
 {% if app.problems %}<div class="notice danger" role="alert"><ul>{% for p in app.problems %}<li>{{ p }}</li>{% endfor %}</ul></div>{% endif %}
 <h2>{{ _("Start order") }}</h2>
 <div class="table-wrap"><table>
