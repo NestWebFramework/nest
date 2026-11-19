@@ -212,7 +212,7 @@ def test_wordpress_galleries_come_in_and_old_shortcodes_keep_working(tmp_path):
         )
         page = c.get("/fotografii/").text
         assert page.count('class="gallery-tile"') == 2 and "[Best_Wordpress_Gallery" not in page
-        assert "gallery.css" in page
+        assert "/assets/_bundle/site.css" in page
         gallery_page = c.get("/galerii/de-prin-sat/").text
         assert "Ulița &lt;b&gt;mare&lt;/b&gt;" in gallery_page
         vechi = c.get("/vechi/").text

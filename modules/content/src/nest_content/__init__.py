@@ -45,10 +45,30 @@ def seo_pages(host: ModuleHost, db: object, registry: Registry) -> list[dict]:
             }
         )
     known = {i["path"] for i in out}
+    by_path = {t.path: t for name in registry.taxonomies for t in svc.terms(db, name) if t.path}
     for path, _when in svc.sitemap(db):  # the terms that hold a published entry
-        if path not in known:
-            known.add(path)
+        if path in known:
+            continue
+        known.add(path)
+        term = by_path.get(path)
+        if term is None:
             out.append({"path": path, "kind": "category", "group": "Categories"})
+            continue
+        group = "Categories" if term.taxonomy == "category" else "Tags"
+        out.append(
+            {
+                "path": path,
+                "title": term.name,
+                "subject": f"content.term:{term.id}",  # its search fields, its proposals
+                "description": term.description,
+                "kind": group,
+                "group": group,
+                "text": [term.description],
+                "edit": f"{admin_root}/content/taxonomies/{term.taxonomy}/{term.id}"
+                if admin_root
+                else None,
+            }
+        )
     return out
 
 
@@ -78,7 +98,7 @@ def setup(host: ModuleHost) -> None:
         from nest_content import service
 
         return {
-            "menu": lambda slug: service.menu_tree(db, slug),
+            "menu": lambda slug: service.cached_menu(db, slug),
             "content_types": registry.types,
             "absolute_url": lambda path: absolute(request, path),
             "latest": lambda n=3, category=None: latest(n, category),

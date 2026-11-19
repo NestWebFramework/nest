@@ -4,6 +4,8 @@
 {% set seo_title = entry.title %}{% set seo_description = description %}{% set seo_path = canonical %}
 {% set seo_image = entry.featured %}{% set seo_type = "article" if spec.taxonomies else "website" %}{% set seo_published = entry.published_at %}
 {% set seo_subject = "content.entry:" ~ entry.id %}{% set seo_modified = entry.updated_at %}
+{% set _first = (terms.get("category") or [none])[0] %}
+{% set seo_breadcrumbs = ([(_first.name, _first.path)] if _first else []) + [(entry.title, entry.path)] %}
 {% include "content/seo.html" %}
 {% if "data-video=" in body %}<script src="{{ asset('content', 'video.js') }}" defer></script>{% endif %}
 {% endblock %}

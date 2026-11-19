@@ -30,7 +30,14 @@ def proposal(nest: Any, item: dict[str, Any]) -> dict[str, str]:
         texts += found.get("lead", [])
         more = found.get("text", [])
         context += found.get("context", [])
-    p = propose(item.get("title") or "", *texts, context=context, site=nest.title, more=more)
+    p = propose(
+        item.get("title") or "",
+        *texts,
+        context=context,
+        site=nest.title,
+        more=more,
+        plain_title=subject.startswith("content.term:"),
+    )
     return {"title": p.title, "description": p.description, "keywords": p.keywords}
 
 

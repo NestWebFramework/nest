@@ -473,6 +473,7 @@ def propose(
     context: list[str] | None = None,
     site: str = "",
     more: list[str] | None = None,
+    plain_title: bool = False,
 ) -> Proposal:
     """``texts`` are the page's own words (the description comes from them); ``more`` is
     what it holds besides (a category's entries), which counts for the keywords only."""
@@ -488,7 +489,12 @@ def propose(
             words.insert(min(len(words), 3), c)
     found = ", ".join(words[:8])
     return Proposal(
-        title=search_title(title, context, found.split(", ") if found else [], site),
+        # a page of pages (a category) is called by its name; the site's name follows it
+        title=(
+            " ".join(title.split())[:60]
+            if plain_title
+            else search_title(title, context, found.split(", ") if found else [], site)
+        ),
         description=description(text or extra_text),
         keywords=found,
     )

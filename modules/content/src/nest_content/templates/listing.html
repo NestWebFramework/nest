@@ -3,6 +3,7 @@
 {% block head %}
 {% set seo_title = term.name if term else app.title %}{% set seo_path = (term.path if term else "/") ~ ("?page=" ~ page if page > 1 else "") %}
 {% set seo_subject = "content.term:" ~ term.id if term else "" %}
+{% set seo_type = "collection" if term else "website" %}{% set seo_breadcrumbs = [(term.name, term.path)] if term else [] %}
 {% set seo_description = (term.description | striptags | truncate(160)) if term and term.description else "" %}
 {% include "content/seo.html" %}
 {% endblock %}

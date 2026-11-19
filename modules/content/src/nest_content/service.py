@@ -35,6 +35,20 @@ from nest_content.types import Registry, build_path, term_path
 KIND = "content.entry"
 
 
+def _bumps(fn: Any) -> Any:
+    """A function that writes what menus show: menus are made again after it."""
+    import functools  # noqa: PLC0415
+
+    @functools.wraps(fn)
+    def run(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            changed()
+
+    return run
+
+
 class ContentError(ValueError):
     def __init__(self, message: str, **params: object):
         self.message, self.params = message, params
@@ -76,6 +90,7 @@ def _term_chain(s: Any, term: Term) -> list[Term]:
     return chain
 
 
+@_bumps
 def ensure_term(
     db: Any,
     registry: Registry,
@@ -188,6 +203,7 @@ def _snapshot(e: Entry, terms: list[int]) -> dict[str, Any]:
     }
 
 
+@_bumps
 def save_entry(
     db: Any, search: Any, registry: Registry, data: EntryData, *, existing_id: int | None = None
 ) -> Entry:
@@ -293,6 +309,7 @@ def _refresh_children(s: Any, registry: Registry, parent: Entry) -> list[Entry]:
     return changed
 
 
+@_bumps
 def refresh_term_entries(db: Any, search: Any, registry: Registry, term_id: int) -> int:
     """After a category's slug changes, its entries' addresses follow."""
     return len(_refresh_term_entries(db, search, registry, term_id))
@@ -355,6 +372,7 @@ class TermData:
     description: str = ""
 
 
+@_bumps
 def save_term(
     db: Any,
     search: Any,
@@ -406,6 +424,7 @@ def save_term(
     return term_by_id(db, term.id) or term, moves
 
 
+@_bumps
 def delete_term(db: Any, search: Any, registry: Registry, term_id: int) -> list[tuple[str, str]]:
     """A category gone: its children move up to its parent, its entries simply lose it
     (and their addresses follow); the moves are returned, the term's own to its parent's."""
@@ -463,6 +482,7 @@ def term_tree(db: Any, taxonomy: str, type_name: str | None = None) -> list[tupl
     return out
 
 
+@_bumps
 def delete_entry(db: Any, search: Any, entry_id: int) -> None:
     with db.session() as s, s.begin():
         e = s.get(Entry, entry_id)
@@ -792,6 +812,7 @@ def restore_revision(
     )
 
 
+@_bumps
 def trash_entry(
     db: Any, search: Any, entry_id: int, *, author_id: int | None = None
 ) -> Entry | None:
@@ -809,6 +830,7 @@ def trash_entry(
     return e
 
 
+@_bumps
 def untrash_entry(db: Any, search: Any, entry_id: int) -> Entry | None:
     """Out of the trash, with the status it had."""
     with db.session() as s, s.begin():
@@ -955,6 +977,7 @@ class MenuNode:
     children: list[MenuNode] = field(default_factory=list)
 
 
+@_bumps
 def ensure_menu(db: Any, slug: str, title: str) -> Menu:
     with db.session() as s, s.begin():
         m = s.scalar(select(Menu).where(Menu.slug == slug))
@@ -966,6 +989,7 @@ def ensure_menu(db: Any, slug: str, title: str) -> Menu:
         return m
 
 
+@_bumps
 def add_menu_item(
     db: Any,
     menu_id: int,
@@ -994,9 +1018,39 @@ def add_menu_item(
         return item
 
 
+@_bumps
 def clear_menu(db: Any, menu_id: int) -> None:
     with db.session() as s, s.begin():
         s.execute(delete(MenuItem).where(MenuItem.menu_id == menu_id))
+
+
+# What a menu shows changes when an entry, a term or a menu does: each such change moves
+# this on, and a menu kept for an earlier generation is made again. Another process
+# (a second worker, the command line) keeps its own, made again after MENU_TTL.
+_generation = 0
+MENU_TTL = 30.0
+_menus: dict[tuple[int, str, int], tuple[float, list[Any]]] = {}
+
+
+def changed() -> None:
+    """Something a menu may show was changed: menus are made again."""
+    global _generation
+    _generation += 1
+    _menus.clear()
+
+
+def cached_menu(db: Any, slug: str) -> list[MenuNode]:
+    """menu_tree, kept a while: a page asks for its menu on every view."""
+    import time  # noqa: PLC0415
+
+    key = (id(db), slug, _generation)
+    now = time.monotonic()
+    found = _menus.get(key)
+    if found and found[0] > now:
+        return found[1]
+    tree = menu_tree(db, slug)
+    _menus[key] = (now + MENU_TTL, tree)
+    return tree
 
 
 def menu_tree(db: Any, slug: str) -> list[MenuNode]:

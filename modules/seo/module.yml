@@ -27,7 +27,7 @@ module:
   created: "2026-11-19"
 
 main: nest_seo
-styles: [seo.css]
+admin_styles: [seo.css]  # the editors' fields, in the admin panel
 pages: false  # its pages are /sitemap.xml and /robots.txt, at the site's root
 
 provides:

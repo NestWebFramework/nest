@@ -120,7 +120,7 @@ def _send(storage: Storage, key: str, content_type: str) -> Any:
     return StreamingResponse(storage.open(key), media_type=content_type, headers=headers)
 
 
-@router.get("/{key:path}")
+@router.api_route("/{key:path}", methods=["GET", "HEAD"])  # crawlers and link checkers ask HEAD
 def serve(key: str, w: int | None = None, storage: Storage = bound(Storage)) -> Any:
     try:
         stat = storage.stat(key)

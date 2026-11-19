@@ -119,6 +119,7 @@ async def suggest(request: Request, user: CurrentUser = Depends(editor)) -> JSON
         context=context,
         site=request.app.state.nest.title,
         more=extra,
+        plain_title=subject.startswith("content.term:"),
     )
     return JSONResponse({"title": p.title, "description": p.description, "keywords": p.keywords})
 

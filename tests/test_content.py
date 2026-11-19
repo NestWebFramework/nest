@@ -657,6 +657,12 @@ def test_pictures_are_made_at_the_widths_pages_ask_for(site):
     assert site.get("/media/poze/sat.jpg").headers["content-type"] == "image/jpeg"  # as stored
     assert site.get("/media/acte/act.pdf?w=640").content == b"%PDF-1.4"  # not a picture
     assert site.get("/media/poze/sat.jpg?w=abc").status_code == 422
+    head = site.head("/media/poze/sat.jpg")  # crawlers and link checkers ask HEAD
+    assert (
+        head.status_code == 200
+        and head.headers["content-type"] == "image/jpeg"
+        and not head.content
+    )
 
 
 # --- the editor: its page, its pictures ---------------------------------------------

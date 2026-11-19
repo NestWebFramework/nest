@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from nest_auth.sessions import create_user
 from nest_content import service as content
+from nest_content.service import EntryData
 from nest_gallery import service as gallery
 
 from nest import create_app
@@ -346,3 +347,69 @@ def test_a_batch_is_previewed_applied_page_by_page_and_undone(site):
         seo.get(site.db, f"content.entry:{entries['Istoria satului'].id}") is None
     )  # back as it was
     assert "<title>Portul nostru · Morlaca</title>" in site.get(entries["Portul popular"].path).text
+
+
+def test_a_category_is_a_collection_with_its_way_home(site):
+    from nest_content.service import TermData
+
+    term, _moves = content.save_term(
+        site.db, site.search, site.types, "category", TermData(name="Știai că?")
+    )
+    content.save_entry(
+        site.db,
+        site.search,
+        site.types,
+        EntryData(
+            type="post",
+            title="Morlaca și Menumorut",
+            status="published",
+            body="<p>Text.</p>",
+            terms={"category": [term.id]},
+        ),
+    )
+    page = site.get(term.path).text
+    kinds = [d["@type"] for d in ld(page)]
+    assert "CollectionPage" in kinds and "BreadcrumbList" in kinds
+    trail = [d for d in ld(page) if d["@type"] == "BreadcrumbList"][0]["itemListElement"]
+    assert [(i["name"], i["item"]) for i in trail] == [
+        ("Morlaca", "https://morlaca.ro/"),
+        ("Știai că?", f"https://morlaca.ro{term.path}"),
+    ]
+    assert '<meta property="og:locale" content="ro_RO">' in page
+    article = content.published_entries(site.db)[0]
+    steps = [d for d in ld(site.get(article.path).text) if d["@type"] == "BreadcrumbList"][0][
+        "itemListElement"
+    ]
+    assert [i["name"] for i in steps] == ["Morlaca", "Știai că?", "Morlaca și Menumorut"]
+
+
+def test_categories_take_part_in_the_overview_and_the_batch(site):
+    from nest_content.service import TermData
+
+    term, _ = content.save_term(
+        site.db, site.search, site.types, "category", TermData(name="Tradiții")
+    )
+    content.save_entry(
+        site.db,
+        site.search,
+        site.types,
+        EntryData(
+            type="post",
+            title="Nedeia",
+            status="published",
+            body="<p>Hora satului.</p>",
+            terms={"category": [term.id]},
+        ),
+    )
+    tab = site.get("/admin/seo/?group=Categories").text
+    assert "Tradiții" in tab and f"/admin/content/taxonomies/category/{term.id}" in tab
+    preview = site.post(
+        "/admin/seo/batch/preview",
+        data={
+            "csrf_token": site.cookies["nest_csrf"],
+            "group": ["Categories"],
+            "field": ["description"],
+            "mode": "empty",
+        },
+    ).text
+    assert f'name="new:description:content.term:{term.id}"' in preview

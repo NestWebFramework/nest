@@ -78,6 +78,36 @@ def _ld(data: dict[str, Any]) -> str:
     return f'<script type="application/ld+json">{text}</script>'
 
 
+# a language as Open Graph names a locale: its language and its country
+OG_LOCALES = {
+    "ro": "ro_RO",
+    "en": "en_US",
+    "hu": "hu_HU",
+    "de": "de_DE",
+    "fr": "fr_FR",
+    "it": "it_IT",
+    "es": "es_ES",
+}
+
+
+def og_locale(locale: str) -> str:
+    locale = locale.replace("-", "_")
+    return locale if "_" in locale else OG_LOCALES.get(locale, locale)
+
+
+def _trail(request: Any, site: str, crumbs: list[tuple[str, str]]) -> dict[str, Any]:
+    """The way to a page from the home page (BreadcrumbList): search results may show it."""
+    steps = [(site, "/"), *[(n, p) for n, p in crumbs if n and p and p != "/"]]
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": i, "name": name, "item": absolute(request, path)}
+            for i, (name, path) in enumerate(steps, 1)
+        ],
+    }
+
+
 def _iso(when: Any) -> str:
     return when.isoformat() if isinstance(when, datetime) else str(when or "")
 
@@ -96,6 +126,7 @@ def head(
     modified: Any = None,
     images: list[dict[str, str]] | None = None,
     keywords: str = "",
+    breadcrumbs: list[tuple[str, str]] | None = None,
 ) -> Markup:
     s = _settings(request)
     nest = request.app.state.nest
@@ -132,7 +163,7 @@ def head(
         f'<meta property="og:title" content="{escape(page_title)}">',
         f'<meta property="og:url" content="{escape(canonical)}">',
         f'<meta property="og:type" content="{og_type}">',
-        f'<meta property="og:locale" content="{escape(str(locale).replace("-", "_"))}">',
+        f'<meta property="og:locale" content="{escape(og_locale(str(locale)))}">',
     ]
     if desc:
         tags.append(f'<meta property="og:description" content="{escape(desc)}">')
@@ -161,6 +192,8 @@ def head(
                 f'<meta name="msvalidate.01" content="{escape(str(s.get("bing_verification")))}">'
             )
 
+    if not noindex and breadcrumbs:
+        tags.append(_ld(_trail(request, nest.title, breadcrumbs)))
     if not noindex:
         tags.append(
             _ld(
@@ -210,6 +243,13 @@ def _schema(request, kind, name, desc, url, pic, published, modified, images) ->
                 }
                 for i in images[:100]
             ],
+        }
+    elif kind == "collection":  # a category, a tag: a page of other pages
+        data = {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": name,
+            "url": url,
         }
     elif url.rstrip("/") == site_url(request):
         data = {

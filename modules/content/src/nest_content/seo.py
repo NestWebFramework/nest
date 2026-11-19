@@ -133,7 +133,10 @@ def robots(request: Request) -> Response:
 
 def summary(entry: Any, length: int = 160) -> str:
     """A sentence or two about an entry: its excerpt, or its text's beginning."""
-    text = Markup(entry.excerpt or entry.body or "").striptags()
+    source = entry.excerpt or entry.body or ""
+    if not entry.excerpt and len(source) > length * 15:  # the opening is enough: no need
+        source = re.sub(r"<[^>]*$", "", source[: length * 15])  # to read a long article whole
+    text = Markup(source).striptags()
     text = " ".join(_SHORTCODE.sub(" ", text).split())
     if len(text) <= length:
         return text
