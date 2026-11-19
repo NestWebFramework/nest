@@ -108,13 +108,40 @@ class SettingsStore:
         text = "" if value is None else str(_coerce(spec, value, key))
         if "\n" in text:
             raise SettingsError(f"{key}: a value is one line")
+        if spec.choices and _coerce(spec, value, key) not in spec.choices:
+            raise SettingsError(
+                f"{key}: '{value}' is not one of {', '.join(map(str, spec.choices))}"
+            )
         with self._lock:
             self._values[key] = text
-            tmp = self._path.with_suffix(".tmp")
-            body = "".join(f"{k}={v}\n" for k, v in sorted(self._values.items()))
-            tmp.write_text(body, encoding="utf-8")
-            os.chmod(tmp, 0o600)
-            os.replace(tmp, self._path)
+            self._write()
+
+    def specs(self) -> list[tuple[str, str, str, SettingSpec]]:
+        """Every declared setting: (key, owner, name, spec), by owner then name."""
+        return [(k, o, n, s) for k, (o, n, s) in sorted(self._specs.items())]
+
+    def source(self, key: str) -> str:
+        """Where its value comes from: environment, store, manifest or default."""
+        owner, name, _spec = self._spec(key)
+        if env_name(self._app, owner, name) in self._environ:
+            return "environment"
+        if key in self._values:
+            return "store"
+        return "manifest" if key in self._instance else "default"
+
+    def reset(self, key: str) -> None:
+        """Forget the stored value: the manifest's, or the default, applies again."""
+        self._spec(key)
+        with self._lock:
+            if self._values.pop(key, None) is not None:
+                self._write()
+
+    def _write(self) -> None:
+        tmp = self._path.with_suffix(".tmp")
+        body = "".join(f"{k}={v}\n" for k, v in sorted(self._values.items()))
+        tmp.write_text(body, encoding="utf-8")
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, self._path)
 
     def items(self) -> list[tuple[str, Any]]:
         return [(key, self.get(key)) for key in sorted(self._specs)]

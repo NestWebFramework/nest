@@ -12,8 +12,11 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import secrets
+from collections.abc import Callable
 from http.cookies import SimpleCookie
+from typing import Any
 from urllib.parse import urlsplit
 
 from fastapi import HTTPException, Request
@@ -30,6 +33,53 @@ DEFAULT_CSP = (
     "connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; "
     "form-action 'self'; frame-ancestors 'none'"
 )
+
+
+# What a package may add to the policy (a top-level ``csp:`` section of its module.yml):
+# where its pictures, frames, media and requests may come from. Scripts and styles stay
+# 'self' only, so no package can loosen what runs on a page.
+CSP_EXTENDABLE = ("img-src", "frame-src", "media-src", "connect-src")
+_SOURCE = re.compile(r"^https://(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(/[\w./-]*)?$")
+
+
+class CspError(ValueError):
+    pass
+
+
+def build_csp(sections: list[tuple[str, Any]]) -> str:
+    """The default policy, with the sources each package's ``csp:`` section adds.
+
+    ``sections`` is [(package, {directive: [source, ...]})], as ModuleHost.sections
+    gives it. A source is an https origin (a host, optionally a path); a bare
+    wildcard, a keyword or a plain-http source is refused.
+    """
+    directives: dict[str, list[str]] = {}
+    for part in DEFAULT_CSP.split(";"):
+        name, *sources = part.split()
+        directives[name] = sources
+    problems = []
+    for owner, section in sections:
+        if not isinstance(section, dict):
+            problems.append(f"{owner}: csp is a mapping of directive to sources")
+            continue
+        for directive, sources in section.items():
+            if directive not in CSP_EXTENDABLE:
+                problems.append(
+                    f"{owner}: csp may extend {', '.join(CSP_EXTENDABLE)}, not '{directive}'"
+                )
+                continue
+            if isinstance(sources, str):
+                sources = [sources]
+            target = directives.setdefault(directive, ["'self'"])
+            for source in sources or []:
+                source = str(source).strip().lower()
+                if not _SOURCE.match(source):
+                    problems.append(f"{owner}: '{source}' is not an https source csp accepts")
+                elif source not in target:
+                    target.append(source)
+    if problems:
+        raise CspError("; ".join(problems))
+    return "; ".join(" ".join([name, *sources]) for name, sources in directives.items())
 
 
 def local_path(value: str | None, fallback: str = "/") -> str:
@@ -56,12 +106,19 @@ def _valid(secret: str, token: str | None) -> bool:
 class SecurityMiddleware:
     """Pure ASGI, so it never buffers a streamed (SSE) response."""
 
-    def __init__(self, app: ASGIApp, *, secret: str, secure_cookies: bool, csp: str = DEFAULT_CSP):
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        secret: str,
+        secure_cookies: bool,
+        csp: str | Callable[[], str] = DEFAULT_CSP,
+    ):
         self.app = app
         self.secret = secret
         self.secure = secure_cookies
+        self.csp = csp if callable(csp) else (lambda: csp)
         self.headers = {
-            "content-security-policy": csp,
             "x-content-type-options": "nosniff",
             "x-frame-options": "DENY",
             "referrer-policy": "same-origin",
@@ -97,6 +154,8 @@ class SecurityMiddleware:
                 for key, value in self.headers.items():
                     if key not in headers:
                         headers[key] = value
+                if "content-security-policy" not in headers:
+                    headers["content-security-policy"] = self.csp()
                 if fresh:
                     cookie = f"{CSRF_COOKIE}={fresh}; Path=/; HttpOnly; SameSite=Lax"
                     headers.append("set-cookie", cookie + ("; Secure" if self.secure else ""))

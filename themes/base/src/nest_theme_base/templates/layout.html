@@ -18,7 +18,7 @@
     <div class="container bar">
       {% block header %}<a class="brand" href="/">{{ app.title }}</a>{% endblock %}
       <nav aria-label="Main">{% block nav %}{% endblock %}</nav>
-      {% block language %}{% include "widgets/language.html" %}{% endblock %}
+      {% block language %}{% if not in_admin %}{% include "widgets/language.html" %}{% endif %}{% endblock %}
     </div>
   </header>
   <main id="main" class="container">
@@ -27,5 +27,6 @@
   <footer class="site-footer">
     <div class="container">{% block footer %}{{ app.title }}{% endblock %}</div>
   </footer>
+  {% include "notifications/region.html" ignore missing %}
 </body>
 </html>

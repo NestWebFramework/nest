@@ -12,6 +12,8 @@ optional one starts degraded and says why on the health page.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import inspect
 import logging
 import os
@@ -35,16 +37,24 @@ from markupsafe import Markup, escape
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from nest.bind import Bindings, ProviderContext, build
 from nest.catalog import Catalog, Entry
 from nest.contract import load_contracts
-from nest.i18n import LOCALE_COOKIE, Catalogs, LocaleMiddleware, translator
+from nest.i18n import ADMIN_LOCALE_COOKIE, LOCALE_COOKIE, Catalogs, LocaleMiddleware, translator
 from nest.loader import import_main, import_object
 from nest.manifest import load_manifest
 from nest.realtime import Broker, Topic
 from nest.resolve import Plan, Unit, plan
-from nest.security import CSRF_FIELD, SecurityMiddleware, csrf_protect, local_path
+from nest.security import (
+    CSRF_FIELD,
+    CspError,
+    SecurityMiddleware,
+    build_csp,
+    csrf_protect,
+    local_path,
+)
 from nest.settings import Namespaced, SettingsStore
 from nest.shortcodes import Shortcodes
 from nest.templating import is_htmx, make_environment, render_block
@@ -123,7 +133,34 @@ class Nest:
         self._startup: list[Hook] = []
         self._shutdown: list[Hook] = []
         self._background: list[Callable[[], Awaitable[Any]]] = []
-        self._versions = {u.name: u.entry.manifest.module.version for u in plan.units}
+        # an asset's address carries its module's version and its files' last change, so a
+        # browser that keeps it a year (immutable) still gets a changed stylesheet at once
+        self._versions = {}
+        for u in plan.units:
+            folder = u.entry.manifest.folder(u.entry.manifest.static, "static")
+            newest = (
+                max((f.stat().st_mtime for f in folder.rglob("*") if f.is_file()), default=0)
+                if folder is not None
+                else 0
+            )
+            version = u.entry.manifest.module.version
+            self._versions[u.name] = f"{version}-{int(newest):x}" if newest else version
+        # The page policy, with the sources the packages' csp: sections add (a map's tiles,
+        # a video's frames); the application's own last.
+        csp = [
+            (u.name, u.entry.manifest.raw["csp"])
+            for u in plan.units
+            if "csp" in u.entry.manifest.raw
+        ]
+        if "csp" in self.manifest.raw:
+            csp.append((self.name, self.manifest.raw["csp"]))
+        self.settings_checks: dict[str, Callable[[dict[str, Any]], list[str]]] = {}
+        self._csp_sections = csp
+        self._csp_runtime: dict[tuple[str, str], tuple[str, str]] = {}
+        try:
+            self.csp = build_csp(csp)
+        except CspError as e:
+            raise HostError(str(e)) from None
         app_static = plan.app.manifest.folder(plan.app.manifest.static, "static")
         if app_static is not None:  # the application's own files (a client it builds)
             newest = max(
@@ -143,7 +180,11 @@ class Nest:
         self.templates = make_environment(plan.app.root, theme_dir, module_dirs)
         languages = application.languages if application else ["en"]
         default = (application.default_language if application else None) or languages[0]
-        self.catalogs = Catalogs(languages, default)
+        self.site_languages = list(languages)
+        self.admin_languages = list(
+            (application.admin_languages if application else None) or languages
+        )
+        self.catalogs = Catalogs([*languages, *self.admin_languages], default)
         for unit in plan.units:
             for item in unit.entry.manifest.locales:
                 self.catalogs.load(unit.name, item.locale, unit.entry.root / item.file)
@@ -181,6 +222,14 @@ class Nest:
             context.update(provide(request))
         t = translator(request)
         context.update(
+            languages=self.site_languages,  # the site's switch offers these
+            admin_languages=self.admin_languages,  # the admin panel's switch, these
+            in_admin=bool(request.scope.get("state", {}).get("in_admin")),
+        )
+        context.update(
+            # any module's shortcode, where an application's template wants it:
+            # {{ shortcodes('[map]') }}, {{ shortcodes('[album slug="sat"]') }}
+            shortcodes=lambda text: self.shortcodes.expand(text, request),
             request=request,
             csrf_token=token,
             csrf_field=field,
@@ -203,6 +252,35 @@ class Nest:
             if answer is not None:
                 return answer
         return None
+
+    def allow_source(self, owner: str, directive: str, source: str, slot: str = "") -> None:
+        """A source the page policy takes while the application runs (a map's tiles, set
+        in the admin panel), checked as a manifest's csp: is. One per owner and slot: a
+        new one replaces the old, so a changed setting does not leave the old host open."""
+        key = (owner, slot or directive)
+        if self._csp_runtime.get(key) == (directive, source):
+            return
+        runtime = {**self._csp_runtime, key: (directive, source)}
+        extra = [(o, {d: [s]}) for (o, _slot), (d, s) in runtime.items() if s]
+        self.csp = build_csp([*self._csp_sections, *extra])  # CspError if not allowed
+        self._csp_runtime = runtime
+
+    def gather(self, name: str, key: Any = None) -> list[Any]:
+        """Every module's answer to ``name`` (those that answered), in the plan's order.
+
+        Where ``lookup`` wants one record, ``gather`` collects from all: the maps
+        module gathers "map.points" from every module that has places to show.
+        """
+        found = []
+        for owner, fn in self._lookups.get(name, []):
+            try:
+                answer = fn(key)
+            except Exception:
+                log.exception("%s failed to answer %s", owner, name)
+                continue
+            if answer is not None:
+                found.append(answer)
+        return found
 
     def answered(self, name: str) -> bool:
         """Whether any module answers ``name`` (so another may rely on it instead of its own way)."""
@@ -282,6 +360,38 @@ class ModuleHost:
         self.settings = Namespaced(nest.settings, unit.name)
         self.log = logging.getLogger(f"nest.{unit.name}")
 
+    @property
+    def production(self) -> bool:
+        return self._nest.production
+
+    def check_settings(self, fn: Callable[[dict[str, Any]], list[str]]) -> Callable:
+        """``fn(values)`` judges this module's settings before the admin panel saves them:
+        ``values`` is every setting as it would be, and what it returns are the problems
+        (already in the reader's words), none to save."""
+        self._nest.settings_checks[self.name] = fn
+        return fn
+
+    def allow_source(self, directive: str, source: str, slot: str = "") -> None:
+        """Let pages load from ``source`` (an https origin) for ``directive`` (img-src,
+        frame-src, media-src, connect-src), decided while running; CspError if refused."""
+        self._nest.allow_source(self.name, directive, source, slot)
+
+    def sign(self, value: str) -> str:
+        """``value`` with a signature only this application can make (for a cookie): what
+        comes back through ``unsign`` was not changed on the way."""
+        mac = hmac.new(self._key(), value.encode(), hashlib.sha256).hexdigest()[:32]
+        return f"{value}.{mac}"
+
+    def unsign(self, token: str) -> str | None:
+        value, _, mac = (token or "").rpartition(".")
+        if not value:
+            return None
+        good = hmac.new(self._key(), value.encode(), hashlib.sha256).hexdigest()[:32]
+        return value if hmac.compare_digest(good, mac) else None
+
+    def _key(self) -> bytes:  # one key per module: what one signs, another cannot pass off
+        return hashlib.sha256(f"{self._nest.secret}:{self.name}".encode()).digest()
+
     def _require(self, facility: str) -> None:
         if facility not in self.manifest.requires.host:
             raise HostError(
@@ -312,6 +422,12 @@ class ModuleHost:
         prefix = "" if self.route == "/" else self.route
         assert self._nest.app is not None
         self._nest.app.include_router(router, prefix=prefix, dependencies=[Depends(csrf_protect)])
+
+    def serve_at_root(self, router: APIRouter) -> None:
+        """Serve ``router`` at the site's root, whatever this module's route: for the files
+        a site answers at fixed addresses (/sitemap.xml, /robots.txt, /.well-known/...)."""
+        assert self._nest.app is not None
+        self._nest.app.include_router(router, dependencies=[Depends(csrf_protect)])
 
     def admin(self, router: APIRouter) -> AdminPage:
         """Give the admin panel this module's pages (its manifest's admin: says title, order, role).
@@ -507,13 +623,15 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
         static = entry.manifest.folder(entry.manifest.static, "static")
         if static is not None:
             app.mount(
-                f"/assets/{unit.name}", StaticFiles(directory=static), name=f"assets:{unit.name}"
+                f"/assets/{unit.name}",
+                VersionedStatic(directory=static),
+                name=f"assets:{unit.name}",
             )
     app_name = the_plan.app.manifest.module.name
     app_static = the_plan.app.manifest.folder(the_plan.app.manifest.static, "static")
     if app_static is not None and app_name not in {u.name for u in the_plan.units}:
         app.mount(
-            f"/assets/{app_name}", StaticFiles(directory=app_static), name=f"assets:{app_name}"
+            f"/assets/{app_name}", VersionedStatic(directory=app_static), name=f"assets:{app_name}"
         )
     for unit in the_plan.units:
         entry = unit.entry
@@ -541,11 +659,28 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
 
     for cls, options in nest._middleware:
         app.add_middleware(cls, **options)
-    app.add_middleware(LocaleMiddleware, catalogs=nest.catalogs)
+    app.add_middleware(
+        LocaleMiddleware,
+        catalogs=nest.catalogs,
+        site=nest.site_languages,
+        admin=nest.admin_languages,
+        admin_root=lambda: nest.admin_root,
+        browser=bool(nest.manifest.application.browser_language)
+        if nest.manifest.application
+        else True,
+    )
+    hosts = [h.strip() for h in nest.environ.get("NEST_ALLOWED_HOSTS", "").split(",") if h.strip()]
+    if hosts:  # a request for any other host is refused (400); the health check asks locally
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=[*hosts, "localhost", "127.0.0.1"])
     # Pages and SVG shrink about tenfold; SSE streams are left alone by Starlette.
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     # Added last, so outermost: every response gets the headers, whatever a module did.
-    app.add_middleware(SecurityMiddleware, secret=nest.secret, secure_cookies=nest.production)
+    app.add_middleware(
+        SecurityMiddleware,
+        secret=nest.secret,
+        secure_cookies=nest.production,
+        csp=lambda: nest.csp,  # read per response: a module may add a source while running
+    )
     log.info("%s: %d packages ready, workspace %s", nest.name, len(the_plan.units), workspace)
     return app
 
@@ -564,6 +699,20 @@ def _setup(nest: Nest, unit: Unit) -> None:
             log.exception("%s failed to set up; it is optional and starts degraded", unit.name)
             return
         raise HostError(f"{unit.name} failed to set up: {type(e).__name__}: {e}") from e
+
+
+class VersionedStatic(StaticFiles):
+    """A module's static files. Asked for with its version (?v=, as asset() writes every
+    address), a file never changes, so browsers and proxies keep it for a year."""
+
+    def file_response(self, *args: Any, **kwargs: Any) -> Response:
+        response = super().file_response(*args, **kwargs)
+        scope = args[2] if len(args) > 2 else kwargs.get("scope", {})
+        if b"v=" in scope.get("query_string", b""):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers.setdefault("Cache-Control", "public, max-age=3600")
+        return response
 
 
 def _core_routes(app: FastAPI, nest: Nest) -> None:
@@ -628,9 +777,11 @@ def _core_routes(app: FastAPI, nest: Nest) -> None:
         chosen = str(form.get("language", ""))
         target = local_path(str(form.get("next", "/")))
         response = RedirectResponse(target, status_code=303)
-        if chosen in nest.catalogs.languages:
+        admin = str(form.get("scope", "")) == "admin"  # the admin panel's language, or the site's
+        offered = nest.admin_languages if admin else nest.site_languages
+        if chosen in offered:
             response.set_cookie(
-                LOCALE_COOKIE,
+                ADMIN_LOCALE_COOKIE if admin else LOCALE_COOKIE,
                 chosen,
                 max_age=365 * 86400,
                 samesite="lax",

@@ -120,6 +120,8 @@ class SettingSpec(_Section):
     required: bool = False
     secret: bool = False
     description: str | None = None
+    label: str | None = None  # what the admin panel's settings page calls it
+    editable: bool = True  # shown there to change (False: set in module.yml or the environment)
 
 
 class InterfaceSpec(_Section):
@@ -178,6 +180,11 @@ class Application(_Section):
     command: str | None = None
     languages: list[str] = Field(default_factory=lambda: ["en"])
     default_language: str | None = None
+    # the languages its admin panel can be read in (empty: the site's)
+    admin_languages: list[str] = Field(default_factory=list)
+    # whether the site speaks the browser's language before a visitor chooses (False: its
+    # default, as a public site wants for search engines); the admin panel always does
+    browser_language: bool = True
 
     @field_validator("port", mode="before")
     @classmethod

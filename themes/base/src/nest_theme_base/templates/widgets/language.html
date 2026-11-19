@@ -1,11 +1,16 @@
-{# The language switch, shown when the application offers more than one. #}
-{% if languages | length > 1 %}
-<form class="row language" method="post" action="/_nest/language">
+{#- The language switch, shown when there is more than one to choose: the site's, or,
+    with {% set language_scope = "admin" %} before including it, the admin panel's. -#}
+{%- set _admin = (language_scope | default("site")) == "admin" %}
+{%- set _offered = admin_languages if _admin else languages %}
+{%- set _names = {"ro": "Română", "en": "English", "hu": "Magyar", "de": "Deutsch", "fr": "Français", "it": "Italiano", "es": "Español"} %}
+{% if _offered | length > 1 %}
+<form class="row language{% if _admin %} language-admin{% endif %}" method="post" action="/_nest/language" aria-label="{{ _('Language') }}">
   {{ csrf_field }}
-  <input type="hidden" name="next" value="{{ request.url.path }}">
-  {% for lang in languages %}
+  <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+  {% if _admin %}<input type="hidden" name="scope" value="admin">{% endif %}
+  {% for lang in _offered %}
   <button type="submit" name="language" value="{{ lang }}" class="link{% if lang == locale %} current{% endif %}"
-          {% if lang == locale %}aria-current="true"{% endif %} lang="{{ lang }}">{{ lang | upper }}</button>
+          {% if lang == locale %}aria-current="true"{% endif %} lang="{{ lang }}" title="{{ _names.get(lang, lang) }}">{{ _names.get(lang, lang | upper) if _admin else lang | upper }}</button>
   {% endfor %}
 </form>
 {% endif %}

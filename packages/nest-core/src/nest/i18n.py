@@ -29,7 +29,8 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 log = logging.getLogger("nest.i18n")
 
-LOCALE_COOKIE = "nest_locale"
+LOCALE_COOKIE = "nest_locale"  # the language a visitor reads the site in
+ADMIN_LOCALE_COOKIE = "nest_admin_locale"  # the language an editor reads the admin panel in
 
 # Plural category index per language (CLDR rules for cardinal numbers).
 PLURALS: dict[str, Callable[[int], int]] = {
@@ -143,8 +144,13 @@ class Catalogs:
             self._translators[locale] = Translator(locale, self._messages[locale])
         return self._translators[locale]
 
-    def negotiate(self, chosen: str | None, accept_language: str | None) -> str:
-        if chosen in self._messages:
+    def negotiate(
+        self, chosen: str | None, accept_language: str | None, among: list[str] | None = None
+    ) -> str:
+        """The language for a request: the one chosen, else the browser's best, among
+        ``among`` (the site's, or the admin panel's) or all."""
+        offered = among or self.languages
+        if chosen in self._messages and chosen in offered:
             return chosen
         ranked: list[tuple[float, int, str]] = []
         for i, part in enumerate((accept_language or "").split(",")):
@@ -159,22 +165,36 @@ class Catalogs:
                     q = 0.0
             ranked.append((-q, i, tag.lower()))
         for _q, _i, tag in sorted(ranked):
-            for lang in self.languages:
+            for lang in offered:
                 if lang.lower() == tag or _primary(lang) == _primary(tag):
                     return lang
-        return self.default
+        return self.default if self.default in offered else offered[0]
 
 
 class LocaleMiddleware:
-    """Puts ``locale`` and ``translator`` on every request's state."""
+    """Puts ``locale`` and ``translator`` on every request's state: in the admin panel
+    (a path under ``admin_root()``), the editor's admin language; elsewhere the site's."""
 
-    def __init__(self, app: ASGIApp, *, catalogs: Catalogs):
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        catalogs: Catalogs,
+        site: list[str] | None = None,
+        admin: list[str] | None = None,
+        admin_root: Any = None,
+        browser: bool = True,
+    ):
         self.app = app
         self.catalogs = catalogs
+        self.site = site or catalogs.languages
+        self.admin = admin or self.site
+        self.admin_root = admin_root or (lambda: None)
+        self.browser = browser
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            chosen = accept = None
+            chosen = accept = admin_chosen = None
             for key, value in scope.get("headers", []):
                 if key == b"accept-language":
                     accept = value.decode("latin-1")[:500]
@@ -183,8 +203,22 @@ class LocaleMiddleware:
                         name, _, val = part.strip().partition("=")
                         if name == LOCALE_COOKIE:
                             chosen = val
-            locale = self.catalogs.negotiate(chosen, accept)
+                        elif name == ADMIN_LOCALE_COOKIE:
+                            admin_chosen = val
+            root = self.admin_root()
+            path = scope.get("path", "")
+            in_admin = bool(root) and (path == root or path.startswith(root.rstrip("/") + "/"))
+            if in_admin:
+                locale = self.catalogs.negotiate(admin_chosen or chosen, accept, self.admin)
+            else:
+                # the site: the browser's language, or (browser_language: false, for a
+                # public site) its default until a visitor chooses: one address serving two
+                # languages confuses search engines, whose crawler asks in English
+                locale = self.catalogs.negotiate(
+                    chosen, accept if self.browser else None, self.site
+                )
             state = scope.setdefault("state", {})
+            state["in_admin"] = in_admin
             state["locale"] = locale
             state["translator"] = self.catalogs.translator(locale)
         await self.app(scope, receive, send)

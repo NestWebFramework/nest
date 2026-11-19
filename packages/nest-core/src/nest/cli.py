@@ -96,6 +96,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     manifest = load_manifest(root)
     port = args.port or (manifest.application.port if manifest.application else None) or 8000
     os.environ["NEST_APP_DIR"] = str(root)
+    # Behind a proxy (Caddy, nginx, an ingress), the client's address and scheme come from
+    # its X-Forwarded-* headers, believed only from the proxies named here.
+    proxies = args.forwarded_allow_ips or os.environ.get("NEST_TRUSTED_PROXIES", "")
     uvicorn.run(
         "nest.host:app_from_env",
         factory=True,
@@ -103,8 +106,57 @@ def cmd_run(args: argparse.Namespace) -> int:
         port=port,
         reload=args.reload,
         reload_dirs=[str(root), *(args.watch or [])] if args.reload else None,
+        workers=None if args.reload else args.workers,
+        proxy_headers=bool(proxies),
+        forwarded_allow_ips=proxies or None,
+        server_header=False,
         log_level=args.log_level,
     )
+    return 0
+
+
+def _open(app: str):
+    from nest.host import create_app  # noqa: PLC0415
+
+    return create_app(Path(app).resolve(), environ={**os.environ}).state.nest
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    from nest.ops import check  # noqa: PLC0415
+
+    nest = _open(args.app)
+    report = check(nest)
+    marks = {"ok": "✓", "warn": "!", "fail": "✗"}
+    print(f"{nest.name}: ready for production?")
+    for f in report.findings:
+        print(f"  {marks[f.level]} {f.text}")
+    return 1 if report.failed else 0
+
+
+def cmd_backup(args: argparse.Namespace) -> int:
+    from nest.ops import backup  # noqa: PLC0415
+
+    nest = _open(args.app)
+    archive = backup(nest, Path(args.to) if args.to else None, keep=args.keep)
+    print(f"✓ {archive} ({archive.stat().st_size / 2**20:.1f} MB)")
+    return 0
+
+
+def cmd_restore(args: argparse.Namespace) -> int:
+    from nest.manifest import load_manifest as _load  # noqa: PLC0415
+    from nest.ops import RestoreError, restore  # noqa: PLC0415
+    from nest.workspace import resolve_workspace  # noqa: PLC0415
+
+    name = _load(Path(args.app).resolve()).name
+    workspace = resolve_workspace(name, os.environ)
+    try:
+        meta = restore(name, Path(args.archive), workspace, force=args.force)
+    except RestoreError as e:
+        print(f"✗ {e}")
+        return 1
+    print(f"✓ {name}: restored the backup of {meta['made']} into {workspace}")
+    for missing in meta.get("not_included", []):
+        print(f"  not in the backup: {missing}")
     return 0
 
 
@@ -146,7 +198,28 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--reload", action="store_true")
     p.add_argument("--watch", action="append", help="another folder to watch with --reload")
     p.add_argument("--log-level", default="info")
+    p.add_argument("--workers", type=int, default=1, help="processes (SQLite: keep 1)")
+    p.add_argument(
+        "--forwarded-allow-ips",
+        help="the proxies whose X-Forwarded-* headers are believed (default $NEST_TRUSTED_PROXIES)",
+    )
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("check", help="what running an application in production needs")
+    p.add_argument("app")
+    p.set_defaults(func=cmd_check)
+
+    p = sub.add_parser("backup", help="the workspace (databases, files, settings) in one archive")
+    p.add_argument("app")
+    p.add_argument("--to", help="the folder to write it in (default: the workspace's backups/)")
+    p.add_argument("--keep", type=int, default=0, help="keep only the newest N archives there")
+    p.set_defaults(func=cmd_backup)
+
+    p = sub.add_parser("restore", help="a backup back into the workspace (application stopped)")
+    p.add_argument("app")
+    p.add_argument("archive")
+    p.add_argument("--force", action="store_true", help="over a workspace that holds data")
+    p.set_defaults(func=cmd_restore)
 
     p = sub.add_parser("new", help="scaffold a module or an application")
     p.add_argument("kind", choices=["module", "app"])
