@@ -11,7 +11,8 @@ from fastapi.responses import RedirectResponse, Response
 from nest_auth import CurrentUser, require_role
 from nest_db import Database
 
-from nest import ModuleHost, admin_url, bound, is_htmx, render, translator
+from nest import ModuleHost, admin_url, bound, is_htmx, render, toast, translator
+from nest.host import HostError
 from nest_redirects import service
 from nest_redirects.service import RedirectError
 
@@ -53,6 +54,7 @@ async def create(
     try:
         status = int(values["status"] or 301)
         service.add(db, values["source"], values["target"], status, values["note"])
+        toast(request, translator(request)("Redirect added."))
     except (RedirectError, ValueError) as e:
         message = (
             translator(request)(e.message, **e.params) if isinstance(e, RedirectError) else str(e)
@@ -78,14 +80,40 @@ def delete(
     db: Database = bound(Database),
 ):
     service.remove(db, redirect_id)
+    toast(request, translator(request)("Redirect removed."))
     if is_htmx(request):
         return Response("", media_type="text/html")
     return RedirectResponse(f"{_base(request)}/", status_code=303)
 
 
+def prefixes(sections: list[tuple[str, object]]) -> list[tuple[str, str]]:
+    """The prefix rules the packages declare (``redirect_prefixes: {"/old/": "/new/"}``),
+    longest first: a whole folder of old addresses (a WordPress site's
+    /wp-content/uploads/) sent on to where it is now, the rest of the path kept."""
+    rules: dict[str, str] = {}
+    for owner, section in sections:
+        if not isinstance(section, dict):
+            raise HostError(f"{owner}: redirect_prefixes maps an old prefix to a new one")
+        for old, new in section.items():
+            old, new = str(old), str(new)
+            if not (old.startswith("/") and old.endswith("/") and new.startswith("/")):
+                raise HostError(
+                    f"{owner}: redirect prefix '{old}' → '{new}': both are paths ending in /"
+                )
+            if new.startswith("//") or not new.endswith("/"):
+                raise HostError(f"{owner}: redirect prefix target '{new}' is a path ending in /")
+            rules[old] = new
+    return sorted(rules.items(), key=lambda r: -len(r[0]))
+
+
 def answer(request: Request) -> Response | None:
+    path = request.url.path
+    for old, new in request.app.state.nest.module_state["redirects"].get("prefixes", []):
+        if path.startswith(old) and len(path) > len(old):
+            query = f"?{request.url.query}" if request.url.query else ""
+            return RedirectResponse(new + path[len(old) :] + query, status_code=301)
     db = request.app.state.nest.bindings.get("nest.db")
-    r = service.find(db, request.url.path, request.url.query)
+    r = service.find(db, path, request.url.query)
     if r is None:
         return None
     service.hit(db, r.id)
@@ -95,5 +123,12 @@ def answer(request: Request) -> Response | None:
 
 
 def setup(host: ModuleHost) -> None:
+    host.state["prefixes"] = prefixes(host.sections("redirect_prefixes"))
+    db = host.bound("nest.db")
+    # another module moved a page: {"source": old path, "target": new path, "note": why}
+    host.answer(
+        "redirects.moved",
+        lambda m: service.moved(db, m["source"], m["target"], m.get("note", "")) or True,
+    )
     host.admin(router)  # all its pages are in the admin panel, at <admin route>/redirects
     host.fallback(answer, priority=-10)

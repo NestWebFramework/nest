@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import urlsplit
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 
 from nest_redirects.models import Redirect, utcnow
 
@@ -70,6 +70,23 @@ def add(db: Any, source: str, target: str, status: int = 301, note: str = "") ->
         r.target, r.status, r.note = target, status, note[:200]
         s.flush()
         return r
+
+
+def moved(db: Any, source: str, target: str, note: str = "") -> Redirect | None:
+    """A page moved from ``source`` to ``target`` (another module says so): the old address
+    sends on to the new; a redirect that sent the new address away is dropped (the page is
+    there again), and those that sent to the old address now send to the new one."""
+    source, target = normalize_source(source), normalize_source(target)
+    if source == target:
+        return None
+    with db.session() as s, s.begin():
+        s.execute(delete(Redirect).where(Redirect.source == target))
+        for r in s.scalars(select(Redirect).where(Redirect.target == source)):
+            r.target = target  # no chain of hops for old links
+    try:
+        return add(db, source, target, 301, note)
+    except RedirectError:
+        return None
 
 
 def find(db: Any, path: str, query: str = "") -> Redirect | None:
