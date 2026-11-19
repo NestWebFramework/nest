@@ -1,0 +1,13 @@
+{#- Where toasts appear: in every layout, {% include "notifications/region.html" ignore missing %}.
+    The waiting messages are rendered here (so they show without scripts too); toasts.js
+    makes them close by themselves and shows the ones htmx and page scripts bring. -#}
+<div class="toasts" id="toasts" role="status" aria-live="polite" aria-atomic="false"
+     data-close="{{ _('Close') }}">
+  {%- for t in toasts() %}
+  <div class="toast toast-{{ t.level }}"{% if t.level == "error" %} role="alert"{% endif %}>
+    <span class="toast-text">{{ t.text }}</span>
+    <button type="button" class="toast-close" aria-label="{{ _('Close') }}">×</button>
+  </div>
+  {%- endfor %}
+</div>
+<script src="{{ asset('notifications', 'toasts.js') }}" defer></script>
