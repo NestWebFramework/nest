@@ -1,0 +1,35 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ values.title or _("New map") }} · {{ _("Maps") }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/maps/">{{ _("Maps") }}</a></p>
+<h1>{{ values.title or _("New map") }}</h1>
+{% if request.query_params.get("saved") and toasts is not defined %}<p class="notice ok" role="status">{{ _("Saved.") }}{% if map %} <a href="{{ base }}/{{ map.slug }}/">{{ _("View") }}</a>{% endif %}</p>{% endif %}
+{% block form %}
+{% set action = admin_root ~ "/maps/" ~ (map.id if map else "new") %}
+<form id="map-form" class="stack" method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#map-form" hx-swap="outerHTML">
+  {{ csrf_field }}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  <label>{{ _("Title") }} <input name="title" value="{{ values.title }}" required maxlength="200"></label>
+  <label>{{ _("Slug") }} <input name="slug" value="{{ values.slug }}" maxlength="120">
+    <small class="muted">{{ _("Made from the title when empty.") }}</small></label>
+  <label>{{ _("Description") }} <textarea name="description" rows="2">{{ values.description }}</textarea></label>
+  <div class="row">
+    <label>{{ _("Latitude") }} <input name="lat" value="{{ values.lat }}" inputmode="decimal" required></label>
+    <label>{{ _("Longitude") }} <input name="lng" value="{{ values.lng }}" inputmode="decimal" required></label>
+    <label>{{ _("Zoom") }} <input name="zoom" type="number" min="1" max="19" value="{{ values.zoom }}"></label>
+  </div>
+  <label>{{ _("Markers") }}
+    <textarea name="markers" rows="8" class="code" placeholder="46.857500, 22.917900, Biserica de lemn, /obiective/biserica/">{{ values.markers }}</textarea>
+    <small class="muted">{{ _("One a line: latitude, longitude, title, link. OpenStreetMap shows a place's coordinates when you right-click it and choose “Show address”.") }}</small></label>
+  {% if seo_fields is defined %}
+  {{ seo_fields("maps.map:" ~ map.id if map else "", path=(base ~ "/" ~ map.slug ~ "/") if map else "",
+      default_title=values.title, default_description=values.description, form=posted if posted is defined else none) }}
+  {% endif %}
+  <div class="row"><button type="submit">{{ _("Save") }}</button></div>
+</form>
+{% endblock %}
+{% if map %}
+<form method="post" action="{{ admin_root }}/maps/{{ map.id }}/delete">{{ csrf_field }}<button class="danger secondary" type="submit">{{ _("Delete") }}</button></form>
+{% endif %}
+{% endblock %}

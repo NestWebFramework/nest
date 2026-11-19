@@ -1,0 +1,113 @@
+#
+# maps — maps of places, on OpenStreetMap.
+#
+# A map has a centre, a zoom and markers; editors keep them in the admin panel
+# (one marker a line: latitude, longitude, title, link). A page shows one with
+# [map slug="..."] (or WordPress's [wpgmza id="1"], for a moved site); the
+# module's own page shows the main map with every place any module has: the
+# content module offers each published entry whose type has lat and lng fields.
+# Leaflet is served from here and tiles come from OpenStreetMap, so a map asks
+# no one for a key and sets no cookie.
+#
+module:
+  name: maps
+  id: nest.module.maps
+  type: module
+  title: Maps
+  category: content
+  version: 0.2.0
+  description: >
+    Maps with markers (Leaflet, OpenStreetMap tiles), a page with every place the
+    site's modules know, [map] and WordPress's [wpgmza] shortcodes, GeoJSON, an
+    editor in the admin panel, and an importer for WP Google Maps.
+  license: MIT
+  created: "2026-11-19"
+
+main: nest_maps
+styles: [maps.css]  # its base look; an application restyles it
+
+provides:
+  import: nest_maps
+  exports: [MarkerData, Point]
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.2,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_maps.models:Base"
+
+# What the admin panel's settings page shows (Settings › Maps), per application: where the
+# map's pictures (tiles) come from, and the key a provider gives for this site. A key is
+# not a secret (the browser sees it in every tile's address): limit it to the site's
+# domain in the provider's account.
+settings:
+  provider:
+    type: str
+    default: osm
+    choices: [osm, opentopomap, maptiler, thunderforest, stadia, custom]
+    label: Map provider
+    description: >
+      OpenStreetMap and OpenTopoMap need no key (light use, as their rules ask); MapTiler,
+      Thunderforest and Stadia Maps need this site's key; custom takes the address below.
+  api_key:
+    type: str
+    default: ""
+    label: API key
+    description: The provider's key for this site (MapTiler, Thunderforest, Stadia Maps).
+  style:
+    type: str
+    default: ""
+    label: Map style
+    description: >
+      The provider's style, empty for its usual one: MapTiler outdoor-v2, streets-v2,
+      topo-v2; Thunderforest outdoors, landscape, cycle; Stadia outdoors, alidade_smooth.
+  tiles:
+    type: str
+    default: ""
+    label: Tile address (custom)
+    description: >
+      For a custom provider: an https address with {z}, {x} and {y}, and {key} where the
+      key goes (https://tiles.example.ro/{z}/{x}/{y}.png?key={key}).
+  attribution:
+    type: str
+    default: ""
+    label: Attribution
+    description: Who to credit under the map; empty takes the provider's own credit.
+  max_zoom:
+    type: int
+    default: 0
+    label: Closest zoom
+    description: How close a reader may zoom in (1-20); 0 takes the provider's limit.
+  main:
+    type: str
+    default: ""
+    label: Main map
+    description: The address (slug) of the map the module's page shows; empty takes the first.
+
+# The tiles are pictures from the provider; a custom one is let in when it is set.
+csp:
+  img-src:
+    - https://tile.openstreetmap.org
+    - https://tile.opentopomap.org
+    - https://api.maptiler.com
+    - https://tile.thunderforest.com
+    - https://tiles.stadiamaps.com
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+  - {locale: en, file: locales/en.json}
+
+docs:
+  title: Maps
+  section: modules
+
+admin:
+  title: Maps
+  order: 14
+  role: editor
+  description: The site's maps and their markers.

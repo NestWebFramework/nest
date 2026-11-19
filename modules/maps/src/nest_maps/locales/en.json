@@ -1,0 +1,8 @@
+{
+ "osm": "OpenStreetMap",
+ "opentopomap": "OpenTopoMap (relief)",
+ "maptiler": "MapTiler",
+ "thunderforest": "Thunderforest",
+ "stadia": "Stadia Maps",
+ "custom": "Another provider (own address)"
+}

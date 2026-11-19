@@ -1,0 +1,22 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Maps") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block admin_content %}
+<div class="row between"><h1>{{ _("Maps") }}</h1><a class="button" href="{{ admin_root }}/maps/new">{{ _("New map") }}</a></div>
+{% if maps %}
+<table>
+  <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Markers") }}</th><th>{{ _("Address") }}</th></tr></thead>
+  <tbody>
+  {% for m, n in maps %}
+    <tr><td><a href="{{ admin_root }}/maps/{{ m.id }}">{{ m.title }}</a></td><td>{{ n }}</td>
+      <td><a href="{{ base }}/{{ m.slug }}/">{{ base }}/{{ m.slug }}/</a></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">{{ _("No map yet.") }}</p>{% endif %}
+<section class="card maps-tiles">
+  <div class="row between"><h2>{{ _("Map from {provider}", provider=_(provider)) }}</h2>
+    {% if user and user.has("admin") %}<a class="button secondary" href="{{ admin_root }}/settings/maps">{{ _("Settings") }}</a>{% endif %}</div>
+  {% if preview %}{{ preview }}{% endif %}
+</section>
+{% endblock %}

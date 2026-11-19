@@ -1,0 +1,17 @@
+[project]
+name = "nest-maps"
+version = "0.2.0"
+description = "Maps with markers on OpenStreetMap: a page of places, shortcodes, GeoJSON, an editor, a WP Google Maps importer."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-auth"]
+
+[project.entry-points."nest.modules"]
+maps = "nest_maps"
+
+[project.entry-points."nest.commands"]
+maps = "nest_maps.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

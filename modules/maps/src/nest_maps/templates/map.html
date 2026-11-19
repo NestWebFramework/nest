@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% set subject = "maps.map:" ~ map.id if map else "maps.index" %}
+{% block title %}{{ seo_page_title(subject, map.title if map else _("Map")) if seo_page_title is defined else (map.title if map else _("Map")) ~ " · " ~ app.title }}{% endblock %}
+{% block head %}{% if seo_head is defined %}{{ seo_head(subject, title=map.title if map else _("Map"),
+    description=map.description if map else "", path=request.url.path) }}{% endif %}{% endblock %}
+{% block nav %}{% if menu is defined %}{% include "content/menu.html" ignore missing %}{% endif %}{% endblock %}
+{% block content %}
+<section class="map-page">
+  <h1>{{ map.title if map else _("Map") }}</h1>
+  {% if map and map.description %}<p>{{ map.description }}</p>{% endif %}
+  {% if figure %}{{ figure }}{% else %}<p class="muted">{{ _("No map yet.") }}</p>{% endif %}
+  {% if places %}
+  <h2>{{ _("Places") }}</h2>
+  <ul class="map-places">
+    {% for p in places %}<li>{% if p.url %}<a href="{{ p.url }}">{{ p.title }}</a>{% else %}{{ p.title }}{% endif %}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if others %}
+  <h2>{{ _("Other maps") }}</h2>
+  <ul>{% for m in others %}<li><a href="{{ m.slug }}/">{{ m.title }}</a></li>{% endfor %}</ul>
+  {% endif %}
+</section>
+{% endblock %}
