@@ -5,6 +5,7 @@
 # this module, mounted where the application says (/media by convention, which
 # imported pages assume). A stored file is never a page of the site: HTML and
 # SVG are sent as sandboxed attachments; everything is cacheable for a week.
+# A picture asked for with ?w=640 is made that wide (WebP) once and kept.
 #
 module:
   name: media
@@ -13,7 +14,9 @@ module:
   title: Media
   category: content
   version: 0.1.0
-  description: Serves stored files with safe headers, and gives templates media_url(key).
+  description: >
+    Serves stored files with safe headers, pictures at the widths pages need, and gives
+    templates media_url(key, width) and media_srcset(key).
   license: MIT
   created: "2026-11-13"
 
@@ -21,7 +24,7 @@ main: nest_media
 
 provides:
   import: nest_media
-  exports: [media_url]
+  exports: [media_url, media_srcset, responsive_images, forget_sizes, SIZES]
 
 requires:
   interfaces: [nest.storage]

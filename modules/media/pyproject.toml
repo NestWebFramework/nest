@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Serves the files in nest.storage, safely, for every module that stores them."
 requires-python = ">=3.12"
 license = "MIT"
-dependencies = ["nest-core", "nest-storage"]
+dependencies = ["nest-core", "nest-storage", "pillow>=11"]
 
 [project.entry-points."nest.modules"]
 media = "nest_media"
