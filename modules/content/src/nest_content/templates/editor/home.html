@@ -1,12 +1,35 @@
 {% extends "admin/layout.html" %}
+{#- The content: each type with its categories (how many in each), then the categories
+    and tags themselves, to manage. -#}
 {% block title %}{{ _("Content") }} · {{ app.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
 {% block admin_content %}
 <h1>{{ _("Content") }}</h1>
-<div class="grid">
-  {% for name, spec in types.items() %}
-  <a class="card tile" href="{{ admin_root }}/content/{{ name }}"><strong>{{ spec.title }}</strong>
-    <span class="muted">{{ counts.get(name, 0) }}</span></a>
+<div class="content-types">
+  {% for sec in sections %}
+  <section class="card content-type">
+    <div class="row between">
+      <h2><a href="{{ admin_root }}/content/{{ sec.name }}">{{ _(sec.spec.title) }}</a> <span class="muted">{{ counts.get(sec.name, 0) }}</span></h2>
+      <a class="button secondary" href="{{ admin_root }}/content/{{ sec.name }}/new">{{ _("New") }}</a>
+    </div>
+    {% if sec.tree or sec.loose %}
+    <ul class="term-counts">
+      {% for t, depth, n in sec.tree %}
+      <li class="depth-{{ depth if depth < 4 else 4 }}"><a href="{{ admin_root }}/content/{{ sec.name }}?category={{ t.id }}">{{ t.name }}</a> <span class="count">{{ n }}</span></li>
+      {% endfor %}
+      {% if sec.loose %}<li><a href="{{ admin_root }}/content/{{ sec.name }}?category=none"><em>{{ _("Without a category") }}</em></a> <span class="count">{{ sec.loose }}</span></li>{% endif %}
+    </ul>
+    {% endif %}
+  </section>
   {% endfor %}
 </div>
+{% if taxonomies %}
+<h2>{{ _("Categories and tags") }}</h2>
+<div class="grid">
+  {% for name, tax, n in taxonomies %}
+  <a class="card tile" href="{{ admin_root }}/content/taxonomies/{{ name }}"><strong>{{ _(tax.title) }}</strong>
+    <span class="muted">{{ ngettext("{n} in all", "{n} in all", n) }} · {{ _("add, rename, move, delete") }}</span></a>
+  {% endfor %}
+</div>
+{% endif %}
 {% endblock %}

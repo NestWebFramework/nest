@@ -67,12 +67,35 @@ taxonomies:
 
 settings:
   home:
+    label: Home page
     type: str
     default: ""
     description: The path of the entry shown at /; empty shows the latest entries.
   per_page:
+    label: Entries per page
     type: int
     default: 10
+  media_max_mb:
+    label: Largest upload (MB)
+    type: int
+    default: 10
+    description: The largest picture an editor may upload, in MB.
+  trash_days:
+    label: Days in the trash
+    type: int
+    default: 30
+    description: How long a deleted entry waits in the trash before it is deleted for good (0 keeps it).
+  site_url:
+    label: Public address
+    type: str
+    default: ""
+    description: >
+      The address the public uses (https://morlaca.ro), for the absolute links of the
+      sitemap, the feed and what a shared page shows; empty takes the request's.
+
+# Videos play from YouTube's cookieless player, and only when a reader plays one.
+csp:
+  frame-src: [https://www.youtube-nocookie.com]
 
 locales:
   - {locale: ro, file: locales/ro.json}

@@ -265,9 +265,15 @@ def test_wordpress_comes_in_with_its_addresses(wordpress):
     )  # /%category%/%postname%/, parent included
     assert page.status_code == 200
     assert "<p>Biserica a fost ridicată în 1791.</p>" in page.text  # wpautop
-    assert '<img src="/media/uploads/2012/12/biserica.jpg">' in page.text  # an old host, rewritten
+    # an old host, rewritten; shown at the widths a phone or a desk needs, loaded lazily
+    body = page.text.split('<div class="body">', 1)[1]
+    img = re.search(r"<img [^>]*>", body).group(0)
+    assert 'src="/media/uploads/2012/12/biserica.jpg"' in img
+    assert 'srcset="/media/uploads/2012/12/biserica.jpg?w=320 320w,' in img
+    assert 'loading="lazy"' in img and "sizes=" in img
     assert "onerror" not in page.text and "alert('x')" not in page.text
-    assert 'src="/media/uploads/2012/12/biserica.jpg" alt=""' in page.text  # the featured image
+    # the featured image, sized
+    assert 'src="/media/uploads/2012/12/biserica.jpg?w=1280" srcset=' in page.text
     assert ">Biserici<" in page.text and ">istorie<" in page.text
     assert c.get("/media/uploads/2012/12/biserica.jpg").content == b"\xff\xd8 big"
     assert c.get("/media/uploads/2012/12/biserica-300x200.jpg").status_code == 200  # resized copy
@@ -542,7 +548,8 @@ unused_types:
         page = c.get("/cfr/istorie/locomotive-cu-aburi")
         assert (
             page.status_code == 200
-            and '<img src="/media/assets/cms/uploads/images/loc/Abur%20mare.jpg">' in page.text
+            and ' src="/media/assets/cms/uploads/images/loc/Abur%20mare.jpg">' in page.text
+            and "Abur%20mare.jpg?w=640 640w" in page.text
         )
         assert "<script>" not in page.text.split('<div class="body">')[1]
         assert c.get("/media/assets/cms/uploads/images/loc/Abur%20mare.jpg").content == b"jpeg"
@@ -564,3 +571,277 @@ unused_types:
         )
         assert again.entries == 4
         assert service.counts_by_type(b.get("nest.db")) == {"page": 3, "article": 1}
+
+
+# --- what search engines, feed readers and shared links see -------------------------
+
+
+def test_sitemap_feed_and_robots(wordpress):
+    c = wordpress
+    sitemap = c.get("/sitemap.xml")
+    assert sitemap.headers["content-type"].startswith("application/xml")
+    assert "<loc>http://testserver/despre-sat/biserici/biserica-din-sat/</loc>" in sitemap.text
+    assert "<loc>http://testserver/category/despre-sat/biserici/</loc>" in sitemap.text
+    assert "<lastmod>" in sitemap.text
+    c.nest.settings.set("content.site_url", "https://satul.ro/")
+    assert "<loc>https://satul.ro/</loc>" in c.get("/sitemap.xml").text
+    feed = c.get("/feed/")
+    assert feed.headers["content-type"].startswith("application/rss+xml")
+    assert "<title>Biserica Ortodoxă din sat</title>" in feed.text
+    assert "<link>https://satul.ro/despre-sat/biserici/biserica-din-sat/</link>" in feed.text
+    assert c.get("/feed", follow_redirects=False).headers["location"] == "/feed/"
+    robots = c.get("/robots.txt").text
+    assert "Disallow: /\n" in robots or robots.rstrip().endswith("Disallow: /")  # not production
+    c.nest.production = True
+    robots = c.get("/robots.txt").text
+    assert "Disallow: /admin/" in robots and "Disallow: /cont/" in robots
+    assert "Sitemap: https://satul.ro/sitemap.xml" in robots
+
+
+def test_a_page_tells_what_it_is_when_shared(wordpress):
+    page = wordpress.get("/despre-sat/biserici/biserica-din-sat/").text
+    assert (
+        '<link rel="canonical" href="http://testserver/despre-sat/biserici/biserica-din-sat/">'
+        in page
+    )
+    assert '<meta property="og:title" content="Biserica Ortodoxă din sat">' in page
+    assert '<meta property="og:type" content="article">' in page
+    assert 'og:image" content="http://testserver/media/uploads/2012/12/biserica.jpg?w=1280"' in page
+    assert '<meta name="description" content="Biserica a fost ridicată în 1791.' in page
+    assert 'type="application/rss+xml"' in page
+
+
+def test_a_youtube_address_alone_is_a_video_that_loads_when_played(site):
+    service.save_entry(
+        site.db,
+        site.search,
+        site.types,
+        EntryData(
+            type="page",
+            title="Obiceiuri",
+            status="published",
+            body=(
+                "<p>Colindul:</p><div>https://www.youtube.com/watch?v=c6oLgc9Jujo<span>&nbsp;</span></div>"
+                '<p>Vezi <a href="https://youtu.be/leY6NPTOXCo">aici</a> în text.</p>'
+                '<p>[youtube url="https://youtu.be/CjNXyVl0IVk"]</p>'
+            ),
+        ),
+    )
+    r = site.get("/obiceiuri/")
+    assert r.text.count('class="video"') == 2
+    assert 'data-video="c6oLgc9Jujo"' in r.text and 'data-video="CjNXyVl0IVk"' in r.text
+    assert 'href="https://youtu.be/leY6NPTOXCo"' in r.text  # a link in a sentence stays one
+    assert 'data-video="leY6NPTOXCo"' not in r.text
+    assert "Pornește filmul" in r.text and "content/video.js" in r.text
+    assert "<iframe" not in r.text  # nothing asks YouTube for anything until it is played
+    assert (
+        "frame-src 'self' https://www.youtube-nocookie.com" in r.headers["content-security-policy"]
+    )
+
+
+def test_pictures_are_made_at_the_widths_pages_ask_for(site):
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (2400, 1600), "olive").save(out, "JPEG")
+    site.storage.put("poze/sat.jpg", out.getvalue(), "image/jpeg")
+    site.storage.put("acte/act.pdf", b"%PDF-1.4", "application/pdf")
+    r = site.get("/media/poze/sat.jpg?w=600")  # taken up to the next width media makes
+    assert r.headers["content-type"] == "image/webp"
+    assert Image.open(io.BytesIO(r.content)).size == (640, 427)
+    assert site.storage.stat("_sized/640/poze/sat.jpg.webp") is not None  # kept
+    assert site.get("/media/poze/sat.jpg?w=99999").headers["content-type"] == "image/webp"
+    assert Image.open(io.BytesIO(site.get("/media/poze/sat.jpg?w=99999").content)).width == 1920
+    assert site.get("/media/poze/sat.jpg").headers["content-type"] == "image/jpeg"  # as stored
+    assert site.get("/media/acte/act.pdf?w=640").content == b"%PDF-1.4"  # not a picture
+    assert site.get("/media/poze/sat.jpg?w=abc").status_code == 422
+
+
+# --- the editor: its page, its pictures ---------------------------------------------
+
+
+def _png(width=4, height=3):
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (width, height), "red").save(out, "PNG")
+    return out.getvalue()
+
+
+def test_the_edit_page_has_the_editor(site):
+    sign_in(site)
+    page = site.get("/admin/content/post/new").text
+    assert "content/editor/editor.js" in page and "content/editor/editor.css" in page
+    assert 'name="body"' in page and "data-editor" in page  # still the textarea, posted as before
+    assert 'data-media-list="/admin/content/media.json"' in page
+    assert (
+        "&#34;bold&#34;: &#34;\\u00cengro\\u0219at&#34;" in page
+    )  # its words, in the site's language
+
+
+def test_an_editor_uploads_a_picture_and_finds_it_in_the_library(site):
+    sign_in(site)
+    csrf = {"x-csrf-token": site.cookies["nest_csrf"]}
+    r = site.post(
+        "/admin/content/media",
+        files={"file": ("Biserica de lemn.PNG", _png(), "application/octet-stream")},
+        data={"alt": "Biserica"},
+        headers=csrf,
+    )
+    assert r.status_code == 201, r.text
+    item = r.json()
+    assert item["key"].startswith("uploads/") and item["key"].endswith("/biserica-de-lemn.png")
+    assert item["thumb"].endswith("?w=320") and item["alt"] == "Biserica"
+    again = site.post(
+        "/admin/content/media",
+        files={"file": ("biserica de lemn.png", _png(), "image/png")},
+        headers=csrf,
+    ).json()
+    assert again["key"].endswith("/biserica-de-lemn-2.png")  # never over another
+    assert site.get(item["url"]).headers["content-type"] == "image/png"
+    found = site.get("/admin/content/media.json?q=biserica").json()["items"]
+    assert [i["key"] for i in found] == [again["key"], item["key"]]  # newest first
+    fake = site.post(
+        "/admin/content/media",
+        files={"file": ("poza.png", b"<svg onload=alert(1)>", "image/png")},
+        headers=csrf,
+    )
+    assert fake.status_code == 415 and "JPEG" in fake.json()["error"]  # by its bytes, not its name
+    site.nest.settings.set("content.media_max_mb", 1)
+    big = site.post(
+        "/admin/content/media",
+        files={"file": ("mare.png", _png() + b"\0" * (2**20 + 10), "image/png")},
+        headers=csrf,
+    )
+    assert big.status_code == 413
+    no_token = site.post("/admin/content/media", files={"file": ("a.png", _png(), "image/png")})
+    assert no_token.status_code == 403
+
+
+def test_only_editors_reach_the_library(site):
+    assert site.get("/admin/content/media.json", follow_redirects=False).status_code in (
+        303,
+        401,
+        403,
+    )
+    r = site.post(
+        "/admin/content/media",
+        files={"file": ("a.png", _png(), "image/png")},
+        headers={"x-csrf-token": site.cookies.get("nest_csrf", "")},
+        follow_redirects=False,
+    )
+    assert r.status_code in (303, 401, 403)
+
+
+# --- versions and the trash ---------------------------------------------------------
+
+
+def _write(site, title, body, existing=None, status="published"):
+    return service.save_entry(
+        site.db,
+        site.search,
+        site.types,
+        EntryData(type="page", title=title, status=status, body=body),
+        existing_id=existing,
+    )
+
+
+def test_a_version_shows_what_changed_and_comes_back(site):
+    sign_in(site)
+    e = _write(site, "Istoria", "<p>Satul e vechi.</p><p>Biserica e din 1838.</p>")
+    _write(
+        site, "Istoria satului <b>", "<p>Satul e foarte vechi.</p><p>Biserica e din 1838.</p>", e.id
+    )
+    first, *_ = reversed(service.revisions(site.db, e.id))  # the oldest: as it was written
+    page = site.get(f"/admin/content/page/{e.id}/versions/{first.id}")
+    assert page.status_code == 200
+    assert "Satul e <ins>foarte</ins> vechi." in page.text
+    assert '<p class="diff-same">Biserica e din 1838.</p>' in page.text
+    preview = page.text.split('class="entry version-preview', 1)[1]
+    assert "<p>Satul e vechi.</p>" in preview and "&lt;p&gt;" not in preview  # shown, formatted
+    assert "<del>Istoria</del>" in page.text and "<ins>Istoria satului &lt;b&gt;</ins>" in page.text
+
+    csrf = site.cookies["nest_csrf"]
+    r = site.post(
+        f"/admin/content/page/{e.id}/versions/{first.id}/restore",
+        data={"csrf_token": csrf, "what": "all"},
+    )
+    assert r.status_code == 200
+    now = service.entry(site.db, e.id)
+    assert (now.title, now.body) == ("Istoria", "<p>Satul e vechi.</p><p>Biserica e din 1838.</p>")
+    undo = service.revisions(site.db, e.id)[0]  # the version the restore replaced
+    assert undo.data["title"] == "Istoria satului <b>"
+    site.post(
+        f"/admin/content/page/{e.id}/versions/{undo.id}/restore",
+        data={"csrf_token": csrf, "what": "text"},
+    )
+    now = service.entry(site.db, e.id)
+    assert now.title == "Istoria" and "foarte vechi" in now.body  # only the text came back
+
+
+def test_a_version_opens_in_the_editor_as_an_unsaved_copy(site):
+    sign_in(site)
+    e = _write(site, "Portul", "<p>Ie cu altiță.</p>")
+    _write(site, "Portul popular", "<p>Ie.</p>", e.id)
+    old = service.revisions(site.db, e.id)[0]
+    page = site.get(f"/admin/content/page/{e.id}?from_version={old.id}").text
+    assert 'value="Portul"' in page and "Ie cu altiță." in page and "Lucrezi pe o copie" in page
+    assert service.entry(site.db, e.id).title == "Portul popular"  # nothing changed until saved
+
+
+def test_deleting_puts_it_in_the_trash_and_it_comes_back_as_it_was(site):
+    sign_in(site)
+    csrf = site.cookies["nest_csrf"]
+    e = _write(site, "Tradiții", "<p>Nedeia.</p>")
+    assert site.get("/traditii/").status_code == 200
+    site.post(f"/admin/content/page/{e.id}/delete", data={"csrf_token": csrf})
+    assert service.entry(site.db, e.id).status == "trash"
+    assert site.get("/traditii/").status_code == 404
+    assert "Tradiții" not in site.get("/admin/content/page").text.split("<tbody>")[1]
+    assert "Coș (1)" in site.get("/admin/content/page").text
+    assert "Tradiții" in site.get("/admin/content/page/trash").text
+    assert site.search.query("Nedeia", kind=service.KIND) == []
+    with pytest.raises(service.ContentError, match="trash"):
+        _write(site, "Tradiții", "<p>altfel</p>", e.id)
+    assert (
+        site.post(f"/admin/content/page/{e.id}/untrash", data={"csrf_token": csrf}).status_code
+        == 200
+    )
+    back = service.entry(site.db, e.id)
+    assert back.status == "published" and site.get("/traditii/").status_code == 200
+    assert site.search.query("Nedeia", kind=service.KIND)
+
+
+def test_only_what_is_in_the_trash_is_deleted_for_good_and_it_empties_itself(site):
+    sign_in(site)
+    csrf = site.cookies["nest_csrf"]
+    keep = _write(site, "Rămâne", "<p>a</p>")
+    gone = _write(site, "Pleacă", "<p>b</p>")
+    assert (
+        site.post(f"/admin/content/page/{keep.id}/purge", data={"csrf_token": csrf}).status_code
+        == 404
+    )
+    service.trash_entry(site.db, site.search, gone.id)
+    assert service.empty_trash(site.db, site.search, older_than_days=30) == 0  # not old enough
+    site.post(f"/admin/content/page/{gone.id}/purge", data={"csrf_token": csrf})
+    assert service.entry(site.db, gone.id) is None and service.revisions(site.db, gone.id) == []
+    assert service.entry(site.db, keep.id) is not None
+
+
+def test_a_long_unchanged_stretch_folds_and_pictures_are_named():
+    from nest_content.diff import text_diff
+
+    same = "".join(f"<p>Rând {i}.</p>" for i in range(8))
+    shown, changed = text_diff(
+        same + '<p>Vechi.</p><img src="/media/a.jpg" alt="Biserica">',
+        same + "<p>Nou.</p>",
+        picture="imagine",
+        unchanged=lambda n: f"{n} neschimbate",
+    )
+    assert changed == 2 and "… 6 neschimbate …" in shown
+    assert "Rând 0." in shown and "Rând 7." in shown and "Rând 3." not in shown
+    assert "<del>[imagine: Biserica]</del>" in shown

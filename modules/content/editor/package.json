@@ -1,0 +1,22 @@
+{
+  "name": "nest-content-editor",
+  "private": true,
+  "description": "The content module's editor (Tiptap on ProseMirror, MIT), built into ../src/nest_content/static/editor/editor.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.34.0",
+    "@tiptap/extension-image": "3.34.0",
+    "@tiptap/extension-subscript": "3.34.0",
+    "@tiptap/extension-superscript": "3.34.0",
+    "@tiptap/extension-table": "3.34.0",
+    "@tiptap/extensions": "3.34.0",
+    "@tiptap/pm": "3.34.0",
+    "@tiptap/starter-kit": "3.34.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

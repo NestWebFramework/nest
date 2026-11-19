@@ -10,3 +10,4 @@ node_modules/
 *.db
 *.db-wal
 *.db-shm
+modules/content/editor/node_modules/

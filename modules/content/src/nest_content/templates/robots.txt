@@ -1,0 +1,9 @@
+{#- robots.txt. An application writes its own as templates/content/robots.txt. -#}
+User-agent: *
+{% if production -%}
+{% for path in closed %}Disallow: {{ path }}
+{% endfor %}
+Sitemap: {{ sitemap }}
+{%- else -%}
+Disallow: /
+{%- endif %}

@@ -1,11 +1,27 @@
 {% extends "admin/layout.html" %}
 {% block title %}{{ values.title or _("New") }} · {{ spec.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ asset('content', 'editor/editor.css') }}">
+<script src="{{ asset('content', 'editor/editor.js') }}" defer></script>
+{% endblock %}
 {% block admin_content %}
 <p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a> › <a href="{{ admin_root }}/content/{{ type_name }}">{{ spec.title }}</a></p>
 <h1>{{ values.title or _("New") }}</h1>
-{% if request.query_params.get("saved") %}<p class="notice ok" role="status">{{ _("Saved.") }} {% if entry and entry.status == "published" %}<a href="{{ entry.path }}">{{ _("View") }}</a>{% endif %}</p>{% endif %}
+{% if request.query_params.get("saved") and toasts is not defined %}<p class="notice ok" role="status">{{ _("Saved.") }} {% if entry and entry.status == "published" %}<a href="{{ entry.path }}">{{ _("View") }}</a>{% endif %}</p>{% endif %}
+{% if entry and entry.status == "trash" %}
+<div class="notice warning" role="status"><p>{{ _("This entry is in the trash: it is not on the site, and it cannot be changed until it is brought back.") }}</p>
+  <form method="post" action="{{ admin_root }}/content/{{ type_name }}/{{ entry.id }}/untrash">{{ csrf_field }}
+    <button type="submit">{{ _("Bring it back") }}</button></form></div>
+{% endif %}
+{% if copy_of is defined and copy_of %}
+<div class="notice info version-copy" role="status">
+  <p>{{ _("You are working on a copy of the version until {when}. Saving makes it the current one (the current one is kept among the earlier versions); leaving changes nothing.", when=copy_of.created_at.strftime("%d.%m.%Y %H:%M")) }}</p>
+  <p><a href="{{ admin_root }}/content/{{ type_name }}/{{ entry.id }}">{{ _("Back to the current version") }}</a></p>
+</div>
+{% endif %}
 {% block form %}
+{% if not (entry and entry.status == "trash") %}
 {% set action = admin_root ~ "/content/" ~ type_name ~ ("/" ~ entry.id if entry else "/new") %}
 <form id="entry-form" class="stack" method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#entry-form" hx-swap="outerHTML">
   {{ csrf_field }}
@@ -31,8 +47,29 @@
   </fieldset>
   {% endfor %}
   <div class="field"><label for="excerpt">{{ _("Summary") }}</label><textarea id="excerpt" name="excerpt" rows="2">{{ values.excerpt }}</textarea></div>
-  <div class="field"><label for="body">{{ _("Text") }}</label><textarea id="body" name="body" rows="18" class="code">{{ values.body }}</textarea>
-    <small class="hint">{{ _("HTML: paragraphs, headings, lists, links, images, tables. Anything else is removed when saved.") }}</small></div>
+  {%- set media_list = admin_root ~ "/content/media.json" %}{% set media_upload = admin_root ~ "/content/media" %}
+  {%- set labels = {
+    "toolbar": _("Formatting"), "text": _("Text"), "placeholder": _("Write here…"), "block": _("Paragraph style"),
+    "paragraph": _("Paragraph"), "h2": _("Heading"), "h3": _("Subheading"), "h4": _("Small heading"),
+    "bold": _("Bold"), "italic": _("Italic"), "underline": _("Underline"), "strike": _("Strikethrough"),
+    "sub": _("Subscript"), "sup": _("Superscript"), "bullet": _("Bulleted list"), "ordered": _("Numbered list"),
+    "quote": _("Quote"), "rule": _("Dividing line"), "link": _("Link"), "unlink": _("Remove link"),
+    "linkAsk": _("The link's address"), "image": _("Picture"), "video": _("Video"),
+    "videoAsk": _("The video's YouTube address"), "table": _("Table"), "undo": _("Undo"), "redo": _("Redo"),
+    "clear": _("Clear formatting"), "source": _("HTML"), "full": _("Full screen"),
+    "alignLeft": _("Picture on the left"), "alignCenter": _("Picture centred"), "alignRight": _("Picture on the right"),
+    "alt": _("Description of the picture (for those who cannot see it)"),
+    "rowAdd": _("Add a row"), "colAdd": _("Add a column"), "rowDel": _("Delete the row"), "colDel": _("Delete the column"),
+    "headRow": _("Header row"), "tableDel": _("Delete the table"),
+    "media": _("Pictures"), "search": _("Search pictures"), "upload": _("Upload a picture"), "insert": _("Insert"),
+    "noMedia": _("No pictures yet."), "loading": _("Loading…"), "uploading": _("Uploading…"),
+    "failed": _("That did not work; try again."), "ok": _("OK"), "cancel": _("Cancel"),
+    "choose": _("Choose a picture"), "remove": _("Remove"),
+  } %}
+  <div class="field"><label for="body">{{ _("Text") }}</label>
+    <textarea id="body" name="body" rows="18" class="code" data-editor data-labels="{{ labels | tojson | forceescape }}"
+      data-media-list="{{ media_list }}" data-media-upload="{{ media_upload }}">{{ values.body }}</textarea>
+    <small class="hint">{{ _("Paragraphs, headings, lists, links, pictures, tables. A YouTube address alone on a line is shown as the video; shortcodes ([map], [album slug=\"…\"]) stay as written.") }}</small></div>
   {% for name, f in spec.fields.items() %}
   {% set kind = {"textarea": "textarea", "html": "textarea", "integer": "number", "decimal": "number", "date": "date", "datetime": "datetime-local", "url": "url"}.get(f.type, "text") %}
   <div class="field{% if f.type == 'boolean' %} check{% endif %}">
@@ -48,14 +85,39 @@
     {% if f.help %}<small class="hint">{{ f.help }}</small>{% endif %}
   </div>
   {% endfor %}
-  <div class="field"><label for="featured">{{ _("Featured image") }}</label><input id="featured" name="featured" value="{{ values.featured }}" placeholder="uploads/2026/11/church.jpg"></div>
+  <div class="field"><label for="featured">{{ _("Featured image") }}</label><input id="featured" name="featured" value="{{ values.featured }}" placeholder="uploads/2026/11/church.jpg"
+      data-media-pick data-labels="{{ labels | tojson | forceescape }}" data-media-list="{{ media_list }}" data-media-upload="{{ media_upload }}" data-media-base="{{ media_url('x')[:-2] }}"></div>
+  {% if seo_fields is defined %}
+  {{ seo_fields("content.entry:" ~ entry.id if entry else "", path=entry.path if entry else "",
+      default_title=values.title, default_description=(values.excerpt or values.body) | striptags | truncate(160),
+      form=posted if posted is defined else none,
+      picker={"labels": labels | tojson | forceescape, "list": media_list, "upload": media_upload, "base": media_url('x')[:-2]}) }}
+  {% endif %}
   <button type="submit">{{ _("Save") }}</button>
 </form>
+{% endif %}
 {% endblock %}
 {% if entry %}
-{% if revisions %}<details><summary>{{ ngettext("{n} earlier version", "{n} earlier versions", revisions | length) }}</summary>
-  <ul>{% for r in revisions %}<li>{{ r.created_at.strftime("%d.%m.%Y %H:%M") }} · {{ r.data.title }}</li>{% endfor %}</ul></details>{% endif %}
+{% if revisions %}
+<section class="versions" aria-labelledby="versions-title">
+  <h2 id="versions-title">{{ ngettext("{n} earlier version", "{n} earlier versions", revisions | length) }}</h2>
+  <p class="hint">{{ _("Each save keeps the version it replaced. Open one to see it and what changed since; it can be brought back whole, only its text, or opened in the editor.") }}</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ _("Current until") }}</th><th>{{ _("Replaced by") }}</th><th>{{ _("Title") }}</th><th>{{ _("Status") }}</th><th></th></tr></thead>
+    <tbody>
+    {% for r in revisions %}
+      <tr><td>{{ r.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+        <td>{{ authors.get(r.author_id, "—") if authors is defined else "—" }}</td>
+        <td>{{ r.data.title }}</td><td>{{ _(r.data.status or "") }}</td>
+        <td><a href="{{ admin_root }}/content/{{ type_name }}/{{ entry.id }}/versions/{{ r.id }}">{{ _("Open") }}</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endif %}
+{% if entry.status != "trash" %}
 <form method="post" action="{{ admin_root }}/content/{{ type_name }}/{{ entry.id }}/delete" class="danger-zone">{{ csrf_field }}
-  <button type="submit" class="secondary">{{ _("Delete") }}</button></form>
+  <button type="submit" class="secondary">{{ _("Move to the trash") }}</button></form>
+{% endif %}
 {% endif %}
 {% endblock %}

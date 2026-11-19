@@ -126,3 +126,38 @@ def link_list(items: list[tuple[str, str]]) -> str:
         return ""
     lis = "".join(f'<li><a href="{escape(url)}">{escape(title)}</a></li>' for title, url in items)
     return f'<ul class="shortcode-list">{lis}</ul>'
+
+
+# --- videos ----------------------------------------------------------------------
+
+# A YouTube address alone in a paragraph (how WordPress embedded one, by oEmbed), bare
+# or as a link to itself, with the stray spaces WordPress's editor left around it.
+_YOUTUBE_ID = r"(?:https?://)?(?:www\.|m\.)?(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([\w-]{11})"
+_ALONE = re.compile(
+    rf"<(p|div)>\s*(?:<a [^>]*>\s*)?{_YOUTUBE_ID}[^\s<]*\s*(?:</a>)?"
+    r"(?:\s|&nbsp;|\xa0|<br\s*/?>|<span>(?:\s|&nbsp;|\xa0)*</span>)*</\1>"
+)
+_ID = re.compile(rf"^{_YOUTUBE_ID}|^([\w-]{{11}})$")
+
+
+def youtube_id(value: str) -> str | None:
+    """The video's id in a YouTube address (or an id given as it is), or None."""
+    m = _ID.match((value or "").strip())
+    return (m.group(1) or m.group(2)) if m else None
+
+
+def video(video_id: str, label: str) -> str:
+    """A video that loads only when it is played: until then a link, so a page asks
+    nothing of YouTube (no cookie, no request) for a reader who does not play it.
+    The content module's video.js turns the link into the player (youtube-nocookie)."""
+    vid = escape(video_id)
+    return (
+        f'<figure class="video" data-video="{vid}">'
+        f'<a class="video-play" href="https://www.youtube.com/watch?v={vid}" rel="noopener">'
+        f"<span>{escape(label)}</span></a></figure>"
+    )
+
+
+def embed_videos(markup: str, label: str) -> str:
+    """Each YouTube address standing alone in a paragraph, as a video."""
+    return _ALONE.sub(lambda m: video(m.group(2), label), markup or "")

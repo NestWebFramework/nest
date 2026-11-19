@@ -1,0 +1,27 @@
+{#- What a page tells search engines and the sites it is shared on. Set before including:
+    seo_title, seo_description, seo_path, and optionally seo_subject ("content.entry:12"),
+    seo_image (a stored key), seo_type ("article" or "website"), seo_published and
+    seo_modified (datetimes). With the seo module, it writes them, with what the editors
+    said; without it, the basic tags below. -#}
+<link rel="alternate" type="application/rss+xml" title="{{ app.title }}" href="{{ absolute_url('/feed/') }}">
+{%- if seo_head is defined %}
+{{ seo_head(seo_subject | default(""), title=seo_title, description=seo_description, path=seo_path,
+    image=seo_image | default(""), kind=seo_type | default("website"),
+    published=seo_published | default(none), modified=seo_modified | default(none)) }}
+{%- else %}
+{%- set _url = absolute_url(seo_path) %}
+<link rel="canonical" href="{{ _url }}">
+{% if seo_description %}<meta name="description" content="{{ seo_description }}">{% endif %}
+<meta property="og:site_name" content="{{ app.title }}">
+<meta property="og:title" content="{{ seo_title }}">
+<meta property="og:url" content="{{ _url }}">
+<meta property="og:type" content="{{ seo_type | default('website') }}">
+<meta property="og:locale" content="{{ locale }}">
+{% if seo_description %}<meta property="og:description" content="{{ seo_description }}">{% endif %}
+{% if seo_image is defined and seo_image %}
+{%- set _image = absolute_url(media_url(seo_image, 1280)) %}
+<meta property="og:image" content="{{ _image }}">
+<meta name="twitter:card" content="summary_large_image">
+{% else %}<meta name="twitter:card" content="summary">{% endif %}
+{% if seo_published is defined and seo_published %}<meta property="article:published_time" content="{{ seo_published.isoformat() }}">{% endif %}
+{%- endif %}

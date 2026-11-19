@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
-{% block title %}{% if term %}{{ term.name }} · {% endif %}{{ app.title }}{% endblock %}
+{% block title %}{% if seo_page_title is defined %}{{ seo_page_title("content.term:" ~ term.id if term else "", term.name if term else app.title) }}{% else %}{% if term %}{{ term.name }} · {% endif %}{{ app.title }}{% endif %}{% endblock %}
+{% block head %}
+{% set seo_title = term.name if term else app.title %}{% set seo_path = (term.path if term else "/") ~ ("?page=" ~ page if page > 1 else "") %}
+{% set seo_subject = "content.term:" ~ term.id if term else "" %}
+{% set seo_description = (term.description | striptags | truncate(160)) if term and term.description else "" %}
+{% include "content/seo.html" %}
+{% endblock %}
 {% block nav %}{% include "content/menu.html" %}{% endblock %}
 {% block content %}
 {% if term %}<h1>{{ term.name }}</h1>{% if term.description %}<p>{{ term.description }}</p>{% endif %}{% endif %}

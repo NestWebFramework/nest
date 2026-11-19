@@ -1,0 +1,27 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Trash") }} · {{ spec.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a> › <a href="{{ admin_root }}/content/{{ type_name }}">{{ spec.title }}</a></p>
+<h1>{{ _("Trash") }}</h1>
+<p class="hint">{% if days %}{{ ngettext("What is deleted waits here, with its versions, for {n} day; then it is deleted for good.", "What is deleted waits here, with its versions, for {n} days; then it is deleted for good.", days) }}{% else %}{{ _("What is deleted waits here, with its versions, until it is deleted for good.") }}{% endif %}</p>
+{% if entries %}
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Address") }}</th><th>{{ _("Deleted") }}</th><th></th></tr></thead>
+  <tbody>
+  {% for e in entries %}
+    <tr><td><a href="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td><td>{{ e.path }}</td>
+      <td>{{ e.updated_at.strftime("%d.%m.%Y %H:%M") }}</td>
+      <td class="row">
+        <form method="post" action="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}/untrash">{{ csrf_field }}<button type="submit">{{ _("Bring it back") }}</button></form>
+        <form method="post" action="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}/purge">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Delete for good") }}</button></form>
+      </td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<form method="post" action="{{ admin_root }}/content/{{ type_name }}/trash/empty" class="danger-zone">{{ csrf_field }}
+  <button type="submit" class="secondary">{{ _("Empty the trash") }}</button></form>
+{% else %}
+<p class="muted">{{ _("The trash is empty.") }}</p>
+{% endif %}
+{% endblock %}

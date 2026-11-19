@@ -1,24 +1,46 @@
 {% extends "admin/layout.html" %}
-{% block title %}{{ spec.title }} · {{ app.title }}{% endblock %}
+{#- A type's entries, a category at a time: the categories beside the list. -#}
+{% block title %}{{ _(spec.title) }}{% if current_term %} · {{ current_term.name }}{% endif %} · {{ app.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
 {% block admin_content %}
-<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a></p>
-<div class="row between"><h1>{{ spec.title }}</h1><a class="button" href="{{ admin_root }}/content/{{ type_name }}/new">{{ _("New") }}</a></div>
-<form class="search" method="get">
-  <input name="q" type="search" value="{{ q }}" placeholder="{{ _('Filter by title') }}" aria-label="{{ _('Filter by title') }}"
-         hx-get="{{ admin_root }}/content/{{ type_name }}" hx-trigger="input changed delay:250ms" hx-target="#rows" hx-swap="outerHTML">
-</form>
-{% block rows %}
-<div id="rows" class="table-wrap">
-  <table>
-    <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Status") }}</th><th>{{ _("Address") }}</th><th>{{ _("Updated") }}</th></tr></thead>
-    <tbody>
-      {% for e in entries %}
-      <tr><td><a href="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td><td>{{ _(e.status) }}</td>
-          <td><a href="{{ e.path }}">{{ e.path }}</a></td><td>{{ e.updated_at.strftime("%d.%m.%Y %H:%M") }}</td></tr>
-      {% else %}<tr><td colspan="4" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
-    </tbody>
-  </table>
+<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a>{% if current_term or category == "none" %} › <a href="{{ admin_root }}/content/{{ type_name }}">{{ _(spec.title) }}</a>{% endif %}</p>
+<div class="row between"><h1>{% if current_term %}{{ current_term.name }}{% elif category == "none" %}{{ _("Without a category") }}{% else %}{{ _(spec.title) }}{% endif %}</h1>
+  <div class="row">{% if trash_count %}<a class="button secondary" href="{{ admin_root }}/content/{{ type_name }}/trash">{{ _("Trash") }} ({{ trash_count }})</a>{% endif %}
+    <a class="button" href="{{ admin_root }}/content/{{ type_name }}/new{% if current_term %}?category={{ current_term.id }}{% endif %}">{{ _("New") }}</a></div></div>
+<div class="{{ 'content-browse' if grouping else '' }}">
+  {% if grouping %}
+  <nav class="term-nav" aria-label="{{ _(grouping_spec.title) }}">
+    <p class="term-nav-head">{{ _(grouping_spec.title) }}</p>
+    <ul>
+      <li><a href="?"{% if not category %} aria-current="page"{% endif %}>{{ _("All") }} <span class="count">{{ everything }}</span></a></li>
+      {% for t, depth, n in tree %}
+      <li class="depth-{{ depth if depth < 4 else 4 }}"><a href="?category={{ t.id }}"{% if current_term and current_term.id == t.id %} aria-current="page"{% endif %}>{{ t.name }} <span class="count">{{ n }}</span></a></li>
+      {% endfor %}
+      {% if loose %}<li><a href="?category=none"{% if category == "none" %} aria-current="page"{% endif %}><em>{{ _("Without a category") }}</em> <span class="count">{{ loose }}</span></a></li>{% endif %}
+    </ul>
+    <p><a href="{{ admin_root }}/content/taxonomies/{{ grouping }}">{{ _("Manage the categories") }}</a></p>
+  </nav>
+  {% endif %}
+  <div class="content-list">
+    <form class="search" method="get">
+      {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+      <input name="q" type="search" value="{{ q }}" placeholder="{{ _('Filter by title') }}" aria-label="{{ _('Filter by title') }}"
+             hx-get="{{ admin_root }}/content/{{ type_name }}" hx-include="closest form" hx-trigger="input changed delay:250ms" hx-target="#rows" hx-swap="outerHTML">
+    </form>
+    {% block rows %}
+    <div id="rows" class="table-wrap">
+      <table>
+        <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Status") }}</th><th>{{ _("Address") }}</th><th>{{ _("Updated") }}</th></tr></thead>
+        <tbody>
+          {% for e in entries %}
+          <tr><td><a href="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td><td>{{ _(e.status) }}</td>
+              <td><a href="{{ e.path }}">{{ e.path }}</a></td><td>{{ e.updated_at.strftime("%d.%m.%Y %H:%M") }}</td></tr>
+          {% else %}<tr><td colspan="4" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      {% if pages > 1 %}<p class="muted">{{ page }} / {{ pages }}</p>{% endif %}
+    </div>
+    {% endblock %}
+  </div>
 </div>
-{% endblock %}
 {% endblock %}

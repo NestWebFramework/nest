@@ -1,0 +1,57 @@
+{% extends "admin/layout.html" %}
+{#- One earlier version of an entry: what changed from it to the current one, how it
+    looked, and what can be done with it. -#}
+{% set when = rev.created_at.strftime("%d.%m.%Y %H:%M") %}
+{% block title %}{{ _("The version until {when}", when=when) }} · {{ entry.title }}{% endblock %}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a> › <a href="{{ admin_root }}/content/{{ type_name }}">{{ spec.title }}</a>
+  › <a href="{{ admin_root }}/content/{{ type_name }}/{{ entry.id }}">{{ entry.title }}</a></p>
+<h1>{{ _("The version until {when}", when=when) }}</h1>
+<p class="muted">{% if author %}{{ _("Replaced by {who}.", who=author) }} {% endif %}{{ _("The current version is the one being edited now.") }}</p>
+
+<nav class="row between version-nav" aria-label="{{ _('Versions') }}">
+  {% if older %}<a href="{{ older.id }}">← {{ _("Older") }} ({{ older.created_at.strftime("%d.%m.%Y %H:%M") }})</a>{% else %}<span></span>{% endif %}
+  {% if newer %}<a href="{{ newer.id }}">{{ _("Newer") }} ({{ newer.created_at.strftime("%d.%m.%Y %H:%M") }}) →</a>{% endif %}
+</nav>
+
+{% if not in_trash %}
+<div class="version-actions card">
+  <form method="post" action="{{ rev.id }}/restore">{{ csrf_field }}<input type="hidden" name="what" value="all">
+    <button type="submit">{{ _("Bring back this version") }}</button></form>
+  <form method="post" action="{{ rev.id }}/restore">{{ csrf_field }}<input type="hidden" name="what" value="text">
+    <button type="submit" class="secondary">{{ _("Bring back only its text") }}</button></form>
+  <a class="button secondary" href="{{ admin_root }}/content/{{ type_name }}/{{ entry.id }}?from_version={{ rev.id }}">{{ _("Open it in the editor") }}</a>
+  <p class="hint">{{ _("Bringing a version back keeps the current one among the earlier versions, so it can be undone the same way.") }}</p>
+</div>
+{% else %}
+<p class="notice warning">{{ _("This entry is in the trash; bring it back before using its versions.") }}</p>
+{% endif %}
+
+<section aria-labelledby="changes-title">
+  <h2 id="changes-title">{{ _("What changed since") }}</h2>
+  {% if fields %}
+  <div class="table-wrap"><table class="version-fields">
+    <thead><tr><th></th><th>{{ _("Then") }}</th><th>{{ _("Now") }}</th></tr></thead>
+    <tbody>{% for label, then, now in fields %}<tr><th scope="row">{{ label }}</th><td><del>{{ then }}</del></td><td><ins>{{ now }}</ins></td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+  {% if changed_blocks %}
+  <p class="muted">{{ ngettext("{n} paragraph of the text differs: struck out as it was, underlined as it is now.", "{n} paragraphs of the text differ: struck out as they were, underlined as they are now.", changed_blocks) }}</p>
+  <div class="diff">{{ diff }}</div>
+  {% elif not fields %}
+  <p class="muted">{{ _("Nothing differs from the current version.") }}</p>
+  {% else %}
+  <p class="muted">{{ _("The text is the same.") }}</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="then-title">
+  <h2 id="then-title">{{ _("As it was") }}</h2>
+  <article class="entry version-preview card">
+    <h1>{{ snap.title }}</h1>
+    {% if snap.excerpt %}<p class="muted">{{ snap.excerpt }}</p>{% endif %}
+    <div class="body">{{ preview }}</div>
+  </article>
+</section>
+{% endblock %}
