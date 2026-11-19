@@ -117,8 +117,10 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_serve(args: argparse.Namespace) -> int:
     """gunicorn's master and its workers: an application in production."""
-    from nest.serve import (  # noqa: PLC0415
+    from nest.serve import (  # noqa: PLC0415  # noqa: PLC0415
+        EngineProcess,
         ServeError,
+        engine_socket,
         gunicorn_options,
         one_process_modules,
         plan,
@@ -156,6 +158,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
         return 2
     os.environ["NEST_MIGRATE"] = "off"  # done above: the workers do not race at it
     os.environ["NEST_THREADS"] = str(the_plan.threads)
+    engine = None
+    if the_plan.engine:
+        os.environ["NEST_ROLE"] = "web"
+        if not os.environ.get("NEST_ENGINE_URL"):  # else an engine runs elsewhere (a service)
+            socket = engine_socket(nest.workspace)
+            os.environ["NEST_ENGINE_URL"] = f"unix:{socket}"
+            if not args.dry_run:
+                engine = EngineProcess(root, socket, {**os.environ}, the_plan.log_level)
     for note in the_plan.notes:
         print(f"! {note}")
     print(
@@ -167,7 +177,40 @@ def cmd_serve(args: argparse.Namespace) -> int:
             print(f"  {key} = {value}")
         return 0
     sys.stdout.flush()  # before the fork: a buffered line would be printed by each worker
-    return run(the_plan)
+    if engine is not None and not engine.start():
+        print("✗ the engine process did not start; see its output above")
+        engine.stop()
+        return 1
+    try:
+        return run(the_plan)
+    finally:
+        if engine is not None:
+            engine.stop(the_plan.graceful_timeout + 10)
+
+
+def cmd_engine(args: argparse.Namespace) -> int:
+    """The engine process: the application with its one-process modules' state, answering
+    the workers of nest serve (on a Unix socket, or a port for an engine run as a service)."""
+    import uvicorn  # noqa: PLC0415
+
+    root = Path(args.app).resolve()
+    os.environ["NEST_APP_DIR"] = str(root)
+    os.environ["NEST_ROLE"] = "engine"
+    os.environ.pop("NEST_ENGINE_URL", None)
+    where: dict[str, object] = (
+        {"uds": args.socket} if args.socket else {"host": args.host, "port": args.port}
+    )
+    uvicorn.run(
+        "nest.host:app_from_env",
+        factory=True,
+        lifespan="on",
+        proxy_headers=False,  # the workers say who the visitor is, signed (nest.engine)
+        server_header=False,
+        log_level=args.log_level,
+        timeout_graceful_shutdown=20,
+        **where,  # type: ignore[arg-type]
+    )
+    return 0
 
 
 def _open(app: str):
@@ -276,6 +319,16 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="show the plan and the settings, run nothing"
     )
     p.set_defaults(func=cmd_serve)
+
+    p = sub.add_parser(
+        "engine", help="the engine process: the worlds of a one-process module, for nest serve"
+    )
+    p.add_argument("app")
+    p.add_argument("--socket", help="a Unix socket to listen on (nest serve gives its own)")
+    p.add_argument("--host", default="127.0.0.1", help="else this address and --port")
+    p.add_argument("--port", type=int, default=8001)
+    p.add_argument("--log-level", default="info")
+    p.set_defaults(func=cmd_engine)
 
     p = sub.add_parser("check", help="what running an application in production needs")
     p.add_argument("app")

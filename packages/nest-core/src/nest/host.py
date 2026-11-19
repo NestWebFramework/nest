@@ -44,6 +44,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from nest.bind import Bindings, ProviderContext, build
 from nest.catalog import Catalog, Entry
 from nest.contract import load_contracts
+from nest.engine import ROLES, EngineGate, EngineProxy
 from nest.i18n import ADMIN_LOCALE_COOKIE, LOCALE_COOKIE, Catalogs, LocaleMiddleware, translator
 from nest.loader import import_main, import_object
 from nest.manifest import load_manifest
@@ -138,6 +139,11 @@ class Nest:
         self.environ = environ
         self.secret = secret
         self.production = is_production(environ)
+        # under nest serve with a one-process module: "engine" holds its state, "web" passes
+        # its requests to the engine; "" is one process doing everything (nest run)
+        self.role = str(environ.get("NEST_ROLE", "")).strip().lower()
+        if self.role not in ROLES:
+            raise HostError(f"NEST_ROLE is engine or web, not '{self.role}'")
         self.manifest = plan.app.manifest
         self.name = self.manifest.name
         application = self.manifest.application
@@ -519,6 +525,13 @@ class ModuleHost:
     def production(self) -> bool:
         return self._nest.production
 
+    @property
+    def role(self) -> str:
+        """ "engine" (this process holds the one-process modules' state and serves them),
+        "web" (a worker: it passes their requests to the engine and must not open their
+        state), or "" (one process doing everything)."""
+        return self._nest.role
+
     def check_settings(self, fn: Callable[[dict[str, Any]], list[str]]) -> Callable:
         """``fn(values)`` judges this module's settings before the admin panel saves them:
         ``values`` is every setting as it would be, and what it returns are the problems
@@ -864,6 +877,11 @@ def create_app(app_dir: str | Path, *, environ: Mapping[str, str] | None = None)
         secure_cookies=nest.production,
         csp=lambda: nest.csp,  # read per response: a module may add a source while running
     )
+    if nest.role == "web" and nest.environ.get("NEST_ENGINE_URL"):
+        # outermost: the engine's answers go out as the engine made them
+        app.add_middleware(EngineProxy, nest=nest, url=nest.environ["NEST_ENGINE_URL"])
+    elif nest.role == "engine":
+        app.add_middleware(EngineGate, secret=nest.secret)
     log.info("%s: %d packages ready, workspace %s", nest.name, len(the_plan.units), workspace)
     return app
 

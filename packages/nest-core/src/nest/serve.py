@@ -20,6 +20,11 @@ from __future__ import annotations
 
 import contextlib
 import os
+import signal
+import subprocess
+import sys
+import threading
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -49,6 +54,7 @@ class Plan:
     proxies: str
     log_level: str
     notes: list[str] = field(default_factory=list)
+    engine: bool = False  # one more process holds the one-process modules (nest.engine)
 
 
 def cpus() -> int:
@@ -93,13 +99,13 @@ def plan(
     notes: list[str] = []
     raw_workers = pick("workers", "NEST_WORKERS", spec.workers)
     workers = cpus() if str(raw_workers) == "auto" else _int(raw_workers, "workers")
-    if one_process and workers > 1:
-        verb = "keeps its" if len(one_process) == 1 else "keep their"
+    engine = bool(one_process) and workers > 1
+    if engine:
+        verb = "keeps its" if len(one_process or []) == 1 else "keep their"
         notes.append(
-            f"one worker: {', '.join(one_process)} {verb} state in one process "
-            f"(asked for {workers})"
+            f"{', '.join(one_process or [])} {verb} state in the engine process, which serves "
+            f"its pages; the {workers} workers serve the rest and pass those to it"
         )
-        workers = 1
     if process_local and workers > 1:
         notes.append(
             f"{', '.join(process_local)}: each worker keeps its own values "
@@ -127,6 +133,7 @@ def plan(
         proxies=str(pick("forwarded_allow_ips", "NEST_TRUSTED_PROXIES", "127.0.0.1")),
         log_level=str(pick("log_level", "NEST_LOG_LEVEL", "info")).lower(),
         notes=notes,
+        engine=engine,
     )
 
 
@@ -233,3 +240,110 @@ def run(p: Plan) -> int:
 
     Application().run()
     return 0
+
+
+# --- the engine process -----------------------------------------------------------------
+
+
+SOCKET_PATH_MAX = 100  # a Unix socket's path is at most 107 bytes on Linux, 103 on macOS
+
+
+def engine_socket(workspace: Path) -> Path:
+    """``run/engine.sock`` in the workspace; in the user's runtime folder when that path
+    would be too long for a socket (a workspace deep in the folders)."""
+    run_dir = workspace / "run"
+    run_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path = run_dir / "engine.sock"
+    if len(os.fsencode(path)) <= SOCKET_PATH_MAX:
+        return path
+    import hashlib  # noqa: PLC0415
+    import tempfile  # noqa: PLC0415
+
+    base = Path(os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir())
+    digest = hashlib.sha256(os.fsencode(workspace.resolve())).hexdigest()[:12]
+    return base / f"nest-engine-{digest}.sock"
+
+
+class EngineProcess:
+    """``nest engine`` beside gunicorn's workers: started before them, started again if it
+    stops on its own (after a pause that grows while it keeps failing), stopped after them.
+    On Linux it also stops if nest serve is killed outright."""
+
+    def __init__(self, app_dir: Path, socket: Path, environ: dict[str, str], log_level: str):
+        self.socket = socket
+        self.command = [
+            sys.executable,
+            "-c",
+            "from nest.cli import main; raise SystemExit(main())",
+            "engine",
+            str(app_dir),
+            "--socket",
+            str(socket),
+            "--log-level",
+            log_level,
+        ]
+        self.environ = {**environ, "NEST_ROLE": "engine", "NEST_MIGRATE": "off"}
+        self.environ.pop("NEST_ENGINE_URL", None)
+        self.proc: subprocess.Popen[bytes] | None = None
+        self._stopping = threading.Event()
+        self._watcher: threading.Thread | None = None
+
+    def _spawn(self) -> None:
+        with contextlib.suppress(FileNotFoundError):
+            self.socket.unlink()  # a socket left by an engine that was killed
+        self.proc = subprocess.Popen(  # noqa: S603 - our own interpreter and arguments
+            self.command, env=self.environ, preexec_fn=_die_with_parent
+        )
+        print(f"nest serve: engine process {self.proc.pid} on {self.socket}", flush=True)
+
+    def start(self, wait: float = 120.0) -> bool:
+        """Start it and wait until it listens (its worlds loaded); False if it did not."""
+        self._spawn()
+        deadline = time.monotonic() + wait
+        while time.monotonic() < deadline:
+            if self.proc is not None and self.proc.poll() is not None:
+                return False
+            if self.socket.exists():
+                break
+            time.sleep(0.2)
+        else:
+            return False
+        self._watcher = threading.Thread(target=self._watch, name="engine-watch", daemon=True)
+        self._watcher.start()
+        return True
+
+    def _watch(self) -> None:
+        pause = 1.0
+        while not self._stopping.is_set():
+            assert self.proc is not None
+            began = time.monotonic()
+            code = self.proc.wait()
+            if self._stopping.is_set():
+                return
+            pause = 1.0 if time.monotonic() - began > 60 else min(pause * 2, 30.0)
+            print(f"nest serve: the engine stopped ({code}); starting it again", flush=True)
+            if self._stopping.wait(pause):
+                return
+            self._spawn()
+
+    def stop(self, timeout: float = 30.0) -> None:
+        """TERM, so it writes its worlds before it goes; KILL if it takes too long."""
+        self._stopping.set()
+        if self.proc is None or self.proc.poll() is not None:
+            return
+        self.proc.terminate()
+        try:
+            self.proc.wait(timeout)
+        except subprocess.TimeoutExpired:
+            self.proc.kill()
+            self.proc.wait()
+
+
+def _die_with_parent() -> None:
+    """In the child, before it runs: on Linux, a TERM when nest serve dies, however it dies."""
+    try:
+        import ctypes  # noqa: PLC0415
+
+        ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, signal.SIGTERM)  # PR_SET_PDEATHSIG
+    except (OSError, AttributeError):
+        pass

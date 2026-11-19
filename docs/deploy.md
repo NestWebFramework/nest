@@ -88,8 +88,36 @@ What the workers must agree on, they share:
   over within seconds if that worker stops. Several machines with their own
   workspaces each run their own.
 
+### A game: the engine process
+
 A module that keeps its state in its process says so (`one_process: true`, as Saga's
-worlds do), and `nest serve` then runs one worker and says why.
+worlds do). With one worker nothing changes: that process does everything. With more,
+`nest serve` starts one more process beside gunicorn's workers, the **engine**
+(`nest engine`, `NEST_ROLE=engine`): the whole application with the worlds open and
+ticking, listening on a Unix socket in the workspace (`run/engine.sock`). The workers
+(`NEST_ROLE=web`) never open the worlds; they serve the site, the forum, letters,
+accounts and assets themselves, and pass to the engine, streamed both ways:
+
+- the routes of the game's packages (`/joc`, `/api/joc`) and their admin pages,
+- an event stream that follows one of the game's topics (`saga.*`).
+
+```
+browser ──► workers (N)   /  /sfat  /scrisori  /cont  /admin  /assets   served here
+              └─ /joc  /api/joc  /admin/saga …  saga.* streams ─► engine (1)
+```
+
+The engine answers only requests a worker signed with a token made from the
+application's secret key, and takes the visitor's address from them. `nest serve`
+waits for it to load the worlds before the workers start, starts it again if it stops
+(the workers answer 503 "starting" meanwhile), and stops it after them with TERM, so it
+writes the worlds first. `kill -HUP` reloads the workers only; the worlds keep ticking.
+A worker names players (letters, the forum) by their characters as the engine's last
+checkpoint wrote them. Bind `nest.pubsub` so a letter's live update reaches a game page
+(served by the engine) as well.
+
+To run the engine as a service of its own (another container), start `nest engine APP
+--host 0.0.0.0 --port 8001` there and give the workers `NEST_ENGINE_URL=http://engine:8001`;
+both need the same workspace secret key.
 
 Measured with morlaca (4 workers x 8 threads): about 280 category pages a second
 and 320 feeds, a worker killed is replaced in seconds, and 3,000 requests made

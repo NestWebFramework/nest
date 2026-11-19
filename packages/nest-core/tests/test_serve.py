@@ -45,14 +45,18 @@ def test_the_plan_takes_the_manifest_then_the_environment_then_the_command_line(
     assert plan(tmp_path, manifest(tmp_path), {}, {}).workers == cpus()  # auto: the CPUs
 
 
-def test_bad_values_are_refused_and_one_process_modules_keep_one_worker(tmp_path):
+def test_bad_values_are_refused_and_one_process_modules_get_an_engine(tmp_path):
     m = manifest(tmp_path)
     with pytest.raises(ServeError, match="workers is a number"):
         plan(tmp_path, m, {"NEST_WORKERS": "many"}, {})
     with pytest.raises(ServeError, match="threads is 1 or more"):
         plan(tmp_path, m, {}, {"threads": 0})
     p = plan(tmp_path, m, {}, {"workers": "4"}, one_process=["saga"])
-    assert p.workers == 1 and "saga keeps its state in one process" in p.notes[0]
+    assert (
+        p.workers == 4 and p.engine and "saga keeps its state in the engine process" in p.notes[0]
+    )
+    p = plan(tmp_path, m, {}, {"workers": "1"}, one_process=["saga"])
+    assert not p.engine and not p.notes  # one worker does everything, as nest run
 
 
 def test_gunicorn_is_given_nests_worker_and_renews_its_workers(tmp_path):
@@ -120,3 +124,13 @@ def test_gunicorn_runs_the_workers_and_stops_them_gracefully(tmp_path):
         and "Booting worker" in out
         and "Shutting down: Master" in out
     )
+
+
+def test_the_engine_socket_stays_short_enough(tmp_path):
+    from nest.serve import SOCKET_PATH_MAX, engine_socket  # noqa: PLC0415
+
+    assert engine_socket(tmp_path) == tmp_path / "run" / "engine.sock"
+    deep = tmp_path / ("a" * 60) / ("b" * 60)
+    path = engine_socket(deep)
+    assert len(str(path)) <= SOCKET_PATH_MAX and path.name.startswith("nest-engine-")
+    assert engine_socket(deep) == path  # the same workspace, the same socket

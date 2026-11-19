@@ -126,6 +126,7 @@ Any declared setting can be overridden as `NEST_<APP>__<OWNER>__<KEY>`, for exam
 | `NEST_ALLOWED_HOSTS` | the hosts it answers, comma-separated; any other gets 400 |
 | `NEST_TRUSTED_PROXIES` | the proxies whose `X-Forwarded-*` headers `nest run` and `nest serve` believe |
 | `NEST_WORKERS`, `NEST_THREADS` | `nest serve`'s processes and each one's threads (or the manifest's `serve:`) |
+| `NEST_ROLE`, `NEST_ENGINE_URL` | set by `nest serve` for a game: the engine process, the workers, where they reach it |
 
 Running one for real (the image, `nest check`, `nest backup`/`restore`, Caddy in front)
 is in [docs/deploy.md](docs/deploy.md).
