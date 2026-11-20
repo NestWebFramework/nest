@@ -49,3 +49,12 @@
 .modules .busy.htmx-request { display: block; opacity: 1; }
 .module.disabled { opacity: .85; }
 .module-log { font-size: .88rem; }
+/* the themes page: a card per theme, its colours drawn beside it */
+.theme-list { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: 1rem; }
+.theme-list > .card.theme { display: grid; grid-template-columns: 15rem 1fr; gap: 1.25rem; align-items: start; margin: 0; padding: 1rem; }
+.theme.active { border-color: var(--accent); }
+.theme-sample { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); display: block; }
+.theme-text p { margin: .4rem 0 0; }
+.theme-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; align-items: center; }
+.theme-actions form { margin: 0; }
+@media (max-width: 40rem) { .theme-list > .card.theme { grid-template-columns: 1fr; } }

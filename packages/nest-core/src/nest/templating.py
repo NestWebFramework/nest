@@ -32,7 +32,7 @@ from jinja2 import (
 
 def make_environment(
     app_root: Path,
-    theme_dir: Path | None,
+    theme_dirs: list[Path] | Path | None,
     module_dirs: Mapping[str, Path],
     *,
     reload: bool = True,
@@ -43,8 +43,10 @@ def make_environment(
     loaders: list[BaseLoader] = []
     if (app_root / "templates").is_dir():
         loaders.append(FileSystemLoader(app_root / "templates"))
-    if theme_dir is not None:
-        loaders.append(FileSystemLoader(theme_dir))
+    if isinstance(theme_dirs, Path):
+        theme_dirs = [theme_dirs]
+    for folder in theme_dirs or []:  # the theme, then the one it extends
+        loaders.append(FileSystemLoader(folder))
     loaders.append(
         PrefixLoader({name: FileSystemLoader(path) for name, path in module_dirs.items()})
     )

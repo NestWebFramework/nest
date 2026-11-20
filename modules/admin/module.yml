@@ -23,6 +23,7 @@ module:
 
 main: nest_admin
 admin_styles: [admin.css]  # its base look; an application restyles it
+styles: [preview.css]  # the bar an administrator previewing a theme sees, on site pages
 
 provides:
   import: nest_admin

@@ -1,0 +1,8 @@
+{#- Shown, in any theme, to the administrator previewing it (nest_admin.themes). -#}
+{% if theme_preview is defined and theme_preview %}
+<div class="theme-preview-bar" role="status">
+  {{ _("You are previewing the theme {name}; only you see the site this way.", name=theme_preview) }}
+  <a href="{{ admin_root }}/themes#t-{{ theme_preview }}">{{ _("Back to the themes") }}</a>
+  <a href="{{ admin_root }}/themes/preview/stop">{{ _("Stop the preview") }}</a>
+</div>
+{% endif %}

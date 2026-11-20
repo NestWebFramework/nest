@@ -285,6 +285,9 @@ class Manifest(BaseModel):
     # names its host, so one made later, elsewhere, joins it the same way.
     subsystems: Subsystems | None = None
     part_of: str | None = None
+    # a theme built on another: its templates and stylesheet come first, the other's fill
+    # in what it does not have (it is in its deps too)
+    extends: str | None = None
     docs: dict[str, Any] = Field(default_factory=dict)
     system_deps: dict[str, Any] = Field(default_factory=dict)
     # Called as fn(nest) once bindings exist and before any module is set up,

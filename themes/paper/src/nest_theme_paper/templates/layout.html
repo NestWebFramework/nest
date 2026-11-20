@@ -1,0 +1,35 @@
+<!doctype html>
+{#- Paper's frame: a masthead (the language above, the name set large, the menu between
+    rules), the page, a quiet footer. The blocks are base's, so every module's page fits. -#}
+<html lang="{% block lang %}{{ locale }}{% endblock %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}{{ app.title }}{% endblock %}</title>
+  {% for href in styles %}<link rel="stylesheet" href="{{ href }}">
+  {% endfor %}
+  {% include "htmx/head.html" %}
+  {% block head %}{% endblock %}
+</head>
+<body class="paper"{% if (user is defined and user) or in_admin %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
+  <a class="skip" href="#main">{{ _("Skip to content") }}</a>
+  <header class="site-header masthead">
+    <div class="container masthead-top">
+      {% block language %}{% if not in_admin %}{% include "widgets/language.html" %}{% endif %}{% endblock %}
+    </div>
+    <div class="container masthead-brand">
+      {% block header %}<a class="brand" href="/">{{ app.title }}</a>{% endblock %}
+    </div>
+    <nav class="masthead-nav" aria-label="Main"><div class="container">{% block nav %}{% endblock %}</div></nav>
+  </header>
+  <main id="main" class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="container">{% block footer %}{{ app.title }}{% endblock %}</div>
+  </footer>
+  {% include "admin/preview_bar.html" ignore missing %}
+  {% include "notifications/region.html" ignore missing %}
+</body>
+</html>

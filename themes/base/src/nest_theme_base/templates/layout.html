@@ -26,6 +26,7 @@
   <footer class="site-footer">
     <div class="container">{% block footer %}{{ app.title }}{% endblock %}</div>
   </footer>
+  {% include "admin/preview_bar.html" ignore missing %}
   {% include "notifications/region.html" ignore missing %}
 </body>
 </html>

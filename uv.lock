@@ -66,6 +66,8 @@ members = [
     "nest-storage",
     "nest-storage-local",
     "nest-theme-base",
+    "nest-theme-paper",
+    "nest-theme-slate",
     "nest-trains",
     "nest-workspace",
 ]
@@ -1440,6 +1442,28 @@ dependencies = [
 requires-dist = [{ name = "nest-htmx", editable = "modules/htmx" }]
 
 [[package]]
+name = "nest-theme-paper"
+version = "0.1.0"
+source = { editable = "themes/paper" }
+dependencies = [
+    { name = "nest-theme-base" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
+
+[[package]]
+name = "nest-theme-slate"
+version = "0.1.0"
+source = { editable = "themes/slate" }
+dependencies = [
+    { name = "nest-theme-base" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
+
+[[package]]
 name = "nest-trains"
 version = "0.1.0"
 source = { editable = "modules/trains" }
@@ -1523,6 +1547,8 @@ dependencies = [
     { name = "nest-storage" },
     { name = "nest-storage-local" },
     { name = "nest-theme-base" },
+    { name = "nest-theme-paper" },
+    { name = "nest-theme-slate" },
     { name = "nest-trains" },
 ]
 
@@ -1597,6 +1623,8 @@ requires-dist = [
     { name = "nest-storage", editable = "interfaces/storage" },
     { name = "nest-storage-local", editable = "providers/storage-local" },
     { name = "nest-theme-base", editable = "themes/base" },
+    { name = "nest-theme-paper", editable = "themes/paper" },
+    { name = "nest-theme-slate", editable = "themes/slate" },
     { name = "nest-trains", editable = "modules/trains" },
 ]
 

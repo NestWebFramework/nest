@@ -7,6 +7,8 @@ dependencies = [
     "nest-core",
     "nest-htmx",
     "nest-theme-base",
+    "nest-theme-paper",
+    "nest-theme-slate",
     "nest-cache",
     "nest-cache-memory",
     "nest-pubsub",
@@ -87,6 +89,8 @@ members = [
 nest-core = { workspace = true }
 nest-htmx = { workspace = true }
 nest-theme-base = { workspace = true }
+nest-theme-paper = { workspace = true }
+nest-theme-slate = { workspace = true }
 nest-cache = { workspace = true }
 nest-cache-memory = { workspace = true }
 nest-redis = { workspace = true }

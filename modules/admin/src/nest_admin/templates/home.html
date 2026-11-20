@@ -7,6 +7,7 @@
 {% else %}
 <div class="grid">
   {% if user and user.has("admin") %}<a class="card tile" href="{{ admin_root }}/settings"><strong>{{ _("Settings") }}</strong><span class="muted">{{ _("Every module's settings, for this application.") }}</span></a>
+  <a class="card tile" href="{{ admin_root }}/themes"><strong>{{ _("Themes") }}</strong><span class="muted">{{ _("The site's look: preview and choose among the installed themes.") }}</span></a>
   <a class="card tile" href="{{ admin_root }}/modules"><strong>{{ _("Modules") }}</strong><span class="muted">{{ _("What this application is made of: enable, disable, add or uninstall modules.") }}</span></a>{% endif %}
   {% for p in pages %}<a class="card tile" href="{{ p.base }}/"><strong>{{ p.title }}</strong>{% if p.description %}<span class="muted">{{ p.description }}</span>{% endif %}</a>{% endfor %}
 </div>

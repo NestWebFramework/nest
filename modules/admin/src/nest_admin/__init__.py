@@ -45,7 +45,17 @@ def setup(host: ModuleHost) -> None:
 
     from nest_admin.modules import router as modules
     from nest_admin.settings import router as settings
+    from nest_admin.themes import ThemePreview
+    from nest_admin.themes import router as themes
+
+    host.state["sign"] = host.sign  # the theme preview's cookie
+    host.add_middleware(ThemePreview, unsign=host.unsign)
+
+    @host.context
+    def _preview(request: Request) -> dict[str, Any]:
+        return {"theme_preview": getattr(request.state, "theme_preview", None)}
 
     host.mount(settings)
     host.mount(modules)
+    host.mount(themes)
     host.mount(router)

@@ -28,3 +28,6 @@ docs:
   section: themes
 
 styles: [nest.css]
+
+# the colours its card in the admin panel's Themes page shows
+preview: {bg: "#f8f7f4", surface: "#ffffff", text: "#1d1c1a", muted: "#5f5b53", accent: "#8a2b1f", border: "#dedad0"}

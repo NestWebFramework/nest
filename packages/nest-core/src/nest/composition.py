@@ -5,6 +5,7 @@ modules, which always run, and the others, each enabled or not. What the adminis
 then chooses (in the admin panel, or with ``nest modules``) is kept in the workspace, in
 ``data/modules.yml``, and laid over the manifest when the application is made:
 
+    theme: paper                               # the look, over application.theme
     modules:
       gallery: {enabled: false}
       forum: {enabled: true, route: /forum}    # a module the manifest does not list
@@ -50,13 +51,29 @@ def path(workspace: Path) -> Path:
     return workspace / FILE
 
 
+def _raw(workspace: Path) -> dict[str, Any]:
+    file = path(workspace)
+    if not file.is_file():
+        return {}
+    raw = yaml.safe_load(file.read_text(encoding="utf-8")) or {}
+    if not isinstance(raw, dict):
+        raise CompositionError(f"{file}: expected a mapping")
+    return raw
+
+
+def load_theme(workspace: Path) -> str | None:
+    """The theme the administrator chose (None: the manifest's)."""
+    theme = _raw(workspace).get("theme")
+    return str(theme) if theme else None
+
+
 def load(workspace: Path) -> dict[str, Choice]:
     """The administrator's choices, by module ({} when none were made)."""
     file = path(workspace)
     if not file.is_file():
         return {}
-    raw = yaml.safe_load(file.read_text(encoding="utf-8")) or {}
-    modules = raw.get("modules") if isinstance(raw, dict) else None
+    raw = _raw(workspace)
+    modules = raw.get("modules", {})
     if not isinstance(modules, dict):
         raise CompositionError(f"{file}: expected a 'modules:' mapping")
     out = {}
@@ -71,14 +88,25 @@ def load(workspace: Path) -> dict[str, Choice]:
     return out
 
 
-def save(workspace: Path, choices: dict[str, Choice]) -> None:
+_KEEP = object()
+
+
+def save(workspace: Path, choices: dict[str, Choice] | None = None, theme: Any = _KEEP) -> None:
+    """Write the choices (``choices`` None: the modules as they are; ``theme`` left out:
+    the theme as it is, None: back to the manifest's)."""
     file = path(workspace)
     file.parent.mkdir(parents=True, exist_ok=True)
-    body = {"modules": {name: c.as_dict() for name, c in sorted(choices.items())}}
+    if choices is None:
+        choices = load(workspace)
+    if theme is _KEEP:
+        theme = load_theme(workspace)
+    body: dict[str, Any] = {"modules": {name: c.as_dict() for name, c in sorted(choices.items())}}
+    if theme:
+        body = {"theme": theme, **body}
     tmp = file.with_suffix(".tmp")
     tmp.write_text(
-        "# The modules this application runs, as its administrator chose (nest modules,\n"
-        "# the admin panel), over its module.yml. Core modules are not listed here.\n"
+        "# The modules and the theme this application runs, as its administrator chose\n"
+        "# (nest modules, nest themes, the admin panel), over its module.yml.\n"
         + yaml.safe_dump(body, sort_keys=True, allow_unicode=True),
         encoding="utf-8",
     )

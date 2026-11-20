@@ -91,6 +91,9 @@ def check(entries: list[Entry], known: list[Entry]) -> list[Finding]:
                 )
                 continue
             findings += _check_file(entry, mine, deps, uses, roots, path, tree)
+    from nest.themes import check as themes_check  # noqa: PLC0415 - the theme contract
+
+    findings += themes_check(entries, known)
     for ep in entry_points(group="nest.checks"):  # an ecosystem's own (saga: world state)
         try:
             extra = ep.load()

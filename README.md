@@ -87,6 +87,7 @@ uv run nest run applications/hello        # http://127.0.0.1:8100  (--reload whi
 uv run nest serve applications/hello      # production: gunicorn's master and workers (docs/deploy.md)
 uv run nest modules applications/hello    # its modules: core, enabled, disabled (docs/modules.md)
 uv run nest packages ../morlaca add forum # install a trusted package (then enable it)
+uv run nest themes ../morlaca use paper   # the site's look (docs/themes.md)
 uv run nest validate --strict modules     # manifests, and the code keeping to them
 uv run pytest                             # the tests
 uv run nest validate .                    # every manifest against its contract

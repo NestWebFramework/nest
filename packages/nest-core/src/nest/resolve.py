@@ -64,6 +64,8 @@ class Plan:
     notes: list[str] = field(default_factory=list)
     # the core modules and everything they depend on: never disabled nor uninstalled
     locked: set[str] = field(default_factory=set)
+    # the theme, then the one it extends, and so on: templates looked for in this order
+    themes: list[Entry] = field(default_factory=list)
     # the modules the application lists but does not run now
     disabled: set[str] = field(default_factory=set)
 
@@ -307,6 +309,16 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
     if problems:
         raise PlanError(app.name, problems + [f"note: {n}" for n in notes])
     units = [Unit(entry=included[name], instance=instances.get(name)) for name in order]
+    chain: list[Entry] = []
+    current = theme
+    while current is not None and current not in chain:
+        chain.append(current)
+        parent = current.manifest.extends
+        current = included.get(parent) if parent else None
+        if parent and current is None:
+            problems.append(f"theme {chain[-1].name} extends '{parent}', which is not installed")
+    if problems:
+        raise PlanError(app.name, problems + [f"note: {n}" for n in notes])
     locked: set[str] = set()
     stack = [i.name for i in manifest.modules if i.core and i.name in included]
     if theme is not None:
@@ -325,6 +337,7 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
         notes=notes,
         locked=locked,
         disabled=disabled,
+        themes=chain,
     )
 
 

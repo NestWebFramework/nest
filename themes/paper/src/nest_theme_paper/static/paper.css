@@ -1,0 +1,50 @@
+/* paper.css — on base's stylesheet: an editorial page. Tokens first (light, then ink at
+   night), then the masthead, type and the quieter shapes. */
+:root {
+  --bg: #fbf8f1; --surface: #fffdf8; --text: #1f1b16; --muted: #6b6358;
+  --border: #e4dccb; --accent: #9c2a1a; --accent-text: #fffdf8; --focus: #1c4f7c;
+  --ok: #2f6b3c; --danger: #a3271f;
+  --radius: 3px; --max: 68rem;
+  --font: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16130f; --surface: #1d1a15; --text: #efe9dd; --muted: #a69d8e;
+    --border: #3a342b; --accent: #e58a72; --accent-text: #16130f; --focus: #8db6ea;
+    --ok: #82c592; --danger: #f08a80;
+  }
+}
+body { font: 1.06rem/1.7 var(--font); }
+h1, h2, h3 { font-family: var(--font); font-weight: 700; letter-spacing: -.01em; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.6rem); }
+
+/* the masthead */
+.masthead { background: var(--surface); border-bottom: 3px double var(--border); }
+.masthead .bar { min-height: 0; }
+.masthead-top { display: flex; justify-content: flex-end; align-items: center; min-height: 2rem;
+  font: .8rem var(--sans); color: var(--muted); }
+.masthead-brand { text-align: center; padding-block: .75rem .5rem; }
+.masthead .brand { display: inline-block; font-size: clamp(1.9rem, 6vw, 3rem); line-height: 1.1;
+  font-weight: 700; letter-spacing: -.02em; color: var(--text); text-decoration: none; }
+.masthead-nav { border-top: 1px solid var(--border); font-family: var(--sans);
+  text-transform: uppercase; letter-spacing: .09em; font-size: .78rem; }
+.masthead-nav .container { display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: .25rem 1.5rem; padding-block: .55rem; }
+.masthead-nav ul { justify-content: center; gap: .25rem 1.5rem; }
+.masthead-nav a { color: var(--text); }
+.masthead-nav a:hover, .masthead-nav a[aria-current="page"] { color: var(--accent); }
+
+/* the page */
+main { padding-block: 2rem 3.5rem; }
+main p, main li { max-width: 46rem; }
+blockquote { border-left: 3px solid var(--accent); margin-left: 0; padding-left: 1rem; font-style: italic; }
+hr { border: 0; border-top: 3px double var(--border); }
+.card { border-radius: var(--radius); }
+button, .button, input, select, textarea { font-family: var(--sans); }
+button, .button { border-radius: 2px; letter-spacing: .02em; }
+.badge { border-radius: 2px; font-family: var(--sans); }
+
+/* the footer */
+.site-footer { text-align: center; border-top: 3px double var(--border); font: .78rem var(--sans);
+  letter-spacing: .08em; text-transform: uppercase; padding-block: 1.5rem; }

@@ -110,3 +110,5 @@ form.inline { display: inline; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .better { color: var(--ok); } .worse { color: var(--danger); }
 progress { width: 100%; max-width: 32rem; }
+/* the language switch: its choices apart, in any theme */
+.language { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem .6rem; }

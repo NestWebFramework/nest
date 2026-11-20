@@ -1,0 +1,25 @@
+#
+# slate — a modern, dark-first theme: a translucent header that stays on top, rounded
+# cards with depth, pill buttons, a teal accent (and a light variant by day).
+# Built on base: only slate.css; base gives the templates.
+#
+module:
+  name: slate
+  id: nest.theme.slate
+  type: theme
+  title: Slate
+  version: 0.1.0
+  description: A modern dark look with a header that stays on top, rounded cards and teal accents; light by day.
+  license: MIT
+  created: "2026-11-20"
+
+main: nest_theme_slate
+extends: base
+
+deps:
+  base: ">=0.2,<1"
+  htmx: ">=0.1,<1"
+
+styles: [slate.css]
+
+preview: {bg: "#0f1720", surface: "#16202b", text: "#e6edf3", muted: "#93a1b0", accent: "#4cc2b5", border: "#243241"}

@@ -1,0 +1,6 @@
+/* preview.css — the bar an administrator previewing a theme sees, in any theme (site pages). */
+.theme-preview-bar { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 50;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; max-width: calc(100% - 2rem);
+  padding: .6rem 1rem; border-radius: 10px; font: .9rem/1.4 system-ui, sans-serif;
+  background: #1d1c1a; color: #f4f2ec; box-shadow: 0 8px 28px rgb(0 0 0 / .3); }
+.theme-preview-bar a { color: #ffd38a; }

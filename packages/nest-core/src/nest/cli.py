@@ -252,6 +252,34 @@ def cmd_modules(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_themes(args: argparse.Namespace) -> int:
+    """An application's look: the installed themes, the one it uses; switch."""
+    from nest.themes import ThemeError, themes, use  # noqa: PLC0415
+
+    root = Path(args.app).resolve()
+    if args.action == "list":
+        for t in themes(root):
+            mark = "●" if t.active else " "
+            extra = (f"  (extends {t.extends})" if t.extends else "") + (
+                "  [module.yml]" if t.default else ""
+            )
+            print(f"{mark} {t.name:14} {t.version:8} {t.title}{extra}")
+        return 0
+    try:
+        notes = use(root, args.name or None)
+    except ThemeError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    print(
+        f"✓ {args.name or "the manifest's theme"} is the theme now"
+        + ("" if notes else "; the application is reloading")
+    )
+    for note in notes:
+        print(f"! {note}")
+    return 0
+
+
 def cmd_packages(args: argparse.Namespace) -> int:
     """The packages this server trusts, installed in an application or not; add, remove."""
     from nest.packages import PackageError, add, remove, status  # noqa: PLC0415
@@ -277,6 +305,10 @@ def cmd_packages(args: argparse.Namespace) -> int:
             return 2
         if args.action == "add":
             offer = add(root, args.name)
+            if offer.type == "theme":
+                print(f"✓ {offer.name} installed: choose it in the admin panel's Themes page, or")
+                print(f"  nest themes {args.app} use {offer.name}")
+                return 0
             print(f"✓ {offer.name} installed: add it in the admin panel's Modules page, or")
             print(
                 f"  nest modules {args.app} enable {offer.name}"
@@ -428,6 +460,12 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="show the plan and the settings, run nothing"
     )
     p.set_defaults(func=cmd_serve)
+
+    p = sub.add_parser("themes", help="an application's look: list the themes, use one")
+    p.add_argument("app")
+    p.add_argument("action", nargs="?", default="list", choices=["list", "use"])
+    p.add_argument("name", nargs="?", help="use: the theme (none: back to module.yml's)")
+    p.set_defaults(func=cmd_themes)
 
     p = sub.add_parser(
         "packages", help="install packages this server trusts into an application, or remove them"

@@ -231,16 +231,18 @@ class Nest:
             self._versions[plan.app.manifest.module.name] = (
                 f"{plan.app.manifest.module.version}-{int(newest)}"
             )
+        themes = plan.themes or ([plan.theme] if plan.theme is not None else [])
+        theme_names = {t.name for t in themes}
         module_dirs: dict[str, Path] = {}
         for unit in plan.units:
             folder = unit.entry.manifest.folder(unit.entry.manifest.templates, "templates")
-            if folder is not None and unit.entry is not plan.theme:
+            if folder is not None and unit.name not in theme_names:
                 module_dirs[unit.name] = folder
-        theme_dir = None
-        if plan.theme is not None:
-            theme_dir = plan.theme.manifest.folder(plan.theme.manifest.templates, "templates")
+        theme_dirs = [
+            d for t in themes if (d := t.manifest.folder(t.manifest.templates, "templates"))
+        ]
         self.templates = make_environment(
-            plan.app.root, theme_dir, module_dirs, reload=not self.production
+            plan.app.root, theme_dirs, module_dirs, reload=not self.production
         )
         languages = application.languages if application else ["en"]
         default = (application.default_language if application else None) or languages[0]
@@ -287,10 +289,12 @@ class Nest:
 
         # the theme, each module's look, (in the admin panel, each module's admin look,)
         # and the application's own last: it restyles everything before it
-        if plan.theme is not None:
-            add(plan.theme, plan.theme.manifest.styles)
+        themes = plan.themes or ([plan.theme] if plan.theme is not None else [])
+        for theme in reversed(themes):  # the theme it extends first; this theme restyles it
+            add(theme, theme.manifest.styles)
+        theme_names = {t.name for t in themes}
         for u in plan.units:
-            if u.entry is not plan.theme:
+            if u.name not in theme_names:
                 add(u.entry, u.entry.manifest.styles)
         if kind == "admin":
             for u in plan.units:
@@ -827,14 +831,16 @@ def create_app(
     *,
     environ: Mapping[str, str] | None = None,
     choices: dict[str, Choice] | None = None,
+    theme: str | None = None,
 ) -> FastAPI:
-    """The application in ``app_dir``, with the modules its workspace chose (``choices``
-    instead, to try a composition before keeping it). An optional module that fails to set
-    up is left out: the application is made again without it, and says so."""
+    """The application in ``app_dir``, with the modules and theme its workspace chose
+    (``choices``, ``theme`` instead, to try one before keeping it, or to preview a theme).
+    An optional module that fails to set up is left out: the application is made again
+    without it, and says so."""
     without: dict[str, str] = {}
     while True:
         try:
-            app = _create_app(app_dir, environ, choices, without)
+            app = _create_app(app_dir, environ, choices, without, theme)
         except _OptionalFailed as e:
             if e.name in without:
                 raise HostError(f"{e.name} failed to set up: {e.reason}") from e
@@ -854,12 +860,27 @@ def _create_app(
     environ: Mapping[str, str] | None,
     choices: dict[str, Choice] | None,
     without: dict[str, str],
+    theme: str | None = None,
 ) -> FastAPI:
     app_root = Path(app_dir).resolve()
     manifest = load_manifest(app_root)
     base_env = dict(os.environ if environ is None else environ)
     workspace = resolve_workspace(manifest.name, base_env)
     chosen = dict(composition.load(workspace) if choices is None else choices)
+    look = theme or composition.load_theme(workspace)
+    if look and manifest.application and look != manifest.application.theme:
+        found, _ = Catalog.discover(app_root).find(look)
+        if found is not None and found.type == "theme":
+            manifest = manifest.model_copy(
+                update={"application": manifest.application.model_copy(update={"theme": look})}
+            )
+        else:  # the site keeps its manifest's look rather than not starting
+            log.error(
+                "%s: the theme '%s' is not installed; using %s",
+                manifest.name,
+                look,
+                manifest.application.theme,
+            )
     for name in without:
         chosen[name] = Choice(enabled=False)
     try:

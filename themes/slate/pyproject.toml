@@ -1,0 +1,14 @@
+[project]
+name = "nest-theme-slate"
+version = "0.1.0"
+description = "The Slate theme for Nest, built on the base theme."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-theme-base"]
+
+[project.entry-points."nest.modules"]
+slate = "nest_theme_slate"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
