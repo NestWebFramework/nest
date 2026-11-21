@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# nest-images: build the applications' images and push them to Docker Hub.
+#
+#   nest-images build [APP...]     build (all six when none is named)
+#   nest-images push  [APP...]     push what was built: its version, its commits, latest
+#   nest-images list               the applications, their versions and image names
+#
+# APP: gari morlaca transilpedia regionalisme docsite keeper. A site is built from its own
+# repository beside Nest (SRC/<site>) with Nest as a second build context; docsite and keeper
+# from Nest's repository with their own Dockerfile. Each image holds code only: the data
+# (databases, uploads, settings, backups) are a folder on the server, mounted at /data.
+#
+# Set NAMESPACE (miraur) and SRC (the folder holding nest/ and the sites; ~/projects).
+# An image built from uncommitted code is tagged -dirty and is never pushed.
+# Where: Nest's own (docsite, keeper) each in a public repository, miraur/nest-docsite:0.1.0,
+# :latest. The sites, private, share one repository, a tag per site: miraur/nest-sites:
+# gari-0.1.0, gari-latest, morlaca-latest... (SITES_REPO). It must exist, private, before the
+# first push: a push to a missing repository creates it with the account's default
+# visibility (public, unless changed). Shared layers are stored once.
+set -euo pipefail
+
+NAMESPACE=${NAMESPACE:-miraur}
+SITES_REPO=${SITES_REPO:-$NAMESPACE/nest-sites}
+SRC=${SRC:-$HOME/projects}
+NEST=$SRC/nest
+ALL=(gari morlaca transilpedia regionalisme docsite keeper)
+
+die() { echo "nest-images: $*" >&2; exit 1; }
+say() { echo "· $*"; }
+
+root_of() {  # the application's folder
+  case $1 in
+    docsite|keeper) echo "$NEST/applications/$1" ;;
+    *) echo "$SRC/$1" ;;
+  esac
+}
+
+repo_of() {  # the Docker Hub repository
+  case $1 in docsite|keeper) echo "$NAMESPACE/nest-$1" ;; *) echo "$SITES_REPO" ;; esac
+}
+
+prefix_of() {  # a site's tags start with its name: gari-latest
+  case $1 in docsite|keeper) echo "" ;; *) echo "$1-" ;; esac
+}
+
+version_of() { sed -n 's/^  version: *\([0-9][0-9.]*\).*/\1/p' "$(root_of "$1")/module.yml" | head -1; }
+
+commit_of() {  # a checkout's commit, with -dirty when it has uncommitted changes
+  local rev
+  rev=$(git -C "$1" rev-parse --short HEAD)
+  [[ -z $(git -C "$1" status --porcelain) ]] || rev="$rev-dirty"
+  echo "$rev"
+}
+
+revision_of() {  # the site's commit and Nest's, as the image's third tag
+  case $1 in
+    docsite|keeper) commit_of "$NEST" ;;
+    *) echo "$(commit_of "$(root_of "$1")")-$(commit_of "$NEST")" ;;
+  esac
+}
+
+build() {
+  local app=$1 root image pre version revision
+  root=$(root_of "$app")
+  [[ -f $root/module.yml ]] || die "no application '$app' in $root"
+  image=$(repo_of "$app")
+  pre=$(prefix_of "$app")
+  version=$(version_of "$app")
+  revision=$(revision_of "$app")
+  say "$image:$pre$version ($pre$revision)"
+  case $app in
+    docsite|keeper)
+      DOCKER_BUILDKIT=1 docker build -q -f "$NEST/applications/$app/deploy/Dockerfile" \
+        --label "org.opencontainers.image.version=$version" \
+        --label "org.opencontainers.image.revision=$revision" \
+        -t "$image:$pre$version" -t "$image:$pre$revision" -t "$image:${pre}latest" "$NEST" >/dev/null ;;
+    *)
+      DOCKER_BUILDKIT=1 docker build -q -f "$NEST/deploy/Dockerfile" --build-context "nest=$NEST" \
+        --label "org.opencontainers.image.version=$version" \
+        --label "org.opencontainers.image.revision=$revision" \
+        -t "$image:$pre$version" -t "$image:$pre$revision" -t "$image:${pre}latest" "$root" >/dev/null ;;
+  esac
+}
+
+push() {
+  local app=$1 image pre version revision
+  image=$(repo_of "$app")
+  pre=$(prefix_of "$app")
+  version=$(version_of "$app")
+  revision=$(revision_of "$app")
+  [[ $revision != *dirty* ]] || die "$app: commit and push first (an image is pushed only from committed code: $revision)"
+  docker image inspect "$image:$pre$revision" >/dev/null 2>&1 || die "build $app first ($image:$pre$revision)"
+  for tag in "$pre$version" "$pre$revision" "${pre}latest"; do
+    docker push -q "$image:$tag" >/dev/null
+  done
+  say "pushed $image:$pre$version, :$pre$revision, :${pre}latest"
+}
+
+[[ $# -ge 1 ]] || { sed -n '2,17p' "$0"; exit 1; }
+cmd=$1; shift
+apps=("$@"); [[ ${#apps[@]} -gt 0 ]] || apps=("${ALL[@]}")
+case $cmd in
+  build) for a in "${apps[@]}"; do build "$a"; done ;;
+  push)  for a in "${apps[@]}"; do push "$a"; done ;;
+  list)  for a in "${ALL[@]}"; do printf "%-14s %-8s %s:%slatest\n" "$a" "$(version_of "$a")" "$(repo_of "$a")" "$(prefix_of "$a")"; done ;;
+  *) die "build, push or list" ;;
+esac

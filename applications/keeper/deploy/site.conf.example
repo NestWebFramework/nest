@@ -10,6 +10,11 @@ SRC=/opt/nest/src
 REPO=nest
 # its own image recipe, in Nest's repository, built from the repository's root
 DOCKERFILE=applications/keeper/deploy/Dockerfile
+# the image, from Docker Hub (public; built and pushed with deploy/site/nest-images).
+# Without PULL, nest-site builds it here from SRC with DOCKERFILE.
+PULL=miraur/nest-keeper
+TAG=latest
+# what runs here: :current, and :previous kept for a rollback
 IMAGE=nest-keeper
 MEMORY=384m
 KEEP=14

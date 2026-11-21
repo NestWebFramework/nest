@@ -7,7 +7,8 @@
 # /data: a container restarted, rebuilt or replaced never touches it.
 #
 #   nest-site init SITE              the data folder, and an .env with a fresh secret
-#   nest-site build SITE             an image from the sources (nest + the site, side by side)
+#   nest-site build SITE             an image from the sources (nest + the site, side by side);
+#                                    or, with PULL in its .conf, the image from Docker Hub
 #   nest-site start|stop|restart SITE
 #   nest-site upgrade SITE [--no-pull]
 #                                    pull the sources, build, back up, restart (the migrations
@@ -44,6 +45,8 @@ fi
 : "${IMAGE:=nest-$SITE}"             # the image's name; :current and :previous are its tags
 : "${HEALTH_WAIT:=180}"
 : "${APP:=/src/app}"                 # the application inside the image
+: "${PULL:=}"                        # a Docker Hub repository (miraur/nest-sites): pulled, not built
+: "${TAG:=latest}"                   # which of its tags (gari-latest, gari-0.1.0; latest)
 NAME=nest-$SITE
 UNIT=nest-site@$SITE.service
 UID_NEST=10001                       # the user the image runs as
@@ -89,6 +92,22 @@ case $CMD in
     say "data folder $DATA (owned by the container's user, $UID_NEST)"
     ;;
   build)
+    if [[ -n $PULL ]]; then  # built elsewhere (nest-images), pulled from Docker Hub
+      say "pulling $PULL:$TAG"
+      docker pull -q "$PULL:$TAG" >/dev/null || die "cannot pull $PULL:$TAG (a private repository: docker login first)"
+      pulled=$(docker image inspect -f '{{.Id}}' "$PULL:$TAG")
+      current=$(docker image inspect -f '{{.Id}}' "$IMAGE:current" 2>/dev/null || true)
+      if [[ $pulled == "$current" ]]; then
+        say "$IMAGE:current is already $PULL:$TAG"
+        exit 0
+      fi
+      if [[ -n $current ]]; then  # the one before, kept for a rollback
+        docker tag "$IMAGE:current" "$IMAGE:previous"
+      fi
+      docker tag "$PULL:$TAG" "$IMAGE:current"
+      say "$IMAGE:current is $PULL:$TAG ($(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.version"}} {{index .Config.Labels "org.opencontainers.image.revision"}}' "$PULL:$TAG" 2>/dev/null))"
+      exit 0
+    fi
     [[ -d $SRC/nest && -d $SRC/$REPO ]] || die "the sources are not in $SRC/nest and $SRC/$REPO"
     rev=$(git -C "$SRC/$REPO" rev-parse --short HEAD)-$(git -C "$SRC/nest" rev-parse --short HEAD)
     say "building $IMAGE:$rev"
@@ -136,7 +155,7 @@ case $CMD in
     healthy && say "rolled back, and serving" || die "rolled back, but it is not healthy: nest-site logs $SITE"
     ;;
   upgrade)
-    if [[ ${1:-} != --no-pull ]]; then
+    if [[ ${1:-} != --no-pull && -z $PULL ]]; then  # with PULL, build pulls the image instead
       git -C "$SRC/nest" pull --ff-only
       [[ $REPO == nest ]] || git -C "$SRC/$REPO" pull --ff-only
     fi

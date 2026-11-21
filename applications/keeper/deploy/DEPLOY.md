@@ -16,7 +16,7 @@ itself (Docker, `nest-site`, the systemd units).
 sudo install -m 0640 /opt/nest/src/nest/applications/keeper/deploy/site.conf.example /etc/nest/keeper.conf
 sudo nest-site init keeper              # /srv/nest/keeper, and /etc/nest/keeper.env with a fresh secret
 sudo editor /etc/nest/keeper.env         # the rest, from deploy/keeper.env.example
-sudo nest-site build keeper
+sudo nest-site build keeper              # pulls miraur/nest-keeper:latest (public)
 sudo systemctl enable --now nest-site@keeper nest-site-backup@keeper.timer
 ```
 
@@ -82,7 +82,8 @@ the server (`gari`): its page gets the Server section.
 sudo nest-site upgrade keeper
 ```
 
-It pulls Nest's sources, builds, backs up, migrates and restarts, and rolls back by itself
+It pulls `miraur/nest-keeper:latest` (pushed with `deploy/site/nest-images build keeper`
+and `push keeper`), backs up, migrates and restarts, and rolls back by itself
 if the new keeper is not healthy. The keeper can also be upgraded from its own page
 through the host helper (give it the name `keeper` on the server), but the page goes away
 while it restarts, so the job's output is lost from view. It is still written to

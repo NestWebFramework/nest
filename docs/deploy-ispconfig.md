@@ -108,6 +108,30 @@ NEST_KEEPER__KEEPER__HOST_TOKEN=nh_…
 Each job and who asked for it is written to `/var/lib/nest-site/host-jobs.log` and to the
 journal (`journalctl -u nest-host`).
 
+## Images from Docker Hub
+
+A site's image can be built on the server from its sources, or built once on a
+development machine, pushed to Docker Hub and pulled by the server:
+
+```sh
+deploy/site/nest-images build gari     # from Nest's repository: miraur/nest-sites:gari-0.1.0, gari-latest, gari-<commits>
+deploy/site/nest-images push gari      # only from committed code
+```
+
+On the server, `PULL=miraur/nest-sites` and `TAG=gari-latest` (or a version, `gari-0.1.0`) in
+`/etc/nest/gari.conf` makes `nest-site build` and `nest-site upgrade` pull the image
+instead of building it, and the server needs no sources. Everything else stays: the data
+in `/srv/nest/gari` (never in the image), the backup before an upgrade, the migrations,
+the health wait and the rollback to `:previous`.
+
+Nest's own images (`nest-docsite`, `nest-keeper`) are public, each in its own repository.
+The sites' images are private and share one repository, `miraur/nest-sites`, a tag per site
+(`gari-latest`, `morlaca-latest`, ...): Docker Hub's free plan has one private repository,
+and the layers the sites share (Python, Nest) are stored once. Create it as private before
+the first push (a push creates a missing repository with the account's default
+visibility), and log the server in once with `sudo docker login` and a read-only access
+token.
+
 ## Upgrades and migrations
 
 ```sh
