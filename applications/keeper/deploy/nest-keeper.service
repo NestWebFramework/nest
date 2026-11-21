@@ -1,38 +1,37 @@
-# systemd unit for the keeper, run as a container (as the Nest registry runs).
+# The keeper (one person's: it watches your deployed sites), as a container from Docker Hub
+# (as the Nest registry runs).
 #
-# systemd pulls the image, runs the container in the foreground and restarts it; the
-# container has no restart policy of its own (one supervisor, not two). Its data are a
-# folder on the host, /srv/nest/keeper, mounted at /data: databases, uploaded files,
-# settings, backups. The container is thrown away at each stop; the folder stays, through
-# restarts, new images and rollbacks. The port is bound to the loopback: nginx (ISPConfig's
-# vhost) is what faces the network.
+# Its data (the watched sites, their checks, the actions' log, its accounts, and the .env
+# with NEST_SECRET_KEY) are the folder DATA on this server (Docker from the snap: under
+# /var/snap/docker/common), mounted at /data: they stay through restarts and new images.
+# The container runs as that folder's owner, so it can write there. It reaches the sites at
+# their public addresses (https://gari.ro/_agent).
 #
 #   sudo install -m 0644 nest-keeper.service /etc/systemd/system/
 #   sudo systemctl daemon-reload && sudo systemctl enable --now nest-keeper
 
 [Unit]
-Description=the keeper (Nest)
+Description=Nest keeper
 Wants=network-online.target
-After=network-online.target docker.service
-Requires=docker.service
-ConditionPathIsDirectory=/srv/nest/keeper
+After=network-online.target snap.docker.dockerd.service
+Requires=snap.docker.dockerd.service
 
 [Service]
 Type=simple
-# a version instead of latest pins it (0.2.0), or goes back to it
+# its data: under /var/snap/docker/common, the folders the docker snap may mount
+Environment=DATA=/var/snap/docker/common/nest/keeper
 Environment=IMAGE=miraur/nest-keeper:latest
 
-# the cached image when the pull fails, so a host without network at boot still starts
-ExecStartPre=-/usr/bin/docker pull ${IMAGE}
-ExecStartPre=-/usr/bin/docker rm -f nest-keeper
-ExecStart=/usr/bin/docker run --rm --name nest-keeper \
-    --env-file /etc/nest/keeper.env \
-    -v /srv/nest/keeper:/data \
-    -p 127.0.0.1:8800:8000 \
-    --memory 384m \
+ExecStartPre=-/snap/bin/docker pull ${IMAGE}
+ExecStartPre=-/snap/bin/docker rm -f nest-keeper
+ExecStart=/bin/sh -c 'exec /snap/bin/docker run --rm --name nest-keeper \
+    --user "$$(stat -c %%u:%%g ${DATA})" -e HOME=/data \
+    -e NEST_ALLOWED_HOSTS=keeper.example.org -e "NEST_TRUSTED_PROXIES=*" -e NEST_WORKERS=1 \
+    -e NEST_KEEPER__KEEPER__APPS= \
+    -v ${DATA}:/data -p 127.0.0.1:8800:8000 --memory 384m \
     --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
-    ${IMAGE}
-ExecStop=/usr/bin/docker stop -t 30 nest-keeper
+    ${IMAGE}'
+ExecStop=/snap/bin/docker stop -t 30 nest-keeper
 
 Restart=on-failure
 RestartSec=5

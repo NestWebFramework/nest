@@ -1,0 +1,68 @@
+#!/bin/sh
+# nest-agent-tokens: give sites' agents a token for the keeper, on the server.
+#
+#   sudo sh nest-agent-tokens gari morlaca transilpedia regionalisme docsite
+#
+# For each site (a service nest-<site>, its data in DATA_ROOT/<site>): its own container makes
+# a new control token; the token's SHA-256 replaces the agent line in the data folder's .env
+# (its owner kept); the site restarts; the script checks that the agent answers the token,
+# then prints the token for the keeper's "Watch a site" page. Run again, it replaces the
+# token (the keeper then needs the new one).
+set -eu
+
+DATA_ROOT=${DATA_ROOT:-/var/snap/docker/common/nest}
+DOCKER=${DOCKER:-/snap/bin/docker}
+
+port_of() {
+  case $1 in
+    gari) echo 8400 ;; morlaca) echo 8300 ;; transilpedia) echo 8310 ;;
+    regionalisme) echo 8200 ;; docsite) echo 8700 ;; keeper) echo 8800 ;;
+    *) echo "" ;;
+  esac
+}
+app_of() {
+  case $1 in
+    docsite|keeper) echo "/src/nest/applications/$1" ;;
+    *) echo /src/app ;;
+  esac
+}
+domain_of() {
+  case $1 in docsite) echo nest-framework.org ;; *) echo "$1.ro" ;; esac
+}
+
+[ $# -ge 1 ] || { sed -n '2,10p' "$0"; exit 1; }
+[ "$(id -u)" = 0 ] || { echo "run it with sudo"; exit 1; }
+
+results=""
+for site in "$@"; do
+  port=$(port_of "$site"); env="$DATA_ROOT/$site/.env"; upper=$(echo "$site" | tr 'a-z-' 'A-Z_')
+  if [ -z "$port" ]; then echo "✗ $site: not a site this script knows"; continue; fi
+  if [ ! -d "$DATA_ROOT/$site" ]; then echo "✗ $site: no folder $DATA_ROOT/$site"; continue; fi
+  out=$($DOCKER exec "nest-$site" nest agent token "$(app_of "$site")" --control 2>&1) || {
+    echo "✗ $site: is nest-$site running? ($out)"; continue; }
+  token=$(echo "$out" | grep -o 'na_[A-Za-z0-9_-]*' | head -1)
+  line=$(echo "$out" | grep -o "NEST_${upper}__AGENT__CONTROL_TOKEN=sha256:[0-9a-f]*" | head -1)
+  if [ -z "$token" ] || [ -z "$line" ]; then echo "✗ $site: no token made: $out"; continue; fi
+
+  [ -f "$env" ] || { touch "$env"; chown "$(stat -c %u:%g "$DATA_ROOT/$site")" "$env"; chmod 600 "$env"; }
+  sed -i "/^NEST_${upper}__AGENT__/d" "$env"
+  if [ -s "$env" ] && [ "$(tail -c 1 "$env" | od -An -c | tr -d ' ')" != '\n' ]; then echo >> "$env"; fi
+  echo "$line" >> "$env"
+
+  systemctl restart "nest-$site"
+  answer=""
+  for _ in $(seq 1 60); do
+    answer=$(curl -s -m 3 -H "Authorization: Bearer $token" "http://127.0.0.1:$port/_agent/v1/status" || true)
+    case $answer in *'"agent"'*) break ;; esac
+    sleep 2
+  done
+  case $answer in
+    *'"agent"'*) echo "✓ $site: its agent answers the new token"
+                 results="$results\n  $site  https://$(domain_of "$site")  $token" ;;
+    *) echo "✗ $site: its agent does not answer the token yet (sudo journalctl -u nest-$site -n 30)" ;;
+  esac
+done
+
+if [ -n "$results" ]; then
+  printf "\nFor the keeper (Watch a site → through its agent: the address and the token):%b\n" "$results"
+fi
