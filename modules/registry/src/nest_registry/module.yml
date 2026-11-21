@@ -18,7 +18,7 @@ module:
   id: nest.module.registry
   type: module
   title: Registry
-  version: 0.1.1
+  version: 0.1.2
   description: A registry of Nest packages, a Python package index for uv and pip, and a catalog of what each package is.
   license: MIT
   created: "2026-11-20"
@@ -26,7 +26,7 @@ module:
   fits: [registry]
 
 # the nest-core versions it works with (a registry refuses a package without)
-nest: ">=0.2,<1"
+nest: ">=0.4,<1"
 
 main: nest_registry
 

@@ -9,7 +9,10 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
-## Unreleased
+## 0.4.0
+
+Nest core 0.4.0; the packages that need it say `nest: ">=0.4,<1"` (admin, content,
+translations, keeper, registry, the Saga subsystems with rules).
 
 - **What fits, and placing it without code** (Nest core, admin, content, forum, glossary,
   feed, every theme): application types (`application.type`: site, game, registry,
@@ -27,7 +30,7 @@ This documentation is for **Nest %NEST_VERSION%**.
   `about(name, field, default)`; admin menu groups are identifiers (`admin: group:
   economy`, `admin_menu: [{group: economy, …}]`, labels `group@economy`). Every package
   has its Romanian words.
-- **Module versions on a running site** (Nest core, admin 0.2.0): Admin → Modules in four
+- **Module versions on a running site** (Nest core 0.4.0, admin 0.2.0): Admin → Modules in four
   tabs (Installed, Updates, Registry, History). Update a module, **Update all**, take one
   to any version in the registry (up or down) or back to the image's, add a module or a
   theme from the registry with the Nest packages it needs. The versions chosen are kept
@@ -69,7 +72,7 @@ Packages released after Nest 0.3.0, each with its own version:
   everyone, with every board in it, and listed apart; a board deleted takes every board,
   topic and post in it, after a page that counts them. Topics are archived or deleted too.
   A board's admin page renames it and sets its order.
-- **Nest core (next release)** and **admin 0.2.0**: the admin menu is grouped (a module's
+- **Nest core 0.4.0** and **admin 0.2.0**: the admin menu is grouped (a module's
   `admin: group:` identifiers, an application's `admin_menu:`), each group opening to its pages; a
   module's pages get a **Settings** tab; `admin: settings_role:` lets a role other than
   administrators change that module's settings; settings may have `min` and `max`.

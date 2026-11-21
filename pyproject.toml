@@ -1,6 +1,6 @@
 [project]
 name = "nest-workspace"
-version = "0.3.0"
+version = "0.4.0"
 description = "Nest 0.3.0, the workspace: the core, its modules, interfaces, providers, themes and applications."
 requires-python = ">=3.12"
 dependencies = [

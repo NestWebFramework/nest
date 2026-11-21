@@ -1,6 +1,6 @@
 [project]
 name = "nest-content"
-version = "0.2.0"
+version = "0.2.1"
 description = "Content types, entries, taxonomies, menus and media: the CMS for WordPress- and Geticus-style sites."
 requires-python = ">=3.12"
 license = "MIT"

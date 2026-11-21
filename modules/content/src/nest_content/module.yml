@@ -14,7 +14,7 @@ module:
   id: nest.module.content
   type: module
   title: Content
-  version: 0.2.0
+  version: 0.2.1
   description: >
     Pages, posts and any declared content type with custom fields; categories
     and tags; menus; media in nest.storage; revisions; search; a WordPress
@@ -24,7 +24,7 @@ module:
   category: content
   fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
-nest: ">=0.2,<1"
+nest: ">=0.4,<1"
 
 main: nest_content
 styles: [content.css]  # its base look; an application restyles it
