@@ -1,7 +1,10 @@
 #
 # forum — boards, topics and posts, reusable by any application.
 #
-# Reading is public unless public_read is off; posting is for members. A new
+# Reading is public unless public_read is off; posting is for members. A board may
+# have a scope ("voievodate/settlement:12"): it is not listed, and only those the
+# application lets in (its answer to forum.access) read or post there; others get a 404.
+# Another module makes such a board when it is first wanted (lookup forum.board). A new
 # reply is pushed over SSE (topic family forum.topic.*) to everyone reading
 # its topic; without JavaScript the form posts and the page reloads at the new
 # post. Posts are plain text. Moderators pin, lock and hide; authors edit for
@@ -13,7 +16,7 @@ module:
   type: module
   title: Forum
   category: community
-  version: 0.1.0
+  version: 0.2.0
   description: Boards, topics and posts with moderation, editing, and replies that arrive live.
   license: MIT
   created: "2026-11-13"
@@ -47,6 +50,11 @@ settings:
   posts_per_page: {type: int, default: 30}
   topics_per_page: {type: int, default: 30}
   posts_per_minute: {type: int, default: 5, description: Posts a member may send per minute.}
+  public_names:
+    type: str
+    default: known_as
+    choices: [known_as, account]
+    description: "The names posts show on public boards: known_as (as the application names its people: a game, by their characters) or account (the account's own name). Boards with a scope always use known_as."
 
 locales:
   - {locale: ro, file: locales/ro.json}
@@ -57,6 +65,7 @@ docs:
   section: modules
 
 admin:
+  group: Community
   title: Forum
   order: 22
   role: moderator

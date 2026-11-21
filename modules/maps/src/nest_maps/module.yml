@@ -125,6 +125,7 @@ docs:
   section: modules
 
 admin:
+  group: Content
   title: Maps
   order: 14
   role: editor

@@ -3,7 +3,7 @@
 
 Boards, topics and posts with moderation, editing, and replies that arrive live.
 
-**Version 0.1.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.0** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
@@ -31,6 +31,7 @@ modules:
 | `posts_per_page` | int | `30` |
 | `topics_per_page` | int | `30` |
 | `posts_per_minute` | int | `5` |
+| `public_names` | str | `known_as` |
 
 What each does: the reference page, or the admin panel's Settings.
 <!-- /nest:readme -->

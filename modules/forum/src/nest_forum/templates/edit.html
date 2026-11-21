@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block title %}{{ _("Edit") }} · {{ _("Forum") }}{% endblock %}
-{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block nav %}{% if theme_setting is defined and theme_setting("menu") %}{{ super() }}{% elif menu is defined %}{% include "content/menu.html" %}{% endif %}{% include "auth/status.html" %}{% endblock %}
 {% block content %}
 <h1>{{ _("Edit") }}</h1>
 <ol class="posts">

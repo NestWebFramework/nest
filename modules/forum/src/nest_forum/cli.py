@@ -1,6 +1,6 @@
 """``nest forum``: boards from the command line.
 
-nest forum add-board APP TITLE [--description D] [--slug S]
+nest forum add-board APP TITLE [--description D] [--slug S] [--parent SLUG]
 nest forum boards APP
 """
 
@@ -20,8 +20,15 @@ def _db(app: str) -> Any:
 def _add(args: argparse.Namespace) -> int:
     from nest_forum import service
 
+    db = _db(args.app)
+    parent = None
+    if args.parent:
+        parent = service.board(db, args.parent)
+        if parent is None:
+            print(f"✗ no board '{args.parent}'")
+            return 1
     b = service.ensure_board(
-        _db(args.app), args.title, slug=args.slug or "", description=args.description or ""
+        db, args.title, slug=args.slug or "", description=args.description or "", parent=parent
     )
     print(f"✓ {b.slug}: {b.title}")
     return 0
@@ -30,7 +37,7 @@ def _add(args: argparse.Namespace) -> int:
 def _boards(args: argparse.Namespace) -> int:
     from nest_forum import service
 
-    for r in service.boards(_db(args.app)):
+    for r in service.boards(_db(args.app), scoped=True):
         print(f"{r.board.slug:30} {r.topics:5} topics {r.posts:6} posts  {r.board.title}")
     return 0
 
@@ -43,6 +50,7 @@ def register(sub: Any) -> None:
     p.add_argument("title")
     p.add_argument("--slug")
     p.add_argument("--description")
+    p.add_argument("--parent", help="the board it is in (its slug); boards nest to any depth")
     p.set_defaults(func=_add)
     p = actions.add_parser("boards", help="list the boards")
     p.add_argument("app")

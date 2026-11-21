@@ -3,7 +3,7 @@
 
 One admin shell gathering the admin pages of every module an application includes.
 
-**Version 0.1.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.0** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|

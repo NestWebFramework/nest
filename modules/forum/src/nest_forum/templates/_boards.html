@@ -1,0 +1,27 @@
+{#- boards as a table: the forum's own (the index), or those in a board; those put away
+    follow apart, under the archive -#}
+{% set open_rows = rows | rejectattr("board.archived") | list %}
+{% set archived_rows = rows | selectattr("board.archived") | list %}
+<div class="table-wrap"><table class="forum forum-boards">
+  <thead><tr><th>{{ _("Board") }}</th><th>{{ _("Topics") }}</th><th>{{ _("Posts") }}</th><th>{{ _("Latest") }}</th></tr></thead>
+  <tbody>
+  {% for r in open_rows %}
+  <tr>
+    <td><a href="{{ base }}/{{ r.board.slug }}/"><strong>{{ r.board.title }}</strong></a>{% if r.board.description %}<br><span class="muted">{{ r.board.description }}</span>{% endif %}</td>
+    <td>{{ r.topics }}</td><td>{{ r.posts }}</td>
+    <td>{% if r.last %}<a href="{{ base }}/t/{{ r.last.id }}/{{ r.last.slug }}?last=1">{{ r.last.title | truncate(40) }}</a><br>
+      <span class="muted">{{ names[r.last.last_author_id].label if r.last.last_author_id in names else "" }} · {{ r.last.last_post_at.strftime("%d.%m.%Y %H:%M") }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+  </tr>
+  {% else %}<tr><td colspan="4" class="muted">{{ _("No boards yet.") }}</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% if archived_rows %}
+<details class="forum-archive"><summary>{{ _("Archive") }} ({{ archived_rows | length }})</summary>
+<div class="table-wrap"><table class="forum forum-boards muted"><tbody>
+  {% for r in archived_rows %}<tr>
+    <td><a href="{{ base }}/{{ r.board.slug }}/">{{ r.board.title }}</a>{% if r.board.description %}<br><span class="muted">{{ r.board.description }}</span>{% endif %}</td>
+    <td>{{ r.topics }}</td><td>{{ r.posts }}</td>
+  </tr>{% endfor %}
+</tbody></table></div>
+</details>
+{% endif %}

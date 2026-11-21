@@ -190,7 +190,9 @@ def _blocks(template: Path, folders: list[Path], seen: frozenset[Path] = frozens
     return found
 
 
-def _mentions(template: Path, folders: list[Path], needle: str, seen: frozenset[Path] = frozenset()) -> bool:
+def _mentions(
+    template: Path, folders: list[Path], needle: str, seen: frozenset[Path] = frozenset()
+) -> bool:
     """Whether a template (or one it includes, or extends, in the theme chain) holds ``needle``."""
     if template in seen or not template.is_file():
         return False

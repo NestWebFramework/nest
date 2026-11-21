@@ -602,7 +602,7 @@ wheels = [
 
 [[package]]
 name = "nest-admin"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "modules/admin" }
 dependencies = [
     { name = "nest-auth" },
@@ -839,7 +839,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-forum"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "modules/forum" }
 dependencies = [
     { name = "nest-auth" },
@@ -1070,7 +1070,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga" }
 dependencies = [
     { name = "nest-auth" },
@@ -1087,7 +1087,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-building"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/building" }
 dependencies = [
     { name = "nest-db" },
@@ -1106,7 +1106,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-character"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/character" }
 dependencies = [
     { name = "nest-auth" },
@@ -1127,7 +1127,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-chronicle"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/chronicle" }
 dependencies = [
     { name = "nest-auth" },
@@ -1144,7 +1144,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-culture"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/culture" }
 dependencies = [
     { name = "nest-auth" },
@@ -1165,7 +1165,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-dialogue"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/dialogue" }
 dependencies = [
     { name = "nest-auth" },
@@ -1186,7 +1186,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-economy"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/economy" }
 dependencies = [
     { name = "nest-db" },
@@ -1209,7 +1209,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-equipment"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/equipment" }
 dependencies = [
     { name = "nest-auth" },
@@ -1230,7 +1230,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-farm"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/farm" }
 dependencies = [
     { name = "nest-auth" },
@@ -1251,7 +1251,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-guild"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/guild" }
 dependencies = [
     { name = "nest-auth" },
@@ -1272,7 +1272,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-history"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/history" }
 dependencies = [
     { name = "nest-auth" },
@@ -1348,7 +1348,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-justice"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/justice" }
 dependencies = [
     { name = "nest-auth" },
@@ -1369,7 +1369,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-law"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/law" }
 dependencies = [
     { name = "nest-auth" },
@@ -1405,7 +1405,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-monastery"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/monastery" }
 dependencies = [
     { name = "nest-auth" },
@@ -1426,7 +1426,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-npc"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/npc" }
 dependencies = [
     { name = "nest-db" },
@@ -1451,7 +1451,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-overlord"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/overlord" }
 dependencies = [
     { name = "nest-auth" },
@@ -1468,7 +1468,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-player"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/player" }
 dependencies = [
     { name = "nest-auth" },
@@ -1489,7 +1489,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-polity"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/polity" }
 dependencies = [
     { name = "nest-auth" },
@@ -1510,7 +1510,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-production"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/production" }
 dependencies = [
     { name = "nest-db" },
@@ -1535,7 +1535,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-property"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/property" }
 dependencies = [
     { name = "nest-auth" },
@@ -1556,7 +1556,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-quest"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/quest" }
 dependencies = [
     { name = "nest-auth" },
@@ -1575,7 +1575,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-relationship"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/relationship" }
 dependencies = [
     { name = "nest-auth" },
@@ -1596,7 +1596,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-religion"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/religion" }
 dependencies = [
     { name = "nest-auth" },
@@ -1617,7 +1617,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-settlement"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/settlement" }
 dependencies = [
     { name = "nest-auth" },
@@ -1636,7 +1636,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-society"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/society" }
 dependencies = [
     { name = "nest-auth" },
@@ -1672,7 +1672,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-war"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/war" }
 dependencies = [
     { name = "nest-auth" },

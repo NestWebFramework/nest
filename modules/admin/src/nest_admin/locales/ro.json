@@ -169,5 +169,7 @@
  "{name} is enabled.": "{name} e activat.",
  "{name} is the site's theme now.": "{name} este acum tema site-ului.",
  "{name} is uninstalled; its data and settings are gone.": "{name} e dezinstalat; datele și setările lui au fost șterse.",
- "waiting": "în așteptare"
+ "waiting": "în așteptare",
+ "Content": "Conținut",
+ "Community": "Comunitate"
 }

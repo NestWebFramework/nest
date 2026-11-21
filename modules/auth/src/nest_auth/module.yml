@@ -74,6 +74,7 @@ docs:
   section: modules
 
 admin:
+  group: Site
   title: Accounts
   order: 90
   role: admin

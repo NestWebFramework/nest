@@ -71,6 +71,7 @@ old posts became, found through lookups the content and glossary modules answer.
 
 ```sh
 uv run nest forum add-board APP "General" --description "Anything about the site."
+uv run nest forum add-board APP "Crafts" --parent general        # a board in a board
 uv run nest forum boards APP
 ```
 
@@ -80,6 +81,7 @@ uv run nest forum boards APP
 | `posts_per_minute` | 5 | Posts a member may send per minute |
 | `edit_minutes` | 30 | How long an author may edit a post |
 | `topics_per_page`, `posts_per_page` | 30 | Paging |
+| `public_names` | `known_as` | The names posts show on public boards: `known_as` (as the application names its people; a game, by their characters) or `account` (the account's own name, never its email) |
 
 Posting is for members. Moderators pin, lock and hide in the topics themselves;
 **Admin → Forum** shows the boards.
@@ -87,6 +89,55 @@ Posting is for members. Moderators pin, lock and hide in the topics themselves;
 **Replies arrive live.** A new reply is pushed over Server-Sent Events to everyone
 reading the topic, so it appears without a reload. Without JavaScript the form posts
 and the page reloads at the new post.
+
+### Boards in boards
+
+Boards nest to any depth: a board's page lists the boards in it, then its own topics, with
+the way back up above the title. The forum's index lists only the outer boards.
+In **Admin → Forum**, moderators and administrators see every board as a tree and add a
+board at the first level or inside any other; from a board's own page they add one inside
+it (**Add a board here**); the command line takes `--parent`. A board made in another has its scope, so a private board's inner boards
+have the same members, however deep.
+
+### Archiving and deleting
+
+In **Admin → Forum** each board can be opened (rename it, describe it, set its order),
+**archived** or **deleted**; what is done to a board is done to every board in it.
+
+- **Archived**: still read by those who may read it, written by no one (moderators
+  included): no new topics, replies, edits or inner boards. It is listed apart, under
+  **Archive**, below the open boards. Taking it out of the archive opens it again.
+- **Deleted**: the board, every board in it, their topics and posts are gone. A page
+  says first how many boards, topics and posts will go, and offers to archive instead.
+
+Topics too: on a board's admin page, or with the moderation buttons in the topic,
+a topic is archived (read only, listed under **Archived topics**) or deleted with its
+posts. A private board deleted is made again, empty, the next time its members open it.
+
+### Private boards
+
+A board may have a **scope**, a string that says whose it is, such as
+`voievodate/settlement:12` (a game's village assembly). A scoped board:
+
+- is never listed on the forum's index;
+- is read and written only by those the application lets in. The forum asks the
+  `forum.access` lookup, `{"user": id, "scope": "…"}`, and expects
+  `{"read": bool, "post": bool}`. To anyone else, its pages, topics and live replies
+  answer "not found", so a private board doesn't even show that it exists;
+- shows posts under the names the application gives its people (`known_as`).
+
+Moderators read and moderate every board. Another module has a scoped board made when it
+is first wanted, through the `forum.board` lookup:
+
+```python
+board = host.lookup("forum.board", {"scope": "voievodate/guild:7", "title": "Fierarii · Brașov"})
+# -> {"slug": "fierarii-brasov", "url": "/forum/fierarii-brasov/"}
+```
+
+Saga answers these for its subsystems (`nest_saga.answer_access`): a settlement's
+residents, a guild branch's members, a realm's ruler and office holders, and a monastery's
+benefactors and pilgrims each get their board, and the game's API lists a character's
+boards (`GET /api/joc/<world>/forums`) for its book.
 
 ## Messages
 

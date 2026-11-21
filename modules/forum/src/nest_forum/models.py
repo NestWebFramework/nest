@@ -24,6 +24,16 @@ class Board(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     position: Mapped[int] = mapped_column(Integer, default=0)
     locked: Mapped[bool] = mapped_column(Boolean, default=False)
+    # whose board it is: none for a public board; "<world>/<kind>:<id>" for one only its
+    # members read (a settlement's assembly), as the application says (forum.access)
+    scope: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    # the board it is in (none: a board of the forum's own); a board in a board has the
+    # same scope as the one it is in, so its members are the same
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("forum_board.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    # put away: still read by those who may, written by no one, with every board in it
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Topic(Base):
@@ -44,6 +54,8 @@ class Topic(Base):
     pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     locked: Mapped[bool] = mapped_column(Boolean, default=False)
     hidden: Mapped[bool] = mapped_column(Boolean, default=False)
+    # put away: read, never written again, listed apart from the board's open topics
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Post(Base):

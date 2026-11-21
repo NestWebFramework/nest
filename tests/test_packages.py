@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from nest_auth.sessions import create_user
 from test_keeper import APP as KEEPER
+from test_registry import forum_range
 
 from nest import create_app
 from nest.manifest import load_manifest
@@ -73,11 +74,14 @@ def test_installing_adds_it_to_the_contract_installed_not_used(site):
     add(site, "forum", runner=uv, say=lambda _l: None)
     assert uv.calls == [(["sync"], site)]
     project = tomllib.loads((site / "pyproject.toml").read_text())
-    assert "nest-forum>=0.1,<1" in project["project"]["dependencies"]
+    assert forum_range() in project["project"]["dependencies"]
     source = project["tool"]["uv"]["sources"]["nest-forum"]
     assert source["editable"] and source["path"].endswith("modules/forum")
     manifest = load_manifest(site)
-    assert manifest.deps["forum"] == ">=0.1,<1" and manifest.dep_ecosystems["forum"] == "nest"
+    assert (
+        manifest.deps["forum"] == forum_range().removeprefix("nest-forum")
+        and manifest.dep_ecosystems["forum"] == "nest"
+    )
     assert "forum" not in {i.name for i in manifest.modules}  # not used: the admin adds it
     rows = {r.offer.name: r for r in status(site)}
     assert rows["forum"].installed and rows["forum"].direct and not rows["forum"].used

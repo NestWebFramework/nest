@@ -5,7 +5,8 @@ description); this page shows the ones marked editable, a section per module, an
 saves them in the application's settings store (its workspace), where they win over
 the manifest's values. A value the environment sets is shown and cannot be changed
 here; a secret is never shown. A module may judge its values before they are saved
-(``host.check_settings``). Only administrators reach it.
+(``host.check_settings``). Administrators reach every section; a module may let another
+role change its own (admin: settings_role:, a game's masters its rules).
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from nest_auth import CurrentUser, require_role
+from nest_auth import CurrentUser, require_role, require_user
 
 from nest import render, toast, translator
 from nest.modules import reload_app
@@ -27,7 +28,27 @@ admin_only = require_role("admin")
 THEMES = "themes"  # the tab that holds every theme's settings, a tab each under it
 
 
-def _sections(request: Request) -> list[dict[str, Any]]:
+def settings_roles(nest: Any) -> dict[str, str]:
+    """Who may change each module's settings besides administrators (its manifest's admin:
+    settings_role:, a game's masters its rules), by module; a page in the panel or not."""
+    out = {}
+    for u in nest.plan.units:
+        role = ((u.entry.manifest.raw or {}).get("admin") or {}).get("settings_role")
+        if role:
+            out[u.name] = str(role)
+    return out
+
+
+def may_change(request: Request, user: Any, owner: str) -> bool:
+    """An administrator may change every module's settings; another, those of the modules
+    that let its role (admin: settings_role:)."""
+    if user.has("admin"):
+        return True
+    role = settings_roles(request.app.state.nest).get(owner)
+    return bool(role) and user.has(role)
+
+
+def _sections(request: Request, user: Any = None) -> list[dict[str, Any]]:
     """Every package's settings, a section each: the modules' in the plan's order, then the
     installed themes' (``theme``: True), the one in use and those it is built on first."""
     nest = request.app.state.nest
@@ -40,6 +61,8 @@ def _sections(request: Request) -> list[dict[str, Any]]:
     sections: dict[str, dict[str, Any]] = {}
     for key, owner, name, spec in nest.settings.specs():
         if not spec.editable or owner not in titles:
+            continue
+        if user is not None and not may_change(request, user, owner):
             continue
         source = nest.settings.source(key)
         section = sections.setdefault(
@@ -66,9 +89,11 @@ def _sections(request: Request) -> list[dict[str, Any]]:
 
 
 @router.get("/settings")
-def settings_home(request: Request, user: CurrentUser = Depends(admin_only)):
-    """The first section's tab."""
-    sections = _sections(request)
+def settings_home(request: Request, user: CurrentUser = Depends(require_user)):
+    """The first section's tab (of those this user may change)."""
+    sections = _sections(request, user)
+    if not user.has("admin") and not sections:
+        raise HTTPException(403)
     nest = request.app.state.nest
     if not sections:
         return render(request, "admin/settings.html", **_tabs(sections, None), errors={})
@@ -98,9 +123,12 @@ def settings_themes(request: Request, user: CurrentUser = Depends(admin_only)):
 
 
 @router.get("/settings/{owner}")
-def settings_page(request: Request, owner: str, user: CurrentUser = Depends(admin_only)):
-    """One module's (or theme's) settings, the others a tab away."""
-    sections = _sections(request)
+def settings_page(request: Request, owner: str, user: CurrentUser = Depends(require_user)):
+    """One module's (or theme's) settings, the others (those this user may change) a tab
+    away."""
+    if not may_change(request, user, owner):
+        raise HTTPException(403)
+    sections = _sections(request, user)
     current = next((s for s in sections if s["owner"] == owner), None)
     if current is None:
         raise HTTPException(404)
@@ -108,10 +136,12 @@ def settings_page(request: Request, owner: str, user: CurrentUser = Depends(admi
 
 
 @router.post("/settings/{owner}")
-async def save_settings(request: Request, owner: str, user: CurrentUser = Depends(admin_only)):
+async def save_settings(request: Request, owner: str, user: CurrentUser = Depends(require_user)):
     nest = request.app.state.nest
     t = translator(request)
-    section = next((s for s in _sections(request) if s["owner"] == owner), None)
+    if not may_change(request, user, owner):
+        raise HTTPException(403)
+    section = next((s for s in _sections(request, user) if s["owner"] == owner), None)
     if section is None:
         raise HTTPException(404)
     form = await request.form()
@@ -153,7 +183,7 @@ async def save_settings(request: Request, owner: str, user: CurrentUser = Depend
     if problems:
         for p in problems:
             toast(request, p, "error")
-        sections = _sections(request)
+        sections = _sections(request, user)
         return render(
             request,
             "admin/settings.html",

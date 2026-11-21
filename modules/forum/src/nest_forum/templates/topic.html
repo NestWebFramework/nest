@@ -1,15 +1,17 @@
 {% extends "layout.html" %}
 {% block head %}{% include "htmx/sse.html" %}{% endblock %}
 {% block title %}{{ topic.title }} · {{ board.title }}{% endblock %}
-{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block nav %}{% if theme_setting is defined and theme_setting("menu") %}{{ super() }}{% elif menu is defined %}{% include "content/menu.html" %}{% endif %}{% include "auth/status.html" %}{% endblock %}
 {% block content %}
-<p class="muted"><a href="{{ base }}/">{{ _("Forum") }}</a> › <a href="{{ base }}/{{ board.slug }}/">{{ board.title }}</a></p>
-<h1>{{ topic.title }}{% if topic.locked %} <span class="badge">{{ _("Closed") }}</span>{% endif %}</h1>
+<p class="muted forum-trail"><a href="{{ base }}/">{{ _("Forum") }}</a>{% for p in trail %} › <a href="{{ base }}/{{ p.slug }}/">{{ p.title }}</a>{% endfor %} › <a href="{{ base }}/{{ board.slug }}/">{{ board.title }}</a></p>
+<h1>{{ topic.title }}{% if topic.archived %} <span class="badge">{{ _("Archived") }}</span>{% elif topic.locked %} <span class="badge">{{ _("Closed") }}</span>{% endif %}</h1>
 {% if moderating %}
 <form class="row" method="post" action="{{ base }}/t/{{ topic.id }}/moderate">{{ csrf_field }}
   <button class="secondary" name="action" value="{{ 'unpin' if topic.pinned else 'pin' }}">{{ _("Unpin") if topic.pinned else _("Pin") }}</button>
   <button class="secondary" name="action" value="{{ 'unlock' if topic.locked else 'lock' }}">{{ _("Reopen") if topic.locked else _("Close") }}</button>
   <button class="secondary" name="action" value="{{ 'show' if topic.hidden else 'hide' }}">{{ _("Show") if topic.hidden else _("Hide") }}</button>
+  <button class="secondary" name="action" value="{{ 'unarchive' if topic.archived else 'archive' }}">{{ _("Take out of the archive") if topic.archived else _("Archive") }}</button>
+  {% if admin %}<a class="button secondary" href="{{ admin }}/topics/{{ topic.id }}/delete">{{ _("Delete…") }}</a>{% endif %}
 </form>
 {% endif %}
 <div{% if live %} hx-ext="sse" sse-connect="/_nest/events?topic=forum.topic.{{ topic.id }}"{% endif %}>
@@ -32,7 +34,7 @@
   <span class="muted">{{ page }} / {{ pages }}</span>
   {% if page < pages %}<a href="?page={{ page + 1 }}">{{ _("Next") }} →</a>{% endif %}
 </nav>{% endif %}
-{% if user and not topic.locked %}
+{% if user and may_post and not topic.locked and not topic.archived %}
 {% block reply %}
 <form id="reply" class="stack" method="post" action="{{ base }}/t/{{ topic.id }}/reply"
       hx-post="{{ base }}/t/{{ topic.id }}/reply" hx-target="#reply" hx-swap="outerHTML">

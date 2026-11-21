@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block title %}{{ _("New topic") }} · {{ board.title }}{% endblock %}
-{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block nav %}{% if theme_setting is defined and theme_setting("menu") %}{{ super() }}{% elif menu is defined %}{% include "content/menu.html" %}{% endif %}{% include "auth/status.html" %}{% endblock %}
 {% block content %}
 <p class="muted"><a href="{{ base }}/">{{ _("Forum") }}</a> › <a href="{{ base }}/{{ board.slug }}/">{{ board.title }}</a></p>
 <h1>{{ _("New topic") }}</h1>

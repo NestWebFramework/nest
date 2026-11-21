@@ -21,6 +21,19 @@ REPO = Path(__file__).resolve().parents[1]
 APP = REPO / "applications" / "registry"
 
 
+def forum_version() -> str:
+    """The forum's version, as its manifest says (these tests use it as their sample)."""
+    import yaml  # noqa: PLC0415
+
+    path = REPO / "modules/forum/src/nest_forum/module.yml"
+    return yaml.safe_load(path.read_text(encoding="utf-8"))["module"]["version"]
+
+
+def forum_range() -> str:
+    major, minor, _ = forum_version().split(".")
+    return f"nest-forum>={major}.{minor},<1"
+
+
 def manifest(name="widgets", id_="acme.module.widgets", version="1.0.0", nest='">=0.2,<1"'):
     return textwrap.dedent(f"""
         module: {{name: {name}, id: {id_}, type: module, version: {version}, title: Widgets,
@@ -227,7 +240,7 @@ def test_nest_publish_then_install_from_the_registry(registry, tmp_path, monkeyp
         say=lambda _l: None,
     )
     project = tomllib.loads((site / "pyproject.toml").read_text())
-    assert "nest-forum>=0.1,<1" in project["project"]["dependencies"]
+    assert forum_range() in project["project"]["dependencies"]
     assert project["tool"]["uv"]["index"] == [{"name": "nest", "url": f"{url}/simple/"}]
     assert project["tool"]["uv"]["sources"]["nest-forum"] == {
         "index": "nest"
@@ -449,12 +462,12 @@ def test_publish_all_publishes_what_the_registry_lacks(registry, tmp_path, monke
         *wheel(
             dist="nest-forum",
             pkg="nest_forum",
-            module_yml=manifest(name="forum", id_="nest.module.forum", version="0.1.0"),
-            version="0.1.0",
+            module_yml=manifest(name="forum", id_="nest.module.forum", version=forum_version()),
+            version=forum_version(),
         ),
     )
     done, there, refused = remote.publish_all(roots, "https://registry.example.org")
-    assert there == ["nest-forum 0.1.0"] and sent == ["glossary"] and not refused
+    assert there == [f"nest-forum {forum_version()}"] and sent == ["glossary"] and not refused
 
 
 def test_the_keeper_and_the_admin_panel_search_the_registry(registry, tmp_path, monkeypatch):

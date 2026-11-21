@@ -27,7 +27,7 @@
   {% block content %}
   <div class="admin">
     {% include "admin/_nav.html" %}
-    <main class="admin-main" id="admin-main">{% block admin_content %}{% endblock %}</main>
+    <main class="admin-main" id="admin-main">{% include "admin/_tabs.html" %}{% block admin_content %}{% endblock %}</main>
   </div>
   {% endblock %}
   {% include "admin/preview_bar.html" ignore missing %}

@@ -169,5 +169,7 @@
  "{name} is enabled.": "{name} is enabled.",
  "{name} is the site's theme now.": "{name} is the site's theme now.",
  "{name} is uninstalled; its data and settings are gone.": "{name} is uninstalled; its data and settings are gone.",
- "waiting": "waiting"
+ "waiting": "waiting",
+ "Content": "Content",
+ "Community": "Community"
 }

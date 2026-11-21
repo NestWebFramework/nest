@@ -119,9 +119,7 @@ def nest_credit(t: Any) -> Markup:
     words = said if said != key else _CREDIT.get(str(t.locale or "en")[:2], _CREDIT["en"])
     link = f'<a href="{NEST_URL}" rel="noopener" target="_blank">Nest</a>'
     head, _, tail = words.partition("{nest}")
-    return Markup(
-        f'<p class="nest-credit">{escape(head)}{link}{escape(tail)}</p>'
-    )
+    return Markup(f'<p class="nest-credit">{escape(head)}{link}{escape(tail)}</p>')
 
 
 class HostError(Exception):
@@ -171,6 +169,7 @@ class AdminPage:
     role: str = "admin"  # who sees it (the "admin" role sees everything)
     description: str = ""
     base: str = ""  # where it was mounted
+    group: str = ""  # its group in the admin panel's menu (none: a link of its own)
 
 
 class Nest:
@@ -277,6 +276,10 @@ class Nest:
         default = (application.default_language if application else None) or languages[0]
         self.site_languages = list(languages)
         self.admin_frame = (application.admin_frame if application else None) or "standalone"
+        # the admin menu's groups, as the application orders them: (title, its modules)
+        self.admin_menu = [
+            (g.title, list(g.modules)) for g in (application.admin_menu if application else [])
+        ]
         self.admin_languages = list(
             (application.admin_languages if application else None) or languages
         )
@@ -770,6 +773,7 @@ class ModuleHost:
             int(spec.get("order", 50)),
             str(spec.get("role", "admin")),
             str(spec.get("description", "")),
+            group=str(spec.get("group", "")),
         )
         self._nest.admin_pages.append(page)
         return page
@@ -1137,7 +1141,9 @@ def _create_app(
             ", ".join(p.module for p in nest.admin_pages),
         )
     elif nest.admin_root is not None:
+        regroup = {m: title for title, modules in nest.admin_menu for m in modules}
         for page in sorted(nest.admin_pages, key=lambda p: (p.order, p.module)):
+            page.group = regroup.get(page.module, page.group)
             page.base = f"{nest.admin_root}/{page.module}"
             app.include_router(page.router, prefix=page.base, dependencies=[Depends(csrf_protect)])
 

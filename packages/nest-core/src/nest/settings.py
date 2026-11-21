@@ -136,6 +136,11 @@ class SettingsStore:
         text = "" if value is None else str(_coerce(spec, value, key))
         if "\n" in text:
             raise SettingsError(f"{key}: a value is one line")
+        number = _coerce(spec, value, key) if spec.type in ("int", "float") else None
+        if number is not None and spec.min is not None and number < spec.min:
+            raise SettingsError(f"{key}: {number} is less than {spec.min:g}")
+        if number is not None and spec.max is not None and number > spec.max:
+            raise SettingsError(f"{key}: {number} is more than {spec.max:g}")
         if spec.choices and _coerce(spec, value, key) not in spec.choices:
             raise SettingsError(
                 f"{key}: '{value}' is not one of {', '.join(map(str, spec.choices))}"

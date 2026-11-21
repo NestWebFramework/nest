@@ -1,0 +1,17 @@
+{% extends "admin/layout.html" %}
+{# Before a delete: what goes with it, and a last chance to keep it. #}
+{% block title %}{{ title }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ title }}</h1>
+<p class="notice danger" role="alert">{{ _("“{what}” will be deleted, and it cannot be undone.", what=what) }}</p>
+<ul>
+  {% if reach.boards > 1 %}<li>{{ _("{n} boards in it, to any depth", n=reach.boards - 1) }}</li>{% endif %}
+  <li>{{ _("{n} topics", n=reach.topics) }}</li>
+  <li>{{ _("{n} posts", n=reach.posts) }}</li>
+</ul>
+<p class="muted">{{ _("To keep them readable but closed, archive instead.") }}</p>
+<form class="row" method="post" action="{{ action }}">{{ csrf_field }}
+  <button class="danger">{{ _("Delete for good") }}</button>
+  <a class="button secondary" href="{{ back }}">{{ _("Keep it") }}</a>
+</form>
+{% endblock %}

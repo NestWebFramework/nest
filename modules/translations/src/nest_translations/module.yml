@@ -58,6 +58,7 @@ docs:
   section: modules
 
 admin:
+  group: Content
   title: Translations
   order: 65
   role: editor

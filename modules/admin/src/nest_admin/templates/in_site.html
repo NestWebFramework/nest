@@ -11,6 +11,6 @@
       {% set language_scope = "admin" %}{% include "widgets/language.html" ignore missing %}
     </nav>
   </div>
-  <div class="admin-main">{% block admin_content %}{% endblock %}</div>
+  <div class="admin-main">{% include "admin/_tabs.html" %}{% block admin_content %}{% endblock %}</div>
 </div>
 {% endblock %}
