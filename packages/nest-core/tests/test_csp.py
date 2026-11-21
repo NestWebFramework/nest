@@ -43,8 +43,16 @@ def test_scripts_wildcards_keywords_and_http_are_refused():
             ]
         )
     text = str(e.value)
-    assert "bad: csp may extend" in text and "not 'script-src'" in text
+    assert "bad: scripts stay the site's own" in text and "cdn.example.com" in text
     assert "'*' is not an https source" in text
     assert "''unsafe-inline'' is not" in text
     assert "'http://plain.example.com' is not" in text
     assert "odd: csp is a mapping" in text
+
+
+def test_only_the_script_sources_nest_reviewed_may_be_let_in():
+    policy = build_csp([("seo", {"script-src": ["https://www.googletagmanager.com"]})])
+    assert directive(policy, "script-src") == ["'self'", "https://www.googletagmanager.com"]
+    with pytest.raises(CspError) as e:
+        build_csp([("x", {"style-src": ["https://fonts.example.com"]})])
+    assert "not 'style-src'" in str(e.value)

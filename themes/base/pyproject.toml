@@ -1,6 +1,6 @@
 [project]
 name = "nest-theme-base"
-version = "0.2.1"
+version = "0.2.2"
 description = "The base Nest theme: one small stylesheet, responsive, light and dark."
 requires-python = ">=3.12"
 license = "MIT"

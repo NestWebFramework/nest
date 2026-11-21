@@ -41,6 +41,11 @@ DEFAULT_CSP = (
 # where its pictures, frames, media and requests may come from. Scripts and styles stay
 # 'self' only, so no package can loosen what runs on a page.
 CSP_EXTENDABLE = ("img-src", "frame-src", "media-src", "connect-src")
+# The one exception for scripts: sources reviewed here, in Nest's core, that a package may
+# let in (and only while the site's administrator asks for them: the seo module adds
+# Google's tag server only while a Google Analytics ID is set). A script from elsewhere
+# can do anything on a page, so this list stays short and is never a package's to grow.
+CSP_SCRIPT_SOURCES = frozenset({"https://www.googletagmanager.com"})
 _SOURCE = re.compile(r"^https://(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(/[\w./-]*)?$")
 
 
@@ -65,7 +70,7 @@ def build_csp(sections: list[tuple[str, Any]]) -> str:
             problems.append(f"{owner}: csp is a mapping of directive to sources")
             continue
         for directive, sources in section.items():
-            if directive not in CSP_EXTENDABLE:
+            if directive not in CSP_EXTENDABLE and directive != "script-src":
                 problems.append(
                     f"{owner}: csp may extend {', '.join(CSP_EXTENDABLE)}, not '{directive}'"
                 )
@@ -77,6 +82,11 @@ def build_csp(sections: list[tuple[str, Any]]) -> str:
                 source = str(source).strip().lower()
                 if not _SOURCE.match(source):
                     problems.append(f"{owner}: '{source}' is not an https source csp accepts")
+                elif directive == "script-src" and source not in CSP_SCRIPT_SOURCES:
+                    problems.append(
+                        f"{owner}: scripts stay the site's own; '{source}' is not one of the "
+                        f"script sources Nest lets in ({', '.join(sorted(CSP_SCRIPT_SOURCES))})"
+                    )
                 elif source not in target:
                     target.append(source)
     if problems:
