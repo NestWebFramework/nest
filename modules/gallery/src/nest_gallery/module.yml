@@ -85,6 +85,7 @@ docs:
   section: modules
 
 admin:
+  group: Content
   title: Galleries
   order: 14
   role: editor

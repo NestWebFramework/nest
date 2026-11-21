@@ -72,6 +72,7 @@ docs:
   section: modules
 
 admin:
+  group: Community
   title: Comments
   order: 20
   role: moderator

@@ -1,18 +1,30 @@
 {% extends "layout.html" %}
 {% block title %}{{ board.title }} · {{ _("Forum") }}{% endblock %}
-{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block nav %}{% if theme_setting is defined and theme_setting("menu") %}{{ super() }}{% elif menu is defined %}{% include "content/menu.html" %}{% endif %}{% include "auth/status.html" %}{% endblock %}
 {% block content %}
-<p class="muted"><a href="{{ base }}/">{{ _("Forum") }}</a></p>
-<div class="row between"><h1>{{ board.title }}</h1>
-  {% if user and not board.locked %}<a class="button" href="{{ base }}/{{ board.slug }}/new">{{ _("New topic") }}</a>{% endif %}</div>
+<p class="muted forum-trail"><a href="{{ base }}/">{{ _("Forum") }}</a>{% for p in trail %} › <a href="{{ base }}/{{ p.slug }}/">{{ p.title }}</a>{% endfor %}</p>
+<div class="row between"><h1>{{ board.title }}{% if archived %} <span class="badge">{{ _("Archived") }}</span>{% endif %}</h1>
+  {% if user and may_post and not board.locked %}<a class="button" href="{{ base }}/{{ board.slug }}/new">{{ _("New topic") }}</a>{% endif %}</div>
 {% if board.description %}<p>{{ board.description }}</p>{% endif %}
+{% if boards %}{% with rows = boards %}{% include "forum/_boards.html" %}{% endwith %}{% endif %}
+{% if user and user.has("moderator") and not archived %}
+<details class="forum-add-board"><summary>{{ _("Add a board here") }}</summary>
+  <form class="stack" method="post" action="{{ base }}/{{ board.slug }}/boards">{{ csrf_field }}
+    <div class="field"><label for="nb-title">{{ _("Name of the board") }}</label><input id="nb-title" name="title" required maxlength="200"></div>
+    <div class="field"><label for="nb-about">{{ _("Description") }}</label><input id="nb-about" name="description" maxlength="2000"></div>
+    <button>{{ _("Add the board") }}</button>
+  </form>
+</details>
+{% endif %}
+{% if put_away %}<h2>{{ _("Archived topics") }}</h2><p><a href="{{ base }}/{{ board.slug }}/">← {{ _("The open topics") }}</a></p>
+{% elif archived_topics %}<p class="muted"><a href="?archived=1">{{ _("Archived topics") }} ({{ archived_topics }})</a></p>{% endif %}
 {% block topics %}
 <div id="topics" class="table-wrap"><table class="forum">
   <thead><tr><th>{{ _("Topic") }}</th><th>{{ _("Replies") }}</th><th>{{ _("Views") }}</th><th>{{ _("Latest") }}</th></tr></thead>
   <tbody>
   {% for t in topics %}
   <tr{% if t.hidden %} class="muted"{% endif %}>
-    <td>{% if t.pinned %}<span class="badge">{{ _("Pinned") }}</span> {% endif %}{% if t.locked %}<span class="badge">{{ _("Closed") }}</span> {% endif %}
+    <td>{% if t.pinned %}<span class="badge">{{ _("Pinned") }}</span> {% endif %}{% if t.archived %}<span class="badge">{{ _("Archived") }}</span> {% elif t.locked %}<span class="badge">{{ _("Closed") }}</span> {% endif %}
       <a href="{{ base }}/t/{{ t.id }}/{{ t.slug }}"><strong>{{ t.title }}</strong></a><br>
       <span class="muted">{{ names[t.author_id].label if t.author_id in names else "?" }} · {{ t.created_at.strftime("%d.%m.%Y") }}</span></td>
     <td>{{ t.posts - 1 }}</td><td>{{ t.views }}</td>
@@ -23,9 +35,9 @@
   </tbody>
 </table>
 {% if pages > 1 %}<nav class="row between pager" aria-label="{{ _('Pages') }}">
-  {% if page > 1 %}<a href="?page={{ page - 1 }}" hx-get="?page={{ page - 1 }}" hx-target="#topics" hx-swap="outerHTML" hx-push-url="true">← {{ _("Newer") }}</a>{% else %}<span></span>{% endif %}
+  {% if page > 1 %}<a href="?page={{ page - 1 }}{{ "&archived=1" if put_away else "" }}" hx-get="?page={{ page - 1 }}{{ "&archived=1" if put_away else "" }}" hx-target="#topics" hx-swap="outerHTML" hx-push-url="true">← {{ _("Newer") }}</a>{% else %}<span></span>{% endif %}
   <span class="muted">{{ page }} / {{ pages }}</span>
-  {% if page < pages %}<a href="?page={{ page + 1 }}" hx-get="?page={{ page + 1 }}" hx-target="#topics" hx-swap="outerHTML" hx-push-url="true">{{ _("Older") }} →</a>{% endif %}
+  {% if page < pages %}<a href="?page={{ page + 1 }}{{ "&archived=1" if put_away else "" }}" hx-get="?page={{ page + 1 }}{{ "&archived=1" if put_away else "" }}" hx-target="#topics" hx-swap="outerHTML" hx-push-url="true">{{ _("Older") }} →</a>{% endif %}
 </nav>{% endif %}
 </div>
 {% endblock %}

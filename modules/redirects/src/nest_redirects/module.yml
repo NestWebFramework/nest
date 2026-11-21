@@ -48,6 +48,7 @@ docs:
   section: modules
 
 admin:
+  group: Site
   title: Redirects
   order: 80
   role: editor

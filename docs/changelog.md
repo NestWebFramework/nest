@@ -23,6 +23,36 @@ This documentation is for **Nest %NEST_VERSION%**.
   latest snapshot and the last 48 values of each item, serves them same-origin, and
   places the widget with `feed_widget("settlement")`.
 
+## Since 0.3.0
+
+Packages released after Nest 0.3.0, each with its own version:
+
+- **forum 0.2.0**: private boards. A board may have a scope (`voievodate/settlement:12`):
+  never listed, read and written only by those the application lets in (`forum.access`),
+  "not found" for everyone else, live replies included; made on demand by another module
+  (`forum.board`). Public boards may show the accounts' own names (`public_names: account`).
+  Boards nest to any depth (a board in a board, with the way back up), in every forum,
+  private ones included: an inner board has the scope of the one it is in.
+  Archiving and deleting (**Admin → Forum**): a board archived is read only, for
+  everyone, with every board in it, and listed apart; a board deleted takes every board,
+  topic and post in it, after a page that counts them. Topics are archived or deleted too.
+  A board's admin page renames it and sets its order.
+- **Nest core (next release)** and **admin 0.2.0**: the admin menu is grouped (a module's
+  `admin: group:`, an application's `admin_menu:`), each group opening to its pages; a
+  module's pages get a **Settings** tab; `admin: settings_role:` lets a role other than
+  administrators change that module's settings; settings may have `min` and `max`.
+  Nest's own modules are grouped in Content, Community and Site.
+- **saga 0.2.0**: `answer_access`, `forum_scope`, `parse_scope`: a subsystem's own forums.
+  `rules`: a subsystem's play numbers as its settings, applied to the running world every
+  few seconds (`nest_saga.rulebook`).
+- **saga subsystems 0.2.0**: 59 rules a game master changes in the admin panel (the market's
+  stock and the merchant's share, the monastery's table, ages of apprentices, judges and
+  priests, famine relief, plots, fees, and more), each with bounds and a description; the
+  subsystems are grouped in the menu (World, People, Economy, Power, Faith).
+- **saga player, settlement, guild, polity, monastery 0.2.0**: each settlement's assembly,
+  each guild branch's hall, each realm's council, each monastery's board, for their
+  members; `people.characters`; `GET /api/joc/<world>/forums` lists a character's boards.
+
 ## 0.3.0
 
 **Documentation and running sites**

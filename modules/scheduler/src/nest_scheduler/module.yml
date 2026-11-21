@@ -50,6 +50,7 @@ db:
   metadata: "nest_scheduler.models:Base"
 
 admin:
+  group: Site
   title: Scheduler
   order: 40
   role: admin

@@ -128,6 +128,7 @@ failing later.
 | `description` | none | the help text beside it |
 | `editable` | `true` | shown in the admin panel to change (`false`: set in module.yml or the environment) |
 | `restart` | `false` | read when the module is set up (its routes depend on it): a change applies when the application is made again |
+| `min`, `max` | none | the least and the most an `int` or `float` may be; the admin panel refuses a value outside them |
 
 Setting names are snake_case. The environment variable for a setting is
 `NEST_<APP>__<OWNER>__<KEY>`, upper-case, other characters as `_`: the trains module's
@@ -154,7 +155,7 @@ These are not typed by the core model; the package that reads them gives them me
 | Section | Read by | Keys |
 |---|---|---|
 | `db` | the `nest.db` interface | `migrations` (the folder with `versions/`), `metadata` (`package.module:Base`, for `--autogenerate`). See [database](database.md) |
-| `admin` | `host.admin()` | `title`, `order` (default 50), `role` (who sees it, default `admin`), `description` |
+| `admin` | `host.admin()` | `title`, `order` (default 50), `role` (who sees it, default `admin`), `description`, `group` (its group in the panel's menu), `settings_role` (who besides administrators may change the module's settings, e.g. `gamemaster`) |
 | `csp` | the host | sources the page policy takes for `img-src`, `frame-src`, `media-src`, `connect-src` (https only). See [security](security.md) |
 | `pages` | the plan | `pages: false`: a module with no page of its own, included without a route (seo, notifications) |
 | `translatable` | the translations module | records whose text is kept per language: `model`, `label`, `fields`, `title`, `edit` |
@@ -235,6 +236,7 @@ bind:
 | `theme_settings` | `{}` | settings by theme: `{rail-signage: {tagline: "..."}}` |
 | `max_body_mb` | `32` | the largest request body, in MB (`NEST_MAX_BODY_MB` wins) |
 | `admin_frame` | `standalone` | the admin panel as a page of its own, or `site` (in the site's theme) |
+| `admin_menu` | `[]` | the panel menu's groups in order, `[{title: Economy, modules: [farm, guild]}]`; it overrides the modules' own `group` |
 
 | Key of a `modules:` entry | Meaning |
 |---|---|

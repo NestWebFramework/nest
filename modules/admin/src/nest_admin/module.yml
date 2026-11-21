@@ -16,7 +16,7 @@ module:
   type: module
   title: Admin panel
   category: admin
-  version: 0.1.0
+  version: 0.2.0
   description: One admin shell gathering the admin pages of every module an application includes.
   license: MIT
   created: "2026-11-14"

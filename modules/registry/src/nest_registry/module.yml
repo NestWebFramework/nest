@@ -81,6 +81,7 @@ locales:
 
   - {locale: en, file: locales/en.json}
 admin:
+  group: Site
   title: Registry
   order: 20
   role: admin

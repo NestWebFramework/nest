@@ -1,0 +1,39 @@
+{% extends "admin/layout.html" %}
+{# The forum in the admin panel: its boards as a tree, a board added at the first level
+   or in another board, and each board opened, archived or deleted (with all in it). #}
+{% block title %}{{ title }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ title }}</h1>
+<p class="muted">{{ _("Moderators pin, lock and hide in the topics themselves.") }}</p>
+<p><strong>{{ rows|length }}</strong> {{ _("boards") }} · <strong>{{ topics }}</strong> {{ _("topics") }} · <strong>{{ posts }}</strong> {{ _("posts") }}</p>
+
+<h2>{{ _("Add a board") }}</h2>
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+<form class="stack" method="post" action="{{ here }}/boards">{{ csrf_field }}
+  <div class="field"><label for="ab-title">{{ _("Name of the board") }}</label><input id="ab-title" name="title" required maxlength="200"></div>
+  <div class="field"><label for="ab-about">{{ _("Description") }}</label><input id="ab-about" name="description" maxlength="2000"></div>
+  <div class="field"><label for="ab-parent">{{ _("In") }}</label>
+    <select id="ab-parent" name="parent">
+      <option value="">{{ _("the forum itself (a first-level board)") }}</option>
+      {% for depth, r in rows %}{% if not r.put_away %}<option value="{{ r.board.slug }}">{{ "— " * (depth + 1) }}{{ r.board.title }}{% if r.board.scope %} ({{ r.board.scope }}){% endif %}</option>{% endif %}{% endfor %}
+    </select>
+  </div>
+  <button>{{ _("Add the board") }}</button>
+</form>
+
+<h2>{{ _("Boards") }}</h2>
+<p class="muted">{{ _("Archiving or deleting a board does the same to every board in it.") }}</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Board") }}</th><th>{{ _("Who") }}</th><th class="num">{{ _("Topics") }}</th><th class="num">{{ _("Posts") }}</th><th></th></tr></thead>
+  <tbody>{% for depth, r in rows %}<tr{% if r.put_away %} class="muted"{% endif %}>
+    <td>{{ "— " * depth }}<a href="{{ here }}/boards/{{ r.board.slug }}">{{ r.board.title }}</a>{% if r.board.archived %} <span class="badge">{{ _("Archived") }}</span>{% endif %}</td>
+    <td class="muted">{{ r.board.scope or _("everyone") }}</td>
+    <td class="num">{{ r.topics }}</td><td class="num">{{ r.posts }}</td>
+    <td class="row">
+      <a href="{{ base }}/{{ r.board.slug }}/">{{ _("View") }}</a>
+      <form class="inline" method="post" action="{{ here }}/boards/{{ r.board.slug }}/archive">{{ csrf_field }}<input type="hidden" name="archived" value="{{ '0' if r.board.archived else '1' }}"><button class="link">{{ _("Take out of the archive") if r.board.archived else _("Archive") }}</button></form>
+      <a class="danger" href="{{ here }}/boards/{{ r.board.slug }}/delete">{{ _("Delete…") }}</a>
+    </td>
+  </tr>{% else %}<tr><td colspan="5" class="muted">{{ _("No board yet.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

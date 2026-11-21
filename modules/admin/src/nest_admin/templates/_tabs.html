@@ -1,0 +1,4 @@
+{#- A module's admin pages and its settings, a tab each (when it has settings to change). -#}
+{% if admin_tabs %}<nav class="tabs admin-tabs" aria-label="{{ _('Sections') }}">
+  {% for t in admin_tabs %}<a href="{{ t.href }}"{% if t.here %} aria-current="page"{% endif %}>{{ _(t.title) }}</a>{% endfor %}
+</nav>{% endif %}

@@ -129,6 +129,7 @@ docs:
   section: modules
 
 admin:
+  group: Content
   title: Content
   order: 10
   role: editor

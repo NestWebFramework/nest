@@ -1,0 +1,41 @@
+{% extends "admin/layout.html" %}
+{# A board in the admin panel: its name, the boards in it, its topics, and what may be done
+   to each (archive, delete; to the board, with everything in it). #}
+{% block title %}{{ title }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ here }}/">{{ _("Forum") }}</a>{% for p in trail %} › <a href="{{ here }}/boards/{{ p.slug }}">{{ p.title }}</a>{% endfor %}</p>
+<h1>{{ board.title }}{% if archived %} <span class="badge">{{ _("Archived") }}</span>{% endif %}</h1>
+<p><a href="{{ base }}/{{ board.slug }}/">{{ _("View") }}</a>{% if board.scope %} · <span class="muted">{{ board.scope }}</span>{% endif %}</p>
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+
+<form class="stack" method="post" action="{{ here }}/boards/{{ board.slug }}">{{ csrf_field }}
+  <div class="field"><label for="eb-title">{{ _("Name of the board") }}</label><input id="eb-title" name="title" required maxlength="200" value="{{ board.title }}"></div>
+  <div class="field"><label for="eb-about">{{ _("Description") }}</label><input id="eb-about" name="description" maxlength="2000" value="{{ board.description }}"></div>
+  <div class="field"><label for="eb-pos">{{ _("Order") }}</label><input id="eb-pos" name="position" type="number" value="{{ board.position }}"></div>
+  <button>{{ _("Save") }}</button>
+</form>
+
+<div class="row">
+  <form class="inline" method="post" action="{{ here }}/boards/{{ board.slug }}/archive">{{ csrf_field }}<input type="hidden" name="back" value="board"><input type="hidden" name="archived" value="{{ '0' if board.archived else '1' }}"><button class="secondary">{{ _("Take out of the archive") if board.archived else _("Archive, with every board in it") }}</button></form>
+  <a class="button danger" href="{{ here }}/boards/{{ board.slug }}/delete">{{ _("Delete…") }}</a>
+</div>
+{% if archived and not board.archived %}<p class="muted">{{ _("A board it is in is archived, so it is too.") }}</p>{% endif %}
+
+<h2>{{ _("Boards in it") }}</h2>
+{% if children %}<ul>{% for r in children %}<li><a href="{{ here }}/boards/{{ r.board.slug }}">{{ r.board.title }}</a>{% if r.board.archived %} <span class="badge">{{ _("Archived") }}</span>{% endif %} <span class="muted">{{ r.topics }} {{ _("topics") }}</span></li>{% endfor %}</ul>
+{% else %}<p class="muted">{{ _("No board yet.") }}</p>{% endif %}
+
+<h2>{{ _("Topics") }}</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Topic") }}</th><th class="num">{{ _("Posts") }}</th><th></th></tr></thead>
+  <tbody>{% for t in topics %}<tr{% if t.archived or t.hidden %} class="muted"{% endif %}>
+    <td><a href="{{ base }}/t/{{ t.id }}/{{ t.slug }}">{{ t.title }}</a>
+      {% if t.archived %} <span class="badge">{{ _("Archived") }}</span>{% endif %}{% if t.hidden %} <span class="badge">{{ _("Hidden") }}</span>{% endif %}{% if t.locked %} <span class="badge">{{ _("Closed") }}</span>{% endif %}</td>
+    <td class="num">{{ t.posts }}</td>
+    <td class="row">
+      <form class="inline" method="post" action="{{ here }}/topics/{{ t.id }}/archive">{{ csrf_field }}<input type="hidden" name="archived" value="{{ '0' if t.archived else '1' }}"><button class="link">{{ _("Take out of the archive") if t.archived else _("Archive") }}</button></form>
+      <a class="danger" href="{{ here }}/topics/{{ t.id }}/delete">{{ _("Delete…") }}</a>
+    </td>
+  </tr>{% else %}<tr><td colspan="3" class="muted">{{ _("No topics yet.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

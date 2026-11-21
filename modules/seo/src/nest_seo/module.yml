@@ -116,6 +116,7 @@ docs:
   section: modules
 
 admin:
+  group: Site
   title: SEO
   order: 70
   role: editor

@@ -66,6 +66,7 @@ db:
   metadata: "nest_keeper.models:Base"
 
 admin:
+  group: Site
   title: Keeper
   order: 1
   role: admin

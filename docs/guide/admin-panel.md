@@ -66,7 +66,7 @@ uv run nest auth create-user APP ana@example.org --role editor --password-stdin
 
 ## Settings
 
-**Settings** (`/admin/settings`, administrators only) holds every package's settings,
+**Settings** (`/admin/settings`) holds every package's settings,
 a tab per module, in the order the application starts them. Each setting shows its
 label, its description and its current value, and saving writes it to the
 workspace's settings store, where it wins over the manifest's value.
@@ -81,7 +81,14 @@ workspace's settings store, where it wins over the manifest's value.
   exist, so saving it remakes the application.
 
 Only settings a package marks as editable appear here (settings are editable unless
-the manifest says `editable: false`).
+the manifest says `editable: false`). A number may have bounds (`min`, `max`); a value
+outside them is refused.
+
+Administrators see every tab. A module may let another role change its own settings
+(`admin: settings_role: gamemaster`): such a user sees **Settings** in the menu with only
+those modules' tabs, and a **Settings** tab beside the module's own pages. A game's
+subsystems do this for their rules, so game masters tune the game without the rest of
+the site's settings.
 
 ### The Themes tab
 
@@ -173,7 +180,25 @@ admin:
   description: "Albums and galleries: make them, upload and order their photos."
 ```
 
-and gives its pages with `host.admin(router)` in its setup. See
+and gives its pages with `host.admin(router)` in its setup.
+
+### The menu's groups
+
+The menu clusters the pages: each module's `admin: group:` names its group (Nest's own:
+**Content**, **Community**, **Site**), and a group opens to its pages; the one holding the
+page shown is open. A page without a group is a link of its own. The panel's own pages
+(Settings, Modules, Languages, Themes) are in **Site**, at the end. An application may
+regroup and order them:
+
+```yaml
+application:
+  admin_menu:
+    - {title: Economy, modules: [farm, guild, property]}
+    - {title: Power, modules: [law, polity, justice]}
+```
+
+Group and page titles are translated as any text (an application's catalog may reword
+them). See
 [A module](../develop/a-module.md).
 
 ## Its frame: standalone or site

@@ -38,7 +38,7 @@
       </select>
       {% else %}
       <input id="{{ fid }}" name="{{ i.key }}" value="{{ i.value if i.value is not none else '' }}"
-        {%- if spec.type in ('int', 'float') %} type="number"{% if spec.type == 'float' %} step="any"{% endif %}{% endif %}{% if i.locked %} disabled{% endif %} autocomplete="off" spellcheck="false">
+        {%- if spec.type in ('int', 'float') %} type="number"{% if spec.type == 'float' %} step="any"{% endif %}{% if spec.min is not none %} min="{{ spec.min }}"{% endif %}{% if spec.max is not none %} max="{{ spec.max }}"{% endif %}{% endif %}{% if i.locked %} disabled{% endif %} autocomplete="off" spellcheck="false">
       {% endif %}
       {% endif %}
       {% if spec.description %}<small class="hint">{{ _(spec.description | trim) }}</small>{% endif %}

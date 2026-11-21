@@ -125,6 +125,9 @@ class SettingSpec(_Section):
     # read when the module is set up (its routes depend on it): a change made in the admin
     # panel applies when the application is made again (nest serve reloads it at once)
     restart: bool = False
+    # the least and the most a number may be (int and float settings)
+    min: float | None = None
+    max: float | None = None
 
 
 class InterfaceSpec(_Section):
@@ -185,6 +188,13 @@ class Binding(_Section):
     config: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
+class AdminGroup(_Section):
+    """A group of the admin panel's menu: its title and the modules whose pages it holds."""
+
+    title: str
+    modules: list[str] = Field(default_factory=list)
+
+
 class Application(_Section):
     """What makes a package an application: it runs, on a port, with a theme."""
 
@@ -214,6 +224,9 @@ class Application(_Section):
     # the admin panel's frame: a page of its own (the default), or the site's, in its theme
     # and skin (a game's masters' panel)
     admin_frame: Literal["standalone", "site"] = "standalone"
+    # the admin panel's menu, grouped: [{title: Economy, modules: [farm, guild]}], in this
+    # order; a module not named keeps the group its own manifest gives (admin: group:)
+    admin_menu: list[AdminGroup] = Field(default_factory=list)
 
     @field_validator("port", mode="before")
     @classmethod
