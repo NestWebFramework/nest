@@ -1,1 +1,5 @@
-{ "Close": "Închide" }
+{
+ "Close": "Închide",
+ "@title": "Notificări",
+ "@description": "Mesaje scurte (salvat, șters, trimis, eșuat) după redirecționări, răspunsuri htmx și din scripturile paginii; semnate, citite o dată, accesibile."
+}

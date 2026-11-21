@@ -19,11 +19,12 @@ module:
   id: nest.module.agent
   type: module
   title: Agent
-  category: admin
-  version: 0.1.0
+  version: 0.1.1
   description: The site's status, events and checks, and the actions it allows, for the keeper, to a token.
   license: MIT
   created: "2026-11-20"
+  category: admin
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.3,<1"
@@ -51,3 +52,6 @@ settings:
     type: int
     default: 200
     description: How many recent events it remembers (in memory, since it started).
+
+locales:
+  - {locale: ro, file: locales/ro.json}

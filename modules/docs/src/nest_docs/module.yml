@@ -12,12 +12,12 @@ module:
   id: nest.module.docs
   type: module
   title: Documentation
-  category: content
-  version: 0.1.0
+  version: 0.1.1
   description: Markdown documentation with a menu, search, pictures and a reference made from every package's manifest.
   license: MIT
   created: "2026-11-20"
-
+  category: content
+  fits: [site, game]
 nest: ">=0.2,<1"
 
 main: nest_docs
@@ -69,3 +69,7 @@ locales:
 docs:
   title: Documentation
   section: modules
+
+# how a site reaches it without code: a menu link, shortcodes, blocks for a theme's regions
+offers:
+  menu: {title: "Documentation", path: "/"}

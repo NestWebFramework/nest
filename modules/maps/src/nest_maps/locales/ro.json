@@ -58,5 +58,11 @@
  "{provider} needs this site's API key.": "{provider} cere cheia API a acestui site.",
  "Unknown map provider '{provider}'.": "Furnizor de hartă necunoscut: „{provider}”.",
  "Settings": "Setări",
- "Map from {provider}": "Harta de la {provider}"
+ "Map from {provider}": "Harta de la {provider}",
+ "@title": "Hărți",
+ "@description": "Hărți cu marcaje (Leaflet, OpenStreetMap), o pagină cu toate locurile cunoscute de modulele site-ului, codurile scurte [map] și [wpgmza], GeoJSON, un editor și un importator pentru WP Google Maps.",
+ "@admin.title": "Hărți",
+ "@admin.description": "Hărțile site-ului și marcajele lor.",
+ "@shortcode.1": "Harta site-ului, cu toate locurile.",
+ "@shortcode.2": "O hartă, cu marcajele ei."
 }

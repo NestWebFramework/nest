@@ -15,11 +15,12 @@ module:
   id: nest.module.scheduler
   type: module
   title: Scheduler
-  category: admin
-  version: 0.1.0
+  version: 0.1.1
   description: Jobs at set times or intervals, declared in the packages' manifests, run once across the workers.
   license: MIT
   created: "2026-11-21"
+  category: admin
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.3,<1"
@@ -50,7 +51,7 @@ db:
   metadata: "nest_scheduler.models:Base"
 
 admin:
-  group: Site
+  group: site
   title: Scheduler
   order: 40
   role: admin

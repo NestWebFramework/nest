@@ -15,12 +15,12 @@ module:
   id: nest.module.forum
   type: module
   title: Forum
-  category: community
   version: 0.2.0
   description: Boards, topics and posts with moderation, editing, and replies that arrive live.
   license: MIT
   created: "2026-11-13"
-
+  category: community
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -65,8 +65,14 @@ docs:
   section: modules
 
 admin:
-  group: Community
+  group: community
   title: Forum
   order: 22
   role: moderator
   description: "The boards, their topics and posts."
+
+# how a site reaches it without code: a menu link, shortcodes, blocks for a theme's regions
+offers:
+  menu: {title: "Forum", path: "/"}
+  blocks:
+    - {name: latest, title: "Latest forum topics", template: forum/block_latest.html, description: "The topics with the newest replies.", settings: {count: "How many (5 by default)"}}

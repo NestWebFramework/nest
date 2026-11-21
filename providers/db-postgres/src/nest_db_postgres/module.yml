@@ -12,10 +12,12 @@ module:
   id: nest.provider.db-postgres
   type: provider
   title: PostgreSQL
-  version: 0.1.0
+  version: 0.1.1
   description: PostgreSQL through psycopg 3, pooled, in UTC, with TLS modes and a statement timeout.
   license: MIT
   created: "2026-11-13"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -61,3 +63,6 @@ settings:
     type: int
     default: 0
     description: Cancel a statement running longer than this; 0 means never.
+
+locales:
+  - {locale: ro, file: locales/ro.json}

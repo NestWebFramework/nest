@@ -14,15 +14,15 @@ module:
   id: nest.module.content
   type: module
   title: Content
-  category: content
-  version: 0.1.0
+  version: 0.2.0
   description: >
     Pages, posts and any declared content type with custom fields; categories
     and tags; menus; media in nest.storage; revisions; search; a WordPress
     importer that keeps the old addresses.
   license: MIT
   created: "2026-11-13"
-
+  category: content
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -57,6 +57,7 @@ translatable:
     model: "nest_content.models:EntryText"
     label: Articles and pages
     fields: {title: text, slug: slug, excerpt: textarea, body: html}
+    clean: "nest_content.html:sanitize"  # a translated body is cleaned as the original is
     edit: "{admin}/content/entries/{id}"
   term:
     model: "nest_content.models:TermText"
@@ -129,8 +130,16 @@ docs:
   section: modules
 
 admin:
-  group: Content
+  group: content
   title: Content
   order: 10
   role: editor
   description: Pages, articles and their categories; menus.
+
+# how a site reaches it without code: a menu link, shortcodes, blocks for a theme's regions
+offers:
+  shortcodes:
+    - {code: "[catlist id=3 numberposts=10]", description: "The newest articles of a category, as a list."}
+    - {code: "[youtube id=\"…\"]", description: "A YouTube video, played only when asked (no tracking before)."}
+  blocks:
+    - {name: latest, title: "Newest articles", template: content/block_latest.html, description: "The newest articles, as a list.", settings: {count: "How many (5 by default)", category: "Of one category only (its slug), or all"}}

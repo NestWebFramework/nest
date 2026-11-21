@@ -14,15 +14,15 @@ module:
   id: nest.module.maps
   type: module
   title: Maps
-  category: content
-  version: 0.2.0
+  version: 0.2.1
   description: >
     Maps with markers (Leaflet, OpenStreetMap tiles), a page with every place the
     site's modules know, [map] and WordPress's [wpgmza] shortcodes, GeoJSON, an
     editor in the admin panel, and an importer for WP Google Maps.
   license: MIT
   created: "2026-11-19"
-
+  category: maps
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -125,8 +125,15 @@ docs:
   section: modules
 
 admin:
-  group: Content
+  group: content
   title: Maps
   order: 14
   role: editor
   description: The site's maps and their markers.
+
+# how a site reaches it without code: a menu link, shortcodes, blocks for a theme's regions
+offers:
+  menu: {title: "Map", path: "/"}
+  shortcodes:
+    - {code: "[map]", description: "The site's map, with every place."}
+    - {code: "[map slug=\"…\"]", description: "One map, with its markers."}

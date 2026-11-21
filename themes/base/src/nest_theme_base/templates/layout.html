@@ -22,9 +22,11 @@
   </header>
   <main id="main" class="container">
     {% block content %}{% endblock %}
+    {% if region is defined and not in_admin %}{% if request.url.path in ("/", (lang_prefix or "") ~ "/") %}{{ region("home") }}{% endif %}{{ region("after_content") }}{% endif %}
   </main>
   <footer class="site-footer">
     <div class="container">{% block footer %}{{ app.title }}{% endblock %}{{ nest_credit }}</div>
+    {% if region is defined and not in_admin %}<div class="container footer-region">{{ region("footer") }}</div>{% endif %}
   </footer>
   {% include "admin/preview_bar.html" ignore missing %}
   {% include "notifications/region.html" ignore missing %}

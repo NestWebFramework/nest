@@ -1,6 +1,6 @@
 [project]
 name = "nest-docs"
-version = "0.1.0"
+version = "0.1.1"
 description = "Documentation as a site: Markdown pages in a tree, a menu, search, images, and every module's reference made from its manifest."
 requires-python = ">=3.12"
 license = "MIT"

@@ -372,3 +372,22 @@ def delete_topic(db: Any, topic_id: int) -> Topic | None:
             s.flush()
             s.expunge(t)
         return t
+
+
+def latest_topics(db: Any, n: int = 5) -> list[tuple[Topic, Board]]:
+    """The public topics with the newest replies (none of a private, archived or hidden
+    board or topic): what the forum's block shows anywhere on the site."""
+    with db.session() as s:
+        rows = s.execute(
+            select(Topic, Board)
+            .join(Board, Board.id == Topic.board_id)
+            .where(
+                Board.scope.is_(None),
+                Board.archived.is_(False),
+                Topic.hidden.is_(False),
+                Topic.archived.is_(False),
+            )
+            .order_by(Topic.last_post_at.desc())
+            .limit(max(1, min(n, 20)))
+        ).all()
+        return [(t, b) for t, b in rows]

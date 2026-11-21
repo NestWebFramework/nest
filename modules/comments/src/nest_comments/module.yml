@@ -13,12 +13,12 @@ module:
   id: nest.module.comments
   type: module
   title: Comments
-  category: community
-  version: 0.1.0
+  version: 0.1.1
   description: Threaded comments on any module's records, with moderation and spam defences.
   license: MIT
   created: "2026-11-13"
-
+  category: community
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -72,7 +72,7 @@ docs:
   section: modules
 
 admin:
-  group: Community
+  group: community
   title: Comments
   order: 20
   role: moderator

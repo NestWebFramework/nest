@@ -1,6 +1,6 @@
 [project]
 name = "nest-scheduler"
-version = "0.1.0"
+version = "0.1.1"
 description = "Jobs at set times or intervals, declared in the packages' manifests: run once across the workers, remembered across restarts, in the admin panel."
 requires-python = ">=3.12"
 license = "MIT"

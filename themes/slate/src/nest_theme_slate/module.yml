@@ -8,10 +8,12 @@ module:
   id: nest.theme.slate
   type: theme
   title: Slate
-  version: 0.1.0
+  version: 0.1.1
   description: A modern dark look with a header that stays on top, rounded cards and teal accents; light by day.
   license: MIT
   created: "2026-11-20"
+  category: look
+  fits: [site, game]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -26,3 +28,16 @@ deps:
 styles: [slate.css]
 
 preview: {bg: "#0f1720", surface: "#16202b", text: "#e6edf3", muted: "#93a1b0", accent: "#4cc2b5", border: "#243241"}
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+# the menus it shows, by their address (Admin → Content → Menus)
+menus:
+  - {name: main, title: Main menu}
+
+# where its pages have room for blocks (Themes → Regions)
+regions:
+  - {name: home, title: Home page, description: "Under the home page's own content."}
+  - {name: after_content, title: Under every page, description: "Under each page's content."}
+  - {name: footer, title: Footer, description: "In the footer, on every page."}

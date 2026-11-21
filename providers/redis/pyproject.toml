@@ -1,6 +1,6 @@
 [project]
 name = "nest-redis"
-version = "0.1.0"
+version = "0.1.1"
 description = "Redis (or Valkey) as a provider of nest.cache and nest.pubsub."
 requires-python = ">=3.12"
 license = "MIT"

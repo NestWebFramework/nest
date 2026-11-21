@@ -10,10 +10,12 @@ module:
   id: nest.provider.db-sqlite
   type: provider
   title: SQLite
-  version: 0.1.0
+  version: 0.1.1
   description: SQLite in the application's workspace, with WAL and foreign keys on.
   license: MIT
   created: "2026-11-13"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -47,3 +49,6 @@ settings:
     type: int
     default: 5000
     description: How long a writer waits for the lock before failing.
+
+locales:
+  - {locale: ro, file: locales/ro.json}

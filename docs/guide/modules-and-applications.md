@@ -28,7 +28,7 @@ dependencies by itself, but listing a module lets you give it a route and settin
 | A word game | `hangman` | a module that answers `words.random` (glossary) |
 | Search titles, sitemap, robots.txt | `seo` | `nest.db` |
 | Old addresses kept working | `redirects` | `nest.db` |
-| Readings from a RoboHub feed, with its widget | `feed` | `nest.db`, a token per feed in the environment |
+| Readings from RoboHub feeds, with their widget | `feed` | `nest.db`; feeds and their tokens in Admin → Feeds |
 | Text in several languages | `translations` | modules with translatable records |
 | "Saved." messages after actions | `notifications` | nothing |
 

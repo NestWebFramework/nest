@@ -3,7 +3,7 @@
 
 The site's status, events and checks, and the actions it allows, for the keeper, to a token.
 
-**Version 0.1.0** · module · works with Nest `>=0.3,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.3,<1` · licence MIT
 
 | | |
 |---|---|

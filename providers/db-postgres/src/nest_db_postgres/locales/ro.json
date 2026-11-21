@@ -1,0 +1,4 @@
+{
+ "@title": "PostgreSQL",
+ "@description": "PostgreSQL prin psycopg 3, cu conexiuni refolosite, în UTC, cu TLS și limită de timp pentru interogări."
+}

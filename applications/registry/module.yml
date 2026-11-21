@@ -15,6 +15,7 @@ module:
   created: "2026-11-20"
 
 application:
+  type: registry  # what it is: the packages offered to it are those made for it
   title: Nest packages
   port: 8600
   theme: slate

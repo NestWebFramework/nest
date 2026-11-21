@@ -18,11 +18,12 @@ module:
   id: nest.module.registry
   type: module
   title: Registry
-  category: packages
-  version: 0.1.0
+  version: 0.1.1
   description: A registry of Nest packages, a Python package index for uv and pip, and a catalog of what each package is.
   license: MIT
   created: "2026-11-20"
+  category: platform
+  fits: [registry]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -81,7 +82,7 @@ locales:
 
   - {locale: en, file: locales/en.json}
 admin:
-  group: Site
+  group: site
   title: Registry
   order: 20
   role: admin

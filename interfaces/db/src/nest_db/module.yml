@@ -10,12 +10,14 @@ module:
   id: nest.interface.db
   type: interface
   title: Database
-  version: 0.2.0
+  version: 0.2.1
   description: >
     A relational database behind SQLAlchemy: sessions, the engine for
     migrations, the dialect and its capabilities, and a health check.
   license: MIT
   created: "2026-11-13"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -39,3 +41,6 @@ provides:
 docs:
   title: Database
   section: interfaces
+
+locales:
+  - {locale: ro, file: locales/ro.json}

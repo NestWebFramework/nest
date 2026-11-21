@@ -3,12 +3,13 @@
 
 Keeps values in the application's own memory: nothing to run, gone on restart, one process only. For development and small applications.
 
-**Version 0.2.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-cache-memory` |
 | name in a manifest | `cache-memory` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/cache-memory |
 
 ## Using it

@@ -48,6 +48,25 @@ class _Section(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
 
+# What kind of application a package is made for (application.type, and a package's
+# module.fits): a site's modules are not a game's engine, a registry's or a keeper's.
+APP_TYPES = ("site", "game", "registry", "keeper")
+# What a package is about, one of these (the registry's filters, the admin panel's lists)
+CATEGORIES = (
+    "content",  # pages, articles, galleries, dictionaries, documentation
+    "community",  # comments, forum, messages, notifications, games for visitors
+    "media",  # files, pictures, feeds of readings
+    "maps",  # maps, places, near me
+    "seo",  # search engines, redirects, translations of the site
+    "transport",  # timetables
+    "game",  # a game engine and its subsystems
+    "admin",  # running a site: accounts, the panel, the scheduler, its agent
+    "platform",  # Nest's own: a registry, the keeper
+    "infrastructure",  # interfaces, providers, htmx, forms
+    "look",  # themes
+)
+
+
 class Identity(BaseModel):
     """Who a package is. Only ``id`` is its identity; ``name`` may repeat elsewhere."""
 
@@ -59,7 +78,9 @@ class Identity(BaseModel):
     version: str
     title: str | None = None
     description: str | None = None
-    category: str | None = None
+    category: str | None = None  # one of CATEGORIES
+    # the application types it is made for (APP_TYPES), or "any"; left out: any
+    fits: list[str] = Field(default_factory=list)
     previous_ids: list[str] = Field(default_factory=list)
     license: str | None = None
     maintainer: str | None = None
@@ -71,6 +92,29 @@ class Identity(BaseModel):
         if not _DOTTED.match(v):
             raise ValueError("an id is lower-case and dotted, e.g. 'nest.module.glossary'")
         return v
+
+    @field_validator("category")
+    @classmethod
+    def _category(cls, v: str | None) -> str | None:
+        if v is not None and v not in CATEGORIES:
+            raise ValueError(f"category '{v}' is not one of {', '.join(CATEGORIES)}")
+        return v
+
+    @field_validator("fits")
+    @classmethod
+    def _fits(cls, v: list[str]) -> list[str]:
+        for kind in v:
+            if kind != "any" and kind not in APP_TYPES:
+                raise ValueError(
+                    f"'{kind}' is not an application type ({', '.join(APP_TYPES)}, any)"
+                )
+        return v
+
+    def fits_type(self, app_type: str) -> bool:
+        """Whether it is made for an application of this type (its fits says so)."""
+        if not self.fits or "any" in self.fits:
+            return True
+        return app_type in self.fits
 
     @field_validator("previous_ids")
     @classmethod
@@ -189,16 +233,69 @@ class Binding(_Section):
 
 
 class AdminGroup(_Section):
-    """A group of the admin panel's menu: its title and the modules whose pages it holds."""
+    """A group of the admin panel's menu: its identifier (its label is "group@<id>" in a
+    catalog) and the modules whose pages it holds."""
+
+    group: str
+    modules: list[str] = Field(default_factory=list)
+
+
+class MenuOffer(_Section):
+    """A link a site's menu may hold to a module's pages: its title, and where under the
+    module's address it points ("/": its first page)."""
 
     title: str
-    modules: list[str] = Field(default_factory=list)
+    path: str = "/"
+
+
+class ShortcodeOffer(_Section):
+    """A shortcode a page may hold, and what it does (the admin panel shows it on Add)."""
+
+    code: str  # an example: [feed name="settlement"]
+    description: str = ""
+
+
+class BlockOffer(_Section):
+    """A block a theme's region may show (a sidebar, the home page): a template of the
+    module's, rendered with the page's context and the block's settings."""
+
+    name: str
+    title: str
+    template: str  # e.g. forum/block_latest.html
+    description: str = ""
+    settings: dict[str, str] = Field(default_factory=dict)  # name: what it asks, in words
+
+
+class Offers(_Section):
+    """How a site reaches a module without code: a menu link, shortcodes, blocks."""
+
+    menu: MenuOffer | None = None
+    shortcodes: list[ShortcodeOffer] = Field(default_factory=list)
+    blocks: list[BlockOffer] = Field(default_factory=list)
+
+
+class Region(_Section):
+    """A place in a theme's pages where blocks are shown (a sidebar, the home page)."""
+
+    name: str
+    title: str
+    description: str = ""
+
+
+class MenuLocation(_Section):
+    """A menu a theme shows (its main menu, its footer's), by slug."""
+
+    name: str
+    title: str
 
 
 class Application(_Section):
     """What makes a package an application: it runs, on a port, with a theme."""
 
-    kind: str = "hosted"
+    kind: str = "hosted"  # unused; see type
+    # what kind of application it is (APP_TYPES): the packages offered to it are those
+    # made for it (module.fits)
+    type: Literal["site", "game", "registry", "keeper"] = "site"
     title: str | None = None
     route: str = "/"
     port: int | None = None
@@ -224,7 +321,7 @@ class Application(_Section):
     # the admin panel's frame: a page of its own (the default), or the site's, in its theme
     # and skin (a game's masters' panel)
     admin_frame: Literal["standalone", "site"] = "standalone"
-    # the admin panel's menu, grouped: [{title: Economy, modules: [farm, guild]}], in this
+    # the admin panel's menu, grouped: [{group: economy, modules: [farm, guild]}], in this
     # order; a module not named keeps the group its own manifest gives (admin: group:)
     admin_menu: list[AdminGroup] = Field(default_factory=list)
 
@@ -288,6 +385,10 @@ class Translatable(_Section):
     # how each field is edited: one line, an address part, a paragraph, rich text;
     # left out, they come from the table (a String is one line, a Text a paragraph)
     fields: dict[str, Literal["text", "slug", "textarea", "html"]] = Field(default_factory=dict)
+    # what makes an html field's text safe to show, as ``package.module:function`` (text in,
+    # text out): every translation is passed through it before it is kept. Required when a
+    # field is html, so no rich text is ever kept as it was sent.
+    clean: str | None = None
     title: str | None = None  # the field that names a record in lists (the first one)
     edit: str | None = None  # its editor, "{admin}/content/entries/{id}"
 
@@ -346,6 +447,11 @@ class Manifest(BaseModel):
     extends: str | None = None
     # its records whose text is kept per language, by kind ("entry", "term")
     translatable: dict[str, Translatable] = Field(default_factory=dict)
+    # how a site reaches it without code: a menu link, shortcodes, blocks for regions
+    offers: Offers = Field(default_factory=Offers)
+    # a theme's places for blocks, and the menus it shows
+    regions: list[Region] = Field(default_factory=list)
+    menus: list[MenuLocation] = Field(default_factory=list)
     docs: dict[str, Any] = Field(default_factory=dict)
     system_deps: dict[str, Any] = Field(default_factory=dict)
     # Called as fn(nest) once bindings exist and before any module is set up,

@@ -12,13 +12,14 @@ module:
   id: nest.module.media
   type: module
   title: Media
-  category: content
-  version: 0.1.0
+  version: 0.1.1
   description: >
     Serves stored files with safe headers, pictures at the widths pages need, and gives
     templates media_url(key, width) and media_srcset(key).
   license: MIT
   created: "2026-11-13"
+  category: media
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"

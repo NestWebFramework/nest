@@ -7,9 +7,10 @@ bodies are sanitized HTML with shortcodes; editors work in the admin panel.
 
 from __future__ import annotations
 
-from nest import ModuleHost
+from nest import ModuleHost, translator
 from nest.host import HostError
 from nest_content import seo as seo_files
+from nest_content.rich_editor import rich_editor
 from nest_content.seo import absolute
 from nest_content.service import KIND, EntryData
 from nest_content.types import Registry
@@ -226,6 +227,10 @@ def setup(host: ModuleHost) -> None:
             "categories": lambda taxonomy="category": categories(taxonomy, locale),
             "category": lambda slug, taxonomy="category": category(slug, taxonomy, locale),
             "related": lambda entry, n=3: related(entry, n, locale),
+            # the rich text editor for any admin form (see nest_content.rich_editor)
+            "rich_editor": lambda: rich_editor(
+                translator(request), request.app.state.nest.asset, request.app.state.nest.admin_root
+            ),
         }
 
     from nest_content import service as _service
@@ -237,6 +242,47 @@ def setup(host: ModuleHost) -> None:
         return {"subject": f"content.entry:{e.id}", "url": e.path, "title": e.title}
 
     host.answer("wordpress.post", wordpress_post)
+
+    def site_menus(_key: object = None) -> list[dict[str, str]]:
+        """The site's menus, for another module's "link it from a menu" (the admin panel)."""
+        from sqlalchemy import select  # noqa: PLC0415
+
+        from nest_content.models import Menu  # noqa: PLC0415
+
+        with db.session() as s:
+            return [
+                {"slug": m.slug, "title": m.title}
+                for m in s.scalars(select(Menu).order_by(Menu.title))
+            ]
+
+    def menu_link(key: dict) -> dict | None:
+        """A link added at the end of a menu: {"menu": slug, "title", "url"}."""
+        import re  # noqa: PLC0415
+
+        from sqlalchemy import func, select  # noqa: PLC0415
+
+        from nest_content import translated  # noqa: PLC0415
+        from nest_content.models import Menu, MenuItem  # noqa: PLC0415
+
+        url, title = str(key.get("url", "")).strip()[:1000], str(key.get("title", "")).strip()[:200]
+        if not title or not re.match(r"^(/|https?://)", url):
+            return None
+        with db.session() as s:
+            m = s.scalar(select(Menu).where(Menu.slug == str(key.get("menu", ""))))
+            last = (
+                s.scalar(select(func.max(MenuItem.position)).where(MenuItem.menu_id == m.id))
+                if m
+                else 0
+            )
+        if m is None:
+            return None
+        item = service_mod.add_menu_item(db, m.id, title=title, url=url, position=(last or 0) + 1)
+        with db.session() as s, s.begin():
+            translated.mirror_menu_item(s, registry, s.get(MenuItem, item.id))
+        return {"id": item.id, "menu": m.slug}
+
+    host.answer("content.menus", site_menus)
+    host.answer("content.menu.link", menu_link)
 
     located = [n for n, t in registry.types.items() if "lat" in t.fields and "lng" in t.fields]
 
@@ -308,5 +354,9 @@ def setup(host: ModuleHost) -> None:
 
     host.answer("seo.text", seo_text)
     host.mount(router)
+    from nest_content.menus_admin import menus as _menus
+
+    # the menus' pages first, so /menus is never taken for a content type's
+    admin.routes[:0] = [r for r in _menus.routes if r not in admin.routes]
     host.admin(admin)
     host.fallback(serve, priority=10)

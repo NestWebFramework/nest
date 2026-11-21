@@ -3,12 +3,13 @@
 
 A responsive, dependency-free layout and stylesheet for Nest applications.
 
-**Version 0.2.0** · theme · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.1** · theme · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-theme-base` |
 | name in a manifest | `base` |
+| category | look |
 | reference | https://nest-framework.org/docs/reference/themes/base |
 
 ## Using it

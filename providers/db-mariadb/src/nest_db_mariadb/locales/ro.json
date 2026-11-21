@@ -1,0 +1,4 @@
+{
+ "@title": "MariaDB",
+ "@description": "MariaDB sau MySQL prin PyMySQL, utf8mb4, mod strict, UTC, cu conexiuni refolosite."
+}

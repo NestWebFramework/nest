@@ -1,6 +1,6 @@
 [project]
 name = "nest-comments"
-version = "0.1.0"
+version = "0.1.1"
 description = "Comments on anything: threads, moderation, spam defences, WordPress imports."
 requires-python = ">=3.12"
 license = "MIT"

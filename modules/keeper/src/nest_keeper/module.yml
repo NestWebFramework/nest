@@ -26,11 +26,12 @@ module:
   id: nest.module.keeper
   type: module
   title: Keeper
-  category: admin
-  version: 0.2.0
+  version: 0.2.1
   description: The deployed sites Nest watches through their agents, and Nest's applications, their plans and packages.
   license: MIT
   created: "2026-11-14"
+  category: platform
+  fits: [keeper]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -66,7 +67,7 @@ db:
   metadata: "nest_keeper.models:Base"
 
 admin:
-  group: Site
+  group: site
   title: Keeper
   order: 1
   role: admin

@@ -3,12 +3,13 @@
 
 A relational database behind SQLAlchemy: sessions, the engine for migrations, the dialect and its capabilities, and a health check.
 
-**Version 0.2.0** · interface · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.1** · interface · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-db` |
 | name in a manifest | `db` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/interfaces/db |
 
 ## Using it

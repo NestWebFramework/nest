@@ -11,10 +11,12 @@ module:
   id: nest.interface.search
   type: interface
   title: Search
-  version: 0.1.0
+  version: 0.1.1
   description: Index documents and find them again, ranked, with highlighted snippets.
   license: MIT
   created: "2026-11-13"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -26,3 +28,6 @@ interface:
 provides:
   import: nest_search
   exports: [Search, Document, Hit, terms_of, highlight, MARK_START, MARK_END]
+
+locales:
+  - {locale: ro, file: locales/ro.json}

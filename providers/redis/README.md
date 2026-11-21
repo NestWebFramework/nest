@@ -3,12 +3,13 @@
 
 Redis or Valkey through redis-py's asyncio client, shared by every worker.
 
-**Version 0.1.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-redis` |
 | name in a manifest | `redis` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/redis |
 
 ## Using it

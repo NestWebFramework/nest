@@ -27,6 +27,19 @@ class Kind:
     fields: dict[str, str]  # field → how it is edited: text, slug, textarea, html
     title: str  # the field that names a record in lists
     edit: str | None  # its own editor, "{admin}/content/entries/{id}"
+    clean: Callable[[str], str] | None = None  # makes an html field's text safe (its module's)
+
+    def cleaned(self, values: dict[str, str]) -> dict[str, str]:
+        """``values`` with every html field passed through the module's cleaner."""
+        out = dict(values)
+        for field, how in self.fields.items():
+            if how == "html" and out.get(field):
+                if self.clean is None:  # never kept as sent (discover requires a cleaner)
+                    raise TranslationsError(
+                        "{subject} has no cleaner for its rich text", subject=self.subject
+                    )
+                out[field] = self.clean(out[field]).strip()
+        return out
 
     @property
     def unique(self) -> tuple[str, ...]:
@@ -85,6 +98,22 @@ def discover(manifests: list[Any], load: Callable[[str, str], Any]) -> dict[str,
                     subject=subject,
                     title=title,
                 )
+            clean = None
+            if "html" in fields.values():
+                if not spec.clean:
+                    raise TranslationsError(
+                        "{subject}: an html field needs a cleaner (translatable: clean:)",
+                        subject=subject,
+                    )
+                try:
+                    clean = load(manifest.name, spec.clean)
+                except Exception as e:  # noqa: BLE001 - whatever stops it, said with its name
+                    raise TranslationsError(
+                        "{subject}: its cleaner {clean} cannot be found ({error})",
+                        subject=subject,
+                        clean=spec.clean,
+                        error=e,
+                    ) from e
             found[subject] = Kind(
                 subject=subject,
                 module=manifest.name,
@@ -94,5 +123,6 @@ def discover(manifests: list[Any], load: Callable[[str, str], Any]) -> dict[str,
                 fields=fields,
                 title=title,
                 edit=spec.edit,
+                clean=clean,
             )
     return found

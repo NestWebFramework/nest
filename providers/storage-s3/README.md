@@ -3,12 +3,13 @@
 
 Files in an S3-compatible object store (MinIO, Ceph, AWS S3), shared by every worker and machine.
 
-**Version 0.1.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-storage-s3` |
 | name in a manifest | `storage-s3` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/storage-s3 |
 
 ## Using it

@@ -3,13 +3,13 @@
 
 A registry of Nest packages, a Python package index for uv and pip, and a catalog of what each package is.
 
-**Version 0.1.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-registry` |
 | name in a manifest | `registry` |
-| category | packages |
+| category | platform |
 | reference | https://nest-framework.org/docs/reference/modules/registry |
 
 ## Using it

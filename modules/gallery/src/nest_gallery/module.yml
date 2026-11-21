@@ -16,12 +16,12 @@ module:
   id: nest.module.gallery
   type: module
   title: Galleries
-  category: content
-  version: 0.3.0
+  version: 0.3.1
   description: Photo galleries and albums with pages, embeds, a lightbox, uploads in the admin panel and WordPress imports.
   license: MIT
   created: "2026-11-13"
-
+  category: media
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -85,8 +85,15 @@ docs:
   section: modules
 
 admin:
-  group: Content
+  group: content
   title: Galleries
   order: 14
   role: editor
   description: "Albums and galleries: make them, upload and order their photos."
+
+# how a site reaches it without code: a menu link, shortcodes, blocks for a theme's regions
+offers:
+  menu: {title: "Galleries", path: "/"}
+  shortcodes:
+    - {code: "[album slug=\"…\"]", description: "An album's photos, in a page."}
+    - {code: "[gallery slug=\"…\"]", description: "A gallery's albums, in a page."}

@@ -3,7 +3,7 @@
 
 Private conversations between members, with read state and live delivery.
 
-**Version 0.1.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|

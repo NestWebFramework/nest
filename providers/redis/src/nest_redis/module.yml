@@ -14,10 +14,12 @@ module:
   id: nest.provider.redis
   type: provider
   title: Redis
-  version: 0.1.0
+  version: 0.1.1
   description: Redis or Valkey through redis-py's asyncio client, shared by every worker.
   license: MIT
   created: "2026-11-19"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -47,3 +49,6 @@ settings:
     type: int
     default: 20
     description: Connections each worker keeps open at most.
+
+locales:
+  - {locale: ro, file: locales/ro.json}

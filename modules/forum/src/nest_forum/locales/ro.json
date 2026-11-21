@@ -78,5 +78,14 @@
  "{n} boards in it, to any depth": "{n} secțiuni din ea, la orice adâncime",
  "{n} posts": "{n} mesaje",
  "{n} topics": "{n} subiecte",
- "“{what}” will be deleted, and it cannot be undone.": "„{what}” va fi șters, iar asta nu se poate anula."
+ "“{what}” will be deleted, and it cannot be undone.": "„{what}” va fi șters, iar asta nu se poate anula.",
+ "@title": "Forum",
+ "@description": "Secțiuni, subiecte și mesaje, cu moderare, editare și răspunsuri care sosesc pe loc.",
+ "@admin.title": "Forum",
+ "@admin.description": "Secțiunile, subiectele și mesajele lor.",
+ "Latest in the forum": "Ultimele în forum",
+ "The whole forum": "Tot forumul",
+ "@block.latest": "Ultimele subiecte din forum",
+ "@block.latest.description": "Subiectele cu cele mai noi răspunsuri.",
+ "@block.latest.count": "Câte (5 implicit)"
 }

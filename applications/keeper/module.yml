@@ -15,6 +15,7 @@ module:
   created: "2026-11-14"
 
 application:
+  type: keeper  # what it is: the packages offered to it are those made for it
   title: Nest keeper
   port: 8000
   theme: base

@@ -1,7 +1,15 @@
 {
   "This field is required.": "Câmpul este obligatoriu.",
-  "Use at least {n} character.": ["Folosește cel puțin {n} caracter.", "Folosește cel puțin {n} caractere.", "Folosește cel puțin {n} de caractere."],
-  "Use at most {n} character.": ["Folosește cel mult {n} caracter.", "Folosește cel mult {n} caractere.", "Folosește cel mult {n} de caractere."],
+  "Use at least {n} character.": [
+    "Folosește cel puțin {n} caracter.",
+    "Folosește cel puțin {n} caractere.",
+    "Folosește cel puțin {n} de caractere."
+  ],
+  "Use at most {n} character.": [
+    "Folosește cel mult {n} caracter.",
+    "Folosește cel mult {n} caractere.",
+    "Folosește cel mult {n} de caractere."
+  ],
   "Enter a whole number.": "Introdu un număr întreg.",
   "Enter a number.": "Introdu un număr.",
   "Enter {n} or more.": "Introdu {n} sau mai mult.",
@@ -9,5 +17,7 @@
   "Choose one of the options.": "Alege una dintre variante.",
   "This is not in the expected form.": "Valoarea nu are forma așteptată.",
   "Choose at least one.": "Alege cel puțin una.",
-  "This value is not valid.": "Valoarea nu este validă."
+  "This value is not valid.": "Valoarea nu este validă.",
+  "@title": "Formulare",
+  "@description": "Formulare validate, cu mesaje traduse și câmpuri accesibile."
 }

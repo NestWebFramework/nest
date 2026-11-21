@@ -1,0 +1,4 @@
+{
+ "@title": "Redis",
+ "@description": "Redis sau Valkey prin clientul asincron redis-py, comun tuturor proceselor."
+}

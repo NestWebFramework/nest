@@ -1,6 +1,6 @@
 [project]
 name = "nest-media"
-version = "0.1.0"
+version = "0.1.1"
 description = "Serves the files in nest.storage, safely, for every module that stores them."
 requires-python = ">=3.12"
 license = "MIT"

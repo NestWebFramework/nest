@@ -1,0 +1,10 @@
+{#- The forum's block (a theme's region): the public topics with the newest replies. -#}
+{% set base = (module_url("forum") or "/forum").rstrip("/") %}
+{% set rows = forum_latest(block.get("count") or 5) if forum_latest is defined else [] %}
+{% if rows %}
+<h2>{{ _("Latest in the forum") }}</h2>
+<ul class="block-list">{% for t, b in rows %}
+  <li><a href="{{ base }}/t/{{ t.id }}/{{ t.slug }}?last=1">{{ t.title }}</a> <small class="muted">{{ b.title }} · {{ t.last_post_at.strftime("%d.%m.%Y") }}</small></li>
+{% endfor %}</ul>
+<p><a href="{{ base }}/">{{ _("The whole forum") }} →</a></p>
+{% endif %}

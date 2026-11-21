@@ -21,9 +21,9 @@
   <div class="table-wrap"><table>
     <thead><tr><th>{{ _("Package") }}</th><th>{{ _("Type") }}</th><th>{{ _("Version") }}</th><th>{{ _("What it is") }}</th><th></th></tr></thead>
     <tbody>{% for r in remote_rows %}<tr>
-      <td><strong>{{ _(r.offer.title) }}</strong><br><code>{{ r.offer.name }}</code></td>
+      <td><strong>{{ about(r.offer.name, "title", r.offer.title) }}</strong><br><code>{{ r.offer.name }}</code></td>
       <td>{{ r.offer.type }}</td><td>{{ r.offer.version }}<br><small class="muted">nest-core {{ r.offer.nest }}</small></td>
-      <td><small>{{ _(r.offer.description) }}</small></td>
+      <td><small>{{ about(r.offer.name, "description", r.offer.description) }}</small></td>
       <td>{% if r.installed %}<span class="badge">{{ _("installed") }}</span>{% else %}<form method="post" action="{{ base }}/app/{{ app.name }}/packages/{{ r.offer.name }}/add-remote">{{ csrf_field }}<button type="submit">{{ _("Install") }}</button></form>{% endif %}</td>
     </tr>{% endfor %}</tbody>
   </table></div>
@@ -41,10 +41,10 @@
   <tbody>
   {% for r in rows %}
   <tr>
-    <td><strong>{{ _(r.offer.title) }}</strong><br><code>{{ r.offer.name }}</code>{% if r.offer.source != "nest" %} <span class="badge">{{ _("registry") }}</span>{% endif %}</td>
+    <td><strong>{{ about(r.offer.name, "title", r.offer.title) }}</strong><br><code>{{ r.offer.name }}</code>{% if r.offer.source != "nest" %} <span class="badge">{{ _("registry") }}</span>{% endif %}</td>
     <td>{{ r.offer.type }}</td>
     <td>{{ r.offer.version }}</td>
-    <td><small>{{ _(r.offer.description) }}</small>{% if r.needed_by %}<br><small class="muted">{{ _("Needed by") }}: {{ r.needed_by | join(", ") }}</small>{% endif %}</td>
+    <td><small>{{ about(r.offer.name, "description", r.offer.description) }}</small>{% if r.needed_by %}<br><small class="muted">{{ _("Needed by") }}: {{ r.needed_by | join(", ") }}</small>{% endif %}</td>
     <td>
       {% if group == "available" %}
       <form method="post" action="{{ base }}/app/{{ app.name }}/packages/{{ r.offer.name }}/add">{{ csrf_field }}<button type="submit">{{ _("Install") }}</button></form>

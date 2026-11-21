@@ -1,0 +1,4 @@
+{
+ "@title": "Memorie temporară",
+ "@description": "O memorie temporară cheie-valoare, cu expirare opțională. Codul depinde de ea, niciodată de un furnizor."
+}

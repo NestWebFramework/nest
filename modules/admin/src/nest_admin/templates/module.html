@@ -1,0 +1,98 @@
+{% extends "admin/layout.html" %}
+{#- One module: what it is, the version it runs and the others it could, its migrations. -#}
+{% set name = row.name if row else mine.name %}
+{% set here = admin_root ~ "/modules" %}
+{% block title %}{{ about(name, "title", row.title if row else mine.title) }} · {{ _("Modules") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+{% block page %}<div id="module-page">
+<p class="muted"><a href="{{ here }}">{{ _("Modules") }}</a></p>
+<h1>{{ about(name, "title", row.title if row else mine.title) }} <code>{{ name }}</code></h1>
+{% if row and row.description %}<p class="muted">{{ about(name, "description", row.description) }}</p>{% endif %}
+{% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
+{% if steps %}<div class="notice ok" role="status"><ul class="steps">{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ul></div>{% endif %}
+<p id="modules-busy" class="notice busy htmx-indicator" role="status">{{ _("Applying: download, checks, backup, migrations, reload… this can take a minute.") }}</p>
+
+<dl class="module-facts">
+  <dt>{{ _("Runs") }}</dt><dd><strong>{{ mine.running if mine else row.version }}</strong>
+    {% if mine and mine.pinned %} — {{ _("chosen here; the image has {v}", v=mine.image or "—") }}{% elif mine %} — {{ _("the image's") }}{% endif %}</dd>
+  {% if mine and mine.aside %}<dt>{{ _("Set aside") }}</dt><dd>{{ _("{v} was chosen here, but the image changed since: the image's version runs.", v=mine.aside) }}{% if mine.aside_why %} <span class="muted">({{ mine.aside_why }})</span>{% endif %}</dd>{% endif %}
+  {% if row %}<dt>{{ _("State") }}</dt><dd>{{ _(row.state) }}{% if row.route %} · <code>{{ row.route }}</code>{% endif %}</dd>{% endif %}
+  {% if row and row.deps %}<dt>{{ _("Needs") }}</dt><dd>{{ row.deps | join(", ") }}</dd>{% endif %}
+  {% if row and row.needed_by %}<dt>{{ _("Needed by") }}</dt><dd>{{ row.needed_by | join(", ") }}</dd>{% endif %}
+</dl>
+
+{% if offers and (link or offers.shortcodes or offers.blocks) %}
+<h2 id="place">{{ _("Place it on the site") }}</h2>
+<p class="hint">{{ _("Ways to reach it without touching the site's code; each can be changed or undone later.") }}</p>
+{% if link %}
+<h3>{{ _("A link in a menu") }}</h3>
+{% if menus %}
+<form class="row" method="post" action="{{ here }}/{{ name }}/place-menu" hx-post="{{ here }}/{{ name }}/place-menu" hx-target="#module-page" hx-swap="outerHTML">{{ csrf_field }}
+  <label for="pm-menu" class="visually-hidden">{{ _("Menu") }}</label>
+  <select id="pm-menu" name="menu">{% for m in menus %}<option value="{{ m.slug }}">{{ m.title }}</option>{% endfor %}</select>
+  <label for="pm-title" class="visually-hidden">{{ _("Label") }}</label>
+  <input id="pm-title" name="title" value="{{ about(name, 'title', offers.menu.title) }}" maxlength="200">
+  <button type="submit">{{ _("Add the link") }}</button>
+</form>
+<p class="hint">{{ _("It leads to {url}. Menus are edited in Content → Menus.", url=link) }}</p>
+{% else %}<p class="muted">{{ _("The site has no menu yet: make one in Content → Menus, then come back.") }}</p>{% endif %}
+{% endif %}
+{% if offers.shortcodes %}
+<h3>{{ _("In a page or a post") }}</h3>
+<p class="hint">{{ _("Paste one of these where it should show, in any page or post:") }}</p>
+<ul>{% for sc in offers.shortcodes %}<li><code>{{ sc.code }}</code>{% if sc.description %} — {{ about(name, "shortcode." ~ loop.index, sc.description) }}{% endif %}</li>{% endfor %}</ul>
+{% endif %}
+{% if offers.blocks %}
+<h3>{{ _("A block in the theme's pages") }}</h3>
+{% if theme_regions %}
+<ul>{% for b in offers.blocks %}<li><strong>{{ about(name, "block." ~ b.name, b.title) }}</strong>{% if b.description %} — {{ about(name, "block." ~ b.name ~ ".description", b.description) }}{% endif %}
+  <form class="inline" method="post" action="{{ admin_root }}/themes/regions/add">{{ csrf_field }}<input type="hidden" name="block" value="{{ name }}.{{ b.name }}"><input type="hidden" name="back" value="{{ admin_root }}/themes/regions">
+    <label for="pr-{{ b.name }}" class="visually-hidden">{{ _("Region") }}</label>
+    <select id="pr-{{ b.name }}" name="region">{% for theme, r in theme_regions %}<option value="{{ r.name }}"{% if r.name == "home" %} selected{% endif %}>{{ about(theme, "region." ~ r.name, r.title) }}</option>{% endfor %}</select>
+    <button type="submit" class="secondary">{{ _("Place it") }}</button></form></li>{% endfor %}</ul>
+<p class="hint">{{ _("The home page is one of the regions. Blocks are arranged in Themes → Regions.") }}</p>
+{% else %}<p class="muted">{{ _("The theme in use has no regions for blocks.") }}</p>{% endif %}
+{% endif %}
+{% endif %}
+
+<h2>{{ _("Versions") }}</h2>
+{% for p in registry_problems %}<p class="notice danger">{{ _("The registry could not be asked: {why}", why=p) }}</p>{% endfor %}
+{% if mine %}
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Version") }}</th><th>{{ _("Published") }}</th><th>{{ _("Works with Nest") }}</th><th></th></tr></thead>
+  <tbody>{% for r in releases %}{% set running = r.version == mine.running %}<tr{% if not r.fits or r.yanked %} class="muted"{% endif %}>
+    <td><strong>{{ r.version }}</strong>{% if running %} <span class="badge">{{ _("running") }}</span>{% endif %}{% if r.version == mine.image %} <span class="badge">{{ _("the image's") }}</span>{% endif %}{% if r.yanked %} <span class="badge">{{ _("withdrawn") }}</span>{% endif %}</td>
+    <td>{{ (r.published or "")[:10] }}</td><td>{{ r.nest or "—" }}</td>
+    <td>{% if not running and r.fits and not r.yanked %}
+      <form method="post" action="{{ here }}/{{ name }}/version" hx-post="{{ here }}/{{ name }}/version" hx-target="#module-page" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}<input type="hidden" name="version" value="{{ r.version }}">
+        <button type="submit" class="{{ 'secondary' if r.older else '' }}">{{ _("Use this version") }}</button></form>
+      {% elif not r.fits %}<small class="muted">{{ _("not for this Nest") }}</small>{% endif %}</td>
+  </tr>{% else %}<tr><td colspan="4" class="muted">{{ _("The registry has no versions of it.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% if mine.pinned %}
+<form method="post" action="{{ here }}/{{ name }}/version" hx-post="{{ here }}/{{ name }}/version" hx-target="#module-page" hx-swap="outerHTML" hx-indicator="#modules-busy" class="row">{{ csrf_field }}<input type="hidden" name="version" value="image">
+  <button type="submit" class="secondary">{{ _("Back to the image's version ({v})", v=mine.image or "—") }}</button></form>
+{% endif %}
+<p class="hint">{{ _("Going to an older version takes its migrations down first, after a backup; a newer one migrates up. If the site cannot start with the version chosen, the one before is put back.") }}</p>
+{% else %}<p class="muted">{{ _("This module is part of the application's own folder: its version changes with the application.") }}</p>{% endif %}
+
+<h2 id="migrations">{{ _("Migrations") }}</h2>
+{% if migrations %}
+<p>{% if migrations.state == "current" %}✓ {{ _("The database is where its code expects.") }}{% elif migrations.state == "behind" %}<strong>{{ _("The database is behind its code: migrate up to {head}.", head=migrations.head | join(", ")) }}</strong>{% else %}{{ _("Its tables are not made yet.") }}{% endif %}</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Revision") }}</th><th>{{ _("What it does") }}</th><th>{{ _("Applied") }}</th><th></th></tr></thead>
+  <tbody>{% for r in migrations.revisions %}<tr>
+    <td><code>{{ r.id }}</code>{% if r.current %} <span class="badge">{{ _("current") }}</span>{% endif %}{% if r.id in migrations.head %} <span class="badge">{{ _("its code's") }}</span>{% endif %}</td>
+    <td>{{ r.message }}</td><td>{{ "✓" if r.applied else "" }}</td>
+    <td>{% if not r.current %}<form method="post" action="{{ here }}/{{ name }}/migrate" hx-post="{{ here }}/{{ name }}/migrate" hx-target="#module-page" hx-swap="outerHTML" hx-indicator="#modules-busy"{% if not r.applied %}{% else %} hx-confirm="{{ _('Take the tables down to {rev}? What later revisions added is removed (a backup is made first).', rev=r.id) }}"{% endif %}>{{ csrf_field }}<input type="hidden" name="target" value="{{ r.id }}">
+      <button type="submit" class="{{ 'secondary' if r.applied else '' }}">{{ _("Down to here") if r.applied else _("Up to here") }}</button></form>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% if migrations.current %}
+<form method="post" action="{{ here }}/{{ name }}/migrate" hx-post="{{ here }}/{{ name }}/migrate" hx-target="#module-page" hx-swap="outerHTML" hx-indicator="#modules-busy" hx-confirm="{{ _('Remove every table of {name}? A backup is made first.', name=name) }}" class="row">{{ csrf_field }}<input type="hidden" name="target" value="base">
+  <button type="submit" class="danger">{{ _("Down to nothing (its tables removed)") }}</button></form>
+{% endif %}
+<p class="hint">{{ _("Below the revision its code expects, the module may not work until it is migrated up again. Each move is backed up first and written in the history.") }}</p>
+{% else %}<p class="muted">{{ _("It keeps no tables in this site.") }}</p>{% endif %}
+</div>{% endblock %}
+{% endblock %}

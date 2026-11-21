@@ -3,12 +3,13 @@
 
 Files in a folder of the application's workspace (media/ by default).
 
-**Version 0.1.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-storage-local` |
 | name in a manifest | `storage-local` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/storage-local |
 
 ## Using it

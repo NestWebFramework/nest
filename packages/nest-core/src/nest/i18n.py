@@ -80,6 +80,14 @@ class Translator:
 
     __call__ = gettext
 
+    def about(self, owner: str, field: str, default: str = "") -> str:
+        """A package's own text, by its name and the field (``about("forum", "title",
+        "Forum")``: its catalog's "@title"), else ``default`` (its manifest's words)."""
+        entry = self._messages.get(f"{owner}@{field}")
+        if isinstance(entry, list):
+            entry = entry[0] if entry else None
+        return entry if isinstance(entry, str) and entry else default
+
     def scoped(self, scope: str) -> tuple[Callable[..., str], Callable[..., str]]:
         """gettext and ngettext for one module's templates: an application's catalog may
         reword that module alone ("messages::Messages": "Letters"), else the text as anywhere."""
@@ -135,7 +143,11 @@ class Catalogs:
             )
             if not isinstance(key, str) or not ok:
                 raise I18nError(f"{owner}: {path}: '{key}' must map to text or a list of texts")
-        self._messages[locale].update(data)
+        # a package's own texts are found by its name, never by their English words:
+        # "@title" in forum's catalog is "forum@title" (its title, description, admin
+        # page...); an application's catalog may reword one with the whole key
+        own = {(f"{owner}{k}" if k.startswith("@") else k): v for k, v in data.items()}
+        self._messages[locale].update(own)
         self._translators.pop(locale, None)
 
     def translator(self, locale: str | None = None) -> Translator:

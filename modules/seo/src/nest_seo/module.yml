@@ -18,14 +18,14 @@ module:
   id: nest.module.seo
   type: module
   title: SEO
-  category: seo
-  version: 0.1.0
+  version: 0.1.1
   description: >
     Search titles, descriptions, keywords, sharing pictures and indexing for every page of
     every module; meta tags, Open Graph and JSON-LD; a sitemap with photos; robots.txt.
   license: MIT
   created: "2026-11-19"
-
+  category: seo
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -116,7 +116,7 @@ docs:
   section: modules
 
 admin:
-  group: Site
+  group: site
   title: SEO
   order: 70
   role: editor

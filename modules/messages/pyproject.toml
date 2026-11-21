@@ -1,6 +1,6 @@
 [project]
 name = "nest-messages"
-version = "0.1.0"
+version = "0.1.1"
 description = "Private conversations between members, delivered live."
 requires-python = ">=3.12"
 license = "MIT"

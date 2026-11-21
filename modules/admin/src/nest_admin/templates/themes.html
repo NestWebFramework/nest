@@ -2,6 +2,7 @@
 {#- The site's look: the installed themes, each in its own colours; preview, use. -#}
 {% block title %}{{ _("Themes") }} · {{ app.title }}{% endblock %}
 {% block admin_content %}
+<p class="row"><a class="button secondary" href="{{ admin_root }}/themes/regions">{{ _("Regions: blocks in the theme's pages") }}</a></p>
 <h1>{{ _("Themes") }} <span class="muted">· {{ app.title }}</span></h1>
 <p class="hint">{{ _("A theme is the site's look: its layout, type and colours. Preview one to see the site in it (only you see it), then use it: it is tried first, and the site reloads. The application's own styles stay on top of any theme.") }}</p>
 {% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
@@ -10,7 +11,7 @@
   {% for t in rows %}
   {% set c = t.colors %}
   <li class="card theme{% if t.active %} active{% endif %}" id="t-{{ t.name }}">
-    <svg class="theme-sample" viewBox="0 0 240 150" role="img" aria-label="{{ _('The colours of {name}', name=_(t.title)) }}">
+    <svg class="theme-sample" viewBox="0 0 240 150" role="img" aria-label="{{ _('The colours of {name}', name=about(t.name, "title", t.title)) }}">
       <rect width="240" height="150" fill="{{ c.get('bg', '#eeeeee') }}"/>
       <rect width="240" height="30" fill="{{ c.get('surface', '#ffffff') }}"/>
       <rect y="30" width="240" height="1" fill="{{ c.get('border', '#dddddd') }}"/>
@@ -27,11 +28,11 @@
       <rect x="22" y="116" width="34" height="10" rx="5" fill="{{ c.get('accent', '#aa3333') }}"/>
     </svg>
     <div class="theme-text">
-      <strong>{{ _(t.title) }}</strong> <code>{{ t.name }}</code> <span class="badge">{{ t.version }}</span>
+      <strong>{{ about(t.name, "title", t.title) }}</strong> <code>{{ t.name }}</code> <span class="badge">{{ t.version }}</span>
       {% if t.active %}<span class="badge lock">{{ _("in use") }}</span>{% endif %}
       {% if t.default %}<span class="badge">{{ _("the application's default") }}</span>{% endif %}
       {% if t.extends %}<span class="badge">{{ _("built on {name}", name=t.extends) }}</span>{% endif %}
-      {% if t.description %}<p class="muted">{{ _(t.description) }}</p>{% endif %}
+      {% if t.description %}<p class="muted">{{ about(t.name, "description", t.description) }}</p>{% endif %}
       {% if not t.active or settings_of.get(t.name) %}
       <div class="theme-actions">
         {% if not t.active %}<a class="button secondary" href="{{ admin_root }}/themes/{{ t.name }}/preview">{{ _("Preview") }}</a>{% endif %}

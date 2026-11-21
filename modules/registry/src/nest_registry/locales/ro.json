@@ -105,5 +105,9 @@
  "optional": "opțional",
  "A token and a signing key do different jobs. The token proves to this registry that the upload is yours. A signature proves to the people who install your packages that the files are yours, checked on their own machines: even if someone broke into the registry and swapped a file, the signature would not match.": "O cheie de publicare și o cheie de semnare fac lucruri diferite. Cheia de publicare îi dovedește registrului că încărcarea e a ta. Semnătura le dovedește celor care îți instalează pachetele că fișierele sunt ale tale, verificat pe mașinile lor: chiar dacă cineva ar intra în registru și ar schimba un fișier, semnătura nu s-ar potrivi.",
  "You do not need one to publish. To sign everything you publish, run this once on your machine; nest publish then signs on its own:": "Nu ai nevoie de ea ca să publici. Ca să semnezi tot ce publici, rulează o dată pe mașina ta; apoi nest publish semnează singur:",
- "Or paste a public key nest keygen printed:": "Sau lipește o cheie publică afișată de nest keygen:"
+ "Or paste a public key nest keygen printed:": "Sau lipește o cheie publică afișată de nest keygen:",
+ "@title": "Registru",
+ "@description": "Un registru de pachete Nest, un index de pachete Python pentru uv și pip, și un catalog cu ce este fiecare pachet.",
+ "@admin.title": "Registru",
+ "@admin.description": "Pachetele publicate aici, proprietarii și versiunile lor."
 }

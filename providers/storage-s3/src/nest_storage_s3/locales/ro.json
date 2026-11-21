@@ -1,0 +1,4 @@
+{
+ "@title": "Stocare S3",
+ "@description": "Fișiere într-un depozit de obiecte compatibil S3 (MinIO, Ceph, AWS S3), comun tuturor proceselor și mașinilor."
+}

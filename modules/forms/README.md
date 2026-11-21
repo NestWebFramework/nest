@@ -3,13 +3,13 @@
 
 Pydantic-validated forms with translated messages and accessible field macros.
 
-**Version 0.1.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-forms` |
 | name in a manifest | `forms` |
-| category | ui |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/modules/forms |
 
 ## Using it

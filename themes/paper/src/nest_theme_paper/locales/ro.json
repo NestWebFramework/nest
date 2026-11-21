@@ -1,0 +1,13 @@
+{
+ "@title": "Hârtie",
+ "@description": "Un aspect editorial, cu antet și o literă cu serife bună de citit, pe hârtie caldă; întunecat noaptea.",
+ "@menu.main": "Meniul principal",
+ "@region.home": "Pagina principală",
+ "@region.after_content": "Sub fiecare pagină",
+ "@region.footer": "Subsol",
+ "@region.sidebar": "Coloana laterală",
+ "@region.home.description": "Sub conținutul paginii principale.",
+ "@region.after_content.description": "Sub conținutul fiecărei pagini.",
+ "@region.footer.description": "În subsol, pe fiecare pagină.",
+ "@region.sidebar.description": "Lângă fiecare pagină, sub căutare și categorii."
+}

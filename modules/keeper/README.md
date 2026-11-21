@@ -3,13 +3,13 @@
 
 The deployed sites Nest watches through their agents, and Nest's applications, their plans and packages.
 
-**Version 0.2.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.1** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-keeper` |
 | name in a manifest | `keeper` |
-| category | admin |
+| category | platform |
 | reference | https://nest-framework.org/docs/reference/modules/keeper |
 
 ## Using it

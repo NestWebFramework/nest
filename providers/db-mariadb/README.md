@@ -3,12 +3,13 @@
 
 MariaDB or MySQL through PyMySQL, utf8mb4, strict mode, UTC, pooled.
 
-**Version 0.1.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-db-mariadb` |
 | name in a manifest | `db-mariadb` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/db-mariadb |
 
 ## Using it

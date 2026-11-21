@@ -12,11 +12,12 @@ module:
   id: nest.module.forms
   type: module
   title: Forms
-  category: ui
-  version: 0.1.0
+  version: 0.1.1
   description: Pydantic-validated forms with translated messages and accessible field macros.
   license: MIT
   created: "2026-11-13"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"

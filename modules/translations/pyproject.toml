@@ -1,6 +1,6 @@
 [project]
 name = "nest-translations"
-version = "0.1.0"
+version = "0.2.0"
 description = "Every module's records in every language of the site: editors' fields, what is missing or outdated, export and import."
 requires-python = ">=3.12"
 license = "MIT"

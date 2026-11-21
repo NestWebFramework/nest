@@ -78,7 +78,13 @@ Content. A hierarchical taxonomy has parents and children.
 ### Menus
 
 Menus are stored by the content module and drawn by the theme; the WordPress and
-Geticus importers bring a site's menu over. Themes that have a **Menu** setting
+Geticus importers bring a site's menu over. **Content → Menus** manages them: a menu is
+made, renamed or deleted; its links lead to a page or an article, a category, a module's
+pages (each module that offers one) or any address, and are renamed, moved up and down,
+put under another link or out of it, opened in a new window, removed. A link to a page
+with no label of its own shows the page's title, in every language; a label of its own is
+translated in Translations. The theme says which menus it shows (`menus:` in its
+manifest, `main` in Nest's themes): a menu with that address is shown there. Themes that have a **Menu** setting
 (such as `rail-signage` and the morlaca themes) can replace it with a list like
 `Journeys = module:trains/itinerariu; History = category:istorie`, set in Settings →
 Themes or in `application.theme_settings`.

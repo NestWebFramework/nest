@@ -3,13 +3,13 @@
 
 Photo galleries and albums with pages, embeds, a lightbox, uploads in the admin panel and WordPress imports.
 
-**Version 0.3.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.3.1** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-gallery` |
 | name in a manifest | `gallery` |
-| category | content |
+| category | media |
 | reference | https://nest-framework.org/docs/reference/modules/gallery |
 
 ## Using it

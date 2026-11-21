@@ -100,3 +100,20 @@
 /* the panel inside the site's frame (admin_frame: site): the menu and the site's link stacked */
 .admin-side { display: grid; gap: 1rem; align-content: start; position: sticky; top: 1rem; }
 .admin-side .admin-nav { position: static; }
+/* the modules page: the registry's search on one line; the tables' action column */
+.registry-search { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .5rem 0 1rem; }
+.registry-search input { flex: 1 1 14rem; width: auto; margin: 0; }
+.registry-search select { flex: 0 0 auto; width: auto; margin: 0; }
+.module-table td.module-actions { white-space: nowrap; }
+.module-table td.module-actions form, .module-table td.module-actions details { display: inline-block; margin: 0 .25rem .25rem 0; vertical-align: middle; }
+.module-table td.nowrap, .module-table td.module-actions .badge { white-space: nowrap; }
+.module-facts { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; }
+.module-facts dt { color: var(--muted); }
+/* the busy notice of a long change: only while it runs (htmx marks it), never a gap */
+.notice.busy.htmx-indicator { display: none; }
+.notice.busy.htmx-indicator.htmx-request, .htmx-request .notice.busy.htmx-indicator { display: block; opacity: 1; }
+/* small forms inside a line (Place it, a block's region): their fields keep to their size */
+.admin-main form.inline { display: inline-flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .25rem 0; }
+.admin-main form.inline select, .admin-main form.inline input:not([type=hidden]) { width: auto; margin: 0; }
+.region-blocks { padding-left: 1.2rem; }
+.region-blocks > li { margin: .4rem 0; }

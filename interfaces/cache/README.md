@@ -3,12 +3,13 @@
 
 A key-value cache with optional expiry. Code depends on this, never on a provider.
 
-**Version 0.2.0** · interface · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.1** · interface · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-cache` |
 | name in a manifest | `cache` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/interfaces/cache |
 
 ## Using it

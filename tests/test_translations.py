@@ -148,6 +148,7 @@ NOTES = {
             model: "notes:NoteText"
             label: Notes
             fields: {title: text, slug: slug, body: html}
+            clean: "notes:clean"
             edit: "/notes/edit/{id}"
     """,
     "modules/notes/migrations/versions/0001_notes.py": """
@@ -203,6 +204,13 @@ NOTES = {
 
 
         NoteText = text_table(Base, Note, title=String(200), slug=String(200), body=Text, unique=("slug",))
+
+
+        def clean(markup):
+            # the module's rich text made safe (here: no script, no on... attributes)
+            import re
+            markup = re.sub(r"(?is)<script.*?</script>", "", markup)
+            return re.sub(r'(?i)\\s+on[a-z]+="[^"]*"', "", markup)
 
 
         def setup(host: ModuleHost) -> None:
@@ -482,3 +490,47 @@ def test_a_module_translates_only_its_own_records(site):
     notes = Entry(manifest=load_manifest(manifest), source="local")
     findings = check([notes], [*Catalog.discover(None), notes])
     assert any("a module translates its own records" in f.message for f in findings)
+
+
+def test_rich_text_is_cleaned_by_its_module_however_it_comes_in(c):
+    """A translation's html field is passed through the module's cleaner (translatable:
+    clean:) from the form and from an imported file: never kept as it was sent."""
+    write(c, 1, title="Hora", slug="hora", body="<p>Joc</p>")
+    post(
+        c,
+        "/admin/translations/notes.note/1",
+        lang="en",
+        tr_en_present="1",
+        tr_en_title="Hora",
+        tr_en_slug="hora-en",
+        tr_en_body='<p onclick="steal()">Round</p><script>steal()</script>',
+    )
+    from nest_db import text_rows
+
+    kind = c.app.state.nest.module_state["translations"]["kinds"]["notes.note"]
+    db = c.app.state.nest.bindings.get("nest.db")
+
+    def body():
+        with db.session() as s:
+            return text_rows(s, kind.model, [1])[1]["en"].body
+
+    assert body() == "<p>Round</p>"
+    data = c.get("/admin/translations/export?lang=en&only=all").json()
+    data["items"][0]["text"] = {
+        "title": "Hora",
+        "slug": "hora-en",
+        "body": "<p>X</p><script>x()</script>",
+    }
+    c.post(
+        "/admin/translations/import",
+        data={"csrf_token": c.cookies["nest_csrf"]},
+        files={"file": ("en.json", json.dumps(data).encode(), "application/json")},
+    )
+    assert body() == "<p>X</p>"
+
+
+def test_an_html_field_without_a_cleaner_stops_the_start(site, tmp_path):
+    manifest = site / "modules/notes/module.yml"
+    manifest.write_text(manifest.read_text().replace('clean: "notes:clean"', ""))
+    with pytest.raises(Exception, match="needs a cleaner"):
+        create_app(site, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})

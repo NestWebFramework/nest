@@ -3,13 +3,15 @@ module:
   id: nest.interface.pubsub
   type: interface
   title: Publish and subscribe
-  version: 0.1.0
+  version: 0.1.1
   description: >
     Messages on named channels, heard by every process listening. The realtime
     broker relays its events over it, so a visitor on one worker of nest serve sees
     what was published on another.
   license: MIT
   created: "2026-11-19"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -21,3 +23,6 @@ interface:
 provides:
   import: nest_pubsub
   exports: [PubSub]
+
+locales:
+  - {locale: ro, file: locales/ro.json}
