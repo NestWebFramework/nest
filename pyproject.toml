@@ -39,6 +39,7 @@ dependencies = [
     "nest-comments",
     "nest-redirects",
     "nest-hangman",
+    "nest-feed",
     "nest-geo",
     "nest-docs",
     "nest-admin",
@@ -133,6 +134,7 @@ nest-translations = { workspace = true }
 nest-comments = { workspace = true }
 nest-redirects = { workspace = true }
 nest-hangman = { workspace = true }
+nest-feed = { workspace = true }
 nest-geo = { workspace = true }
 nest-docs = { workspace = true }
 nest-admin = { workspace = true }

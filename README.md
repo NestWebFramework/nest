@@ -102,7 +102,7 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, hangman, content, media, gallery, maps, geo, comments, redirects, forum, messages, trains, docs, seo, translations, notifications, admin, agent, scheduler, keeper, registry)
+modules/              reusable modules (htmx, auth, forms, glossary, hangman, content, media, gallery, maps, geo, comments, redirects, feed, forum, messages, trains, docs, seo, translations, notifications, admin, agent, scheduler, keeper, registry)
 interfaces/           interfaces (cache, db, pubsub, search, storage)
 providers/            providers (cache-memory, redis, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)

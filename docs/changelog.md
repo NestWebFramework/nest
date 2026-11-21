@@ -9,6 +9,20 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **feed** (new): a RoboHub feed received on a public site. robohub-feed's `http`
+  publisher puts the snapshot and `widget.js` with a token per feed; the module keeps the
+  latest snapshot and the last 48 values of each item, serves them same-origin, and
+  places the widget with `feed_widget("settlement")`.
+
+## Unreleased
+
+- **feed** (new): a RoboHub feed received on a public site. robohub-feed's `http`
+  publisher puts the snapshot and `widget.js` with a token per feed; the module keeps the
+  latest snapshot and the last 48 values of each item, serves them same-origin, and
+  places the widget with `feed_widget("settlement")`.
+
 ## 0.3.0
 
 **Documentation and running sites**

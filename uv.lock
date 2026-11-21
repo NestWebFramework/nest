@@ -22,6 +22,7 @@ members = [
     "nest-db-postgres",
     "nest-db-sqlite",
     "nest-docs",
+    "nest-feed",
     "nest-forms",
     "nest-forum",
     "nest-gallery",
@@ -808,6 +809,21 @@ requires-dist = [
     { name = "nest-search", editable = "interfaces/search" },
     { name = "pygments" },
     { name = "pyyaml" },
+]
+
+[[package]]
+name = "nest-feed"
+version = "0.1.0"
+source = { editable = "modules/feed" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
 ]
 
 [[package]]
@@ -1908,6 +1924,7 @@ dependencies = [
     { name = "nest-db-postgres" },
     { name = "nest-db-sqlite" },
     { name = "nest-docs" },
+    { name = "nest-feed" },
     { name = "nest-forms" },
     { name = "nest-forum" },
     { name = "nest-gallery" },
@@ -1996,6 +2013,7 @@ requires-dist = [
     { name = "nest-db-postgres", editable = "providers/db-postgres" },
     { name = "nest-db-sqlite", editable = "providers/db-sqlite" },
     { name = "nest-docs", editable = "modules/docs" },
+    { name = "nest-feed", editable = "modules/feed" },
     { name = "nest-forms", editable = "modules/forms" },
     { name = "nest-forum", editable = "modules/forum" },
     { name = "nest-gallery", editable = "modules/gallery" },
