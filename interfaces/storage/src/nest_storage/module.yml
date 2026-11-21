@@ -1,0 +1,28 @@
+#
+# storage — files as an interface.
+#
+# A module stores and reads files by key ("uploads/2026/11/church.jpg"); the
+# provider decides where: the workspace's media/ folder today, MinIO or any S3
+# store on the dedicated server later. Keys are checked: no "..", no absolute
+# paths, so a key can never reach outside the store.
+#
+module:
+  name: storage
+  id: nest.interface.storage
+  type: interface
+  title: Storage
+  version: 0.1.0
+  description: Put, open, stat, list and delete files by key.
+  license: MIT
+  created: "2026-11-13"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+interface:
+  name: nest.storage
+  protocol: "nest_storage:Storage"
+
+provides:
+  import: nest_storage
+  exports: [Storage, Stat, clean_key, StorageError]

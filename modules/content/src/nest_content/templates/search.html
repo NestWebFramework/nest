@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block title %}{{ _("Search") }} · {{ app.title }}{% endblock %}
-{% block nav %}{% include "content/menu.html" %}{% endblock %}
+{% block nav %}{% if theme_setting is defined and theme_setting("menu") %}{{ super() }}{% else %}{% include "content/menu.html" %}{% endif %}{% endblock %}
 {% block content %}
 <h1>{{ _("Search") }}</h1>
 <form class="search" role="search" method="get" action="/search">

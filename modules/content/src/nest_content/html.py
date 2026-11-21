@@ -161,3 +161,25 @@ def video(video_id: str, label: str) -> str:
 def embed_videos(markup: str, label: str) -> str:
     """Each YouTube address standing alone in a paragraph, as a video."""
     return _ALONE.sub(lambda m: video(m.group(2), label), markup or "")
+
+
+# --- what a Joomla site left behind ----------------------------------------------------
+#
+# A site moved from Joomla to WordPress (fg-joomla-to-wordpress) keeps its Joomla plugins'
+# tags as text: {joomplu:962} (a JoomGallery picture), {gmapfp id="6" ...} (a map),
+# {edocs}file.pdf,900,640{/edocs} (an embedded document), {jcomments on}. Their pictures,
+# maps and documents did not come along, so a reader sees only the braces: they go.
+
+_JOOMLA = re.compile(
+    r"\{edocs\}.*?\{/edocs\}|\{(?:joomplu|gmapfp|jcomments|mosimage|loadposition)\b[^{}]*\}",
+    re.I | re.S,
+)
+_EMPTY_P = re.compile(r"<p>(?:\s|&nbsp;|<br\s*/?>)*</p>", re.I)
+
+
+def strip_joomla_tags(markup: str) -> str:
+    """The text without the tags of Joomla plugins (and a paragraph they left empty)."""
+    if not markup or "{" not in markup:
+        return markup
+    cleaned = _JOOMLA.sub("", markup)
+    return _EMPTY_P.sub("", cleaned) if cleaned != markup else markup

@@ -40,10 +40,22 @@ def _page(request: Request, *, steps=None, problems=None, status_code: int = 200
     rows = themes(_app_dir(nest), nest.environ)
     running = nest.plan.theme.name if nest.plan.theme is not None else None
     log = [e for e in history(nest.workspace, 40) if e.get("theme")][:10]
+    # where each theme's settings are: its own, else those of the theme it is built on
+    owners = {owner for _key, owner, _name, spec in nest.settings.specs() if spec.editable}
+    extends = {t.name: t.extends for t in rows}
+    settings_of = {}
+    for t in rows:
+        name, seen = t.name, set()
+        while name and name not in owners and name not in seen:
+            seen.add(name)
+            name = extends.get(name)
+        if name in owners:
+            settings_of[t.name] = name
     return render(
         request,
         "admin/themes.html",
         rows=rows,
+        settings_of=settings_of,
         running=running,
         steps=steps or [],
         problems=problems or [],

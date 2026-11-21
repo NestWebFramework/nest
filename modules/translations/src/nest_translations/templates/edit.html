@@ -1,0 +1,32 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Translate") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/?subject={{ kind.subject | urlencode }}&amp;lang={{ lang }}">← {{ _("Translations") }}</a></p>
+<div class="row between">
+  <h1>{{ source[kind.title] or ("#" ~ owner_id) }}</h1>
+  {% if edit %}<a href="{{ edit }}">{{ _("Edit the original") }}</a>{% endif %}
+</div>
+{% if targets | length > 1 %}
+<nav class="tabs" aria-label="{{ _('Language') }}">
+  {% for x in targets %}<a href="?lang={{ x }}"{% if x == lang %} aria-current="page"{% endif %}>{{ names[x] }}</a>{% endfor %}
+</nav>
+{% endif %}
+<div class="tr-side">
+  <section class="tr-source" lang="{{ default }}" aria-labelledby="tr-src">
+    <h2 id="tr-src">{{ names[default] }}</h2>
+    {% for field, how in kind.fields.items() %}
+    <div class="field"><span class="tr-label">{{ _(field.replace("_", " ") | capitalize) }}</span>
+      <div class="tr-original{% if how == 'html' %} tr-html{% endif %}">{% if how == "html" %}{{ source[field] | safe }}{% else %}{{ source[field] }}{% endif %}</div></div>
+    {% endfor %}
+  </section>
+  <form method="post" class="stack tr-target">
+    {{ csrf_field }}
+    <input type="hidden" name="lang" value="{{ lang }}">
+    {{ translation_fields(kind.subject, owner_id, form=form, only=[lang]) }}
+    <div class="row">
+      <button type="submit">{{ _("Save") }}</button>
+      <button type="submit" name="copy" value="1" class="secondary" formnovalidate>{{ _("Start from the {language} text", language=names[default]) }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

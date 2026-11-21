@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+{#- One package: what it is, how to install it, its versions and files. -#}
+{% block title %}{{ _(item.title) }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "registry/nav.html" %}{% endblock %}
+{% block content %}
+<p><a href="{{ base }}/">← {{ _("Nest packages") }}</a></p>
+<h1>{{ _(item.title) }} <span class="muted">{{ item.version }}</span></h1>
+<p class="lead">{{ _(item.description) }}</p>
+<p class="row">
+  <code>{{ item.name }}</code> <span class="badge">{{ _(item.type) }}</span> <span class="badge">{{ item.ecosystem }}</span>
+  <span class="badge">nest-core {{ item.nest }}</span>
+  {% if item.part_of %}<span class="badge">{{ _("part of {host}", host=item.part_of) }}</span>{% endif %}
+  {% if item.extends %}<span class="badge">{{ _("built on {name}", name=item.extends) }}</span>{% endif %}
+  {% if item.visibility == "private" %}<span class="badge lock">{{ _("private") }}</span>{% endif %}
+</p>
+{% if item.screenshot %}
+<figure class="registry-shot"><img src="{{ base }}/p/{{ item.name }}/screenshot" alt="{{ _('{name}, as a site looks in it', name=_(item.title)) }}" loading="lazy"></figure>
+{% elif item.preview %}{% set c = item.preview %}
+<svg class="registry-swatch" viewBox="0 0 240 150" role="img" aria-label="{{ _('The colours of {name}', name=_(item.title)) }}">
+  <rect width="240" height="150" fill="{{ c.get('bg', '#eeeeee') }}"/>
+  <rect width="240" height="30" fill="{{ c.get('surface', '#ffffff') }}"/>
+  <rect y="30" width="240" height="1" fill="{{ c.get('border', '#dddddd') }}"/>
+  <rect x="14" y="11" width="46" height="8" rx="2" fill="{{ c.get('text', '#222222') }}"/>
+  <rect x="180" y="12" width="22" height="6" rx="2" fill="{{ c.get('muted', '#777777') }}"/>
+  <rect x="208" y="12" width="18" height="6" rx="2" fill="{{ c.get('accent', '#aa3333') }}"/>
+  <rect x="14" y="46" width="130" height="11" rx="2" fill="{{ c.get('text', '#222222') }}"/>
+  <rect x="14" y="66" width="200" height="5" rx="2" fill="{{ c.get('muted', '#777777') }}"/>
+  <rect x="14" y="76" width="180" height="5" rx="2" fill="{{ c.get('muted', '#777777') }}"/>
+  <rect x="14" y="94" width="96" height="40" rx="4" fill="{{ c.get('surface', '#ffffff') }}" stroke="{{ c.get('border', '#dddddd') }}"/>
+  <rect x="22" y="116" width="34" height="10" rx="5" fill="{{ c.get('accent', '#aa3333') }}"/>
+</svg>
+{% endif %}
+{% if item.about %}
+<section class="registry-about" aria-labelledby="about-h">
+  <h2 id="about-h">{{ _("About") }}</h2>
+  {% for para in item.about.split("\n\n") %}<p>{{ para }}</p>{% endfor %}
+</section>
+{% endif %}
+<section class="card stack">
+  <h2>{{ _("Install") }}</h2>
+  <p>{{ _("Into an application, from its folder (it then appears in its admin panel, ready to enable):") }}</p>
+  <pre><code>nest packages . add {{ item.name }} --remote</code></pre>
+  <p class="muted">{{ _("Or by hand, as any Python package, with this index:") }}</p>
+  <pre><code>uv add {{ item.dist }} --index nest={{ index_url }}</code></pre>
+</section>
+{% if item.deps or item.uses %}
+<h2>{{ _("What it needs") }}</h2>
+<ul>
+  {% if item.deps %}<li>{{ _("Needs") }}: {% for d in item.deps %}<a href="{{ base }}/p/{{ d }}">{{ d }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endif %}
+  {% if item.uses %}<li>{{ _("Works with") }}: {% for d in item.uses %}<a href="{{ base }}/p/{{ d }}">{{ d }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endif %}
+</ul>
+{% endif %}
+<h2>{{ _("Versions") }}</h2>
+<table>
+  <thead><tr><th>{{ _("Version") }}</th><th>nest-core</th><th>{{ _("Published") }}</th></tr></thead>
+  <tbody>{% for r in item.releases | reverse %}<tr>
+    <td>{{ r.version }}{% if r.yanked %} <span class="badge">{{ _("withdrawn") }}</span>{% if r.reason %} <small class="muted">{{ r.reason }}</small>{% endif %}{% endif %}</td>
+    <td>{{ r.nest }}</td><td>{{ r.published[:10] }}</td>
+    {% if manages %}<td>
+      <form method="post" action="{{ base }}/p/{{ item.name }}/{{ r.version }}/yank" class="row">{{ csrf_field }}
+        {% if r.yanked %}<input type="hidden" name="undo" value="1"><button type="submit" class="secondary">{{ _("Bring back") }}</button>
+        {% else %}<label class="visually-hidden" for="why-{{ loop.index }}">{{ _("Why") }}</label><input id="why-{{ loop.index }}" name="reason" placeholder="{{ _('why (optional)') }}" maxlength="300"><button type="submit" class="secondary">{{ _("Withdraw") }}</button>{% endif %}
+      </form></td>{% endif %}
+  </tr>{% endfor %}</tbody>
+</table>
+<h2>{{ _("Files") }}</h2>
+<table class="registry-files">
+  <thead><tr><th>{{ _("File") }}</th><th>{{ _("Size") }}</th><th>sha256</th><th>{{ _("Signed") }}</th></tr></thead>
+  <tbody>{% for f in item.files %}<tr><td><a href="{{ base }}/files/{{ f.sha256 }}/{{ f.filename }}">{{ f.filename }}</a></td><td>{{ (f.size / 1024) | round(1) }} KB</td><td><code>{{ f.sha256[:16] }}…</code></td>
+    <td>{% if f.key %}<span class="badge lock" title="{{ f.key }}">✓ {{ f.key_fingerprint }}</span>{% else %}<span class="muted">—</span>{% endif %}</td></tr>{% endfor %}</tbody>
+</table>
+<h2>{{ _("Who publishes it") }}</h2>
+<p>{{ _("Owner") }}: {{ owner }}{% if maintainers %} · {{ _("Maintainers") }}: {% for _id, label in maintainers %}{{ label }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</p>
+{% if manages %}
+<section class="card stack">
+  <form method="post" action="{{ base }}/p/{{ item.name }}/visibility" class="row">
+    {{ csrf_field }}
+    <span>{{ _("Who may install it") }}:</span>
+    {% if item.visibility == "private" %}<input type="hidden" name="visibility" value="public"><span class="badge lock">{{ _("its owner, maintainers and administrators") }}</span> <button type="submit" class="secondary">{{ _("Make it public") }}</button>
+    {% else %}<input type="hidden" name="visibility" value="private"><span class="badge">{{ _("everybody") }}</span> <button type="submit" class="secondary">{{ _("Make it private") }}</button>{% endif %}
+  </form>
+</section>
+<section class="card stack">
+  <p class="hint">{{ _("A maintainer may publish new versions of this package; only its owner (or an administrator) chooses them.") }}</p>
+  {% if maintainers %}
+  <ul>{% for user_id, label in maintainers %}<li>{{ label }}
+    <form method="post" action="{{ base }}/p/{{ item.name }}/maintainers/{{ user_id }}/remove" class="inline">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Remove") }}</button></form></li>{% endfor %}</ul>
+  {% endif %}
+  <form method="post" action="{{ base }}/p/{{ item.name }}/maintainers" class="row">
+    {{ csrf_field }}
+    <label for="m-email">{{ _("Account's email") }}</label>
+    <input id="m-email" name="email" type="email" required autocomplete="off">
+    <button type="submit">{{ _("Add a maintainer") }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

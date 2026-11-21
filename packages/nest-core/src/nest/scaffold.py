@@ -42,7 +42,7 @@ dependencies = ["nest-core"]
 requires = ["uv_build>=0.9,<0.14"]
 build-backend = "uv_build"
 """,
-            root / "module.yml": f"""module:
+            src / "module.yml": f"""module:
   name: {name}
   id: nest.module.{name}
   type: module
@@ -52,6 +52,9 @@ build-backend = "uv_build"
     What this module is for.
   license: MIT
   created: "{date.today().isoformat()}"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
 
 main: {package}
 

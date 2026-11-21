@@ -24,7 +24,7 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="site-footer">
-    <div class="container">{% block footer %}{{ app.title }}{% endblock %}</div>
+    <div class="container">{% block footer %}{{ app.title }}{% endblock %}{{ nest_credit }}</div>
   </footer>
   {% include "admin/preview_bar.html" ignore missing %}
   {% include "notifications/region.html" ignore missing %}

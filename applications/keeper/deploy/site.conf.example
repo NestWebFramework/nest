@@ -1,0 +1,17 @@
+# /etc/nest/keeper.conf: where the keeper runs on this server (no secrets here).
+#   sudo install -m 0640 site.conf.example /etc/nest/keeper.conf
+
+# the host port nginx proxies to (127.0.0.1 only)
+PORT=8800
+# its workspace: the watched sites, their checks, the actions' log, its accounts (never in the container)
+DATA=/srv/nest/keeper
+# Nest's sources (the keeper is inside Nest's repository)
+SRC=/opt/nest/src
+REPO=nest
+# its own image recipe, in Nest's repository, built from the repository's root
+DOCKERFILE=applications/keeper/deploy/Dockerfile
+IMAGE=nest-keeper
+MEMORY=384m
+KEEP=14
+# the application inside the image (for nest commands: nest-site nest keeper auth create-user $APP ...)
+APP=/src/nest/applications/keeper

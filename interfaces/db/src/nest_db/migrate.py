@@ -137,6 +137,15 @@ def pending(db: Any, m: ModuleMigrations) -> bool:
     return current(db, m) != heads(m)
 
 
+def pending_migrations(nest: Any) -> list[str]:
+    """The modules of a running application whose migrations are not all applied (for its
+    agent: a site that runs behind its tables needs care)."""
+    if "nest.db" not in nest.bindings.by_interface:
+        return []
+    db = nest.bindings.get("nest.db")
+    return [m.name for m in discover(nest.plan) if pending(db, m)]
+
+
 def upgrade(db: Any, m: ModuleMigrations, target: str = "heads") -> None:
     script = m.script()
 

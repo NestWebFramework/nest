@@ -4,10 +4,18 @@
 {% block admin_content %}
 <h1>{{ _("Settings") }} <span class="muted">· {{ app.title }}</span></h1>
 <p class="hint">{{ _("What is changed here is kept with this application's data and wins over its manifest. A value set in the server's environment is shown, not changed here.") }}</p>
-{% if not sections %}<p class="muted">{{ _("No module of this application has settings to change here.") }}</p>{% endif %}
+{% if not sections and not themes %}<p class="muted">{{ _("No module of this application has settings to change here.") }}</p>{% endif %}
 <nav class="tabs" aria-label="{{ _('Sections') }}">
   {% for s in sections %}<a href="{{ admin_root }}/settings/{{ s.owner }}"{% if current and s.owner == current.owner %} aria-current="page"{% endif %}>{{ _(s.title) }}</a>{% endfor %}
+  {% if themes %}<a href="{{ admin_root }}/settings/themes"{% if current and current.theme %} aria-current="page"{% endif %}>{{ _("Themes") }}</a>{% endif %}
 </nav>
+{% if current and current.theme %}
+{#- the themes' own tabs, under theirs: the one in use (and those it is built on) first -#}
+<nav class="tabs subtabs" aria-label="{{ _('Themes') }}">
+  {% for s in themes %}<a href="{{ admin_root }}/settings/{{ s.owner }}"{% if s.owner == current.owner %} aria-current="page"{% endif %}>{{ _(s.title) }}{% if s.in_use %} <span class="badge">{{ _("in use") }}</span>{% endif %}</a>{% endfor %}
+</nav>
+<p class="hint">{{ _("A theme's settings may be set before it is used; a theme built on another shares that one's settings, and may say any of them otherwise.") }} <a href="{{ admin_root }}/themes">{{ _("Themes") }} →</a></p>
+{% endif %}
 {% if current %}{% set s = current %}
 <section class="card settings-section" id="{{ s.owner }}" aria-labelledby="h-{{ s.owner }}">
   <h2 id="h-{{ s.owner }}">{{ _(s.title) }}</h2>

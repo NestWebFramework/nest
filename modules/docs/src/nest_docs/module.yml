@@ -1,0 +1,71 @@
+#
+# docs — documentation as a site.
+#
+# A tree of Markdown pages (a folder: site.yml says its sections and their order, each
+# page a .md file with its front matter, its pictures beside it) served with a menu, the
+# page's contents beside it, search, and links between pages checked. Every module,
+# theme and provider installed gets a reference page made from its manifest (what it
+# does, its settings, what it needs), so the reference cannot fall behind the code.
+#
+module:
+  name: docs
+  id: nest.module.docs
+  type: module
+  title: Documentation
+  category: content
+  version: 0.1.0
+  description: Markdown documentation with a menu, search, pictures and a reference made from every package's manifest.
+  license: MIT
+  created: "2026-11-20"
+
+nest: ">=0.2,<1"
+
+main: nest_docs
+styles: [docs.css]
+
+provides:
+  import: nest_docs
+  exports: [render, Tree]
+
+requires:
+  interfaces: [nest.search]
+
+deps:
+  search: ">=0.1,<1"
+
+settings:
+  tree:
+    type: str
+    default: docs
+    restart: true
+    description: The documentation's folder, from the application's (where site.yml is).
+  home:
+    type: bool
+    default: false
+    restart: true
+    description: The tree's landing.md is the site's home page (the documentation stays at the module's route).
+  reference:
+    type: bool
+    default: true
+    restart: true
+    description: A reference page for every module, theme and provider installed, made from its manifest.
+  reload:
+    type: bool
+    default: false
+    description: Read the pages again when they change (while writing them; off in production).
+  nav:
+    type: str
+    default: ""
+    description: The links over the documentation's pages, as "Label = address; Label = address" (empty, the theme's own).
+  edit_url:
+    type: str
+    default: ""
+    description: Where a page is edited, with {path} for its file (https://github.com/.../edit/main/docs/{path}).
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}
+docs:
+  title: Documentation
+  section: modules

@@ -1,0 +1,28 @@
+#
+# search — full-text search as an interface.
+#
+# A module indexes its documents (a glossary term, an article) and asks for
+# matches; the provider decides how: SQLite FTS5 in the workspace today,
+# PostgreSQL or a search server later. Matching ignores diacritics, so
+# "stiinta" finds "știință", and a word typed in part finds the whole.
+#
+module:
+  name: search
+  id: nest.interface.search
+  type: interface
+  title: Search
+  version: 0.1.0
+  description: Index documents and find them again, ranked, with highlighted snippets.
+  license: MIT
+  created: "2026-11-13"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+interface:
+  name: nest.search
+  protocol: "nest_search:Search"
+
+provides:
+  import: nest_search
+  exports: [Search, Document, Hit, terms_of, highlight, MARK_START, MARK_END]

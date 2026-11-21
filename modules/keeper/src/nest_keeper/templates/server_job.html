@@ -1,0 +1,14 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Server") }} · {{ site.name }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/sites/{{ site.id }}">← {{ site.name }}</a></p>
+{% block job %}<div id="job"{% if job and job.running %} hx-get="{{ base }}/sites/{{ site.id }}/server/jobs/{{ job.id }}" hx-trigger="every 2s" hx-select="#job" hx-swap="outerHTML"{% endif %}>
+{% if problem %}<p class="notice danger" role="alert">{{ problem }}</p>{% endif %}
+{% if job %}
+<h1>{{ job.action }} <span class="muted">· {{ site.name }}</span>
+  {% if job.running %}<span class="keeper-state warn">{{ _("running…") }}</span>{% elif job.code == 0 %}<span class="keeper-state up">✓ {{ _("done") }}</span>{% else %}<span class="keeper-state down">✗ {{ _("failed") }} ({{ job.code }})</span>{% endif %}</h1>
+<p class="muted">{{ _("asked by") }} {{ job.who }} · {{ job.started_at[:19]|replace("T", " ") }} UTC{% if job.finished_at %} → {{ job.finished_at[11:19] }}{% endif %}</p>
+<pre class="keeper-output">{{ job.output or "…" }}</pre>
+{% endif %}
+</div>{% endblock %}
+{% endblock %}

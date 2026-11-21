@@ -1,0 +1,8 @@
+{#- The registry's menu, one row: its pages, then who is signed in. -#}
+<div class="registry-bar">
+  <ul class="registry-links">
+    <li><a href="{{ base }}/"{% if request.url.path in (base ~ "/", "/") %} aria-current="page"{% endif %}>{{ _("Packages") }}</a></li>
+    {% if user %}<li><a href="{{ base }}/tokens"{% if request.url.path.endswith("/tokens") %} aria-current="page"{% endif %}>{{ _("Publish tokens") }}</a></li>{% endif %}
+  </ul>
+  <div class="registry-account">{% include "auth/status.html" %}</div>
+</div>

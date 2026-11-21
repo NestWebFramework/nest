@@ -1,0 +1,9 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Its log") }} · {{ site.name }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/sites/{{ site.id }}">← {{ site.name }}</a></p>
+<div class="row between"><h1>{{ _("Its log") }} <span class="muted">· {{ site.name }}</span></h1>
+<span class="row">{% for n in (200, 500, 1000) %}<a href="?lines={{ n }}"{% if n == lines %} aria-current="page"{% endif %}>{{ n }}</a> {% endfor %}</span></div>
+{% if problem %}<p class="notice danger" role="alert">{{ problem }}</p>{% endif %}
+<pre class="keeper-output">{{ text }}</pre>
+{% endblock %}

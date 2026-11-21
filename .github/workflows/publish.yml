@@ -1,0 +1,33 @@
+# Publish Nest's packages to the Nest registry (registry.nest-framework.org) when a version
+# tag is pushed, or by hand. `nest publish --all` publishes every package whose version the
+# registry does not have yet (nest-core to the index only) and skips the rest, so a tag
+# publishes what changed since the last one. The token is an administrator's publish token
+# (the registry's Tokens page), kept as the repository secret NEST_REGISTRY_TOKEN.
+name: publish
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: registry
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.9.x"
+      - name: Install the workspace
+        run: uv sync --frozen
+      - name: Test before publishing
+        run: uv run pytest -q
+      - name: Publish what the registry does not have yet
+        env:
+          NEST_REGISTRY_URL: https://registry.nest-framework.org
+          NEST_REGISTRY_TOKEN: ${{ secrets.NEST_REGISTRY_TOKEN }}
+        run: uv run nest publish --all

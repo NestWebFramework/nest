@@ -1,0 +1,64 @@
+#
+# translations — every module's records in every language of the site.
+#
+# A module keeps its records' text in a text table (nest_db.text_table: one row per
+# record per language, the default language's included) and names it in its manifest:
+#
+#   translatable:
+#     entry: {model: "nest_content.models:EntryText", label: Articles,
+#             fields: {title: text, slug: slug, excerpt: textarea, body: html},
+#             edit: "{admin}/content/entries/{id}"}
+#
+# This module does the editors' side for all of them, with no tables of its own:
+#   * a module's edit form shows {{ translation_fields(subject, id) }} (every language but
+#     the default one) and its save asks nest.lookup("translations.save", ...);
+#   * the admin page lists what is missing, a draft or outdated (the default language's
+#     text changed after the translation was made), per language, with an editor;
+#   * export and import (JSON) for translating elsewhere: admin page or command line.
+# Adding a language in the admin panel adds rows, never columns. Without this module a
+# module still reads its own rows (nest_db.localize) and works in one language.
+#
+module:
+  name: translations
+  id: nest.module.translations
+  type: module
+  title: Translations
+  category: content
+  version: 0.1.0
+  description: >
+    Every module's records in every language of the site: the editors' fields, what is
+    missing, a draft or outdated, an editor beside the original, export and import.
+  license: MIT
+  created: "2026-11-20"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_translations
+admin_styles: [translations.css]
+pages: false  # all its pages are in the admin panel
+
+provides:
+  import: nest_translations
+  exports: []
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.2,<1"
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}
+docs:
+  title: Translations
+  section: modules
+
+admin:
+  title: Translations
+  order: 65
+  role: editor
+  description: Every page's text in every language of the site, and what is left to translate.

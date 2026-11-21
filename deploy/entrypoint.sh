@@ -6,7 +6,7 @@
 #   nest ARGS...     a nest command (nest check /src/app, nest backup /src/app ...)
 #   anything else    run as given
 set -eu
-APP=/src/app
+APP="${NEST_APP:-/src/app}"  # an application inside Nest's own repository names itself
 case "${1:-serve}" in
   serve)
     nest db upgrade "$APP"

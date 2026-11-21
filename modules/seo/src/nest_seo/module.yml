@@ -1,0 +1,122 @@
+#
+# seo — what search engines and shared links are told about every page of the site.
+#
+# For any page of any module (a subject: "content.entry:12", "gallery.collection:3"),
+# editors set a title for search results, a description, keywords, the picture a
+# shared link shows, a canonical address, and whether search engines may list it.
+# A module takes part without depending on this one:
+#   * its edit form shows {{ seo_fields(subject) }} and its save asks nest.lookup("seo.save");
+#   * its pages write {{ seo_head(subject, title=..., description=..., ...) }} in their head,
+#     and {{ seo_page_title(subject, title) }} as their title;
+#   * it answers "seo.urls" with its public pages (and their photos), for the sitemap.
+# This module serves /sitemap.xml (with the photos, Google's image sitemap) and
+# /robots.txt, and writes structured data (JSON-LD) so a page is read as an article,
+# a photo gallery or the site itself. The site-wide defaults are its settings.
+#
+module:
+  name: seo
+  id: nest.module.seo
+  type: module
+  title: SEO
+  category: seo
+  version: 0.1.0
+  description: >
+    Search titles, descriptions, keywords, sharing pictures and indexing for every page of
+    every module; meta tags, Open Graph and JSON-LD; a sitemap with photos; robots.txt.
+  license: MIT
+  created: "2026-11-19"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_seo
+admin_styles: [seo.css]  # the editors' fields, in the admin panel
+pages: false  # its pages are /sitemap.xml and /robots.txt, at the site's root
+
+provides:
+  import: nest_seo
+  exports: [SUBJECT_FIELDS]
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.2,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_seo.models:Base"
+
+# What it says of a page, in every language of the site: with the translations module,
+# editors write each language's search title, description and keywords (Admin →
+# Translations); a translated page without them uses its own translated text.
+uses: [translations]
+translatable:
+  meta:
+    model: "nest_seo.models:MetaText"
+    label: Search titles and descriptions
+    fields: {title: text, description: textarea, keywords: text}
+
+settings:
+  site_url:
+    type: str
+    default: ""
+    label: Public address
+    description: >
+      The address the public uses (https://morlaca.ro): the canonical links, the sitemap
+      and what a shared page shows are made with it; empty takes the request's.
+  title_pattern:
+    type: str
+    default: "{title} · {site}"
+    label: Title in search results
+    description: How a page's title is shown in search results and the browser tab ({title}, {site}).
+  description:
+    type: str
+    default: ""
+    label: Site description
+    description: What the site is, for search results, where a page says nothing of its own.
+  keywords:
+    type: str
+    default: ""
+    label: Site keywords
+    description: Words the whole site is about, separated by commas; a page adds its own.
+  image:
+    type: str
+    default: ""
+    label: Sharing picture
+    description: The picture a shared link shows when a page has none (a stored picture, uploads/...).
+  twitter:
+    type: str
+    default: ""
+    label: X (Twitter) account
+    description: The site's account, as @name, for shared links.
+  google_verification:
+    type: str
+    default: ""
+    label: Google Search Console code
+    description: The code of the meta tag Google gives to confirm the site is yours.
+  bing_verification:
+    type: str
+    default: ""
+    label: Bing Webmaster code
+    description: The code of the meta tag Bing gives to confirm the site is yours.
+  robots_closed:
+    type: str
+    default: ""
+    label: Closed to search engines
+    description: Paths search engines are asked not to visit, besides the admin and sign-in pages, separated by commas.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}
+docs:
+  title: SEO
+  section: modules
+
+admin:
+  title: SEO
+  order: 70
+  role: editor
+  description: How every page shows in search results, and what is missing.

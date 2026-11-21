@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}{{ page.title }} · {{ tree.title }}{% endblock %}
+{% block head %}{% set desc = page.meta.get("description") or (page.text | truncate(160)) %}{% if seo_head is defined %}{{ seo_head("docs.page:" ~ current, title=page.title, description=desc, path=tree.url(current)) }}{% else %}<meta name="description" content="{{ desc }}">{% endif %}{% endblock %}
+{% block nav %}{% if docs_nav %}{% include "docs/_top.html" %}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block content %}
+<div class="docs">
+  <aside class="docs-side">{% include "docs/_menu.html" %}</aside>
+  <article class="docs-page">
+    {% if section %}<p class="docs-crumb">{{ section }}</p>{% endif %}
+    <div class="docs-body">{{ page.html }}</div>
+    <nav class="docs-pager" aria-label="{{ _('Pages') }}">
+      {% if before %}<a class="docs-prev" href="{{ tree.url(before.key) }}"><span>← {{ _("Before") }}</span>{{ before.title }}</a>{% else %}<span></span>{% endif %}
+      {% if after %}<a class="docs-next" href="{{ tree.url(after.key) }}"><span>{{ _("Next") }} →</span>{{ after.title }}</a>{% endif %}
+    </nav>
+    {% if edit %}<p class="docs-edit"><a href="{{ edit }}" rel="noopener" target="_blank">{{ _("Improve this page") }}</a></p>{% endif %}
+  </article>
+  {% if toc | length > 1 %}
+  <aside class="docs-toc" aria-label="{{ _('On this page') }}">
+    <p>{{ _("On this page") }}</p>
+    <ul>{% for h in toc %}<li class="lvl-{{ h.level }}"><a href="#{{ h.anchor }}">{{ h.text }}</a></li>{% endfor %}</ul>
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

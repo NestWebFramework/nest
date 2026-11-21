@@ -81,6 +81,16 @@
   </section>
   {% endfor %}
 
+  <section class="module-group" aria-labelledby="g-registry">
+    <h2 id="g-registry">{{ _("More in the Nest registry") }}</h2>
+    <form method="get" action="{{ admin_root }}/modules/registry" class="row" hx-get="{{ admin_root }}/modules/registry" hx-target="#registry-results" hx-swap="outerHTML">
+      <label class="visually-hidden" for="registry-q">{{ _("Search") }}</label>
+      <input id="registry-q" name="q" placeholder="{{ _('forum, map, theme…') }}">
+      <button type="submit" class="secondary">{{ _("Search the registry") }}</button>
+    </form>
+    <div id="registry-results"></div>
+  </section>
+
   {% if log %}
   <section class="module-group" aria-labelledby="g-log">
     <h2 id="g-log">{{ _("Latest changes") }}</h2>

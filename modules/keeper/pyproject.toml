@@ -1,7 +1,7 @@
 [project]
 name = "nest-keeper"
-version = "0.1.0"
-description = "The keeper: Nest's own orchestration of its applications: what exists, how each is planned, which run."
+version = "0.2.0"
+description = "The keeper: the deployed sites Nest watches through their agents, and Nest's applications, their plans and packages."
 requires-python = ">=3.12"
 license = "MIT"
 dependencies = ["nest-core", "nest-auth", "nest-admin", "nest-db"]

@@ -1,0 +1,18 @@
+{#- The locate button any page includes: it asks the browser where the reader is, then
+    loads ``locate_url`` (with ?lat=&lon=) into ``locate_target``; without JavaScript, or
+    when the reader says no, a form takes a place by hand. The page must allow geolocation
+    (nest.security.allow(response, "geolocation")). -#}
+{% set url = locate_url | default(action ~ "places") %}
+{% set target = locate_target | default("#geo-near") %}
+<div class="geo-locate">
+  <button type="button" data-geo-locate data-url="{{ url }}" data-target="{{ target }}">{{ locate_label | default(_("Find what is near me")) }}</button>
+  <span class="muted" data-geo-status></span>
+  <p class="muted">{{ _("Your browser asks first; the position is used for this search only and kept nowhere.") }}</p>
+  <details class="geo-by-hand"><summary>{{ _("Or give a place by hand") }}</summary>
+    <form method="get" action="{{ action | default(url) }}" class="row">
+      <label>{{ _("Latitude") }} <input name="lat" inputmode="decimal" required size="9"></label>
+      <label>{{ _("Longitude") }} <input name="lon" inputmode="decimal" required size="9"></label>
+      <button type="submit" class="secondary">{{ _("Search") }}</button>
+    </form>
+  </details>
+</div>

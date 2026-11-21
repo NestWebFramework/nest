@@ -81,9 +81,13 @@ def _reindex(args: argparse.Namespace) -> int:
     from nest_content import service
 
     nest = _app(args.app)
-    print(
-        f"✓ {service.reindex(nest.bindings.get('nest.db'), nest.bindings.get('nest.search'))} entries indexed"
+    registry = nest.module_state["content"][
+        "types"
+    ]  # every language's index, not only the default's
+    done = service.reindex(
+        nest.bindings.get("nest.db"), nest.bindings.get("nest.search"), registry=registry
     )
+    print(f"✓ {done} entries indexed")
     return 0
 
 

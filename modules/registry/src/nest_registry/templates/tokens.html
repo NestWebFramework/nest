@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{#- An account's publish tokens (made here, shown once, revocable) and, optional, its signing keys. -#}
+{% block title %}{{ _("Publish tokens") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "registry/nav.html" %}{% endblock %}
+{% block content %}
+<h1>{{ _("Publish tokens") }}</h1>
+<p class="lead">{{ _("A token lets the nest command publish packages as you. Make one per machine (your laptop, CI), keep it like a password, and revoke it when that machine no longer needs it.") }}</p>
+
+{% if not allowed %}
+<p class="notice" role="status">{{ _("This account may not publish here yet: the registry's administrators approve publishers. You can browse and install every public package without an account.") }}</p>
+{% else %}
+
+{% if secret %}
+<section class="card stack registry-secret" role="status" aria-labelledby="secret-h">
+  <h2 id="secret-h">{{ _("Your new token") }}</h2>
+  <p>{{ _("Copy it now: it is shown only this once. Then, on the machine that publishes:") }}</p>
+  <pre><code>nest login --registry {{ registry }} --token {{ secret }}
+nest publish --all</code></pre>
+</section>
+{% endif %}
+
+<section class="card stack" aria-labelledby="make-h">
+  <h2 id="make-h">{{ _("Make a token") }}</h2>
+  <form method="post" action="{{ base }}/tokens" class="registry-inline">
+    {{ csrf_field }}
+    <label for="token-name" class="visually-hidden">{{ _("Name") }}</label>
+    <input id="token-name" name="name" placeholder="{{ _('What it is for: laptop, CI…') }}" required maxlength="120">
+    <button type="submit">{{ _("Make a token") }}</button>
+  </form>
+</section>
+
+{% if tokens %}
+<h2>{{ _("Your tokens") }}</h2>
+<table class="registry-table">
+  <thead><tr><th>{{ _("Name") }}</th><th>{{ _("Begins") }}</th><th>{{ _("Made") }}</th><th>{{ _("Last used") }}</th><th></th></tr></thead>
+  <tbody>
+  {% for t in tokens %}
+  <tr>
+    <td>{{ t.name }}</td><td><code>{{ t.prefix }}…</code></td><td>{{ t.created_at.strftime("%Y-%m-%d") }}</td>
+    <td>{{ t.last_used_at.strftime("%Y-%m-%d %H:%M") if t.last_used_at else "—" }}</td>
+    <td>{% if t.revoked %}<span class="badge">{{ _("revoked") }}</span>{% else %}<form method="post" action="{{ base }}/tokens/{{ t.id }}/revoke">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Revoke") }}</button></form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<details class="card registry-keys"{% if keys %} open{% endif %}>
+  <summary><strong>{{ _("Signing keys") }}</strong> <span class="muted">· {{ _("optional") }}</span></summary>
+  <div class="stack">
+    <p>{{ _("A token and a signing key do different jobs. The token proves to this registry that the upload is yours. A signature proves to the people who install your packages that the files are yours, checked on their own machines: even if someone broke into the registry and swapped a file, the signature would not match.") }}</p>
+    <p>{{ _("You do not need one to publish. To sign everything you publish, run this once on your machine; nest publish then signs on its own:") }}</p>
+    <pre><code>nest keygen --register</code></pre>
+    <p class="muted">{{ _("Or paste a public key nest keygen printed:") }}</p>
+    <form method="post" action="{{ base }}/keys" class="registry-inline">
+      {{ csrf_field }}
+      <label for="key-public" class="visually-hidden">{{ _("Public key") }}</label>
+      <input id="key-public" name="public" required autocomplete="off" spellcheck="false" placeholder="{{ _('Public key') }}">
+      <label for="key-name" class="visually-hidden">{{ _("Name") }}</label>
+      <input id="key-name" name="name" placeholder="{{ _('Name') }}" maxlength="120" class="registry-short">
+      <button type="submit" class="secondary">{{ _("Register the key") }}</button>
+    </form>
+    {% if keys %}
+    <table class="registry-table">
+      <thead><tr><th>{{ _("Name") }}</th><th>{{ _("Fingerprint") }}</th><th>{{ _("Made") }}</th><th></th></tr></thead>
+      <tbody>{% for k in keys %}<tr><td>{{ k.name }}</td><td><code>{{ k.fingerprint }}</code></td><td>{{ k.created_at.strftime("%Y-%m-%d") }}</td>
+        <td>{% if k.revoked %}<span class="badge">{{ _("revoked") }}</span>{% else %}<form method="post" action="{{ base }}/keys/{{ k.id }}/revoke">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Revoke") }}</button></form>{% endif %}</td></tr>{% endfor %}</tbody>
+    </table>
+    {% endif %}
+  </div>
+</details>
+{% endif %}
+{% endblock %}

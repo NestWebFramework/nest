@@ -1,5 +1,7 @@
 # Nest
 
+**Version 0.3.0** · [changelog](CHANGELOG.md) · documentation at [nest-framework.org](https://nest-framework.org/docs/)
+
 A lightweight, manifest-driven host for web applications in Python: FastAPI,
 server-rendered pages, htmx and Server-Sent Events, Vue only where a page
 needs it. One application is one service on one port, made of reusable
@@ -88,6 +90,7 @@ uv run nest serve applications/hello      # production: gunicorn's master and wo
 uv run nest modules applications/hello    # its modules: core, enabled, disabled (docs/modules.md)
 uv run nest packages ../morlaca add forum # install a trusted package (then enable it)
 uv run nest themes ../morlaca use paper   # the site's look (docs/themes.md)
+uv run nest publish modules/forum         # to the Nest registry (docs/registry.md)
 uv run nest validate --strict modules     # manifests, and the code keeping to them
 uv run pytest                             # the tests
 uv run nest validate .                    # every manifest against its contract
@@ -99,13 +102,13 @@ uv run nest new module glossary --into modules
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, content, media, gallery, maps, comments, redirects, forum, messages, trains)
+modules/              reusable modules (htmx, auth, forms, glossary, hangman, content, media, gallery, maps, geo, comments, redirects, forum, messages, trains, docs, seo, translations, notifications, admin, agent, scheduler, keeper, registry)
 interfaces/           interfaces (cache, db, pubsub, search, storage)
 providers/            providers (cache-memory, redis, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
 themes/               themes (base)
 engines/saga/             the Saga engine, a package like any module (module.yml and pyproject.toml, code in src/nest_saga/)
 engines/saga/subsystems/  its subsystems, each a package of its own that names the engine (part_of: saga)
-applications/             Nest's own applications (keeper, hello); the sites live in repos of their own beside it
+applications/             Nest's own applications (keeper, hello, registry, docsite); the sites live in repos of their own beside it
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -437,6 +440,59 @@ The import moves Photo Gallery (10Web) and NextGEN galleries and albums with the
 thumbnails. It keeps the plugins' ids as aliases: `[Best_Wordpress_Gallery id="2"]` and
 `[nggallery id=1]` in imported pages keep working, unchanged.
 
+## The glossary's community and hangman
+
+**`glossary`** (regionalisme.ro's dictionaries) takes a Glossword site whole:
+`nest glossary import-glossword-db APP dump.sql` brings every dictionary, a word given twice
+merged into one term with two senses, the original dates kept, and the visitors' proposals the
+site never judged as proposals still waiting.
+
+* **Proposals** (`proposals: true`): visitors send a word and its meaning at `/propose` (a
+  honeypot, a signed time stamp, a limit per address kept as a keyed hash). Editors judge them
+  in Admin → Dictionaries → Proposals: approved, a meaning for a word already there becomes
+  another of its senses; rejected, it stays out of sight. The admin panel shows how many wait
+  (any module answers `admin.waiting`; comments does too).
+* **Comments** on a term, when the application has the comments module.
+* **Other languages:** the words are never translated, they are the dictionary's subject; a
+  sense's definition and usage are explained in each other language (a text table), beside the
+  original in the editor, or in bulk: `nest glossary export-texts APP en file.json`, then
+  `import-texts`. A definition changed in the original drops its translation; one unchanged
+  keeps it through every edit and approval.
+* **Old addresses:** `/index.php/term/...`, `?a=srch` searches, and (through the redirects
+  module's `redirects.request`) its own pages.
+
+**`hangman`** plays with whichever module answers `words.random` and `words.by_ref` (the
+glossary does): a word at random, its meaning as the clue, the word's page at the end. The game
+lives in a signed cookie with only the word's reference, so the word never reaches the browser
+before the end; the alphabet (Romanian by default), the wrong guesses allowed and the word
+lengths are settings.
+
+## Trains: the timetable from data.gov.ro, journeys with changes
+
+**`trains`** (gari.ro's timetable) reads the CFR XML files Informatică Feroviară publishes for each
+operator on data.gov.ro (`sources/cfr_xml`), finds them through the portal's API
+(`sources/datagov`) and loads each into its year's timetable (`loader`), replacing only what
+that file brought before. With `sync: true` one worker asks the portal every day and loads what
+is new or changed (a checksum decides); the new year arrives in December and is in force from its
+first day. `nest trains sync | sources | load-xml`.
+
+* **Calendars:** each train's running periods and weekdays (the files' `Zile` bit field), so a
+  board can show only today's trains and a journey only the trains of its day.
+* **Journeys:** the Connection Scan Algorithm over one day's connections, kept in memory (built
+  in a fraction of a second): changes with a minimum time, overnight journeys, a station to go
+  through, direct only; the day's choices in tens of milliseconds, fares per leg.
+* **Pages:** stations (boards, services, map), trains (running days, cars drawn, route on the
+  map), the trains running now (placed by the timetable), operators, near me.
+* **Boards for other sites:** split-flap, LED or station-blue boards that refresh themselves;
+  only they may be framed elsewhere (`nest.security.allow(response, "embed")`).
+* **Old addresses:** gari.ro's encrypted tokens read back with its key (a secret in `.env`).
+
+**`geo`** is where the reader is: distances and a box for a database's first cut
+(`nest_geo.distance_km`, `box`, `near`), a locate button any module includes, and a near-me page
+that shows what every module answering `geo.near` has nearby (stations, places on the maps).
+Only pages that ask for it may use the browser's position
+(`nest.security.allow(response, "geolocation")`).
+
 ## Comments and redirects
 
 **`comments`** works on anything. A page embeds a thread with
@@ -454,6 +510,8 @@ comments module knowing them.
 * **Import:** `nest comments import-wordpress APP dump.sql` attaches WordPress comments to the
   pages their posts became. It finds them through the application's `wordpress.post` lookup,
   which `content` answers.
+  `nest comments import-glossword APP dump.sql` does the same for a Glossword site's
+  GentleSource comments, through `glossary.legacy_subject`.
 
 **`redirects`** sends old addresses on to new ones. It answers only after every page, so a page
 that exists always wins over a redirect.

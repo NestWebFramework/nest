@@ -1,0 +1,40 @@
+# The registry with docker compose (instead of the systemd unit), and, with the profile
+# "services", its own PostgreSQL and MinIO (for a single server; a dedicated database and
+# storage server is the registry.env's URLs instead).
+#
+#   docker compose -f applications/registry/deploy/compose.yml up -d
+#   docker compose -f applications/registry/deploy/compose.yml --profile services up -d
+name: nest-registry
+
+services:
+  registry:
+    image: miraur/nest-registry:latest
+    build: {context: ../../.., dockerfile: applications/registry/deploy/Dockerfile}
+    env_file: [/etc/nest/registry.env]
+    ports: ["127.0.0.1:8600:8000"]
+    volumes: [data:/data]
+    restart: unless-stopped
+
+  postgres:
+    profiles: [services]
+    image: postgres:17
+    environment: {POSTGRES_DB: registry, POSTGRES_USER: registry, POSTGRES_PASSWORD_FILE: /run/secrets/pg}
+    secrets: [pg]
+    volumes: [pg:/var/lib/postgresql/data]
+    restart: unless-stopped
+
+  minio:
+    profiles: [services]
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data
+    env_file: [/etc/nest/minio.env]   # MINIO_ROOT_USER, MINIO_ROOT_PASSWORD
+    volumes: [minio:/data]
+    restart: unless-stopped
+
+secrets:
+  pg: {file: /etc/nest/postgres.password}
+
+volumes:
+  data:
+  pg:
+  minio:

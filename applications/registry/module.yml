@@ -1,0 +1,48 @@
+#
+# registry — registry.nest-framework.org: Nest's package registry.
+#
+# The registry module at / (the catalog, the Python index at /simple/, the API at
+# /api/v1/), accounts at /cont (publishers sign in to make their tokens), the admin
+# panel. SQLite and local files to begin with; PostgreSQL and MinIO on the dedicated
+# server later (only the bindings change).
+#
+module:
+  name: registry-app
+  id: nest.app.registry
+  type: application
+  title: Nest packages
+  version: 0.1.0
+  created: "2026-11-20"
+
+application:
+  title: Nest packages
+  port: 8600
+  theme: slate
+  languages: [en, ro]
+
+modules:
+  - name: registry
+    route: /
+    core: true
+    config: {public_url: "https://registry.nest-framework.org"}
+  - name: auth
+    route: /cont
+    core: true
+    # accounts are made by the administrators (nest auth create-user, the admin panel's
+    # Accounts): nobody signs up on their own. Publishing needs the publisher role
+    # (registry: publishers: approved). NEST_REGISTRY_APP__AUTH__ALLOW_REGISTRATION=true
+    # opens sign-up from the environment.
+    config: {allow_registration: false}
+  - {name: admin, route: /admin, core: true}
+  - {name: notifications}
+
+# SQLite and the workspace's files by default (one machine, a volume); the server's
+# environment may choose PostgreSQL and S3/MinIO instead (deploy/registry.env.example):
+#   NEST_BIND__NEST_DB=db-postgres   NEST_BIND__NEST_STORAGE=storage-s3
+bind:
+  nest.db: {providers: [db-sqlite], alternatives: [db-postgres]}
+  nest.storage: {providers: [storage-local], alternatives: [storage-s3]}
+
+deploy:
+  port: 8600
+  service: registry

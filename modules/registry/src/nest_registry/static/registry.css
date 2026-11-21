@@ -1,0 +1,34 @@
+/* registry.css — the catalog's look, on the theme's tokens. */
+.registry-hero { padding-block: .5rem 1.5rem; }
+.registry-hero .lead { font-size: 1.15rem; max-width: 46rem; }
+.registry-search { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.registry-search input { flex: 1 1 18rem; }
+.registry-search select { flex: 0 1 12rem; width: auto; }
+.registry-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; }
+.registry-item { padding: .85rem 1rem; margin: 0; }
+.registry-item p { margin: .35rem 0 0; }
+.registry-name { font-weight: 700; font-size: 1.05rem; margin-right: .4rem; }
+.registry-files td:first-child { overflow-wrap: anywhere; }
+pre { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .6rem .8rem; }
+.registry-shot img, .registry-swatch { display: block; width: 100%; max-width: 36rem; height: auto; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.25rem; }
+.registry-about p { white-space: pre-line; max-width: 46rem; }
+
+/* the menu: one row, the pages then who is signed in */
+.registry-bar { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1.25rem; }
+.registry-links { display: flex; align-items: center; gap: .25rem; list-style: none; margin: 0; padding: 0; }
+.registry-links a { display: inline-block; padding: .35rem .75rem; text-decoration: none; }
+.registry-account { display: flex; align-items: center; gap: .6rem; padding-left: 1.25rem; border-left: 1px solid var(--border); font-size: .92rem; }
+.registry-account form { margin: 0; }
+.registry-account button { padding: .3rem .8rem; min-height: 0; font-size: .88rem; }
+@media (max-width: 40rem) { .registry-account { border-left: 0; padding-left: 0; } }
+/* the tokens page */
+.registry-inline { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 0; }
+.registry-inline input { flex: 1 1 16rem; width: auto; }
+.registry-inline .registry-short { flex: 0 1 12rem; }
+.registry-secret { border-color: var(--accent); }
+.registry-secret pre { margin: 0; }
+.registry-table { margin-bottom: 1.5rem; }
+.registry-keys { margin-top: 1.5rem; padding: .85rem 1rem; }
+.registry-keys summary { cursor: pointer; }
+.registry-keys[open] summary { margin-bottom: .75rem; }
+.card > h2:first-child, .card > summary:first-child { margin-top: 0; }

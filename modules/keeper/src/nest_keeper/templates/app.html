@@ -1,7 +1,7 @@
 {% extends "admin/layout.html" %}
 {% block title %}{{ app.title }} · {{ _("Applications") }}{% endblock %}
 {% block admin_content %}
-<p><a href="{{ base }}/">← {{ _("Applications") }}</a></p>
+<p><a href="{{ base }}/apps">← {{ _("Applications") }}</a></p>
 <h1>{{ app.title }} <span class="muted">· {{ app.name }} {{ app.version }}</span></h1>
 <p>{% if app.running %}<span class="better">● {{ _("runs") }}</span>{% elif app.running is false %}<span class="muted">○ {{ _("stopped") }}</span>{% endif %}
   {% if app.port %}· {{ _("port") }} {{ app.port }}{% endif %} · <span class="muted">{{ app.root }}</span>

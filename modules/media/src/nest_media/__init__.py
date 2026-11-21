@@ -22,8 +22,19 @@ from nest_storage import Storage, StorageError
 
 from nest import ModuleHost, bound
 from nest.host import module_state
+from nest_media.clean import ImageError
+from nest_media.clean import clean as clean_image
 
-__all__ = ["SIZES", "forget_sizes", "media_base", "media_srcset", "media_url", "responsive_images"]
+__all__ = [
+    "SIZES",
+    "ImageError",
+    "clean_image",
+    "forget_sizes",
+    "media_base",
+    "media_srcset",
+    "media_url",
+    "responsive_images",
+]
 
 router = APIRouter()
 ACTIVE = ("text/html", "image/svg", "application/xhtml", "text/xml", "application/xml")

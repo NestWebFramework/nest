@@ -1,0 +1,11 @@
+{
+ "Near me": "Near me",
+ "Near {lat}, {lon}": "Near {lat}, {lon}",
+ "Nothing near here.": "Nothing near here.",
+ "Find what is near me": "Find what is near me",
+ "Your browser asks first; the position is used for this search only and kept nowhere.": "Your browser asks first; the position is used for this search only and kept nowhere.",
+ "Or give a place by hand": "Or give a place by hand",
+ "Latitude": "Latitude",
+ "Longitude": "Longitude",
+ "Search": "Search"
+}

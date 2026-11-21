@@ -1,0 +1,14 @@
+[project]
+name = "nest-geo"
+version = "0.1.0"
+description = "Where the reader is, and what is near: a near-me page every module contributes to, distances, a locate button."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core"]
+
+[project.entry-points."nest.modules"]
+geo = "nest_geo"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

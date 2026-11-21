@@ -8,7 +8,7 @@ are drawn from data, never from markup, so a title can hold nothing that runs.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 from urllib.parse import urlencode
 
@@ -36,10 +36,22 @@ def _state(request: Request) -> dict[str, Any]:
     return module_state(request, "maps")
 
 
+def _locale(request: Any) -> str:
+    state = getattr(request, "state", None)
+    return str(getattr(state, "locale", "") or "") if state is not None else ""
+
+
+def _prefix(request: Any) -> str:
+    """The page's language prefix ("/en"; "" for the default language, or without them)."""
+    state = getattr(request, "state", None)
+    return str(getattr(state, "url_prefix", "") or "") if state is not None else ""
+
+
 def places(request: Request) -> list[Point]:
-    """Every place the application's modules offer ("map.points"), as Points."""
+    """Every place the application's modules offer ("map.points"), as Points, in the
+    page's language (a module that knows it answers with its words and addresses there)."""
     out: list[Point] = []
-    for answer in request.app.state.nest.gather("map.points"):
+    for answer in request.app.state.nest.gather("map.points", {"locale": _locale(request)}):
         for p in answer or []:
             point = p if isinstance(p, Point) else Point(**p)
             out.append(point)
@@ -56,6 +68,7 @@ class View:
     data: str
     title: str
     fit: bool = False
+    refresh: int = 0  # seconds between asking for the markers again (0: once)
 
 
 def current_tiles(request: Request) -> Tiles:
@@ -92,6 +105,8 @@ def element(request: Request, view: View) -> Markup:
     }
     if view.fit:
         attrs["data-fit"] = "1"
+    if view.refresh:
+        attrs["data-refresh"] = str(view.refresh)
     html = " ".join(f'{k}="{escape(v)}"' for k, v in attrs.items())
     osm = (
         f"https://www.openstreetmap.org/?mlat={view.lat:.5f}&amp;mlon={view.lng:.5f}"
@@ -110,7 +125,10 @@ def _base(request: Request) -> str:
 
 
 def map_view(request: Request, m: Any, *, with_places: bool = False) -> View:
-    data = f"{_base(request)}/{m.slug}.geojson" + ("?places=1" if with_places else "")
+    # asked under the page's language prefix, so its markers come in that language
+    data = f"{_prefix(request)}{_base(request)}/{m.slug}.geojson" + (
+        "?places=1" if with_places else ""
+    )
     return View(m.lat, m.lng, m.zoom, data, m.title, fit=with_places)
 
 
@@ -136,7 +154,9 @@ def shortcode_map(attrs: dict[str, str], ctx: Any) -> str:
         return element(request, View(lat, lng, zoom, data, title or "Map"))
     slug = attrs.get("slug") or _state(request)["settings"].get("main") or None
     m = service.map_by(db, slug=slug)
-    return element(request, map_view(request, m)) if m else ""
+    return (
+        element(request, map_view(request, service.shown_map(db, m, _locale(request)))) if m else ""
+    )
 
 
 def shortcode_wpgmza(attrs: dict[str, str], ctx: Any) -> str:
@@ -146,7 +166,9 @@ def shortcode_wpgmza(attrs: dict[str, str], ctx: Any) -> str:
         return ""
     db = request.app.state.nest.bindings.get("nest.db")
     m = service.map_by(db, legacy_id=int(attrs["id"]))
-    return element(request, map_view(request, m)) if m else ""
+    return (
+        element(request, map_view(request, service.shown_map(db, m, _locale(request)))) if m else ""
+    )
 
 
 # --- pages -------------------------------------------------------------------------
@@ -159,6 +181,7 @@ def _main(request: Request, db: Any) -> Any:
 @router.get("/")
 def index(request: Request, db: Database = bound(Database)):
     m = _main(request, db)
+    m = service.shown_map(db, m, _locale(request)) if m else None
     view = map_view(request, m, with_places=True) if m else None
     return render(
         request,
@@ -166,7 +189,11 @@ def index(request: Request, db: Database = bound(Database)):
         map=m,
         figure=element(request, view) if view else None,
         places=sorted(places(request), key=lambda p: p.title.lower()),
-        others=[x for x, _n in service.maps(db) if m is None or x.id != m.id],
+        others=[
+            service.shown_map(db, x, _locale(request))
+            for x, _n in service.maps(db)
+            if m is None or x.id != m.id
+        ],
     )
 
 
@@ -192,7 +219,13 @@ def map_geojson(request: Request, slug: str, db: Database = bound(Database)) -> 
     m = service.map_by(db, slug=slug)
     if m is None:
         raise HTTPException(404)
-    found = service.points(db, m.id)
+    prefix = _prefix(request)
+    found = [  # a marker's link to a page of the site, at that page's address in this language
+        replace(p, url=prefix + p.url)
+        if prefix and p.url.startswith("/") and not p.url.startswith("//")
+        else p
+        for p in service.points(db, m.id, _locale(request))
+    ]
     if request.query_params.get("places") == "1":
         found += places(request)
     return _geo(service.geojson(found))
@@ -203,6 +236,10 @@ def map_page(request: Request, slug: str, db: Database = bound(Database)):
     m = service.map_by(db, slug=slug)
     if m is None:
         raise HTTPException(404)
+    m = service.shown_map(db, m, _locale(request))
+    if getattr(m, "fallback", False):  # not translated: the original's words, said so
+        request.state.language_fallback = True
+        request.state.alternates = {request.app.state.nest.catalogs.default: request.url.path}
     return render(
         request,
         "maps/map.html",

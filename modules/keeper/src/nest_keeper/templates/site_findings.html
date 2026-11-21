@@ -1,0 +1,13 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Production check") }} · {{ site.name }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/sites/{{ site.id }}">← {{ site.name }}</a></p>
+<h1>{{ _("Production check") }} <span class="muted">· {{ site.name }}</span></h1>
+<p class="muted">{{ _("What running in production needs, as the site itself sees it (nest check).") }}</p>
+{% if findings.get("error") %}<p class="notice danger" role="alert">{{ findings.error }}</p>
+{% else %}
+<div class="table-wrap"><table><tbody>{% for f in findings.findings %}
+  <tr><td>{% if f.level == "ok" %}<span class="better">✓</span>{% elif f.level == "warn" %}<span class="keeper-state warn">!</span>{% else %}<span class="worse">✗</span>{% endif %}</td><td>{{ f.text }}</td></tr>
+{% endfor %}</tbody></table></div>
+{% endif %}
+{% endblock %}

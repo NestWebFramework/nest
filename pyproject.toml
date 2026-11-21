@@ -1,7 +1,7 @@
 [project]
 name = "nest-workspace"
-version = "0.0.0"
-description = "The Nest workspace: the core, its modules, interfaces, providers, themes and applications."
+version = "0.3.0"
+description = "Nest 0.3.0, the workspace: the core, its modules, interfaces, providers, themes and applications."
 requires-python = ">=3.12"
 dependencies = [
     "nest-core",
@@ -9,6 +9,10 @@ dependencies = [
     "nest-theme-base",
     "nest-theme-paper",
     "nest-theme-slate",
+    "nest-theme-morlaca-valley",
+    "nest-theme-morlaca-heritage",
+    "nest-theme-morlaca-chronicle",
+    "nest-theme-rail-signage",
     "nest-cache",
     "nest-cache-memory",
     "nest-pubsub",
@@ -24,16 +28,24 @@ dependencies = [
     "nest-glossary",
     "nest-storage",
     "nest-storage-local",
+    "nest-storage-s3",
     "nest-content",
     "nest-media",
     "nest-gallery",
     "nest-maps",
     "nest-notifications",
     "nest-seo",
+    "nest-translations",
     "nest-comments",
     "nest-redirects",
+    "nest-hangman",
+    "nest-geo",
+    "nest-docs",
     "nest-admin",
+    "nest-agent",
+    "nest-scheduler",
     "nest-keeper",
+    "nest-registry",
     "nest-forum",
     "nest-messages",
     "nest-trains",
@@ -91,6 +103,10 @@ nest-htmx = { workspace = true }
 nest-theme-base = { workspace = true }
 nest-theme-paper = { workspace = true }
 nest-theme-slate = { workspace = true }
+nest-theme-morlaca-valley = { workspace = true }
+nest-theme-morlaca-heritage = { workspace = true }
+nest-theme-morlaca-chronicle = { workspace = true }
+nest-theme-rail-signage = { workspace = true }
 nest-cache = { workspace = true }
 nest-cache-memory = { workspace = true }
 nest-redis = { workspace = true }
@@ -106,16 +122,24 @@ nest-search-sqlite = { workspace = true }
 nest-glossary = { workspace = true }
 nest-storage = { workspace = true }
 nest-storage-local = { workspace = true }
+nest-storage-s3 = { workspace = true }
 nest-content = { workspace = true }
 nest-media = { workspace = true }
 nest-gallery = { workspace = true }
 nest-maps = { workspace = true }
 nest-notifications = { workspace = true }
 nest-seo = { workspace = true }
+nest-translations = { workspace = true }
 nest-comments = { workspace = true }
 nest-redirects = { workspace = true }
+nest-hangman = { workspace = true }
+nest-geo = { workspace = true }
+nest-docs = { workspace = true }
 nest-admin = { workspace = true }
+nest-agent = { workspace = true }
+nest-scheduler = { workspace = true }
 nest-keeper = { workspace = true }
+nest-registry = { workspace = true }
 nest-forum = { workspace = true }
 nest-messages = { workspace = true }
 nest-trains = { workspace = true }

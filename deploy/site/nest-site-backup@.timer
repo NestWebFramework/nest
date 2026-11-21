@@ -1,0 +1,11 @@
+# Every night, a backup of a Nest site:  sudo systemctl enable --now nest-site-backup@gari.timer
+[Unit]
+Description=Back up Nest site %i every night
+
+[Timer]
+OnCalendar=*-*-* 03:30
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

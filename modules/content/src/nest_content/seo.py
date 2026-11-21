@@ -58,7 +58,15 @@ def _xml(body: str, media_type: str) -> Response:
 
 @files.get("/sitemap.xml", include_in_schema=False)
 def sitemap(request: Request, db: Database = bound(Database)) -> Response:
+    from nest_content import translated  # noqa: PLC0415
+
+    state = module_state(request, "content")
+    registry = state["types"]
     rows = [("/", None)] + service.sitemap(db)
+    for locale in translated.others(registry):  # each translated page at its own address
+        entries, terms = translated.published_texts(db, registry, locale)
+        rows += [(state["language_url"](row.path, locale), row.updated_at) for _e, row in entries]
+        rows += [(state["language_url"](row.path, locale), None) for _t, row in terms]
     urls = "".join(
         f"<url><loc>{escape(absolute(request, path))}</loc>"
         + (f"<lastmod>{when.date().isoformat()}</lastmod>" if when else "")
@@ -77,26 +85,45 @@ def _rfc822(when: datetime | None) -> str:
 
 @router.get("/feed/", include_in_schema=False)
 def feed(request: Request, db: Database = bound(Database)) -> Response:
+    return feed_of(request, db)
+
+
+def feed_of(request: Request, db: Any, term: Any = None) -> Response:
+    """The newest entries as RSS: the site's (/feed/), or one category's or tag's
+    (/category/stiai-ca/feed/, the address WordPress gave it)."""
     state = module_state(request, "content")
     nest = request.app.state.nest
+    from nest_content import translated  # noqa: PLC0415
+
     types = [t for t, s in state["types"].types.items() if not s.hierarchical]
-    entries, _ = service.listing(db, types=types, per_page=FEED_SIZE)
+    entries, _ = service.listing(
+        db, types=types, term_id=term.id if term is not None else None, per_page=FEED_SIZE
+    )
+    # /en/feed/: the entries in English (the original's where there is none yet), linked
+    # at their English addresses
+    locale = str(getattr(request.state, "locale", "") or "")
+    prefix = str(getattr(request.state, "url_prefix", "") or "")
+    entries = [
+        e
+        for e in translated.show_entries(db, state["types"], entries, locale)
+        if not getattr(e, "fallback", False)
+    ]
     items = "".join(
         "<item>"
         f"<title>{escape(e.title)}</title>"
-        f"<link>{escape(absolute(request, e.path))}</link>"
-        f'<guid isPermaLink="true">{escape(absolute(request, e.path))}</guid>'
+        f"<link>{escape(absolute(request, prefix + e.path))}</link>"
+        f'<guid isPermaLink="true">{escape(absolute(request, prefix + e.path))}</guid>'
         f"<pubDate>{_rfc822(e.published_at)}</pubDate>"
         f"<description>{escape(summary(e))}</description>"
         "</item>"
         for e in entries
     )
-    language = (nest.catalogs.languages or [""])[0]
+    language = locale or nest.catalogs.default
     return _xml(
         '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>'
-        f"<title>{escape(nest.title)}</title>"
-        f"<link>{escape(site_url(request))}/</link>"
-        f'<atom:link href="{escape(absolute(request, "/feed/"))}" rel="self" type="application/rss+xml"/>'
+        f"<title>{escape(nest.title + (' · ' + term.name if term is not None else ''))}</title>"
+        f"<link>{escape(absolute(request, prefix + (term.path if term is not None else '/')))}</link>"
+        f'<atom:link href="{escape(absolute(request, prefix + ((term.path or "/") if term is not None else "/") + "feed/"))}" rel="self" type="application/rss+xml"/>'
         f"<description>{escape(nest.manifest.module.description or nest.title)}</description>"
         + (f"<language>{escape(language)}</language>" if language else "")
         + f"{items}</channel></rss>",

@@ -26,10 +26,10 @@ from starlette.concurrency import run_in_threadpool
 
 from nest import admin_url, bound, is_htmx, render, toast, translator
 from nest.host import module_state
-from nest_content import seo, service
+from nest_content import seo, service, translated
 from nest_content.html import embed_videos, link_list, sanitize, video, youtube_id
 from nest_content.models import STATUSES, Entry
-from nest_content.service import KIND, ContentError, EntryData
+from nest_content.service import ContentError, EntryData
 
 router = APIRouter()
 admin = APIRouter()  # the editor: the admin panel mounts it at <admin route>/content
@@ -38,6 +38,12 @@ editor = require_role("editor")
 
 def _state(request: Request) -> dict[str, Any]:
     return module_state(request, "content")
+
+
+def locale_of(request: Any) -> str:
+    """The language a page is in ("" when there is no request: the default's)."""
+    state = getattr(request, "state", None)
+    return str(getattr(state, "locale", "") or "") if state is not None else ""
 
 
 def _bindings(request: Request) -> tuple[Any, Any, Any]:
@@ -80,6 +86,9 @@ def catlist(attrs: dict[str, str], ctx: Context) -> str:
     if attrs.get("order", "").lower() == "desc" and order == "title":
         entries.reverse()
     own = ctx.entry.id if ctx.entry else None
+    if ctx.request is not None:
+        registry = _state(ctx.request)["types"]
+        entries = translated.show_entries(ctx.db, registry, entries, locale_of(ctx.request))
     return link_list([(e.title, e.path) for e in entries if e.id != own])
 
 
@@ -121,8 +130,9 @@ def search(request: Request, q: str = "", page: int = 1, index: Search = bound(S
     q = q.strip()[:200]
     size = 20
     page = max(1, min(page, 500))
-    hits = index.query(q, kind=KIND, limit=size, offset=(page - 1) * size) if q else []
-    total = index.count(q, kind=KIND) if q else 0
+    kind = translated.kind_for(locale_of(request), _state(request)["types"])  # this language's
+    hits = index.query(q, kind=kind, limit=size, offset=(page - 1) * size) if q else []
+    total = index.count(q, kind=kind) if q else 0
     return render(
         request,
         "content/search.html",
@@ -143,32 +153,100 @@ def serve(request: Request) -> Response | None:
     db, _search, _storage = _bindings(request)
     state = _state(request)
     path = request.url.path
+    old = _wordpress(request, db, state, path)
+    if old is not None:
+        return old
     if path == "/":
-        if request.query_params.get("p", "").isdigit():  # WordPress's ?p=123
-            e = service.entry_by_legacy(db, int(request.query_params["p"]))
-            if e is not None and e.status == "published":
-                return RedirectResponse(e.path, status_code=301)
         home = state["settings"].get("home")
         if home:
             e = service.entry_by_path(db, home)
             if e is not None:
                 return _entry_page(request, db, state, e)
         return _listing_page(request, db, state, None)
-    e = service.entry_by_path(db, path)
+    registry, locale = state["types"], locale_of(request)
+    query = f"?{request.url.query}" if request.url.query else ""
+    # in this language, or the default's text standing in; another language's address
+    # sends to this one's (a language switch, a shared link)
+    e, elsewhere = translated.entry_at(db, registry, path, locale)
     if e is not None:
         return _entry_page(request, db, state, e)
-    term = service.term_by_path(db, path)
-    if term is not None:
-        return _listing_page(request, db, state, term)
+    if elsewhere is None:
+        term, elsewhere = translated.term_at(db, registry, path, locale)
+        if term is not None:
+            return _listing_page(request, db, state, term)
+    if elsewhere is not None and elsewhere != path:
+        return RedirectResponse(elsewhere + query, status_code=301)
     other = path[:-1] if path.endswith("/") else path + "/"
-    if service.entry_by_path(db, other) or service.term_by_path(db, other):
-        query = f"?{request.url.query}" if request.url.query else ""
+    if translated.entry_at(db, registry, other, locale) != (None, None) or translated.term_at(
+        db, registry, other, locale
+    ) != (None, None):
         return RedirectResponse(other + query, status_code=301)
     return None
 
 
+def _wordpress(request: Request, db: Any, state: dict[str, Any], path: str) -> Response | None:
+    """The addresses a WordPress site had besides its pages, sent where they are now:
+    ?p=, ?page_id= (an entry by its old id), ?cat= (a category), ?s= (a search), a
+    category's feed (/category/x/feed/, served), an entry's or the comments' feed, and
+    the sign-in and admin addresses editors kept in their bookmarks."""
+    q = request.query_params
+    if path == "/":
+        for key in ("p", "page_id"):
+            if q.get(key, "").isdigit():
+                e = service.entry_by_legacy(db, int(q[key]))
+                if e is not None and e.status == "published":
+                    return RedirectResponse(e.path, status_code=301)
+        if q.get("cat", "").isdigit():
+            t = service.term_by(db, "category", legacy_id=int(q["cat"]))
+            if t is not None and t.path:
+                return RedirectResponse(t.path, status_code=301)
+        if "s" in q:
+            from urllib.parse import urlencode  # noqa: PLC0415
+
+            return RedirectResponse("/search?" + urlencode({"q": q["s"][:200]}), status_code=301)
+        return None
+    nest = request.app.state.nest
+    if path in ("/wp-login.php", "/wp-admin", "/wp-admin/"):
+        if path == "/wp-login.php":
+            auth = next(
+                (u.instance.route for u in nest.plan.units if u.name == "auth" and u.instance), None
+            )
+            target = f"{auth.rstrip('/')}/login" if auth else None
+        else:
+            target = nest.admin_root
+        return RedirectResponse(target, status_code=301) if target else None
+    if path == "/comments/feed/":
+        return RedirectResponse("/feed/", status_code=301)
+    if path.endswith("/feed/") and len(path) > len("/feed/"):
+        base = path[: -len("feed/")]
+        registry, locale = state["types"], locale_of(request)
+        term, _elsewhere = translated.term_at(db, registry, base, locale)
+        if term is not None:
+            from nest_content.seo import feed_of  # noqa: PLC0415
+
+            return feed_of(request, db, translated.show_terms(db, registry, [term], locale)[0])
+        e, _elsewhere = translated.entry_at(db, registry, base, locale)
+        if e is not None:  # an entry's comment feed: the entry itself
+            return RedirectResponse(base, status_code=301)
+    return None
+
+
+def _say_where(request: Request, registry: Any, shown: Any, alternates: dict[str, Any]) -> None:
+    """Tell the language layer where this page is in each language (hreflang), and when
+    it is the original's text standing in for a missing translation."""
+    if len(registry.languages) > 1:
+        request.state.alternates = alternates
+        if getattr(shown, "fallback", False):
+            request.state.language_fallback = True
+
+
 def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> Response:
     registry = state["types"]
+    locale = locale_of(request)
+    home = state["settings"].get("home") == e.path
+    original = e
+    e = translated.show_entries(db, registry, [e], locale)[0]
+    _say_where(request, registry, e, translated.entry_alternates(db, registry, original, home))
     spec = registry.type(e.type)
     template = spec.template or f"content/{e.type}.html"
     env = request.app.state.nest.templates
@@ -181,8 +259,10 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
         template,
         entry=e,
         spec=spec,
-        terms=service.terms_of(db, e.id),
-        children=service.children(db, e.id) if spec.hierarchical else [],
+        terms=translated.show_term_groups(db, registry, service.terms_of(db, e.id), locale),
+        children=translated.show_entries(db, registry, service.children(db, e.id), locale)
+        if spec.hierarchical
+        else [],
         body=Markup(
             responsive_images(
                 request.app.state.nest.shortcodes.expand(
@@ -193,7 +273,7 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
             )
         ),
         description=seo.summary(e),
-        canonical="/" if state["settings"].get("home") == e.path else e.path,
+        canonical="/" if home else e.path,
     )
 
 
@@ -207,6 +287,14 @@ def _listing_page(request: Request, db: Any, state: dict[str, Any], term: Any) -
     entries, total = service.listing(
         db, types=types, term_id=term.id if term else None, page=page, per_page=per_page
     )
+    registry, locale = state["types"], locale_of(request)
+    entries = translated.show_entries(db, registry, entries, locale)
+    if term is not None:
+        original = term
+        term = translated.show_terms(db, registry, [term], locale)[0]
+        _say_where(request, registry, term, translated.term_alternates(db, registry, original))
+    else:
+        _say_where(request, registry, None, dict.fromkeys(registry.languages, "/"))
     return render(
         request,
         "content/listing.html",
@@ -296,9 +384,12 @@ async def admin_upload(request: Request, user: CurrentUser = Depends(editor)):
         return JSONResponse(
             {"error": t("A picture is at most {n} MB.", n=limit // 2**20)}, status_code=413
         )
-    kind = service.sniff_image(data[:16])
-    if kind is None:
-        return JSONResponse({"error": t("Only JPEG, PNG, WebP and GIF pictures.")}, status_code=415)
+    from nest_media import ImageError, clean_image
+
+    try:  # read whole and written again: a real picture, without its camera's metadata
+        data, kind = await run_in_threadpool(clean_image, data)
+    except ImageError as e:
+        return JSONResponse({"error": t(e.message, **e.params)}, status_code=415)
     key = await run_in_threadpool(service.upload_key, db, upload.filename or "", kind)
     m = await run_in_threadpool(
         service.add_media,
@@ -309,6 +400,7 @@ async def admin_upload(request: Request, user: CurrentUser = Depends(editor)):
         filename=(upload.filename or key.rsplit("/", 1)[-1])[:300],
         alt=str(form.get("alt", ""))[:300],
         content_type=kind,
+        uploaded_by=user.id,
     )
     return JSONResponse(_media_item(request, m), status_code=201)
 
@@ -427,7 +519,9 @@ async def _save_term(request: Request, taxonomy: str, term_id: int | None) -> Re
     }
     term = service.term_by_id(db, term_id) if term_id else None
     try:
-        problem = nest.lookup("seo.check", {"form": form})
+        problem = nest.lookup("seo.check", {"form": form}) or nest.lookup(
+            "translations.check", {"subject": "content.term", "id": term_id or 0, "form": form}
+        )
         if problem:
             raise ContentError(problem)
         saved, moves = await run_in_threadpool(
@@ -461,6 +555,9 @@ async def _save_term(request: Request, taxonomy: str, term_id: int | None) -> Re
             )
         return _term_form(request, db, taxonomy, term, values, message, 400, form)
     nest.lookup("seo.save", {"subject": f"content.term:{saved.id}", "form": form})
+    await run_in_threadpool(
+        nest.lookup, "translations.save", {"subject": "content.term", "id": saved.id, "form": form}
+    )
     moved = _redirect_moves(request, moves, f"{taxonomy} {saved.slug}")
     if moved:
         toast(
@@ -517,6 +614,37 @@ def admin_term_delete(
     )
 
 
+@admin.get("/entries/{entry_id:int}")
+def admin_entry_by_id(
+    request: Request,
+    entry_id: int,
+    user: CurrentUser = Depends(editor),
+    db: Database = bound(Database),
+):
+    """An entry's editor by its id alone (where another module links it: translations)."""
+    e = service.entry(db, entry_id)
+    if e is None:
+        raise HTTPException(404)
+    return RedirectResponse(
+        admin_url(request, "content", f"{quote(e.type)}/{e.id}"), status_code=303
+    )
+
+
+@admin.get("/terms/{term_id:int}")
+def admin_term_by_id(
+    request: Request,
+    term_id: int,
+    user: CurrentUser = Depends(editor),
+    db: Database = bound(Database),
+):
+    t = service.term_by_id(db, term_id)
+    if t is None:
+        raise HTTPException(404)
+    return RedirectResponse(
+        admin_url(request, "content", f"taxonomies/{quote(t.taxonomy)}/{t.id}"), status_code=303
+    )
+
+
 @admin.get("/{type_name}")
 def admin_list(
     request: Request,
@@ -552,6 +680,14 @@ def admin_list(
         without=grouping if grouping and category == "none" else None,
     )
     tree = service.term_tree(db, grouping, type_name) if grouping else []
+    nest = request.app.state.nest
+    tr_states = (  # where each stands in the other languages, with the translations module
+        nest.lookup(
+            "translations.states", {"subject": "content.entry", "ids": [e.id for e in entries]}
+        )
+        if nest.answered("translations.states") and entries
+        else None
+    )
     everything = service.entries_of_type(db, type_name, per_page=1)[1]
     loose = (
         service.entries_of_type(db, type_name, per_page=1, without=grouping)[1] if grouping else 0
@@ -575,6 +711,7 @@ def admin_list(
         current_term=term,
         everything=everything,
         loose=loose,
+        tr_states=tr_states or None,
     )
 
 
@@ -866,7 +1003,7 @@ def admin_untrash(
     db: Database = bound(Database),
     index: Search = bound(Search),
 ):
-    e = service.untrash_entry(db, index, entry_id)
+    e = service.untrash_entry(db, index, entry_id, _state(request)["types"])
     if e is None or e.type != type_name:
         raise HTTPException(404)
     toast(request, translator(request)("“{title}” is back from the trash.", title=e.title))
@@ -966,7 +1103,9 @@ async def _save(
     try:
         # the seo fields, if the seo module put them in the form, are checked first: a page
         # is saved whole or not at all
-        seo_problem = nest.lookup("seo.check", {"form": form})
+        seo_problem = nest.lookup("seo.check", {"form": form}) or nest.lookup(
+            "translations.check", {"subject": "content.entry", "id": existing_id or 0, "form": form}
+        )
         if seo_problem:
             raise ContentError(seo_problem)
         e = await run_in_threadpool(
@@ -974,6 +1113,10 @@ async def _save(
         )
         await run_in_threadpool(
             nest.lookup, "seo.save", {"subject": f"content.entry:{e.id}", "form": form}
+        )
+        # the other languages' text, after the original's (their source)
+        await run_in_threadpool(
+            nest.lookup, "translations.save", {"subject": "content.entry", "id": e.id, "form": form}
         )
     except ContentError as err:
         message = translator(request)(err.message, **err.params)

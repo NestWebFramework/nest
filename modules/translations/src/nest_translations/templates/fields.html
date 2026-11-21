@@ -1,0 +1,37 @@
+{#- Every language's fields but the default one, inside a module's edit form:
+    {{ translation_fields(subject, id) }}. Their names are tr_<language>_<field>; the
+    module's save hands them to the translations module. -#}
+<fieldset class="tr-fields">
+  <legend>{{ _("Translations") }}</legend>
+  {% for lang in languages %}{% set v = values[lang] %}{% set state = states.get(lang, "missing") %}
+  <details class="tr-lang"{% if open or state != "missing" %} open{% endif %}>
+    <summary><span lang="{{ lang }}">{{ names[lang] }}</span>
+      <span class="tr-state tr-{{ state }}">{{ _(state) }}</span></summary>
+    <div class="stack">
+    {% for field, how in kind.fields.items() %}{% set id = "tr_" ~ lang ~ "_" ~ field %}
+      <div class="field"><label for="{{ id }}">{{ _(field.replace("_", " ") | capitalize) }}</label>
+        {% if how in ("textarea", "html") %}
+        <textarea id="{{ id }}" name="{{ id }}" lang="{{ lang }}" rows="{{ 14 if how == 'html' else 3 }}"{% if how == "html" %} data-editor="html"{% endif %}>{{ v[field] }}</textarea>
+        {% else %}
+        <input id="{{ id }}" name="{{ id }}" lang="{{ lang }}" value="{{ v[field] }}"{% if how == "slug" %} spellcheck="false" autocomplete="off" pattern="[^\s/?#]+"{% endif %}>
+        {% endif %}
+        {% if source and source[field] and not open %}<small class="hint">{{ names[default] }}: {{ source[field] | striptags | truncate(140) }}</small>{% endif %}
+      </div>
+    {% endfor %}
+      <div class="row tr-tools">
+        <label for="tr_{{ lang }}_status">{{ _("State") }}</label>
+        <select id="tr_{{ lang }}_status" name="tr_{{ lang }}_status">
+          <option value="published"{% if v.status == "published" %} selected{% endif %}>{{ _("published") }}</option>
+          <option value="draft"{% if v.status == "draft" %} selected{% endif %}>{{ _("draft") }}</option>
+        </select>
+        {% if state == "outdated" %}
+        <span class="check"><input type="checkbox" id="tr_{{ lang }}_current" name="tr_{{ lang }}_current" value="1">
+          <label for="tr_{{ lang }}_current">{{ _("Still matches the original") }}</label></span>
+        {% endif %}
+      </div>
+      <p class="hint">{{ _("Leave every field empty to remove this language's text.") }}</p>
+    </div>
+    <input type="hidden" name="tr_{{ lang }}_present" value="1">
+  </details>
+  {% endfor %}
+</fieldset>

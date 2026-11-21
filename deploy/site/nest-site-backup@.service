@@ -1,0 +1,9 @@
+# A Nest site's backup (nest-site backup <site>): into its data folder's backups/, the
+# newest 14 kept. Copy them off the server too (rsync the folder, or a backup service).
+[Unit]
+Description=Back up Nest site %i
+ConditionPathExists=/etc/nest/%i.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nest-site backup %i

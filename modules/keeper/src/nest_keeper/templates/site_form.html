@@ -1,0 +1,30 @@
+{% extends "admin/layout.html" %}
+{% block title %}{% if site %}{{ site.name }}{% else %}{{ _("Watch a site") }}{% endif %} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/{% if site %}sites/{{ site.id }}{% endif %}">← {% if site %}{{ site.name }}{% else %}{{ _("Sites") }}{% endif %}</a></p>
+<h1>{% if site %}{{ _("Change") }} {{ site.name }}{% else %}{{ _("Watch a site") }}{% endif %}</h1>
+{% if not site %}<ol class="muted">
+  <li>{{ _("Include the agent module in the site's module.yml: - {name: agent, route: /_agent}") }}</li>
+  <li>{{ _("Make a token: nest agent token APP (or --control, to also run its actions).") }}</li>
+  <li>{{ _("Put the line it prints (NEST_…__AGENT__…_TOKEN=sha256:…) in the site's environment and restart it.") }}</li>
+  <li>{{ _("Give the token (na_…) here. The keeper keeps it encrypted.") }}</li>
+</ol>{% endif %}
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="{{ base }}/sites/{% if site %}{{ site.id }}/edit{% else %}new{% endif %}" class="stack">{{ csrf_field }}
+  <label class="field">{{ _("Name") }}<input name="name" required maxlength="120" value="{{ values.get('name', '') }}"></label>
+  <label class="field">{{ _("Address") }}<input name="url" type="url" required maxlength="300" placeholder="https://gari.ro" value="{{ values.get('url', '') }}"></label>
+  {% if not site %}<fieldset class="field"><legend>{{ _("Watched") }}</legend>
+    <label><input type="radio" name="kind" value="agent" {% if values.get('kind', 'agent') == 'agent' %}checked{% endif %}> {{ _("through its agent (a Nest site, or a service that answers the agent's status format)") }}</label>
+    <label><input type="radio" name="kind" value="web" {% if values.get('kind') == 'web' %}checked{% endif %}> {{ _("as a web address: whether it answers, and how fast (no token)") }}</label>
+  </fieldset>{% endif %}
+  <label class="field">{{ _("Agent's address") }} <span class="muted">({{ _("empty: the address and /_agent; for a web check, the address checked, empty: the address") }})</span><input name="agent" type="url" maxlength="300" placeholder="https://gari.ro/_agent" value="{{ values.get('agent', '') }}"></label>
+  <label class="field">{{ _("Agent's token") }}{% if site %} <span class="muted">({{ _("empty: keep the one it has") }})</span>{% endif %}<input name="token" type="password" autocomplete="off" maxlength="100" placeholder="na_… ({{ _('not for a web check') }})"></label>
+  <label class="field">{{ _("Name on the server") }} <span class="muted">({{ _("nest-site's; empty: no restarts from here") }})</span><input name="host_site" maxlength="63" pattern="[a-z0-9][a-z0-9-]*" placeholder="gari" value="{{ values.get('host_site', '') }}"></label>
+  {% if site %}<label><input type="checkbox" name="enabled" value="true" {% if site.enabled %}checked{% endif %}> {{ _("Watched (unticked: paused)") }}</label>{% endif %}
+  <p><button>{% if site %}{{ _("Save") }}{% else %}{{ _("Watch it") }}{% endif %}</button></p>
+</form>
+{% if site %}
+<details><summary class="worse">{{ _("Stop watching it") }}</summary>
+<form method="post" action="{{ base }}/sites/{{ site.id }}/delete">{{ csrf_field }}<p class="muted">{{ _("Its checks and its actions' log go with it. The site itself is not touched.") }}</p><button class="danger">{{ _("Stop watching") }} {{ site.name }}</button></form></details>
+{% endif %}
+{% endblock %}

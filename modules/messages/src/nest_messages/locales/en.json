@@ -1,0 +1,23 @@
+{
+ "A message has at most {n} characters.": "A message has at most {n} characters.",
+ "Archive": "Archive",
+ "Archived": "Archived",
+ "At most {n} people in one conversation.": "At most {n} people in one conversation.",
+ "Conversation": "Conversation",
+ "Email addresses or names, separated by commas.": "Email addresses or names, separated by commas.",
+ "Inbox": "Inbox",
+ "Message": "Message",
+ "Messages": "Messages",
+ "New message": "New message",
+ "No conversations.": "No conversations.",
+ "Nobody here is called “{name}”.": "Nobody here is called “{name}”.",
+ "Reply": "Reply",
+ "Say whom you are writing to.": "Say whom you are writing to.",
+ "Send": "Send",
+ "Subject": "Subject",
+ "This conversation does not exist.": "This conversation does not exist.",
+ "To": "To",
+ "Write something first.": "Write something first.",
+ "Write to someone other than yourself.": "Write to someone other than yourself.",
+ "You have sent many messages this hour; try again later.": "You have sent many messages this hour; try again later."
+}

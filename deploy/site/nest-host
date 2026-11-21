@@ -1,0 +1,437 @@
+#!/usr/bin/env python3
+"""nest-host: the keeper's hands on the server, through nest-site.
+
+Only Python's standard library, 3.8 or later: it runs on the server's own python3.
+
+The keeper runs in a container and cannot restart another container. This small service
+runs on the host (systemd: nest-host.service) and does a few fixed things to the sites
+nest-site runs, when the keeper asks with its token:
+
+    GET  /v1/                          the host, its sites, the actions allowed
+    GET  /v1/sites                     each site: its unit active or not, its image
+                                       (current, previous), its health, a job running
+    GET  /v1/sites/SITE                one site, and its last jobs
+    GET  /v1/sites/SITE/logs?lines=N   the last lines of its log (200; at most 1000)
+    POST /v1/sites/SITE/ACTION         start a job: restart, start, stop, backup, upgrade,
+                                       rollback (as ALLOW says) -> 202 and the job
+    GET  /v1/jobs/ID                   a job: running or done, its exit code, its output
+
+Nothing else runs: no shell, no arguments from the request but a site's name (a site
+with /etc/nest/SITE.conf, lowercase letters, digits and dashes) and an action from the
+list. One job at a time per site. Every request that changes something is written to
+/var/lib/nest-site/host-jobs.log (JSON lines) and to the journal.
+
+    nest-host token     a token for the keeper, and the line for /etc/nest/host.conf
+    nest-host serve     the service (what nest-host.service runs)
+
+/etc/nest/host.conf (KEY=VALUE, no comments after a value):
+    TOKEN_SHA256=sha256:...      the token's SHA-256 (from nest-host token); required
+    BIND=127.0.0.1               where it listens: the loopback, or the Docker bridge's
+                                 address (172.17.0.1) when the keeper is a container;
+                                 never a public address
+    PORT=8090
+    ALLOW=restart start stop backup upgrade rollback
+    SITES=                       only these sites (empty: every site with a .conf)
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import http.server
+import ipaddress
+import json
+import os
+import re
+import secrets
+import subprocess
+import sys
+import threading
+import time
+import urllib.parse
+import urllib.request
+from collections import deque
+from datetime import datetime, timezone
+
+ETC = os.environ.get("NEST_ETC", "/etc/nest")
+STATE = os.environ.get("NEST_STATE", "/var/lib/nest-site")
+NEST_SITE = os.environ.get("NEST_SITE", "/usr/local/bin/nest-site")
+ACTIONS = ("restart", "start", "stop", "backup", "upgrade", "rollback")
+SITE_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+OUTPUT_LIMIT = 200_000
+JOB_TIMEOUT = 1800  # an upgrade builds an image: at most half an hour
+FAILURES_ALLOWED = 20
+
+
+def now() -> str:
+    # timezone.utc, not UTC: the server's python3 may be older than 3.11
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")  # noqa: UP017
+
+
+def say(text: str) -> None:
+    print(f"nest-host: {text}", flush=True)
+
+
+def kept(token: str) -> str:
+    return "sha256:" + hashlib.sha256(token.encode()).hexdigest()
+
+
+def read_conf(path: str) -> dict[str, str]:
+    out: dict[str, str] = {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, _, value = line.partition("=")
+                    out[key.strip()] = value.strip().strip('"').strip("'")
+    except FileNotFoundError:
+        pass
+    return out
+
+
+class Config:
+    def __init__(self, etc: str = ETC) -> None:
+        conf = read_conf(os.path.join(etc, "host.conf"))
+        self.etc = etc
+        self.token = conf.get("TOKEN_SHA256", "").lower()
+        if not (self.token.startswith("sha256:") and len(self.token) == 71):
+            raise SystemExit("nest-host: set TOKEN_SHA256 in host.conf (nest-host token makes one)")
+        self.bind = conf.get("BIND", "127.0.0.1")
+        address = ipaddress.ip_address(self.bind)
+        if not (address.is_loopback or address.is_private) or address.is_unspecified:
+            raise SystemExit(f"nest-host: BIND={self.bind} is not a loopback or private address")
+        self.port = int(conf.get("PORT", "8090"))
+        allow = conf.get("ALLOW", " ".join(ACTIONS)).replace(",", " ").split()
+        bad = [a for a in allow if a not in ACTIONS]
+        if bad:
+            raise SystemExit(f"nest-host: ALLOW names no action {bad[0]!r} ({', '.join(ACTIONS)})")
+        self.allow = tuple(a for a in ACTIONS if a in allow)
+        self.only = set(conf.get("SITES", "").replace(",", " ").split())
+
+    def sites(self) -> list[str]:
+        found = []
+        for name in sorted(os.listdir(self.etc)):
+            site = name[:-5]
+            if (
+                name.endswith(".conf")
+                and name != "host.conf"
+                and SITE_NAME.match(site)
+                and (not self.only or site in self.only)
+            ):
+                found.append(site)
+        return found
+
+    def site_conf(self, site: str) -> dict[str, str]:
+        return read_conf(os.path.join(self.etc, f"{site}.conf"))
+
+
+# --- jobs ---------------------------------------------------------------------------------
+
+
+class Jobs:
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.items: dict[str, dict] = {}
+        self.order: deque[str] = deque(maxlen=200)
+        self.running: dict[str, str] = {}  # site -> job id
+
+    def start(self, site: str, action: str, who: str) -> tuple[dict | None, str]:
+        with self.lock:
+            if site in self.running:
+                return None, self.running[site]
+            job = {
+                "id": secrets.token_hex(8),
+                "site": site,
+                "action": action,
+                "who": who,
+                "started_at": now(),
+                "finished_at": None,
+                "running": True,
+                "code": None,
+                "output": "",
+            }
+            self.items[job["id"]] = job
+            if len(self.order) == self.order.maxlen:
+                self.items.pop(self.order[0], None)
+            self.order.append(job["id"])
+            self.running[site] = job["id"]
+        threading.Thread(target=self._run, args=(job,), daemon=True).start()
+        return job, job["id"]
+
+    def _run(self, job: dict) -> None:
+        command = [NEST_SITE, job["action"], job["site"]]  # rollback: the image and backup before
+        audit(
+            {"at": now(), "event": "start", **{k: job[k] for k in ("id", "site", "action", "who")}}
+        )
+        try:
+            proc = subprocess.Popen(  # noqa: S603 - a fixed program, a checked site, a listed action
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                text=True,
+                env={
+                    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "LANG": "C.UTF-8",
+                    **{k: v for k, v in os.environ.items() if k in ("NEST_ETC", "NEST_STATE")},
+                },
+            )
+            deadline = time.monotonic() + JOB_TIMEOUT
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                with self.lock:
+                    if len(job["output"]) < OUTPUT_LIMIT:
+                        job["output"] += line
+                if time.monotonic() > deadline:
+                    proc.kill()
+                    with self.lock:
+                        job["output"] += "\nnest-host: stopped: it took too long\n"
+                    break
+            code = proc.wait()
+        except OSError as e:
+            code = 127
+            with self.lock:
+                job["output"] += f"nest-host: cannot run {NEST_SITE}: {e}\n"
+        with self.lock:
+            job.update(running=False, code=code, finished_at=now())
+            self.running.pop(job["site"], None)
+        audit(
+            {
+                "at": now(),
+                "event": "done",
+                "id": job["id"],
+                "site": job["site"],
+                "action": job["action"],
+                "code": code,
+            }
+        )
+
+    def get(self, job_id: str) -> dict | None:
+        with self.lock:
+            job = self.items.get(job_id)
+            return dict(job) if job else None
+
+    def of(self, site: str, limit: int = 10) -> list[dict]:
+        with self.lock:
+            found = [
+                self.items[i]
+                for i in reversed(self.order)
+                if i in self.items and self.items[i]["site"] == site
+            ]
+            return [{k: v for k, v in j.items() if k != "output"} for j in found[:limit]]
+
+
+def audit(record: dict) -> None:
+    say(json.dumps(record))
+    try:
+        os.makedirs(STATE, exist_ok=True)
+        with open(os.path.join(STATE, "host-jobs.log"), "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+    except OSError:
+        pass
+
+
+# --- what it tells ------------------------------------------------------------------------
+
+
+def _out(command: list[str], timeout: float = 10) -> tuple[int, str]:
+    try:
+        done = subprocess.run(  # noqa: S603 - fixed programs, checked arguments
+            command, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL
+        )
+        return done.returncode, (done.stdout or "") + (done.stderr or "")
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return 127, str(e)
+
+
+def site_state(config: Config, jobs: Jobs, site: str) -> dict:
+    conf = config.site_conf(site)
+    unit = f"nest-site@{site}.service"
+    _code, active = _out(["systemctl", "is-active", unit])
+    image = conf.get("IMAGE", f"nest-{site}")
+    tags = {}
+    for tag in ("current", "previous"):
+        code, out = _out(["docker", "image", "inspect", "-f", "{{.Created}}", f"{image}:{tag}"])
+        tags[tag] = out.strip()[:25] if code == 0 else None
+    health = None
+    port = conf.get("PORT", "")
+    if port.isdigit():
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{int(port)}/healthz", timeout=3) as r:  # noqa: S310 - the loopback
+                health = r.status == 200
+        except (OSError, ValueError):
+            health = False
+    with jobs.lock:
+        running = jobs.running.get(site)
+    return {
+        "site": site,
+        "unit": unit,
+        "active": active.strip() or "unknown",
+        "port": int(port) if port.isdigit() else None,
+        "healthy": health,
+        "image": image,
+        "built": tags,
+        "job": running,
+    }
+
+
+# --- the service ----------------------------------------------------------------------------
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    server_version = "nest-host"
+    sys_version = ""
+    config: Config
+    jobs: Jobs
+    failures: dict[str, tuple[int, float]] = {}
+
+    def log_message(self, fmt: str, *args) -> None:  # the journal has what matters (audit)
+        pass
+
+    def reply(self, status: int, data: dict) -> None:
+        body = json.dumps(data, default=str).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        if status == 401:
+            self.send_header("WWW-Authenticate", 'Bearer realm="nest-host"')
+        self.end_headers()
+        self.wfile.write(body)
+
+    def allowed(self) -> bool:
+        who = self.client_address[0]
+        count, since = self.failures.get(who, (0, 0.0))
+        if count >= FAILURES_ALLOWED and time.monotonic() - since <= 60:
+            self.reply(429, {"error": "too many bad tokens; wait a minute"})
+            return False
+        scheme, _, token = (self.headers.get("Authorization") or "").partition(" ")
+        token = token.strip()
+        if (
+            scheme.lower() == "bearer"
+            and token.startswith("nh_")
+            and len(token) < 100
+            and hmac.compare_digest(kept(token), self.config.token)
+        ):
+            return True
+        if time.monotonic() - since > 60:
+            count, since = 0, time.monotonic()
+        self.failures[who] = (count + 1, since)
+        if len(self.failures) > 10_000:
+            self.failures.clear()
+        self.reply(401, {"error": "a valid token is needed"})
+        return False
+
+    def parts(self) -> tuple[list[str], dict[str, list[str]]]:
+        url = urllib.parse.urlsplit(self.path)
+        return [p for p in url.path.split("/") if p], urllib.parse.parse_qs(url.query)
+
+    def site_or_404(self, site: str) -> bool:
+        if SITE_NAME.match(site) and site in self.config.sites():
+            return True
+        self.reply(404, {"error": f"no site '{site}' here"})
+        return False
+
+    def do_GET(self) -> None:  # noqa: N802 - the http.server name
+        if not self.allowed():
+            return
+        parts, query = self.parts()
+        if parts[:1] != ["v1"]:
+            return self.reply(404, {"error": "not found"})
+        parts = parts[1:]
+        if not parts:
+            return self.reply(
+                200,
+                {
+                    "host": os.uname().nodename,
+                    "sites": self.config.sites(),
+                    "allow": list(self.config.allow),
+                },
+            )
+        if parts == ["sites"]:
+            return self.reply(
+                200, {"sites": [site_state(self.config, self.jobs, s) for s in self.config.sites()]}
+            )
+        if len(parts) == 2 and parts[0] == "sites":
+            if self.site_or_404(parts[1]):
+                state = site_state(self.config, self.jobs, parts[1])
+                self.reply(
+                    200, {**state, "jobs": self.jobs.of(parts[1]), "allow": list(self.config.allow)}
+                )
+            return None
+        if len(parts) == 3 and parts[0] == "sites" and parts[2] == "logs":
+            if self.site_or_404(parts[1]):
+                try:
+                    lines = max(1, min(1000, int((query.get("lines") or ["200"])[0])))
+                except ValueError:
+                    lines = 200
+                code, out = _out(
+                    [
+                        "journalctl",
+                        "-u",
+                        f"nest-site@{parts[1]}.service",
+                        "-n",
+                        str(lines),
+                        "--no-pager",
+                        "-o",
+                        "short-iso",
+                    ]
+                )
+                self.reply(
+                    200 if code == 0 else 502, {"site": parts[1], "lines": out[-OUTPUT_LIMIT:]}
+                )
+            return None
+        if len(parts) == 2 and parts[0] == "jobs":
+            job = self.jobs.get(parts[1])
+            return self.reply(200, job) if job else self.reply(404, {"error": "no such job"})
+        return self.reply(404, {"error": "not found"})
+
+    def do_POST(self) -> None:  # noqa: N802
+        if not self.allowed():
+            return
+        parts, _query = self.parts()
+        if len(parts) != 4 or parts[:2] != ["v1", "sites"]:
+            return self.reply(404, {"error": "not found"})
+        site, action = parts[2], parts[3]
+        if not self.site_or_404(site):
+            return None
+        if action not in self.config.allow:
+            return self.reply(
+                403,
+                {"error": f"'{action}' is not allowed here (ALLOW: {' '.join(self.config.allow)})"},
+            )
+        who = (self.headers.get("X-Nest-Who") or "keeper")[:200]
+        job, running = self.jobs.start(site, action, who)
+        if job is None:
+            return self.reply(409, {"error": f"{site} has a job running", "job": running})
+        return self.reply(202, {k: v for k, v in job.items() if k != "output"})
+
+
+def serve() -> None:
+    config = Config()
+    Handler.config, Handler.jobs = config, Jobs()
+    server = http.server.ThreadingHTTPServer((config.bind, config.port), Handler)
+    say(
+        f"listening on {config.bind}:{config.port}; sites: {', '.join(config.sites()) or 'none'}; allowed: {' '.join(config.allow)}"
+    )
+    server.serve_forever()
+
+
+def token() -> None:
+    made = "nh_" + secrets.token_urlsafe(32)
+    print("For the keeper (its host_token setting, in its environment), shown this once:")
+    print(f"  {made}")
+    print(f"For {ETC}/host.conf:")
+    print(f"  TOKEN_SHA256={kept(made)}")
+
+
+if __name__ == "__main__":
+    command = sys.argv[1] if len(sys.argv) > 1 else ""
+    if command == "serve":
+        serve()
+    elif command == "token":
+        token()
+    else:
+        print(__doc__)
+        sys.exit(1)

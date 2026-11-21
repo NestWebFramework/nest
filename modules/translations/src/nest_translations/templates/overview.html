@@ -1,0 +1,75 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Translations") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ _("Translations") }}</h1>
+{% if not targets %}
+<p class="notice">{{ _("The site has one language. Add another on the Languages page and its translations start here.") }}
+  {% if user and user.has("admin") %}<a href="{{ admin_root }}/languages">{{ _("Languages") }}</a>{% endif %}</p>
+{% elif not kinds %}
+<p class="notice">{{ _("None of the site's modules translates its records yet.") }}</p>
+{% else %}
+<p class="hint">{{ _("Every record is written first in {language}; here is where the other languages stand. Outdated: the original changed after it was translated.", language=names[default]) }}</p>
+
+<form method="get" class="row tr-filter">
+  <input type="hidden" name="subject" value="{{ kind.subject }}">
+  <label for="tr-lang">{{ _("Language") }}</label>
+  <select id="tr-lang" name="lang" onchange="this.form.submit()">
+    {% for x in targets %}<option value="{{ x }}"{% if x == lang %} selected{% endif %}>{{ names[x] }}</option>{% endfor %}
+  </select>
+  <label for="tr-state">{{ _("Show") }}</label>
+  <select id="tr-state" name="state" onchange="this.form.submit()">
+    {% for s, label in [("todo", _("left to do")), ("missing", _("missing")), ("outdated", _("outdated")), ("draft", _("draft")), ("published", _("published")), ("all", _("all"))] %}
+    <option value="{{ s }}"{% if s == state %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <noscript><button type="submit" class="secondary">{{ _("Show") }}</button></noscript>
+</form>
+
+<nav class="tabs" aria-label="{{ _('Kinds of records') }}">
+  {% for k in kinds.values() %}{% set c = tally[k.subject] %}
+  <a href="?subject={{ k.subject | urlencode }}&amp;lang={{ lang }}&amp;state={{ state }}"{% if k.subject == kind.subject %} aria-current="page"{% endif %}>{{ _(k.label) }}
+    {% set left = c.missing + c.outdated + c.draft %}{% if left %}<span class="count warn" title="{{ _('left to do') }}">{{ left }}</span>{% endif %}</a>
+  {% endfor %}
+</nav>
+
+<div class="grid tr-facts">
+  {% for s in ["missing", "outdated", "draft", "published"] %}
+  <a class="card tr-fact" href="?subject={{ kind.subject | urlencode }}&amp;lang={{ lang }}&amp;state={{ s }}"><strong>{{ counts[s] }}</strong> <span class="tr-state tr-{{ s }}">{{ _(s) }}</span></a>
+  {% endfor %}
+</div>
+
+<div class="table-wrap"><table class="tr-table">
+  <thead><tr><th>{{ names[default] }}</th>{% for x in targets %}<th>{{ names[x] }}</th>{% endfor %}<th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr><td><a href="{{ base }}/{{ kind.subject }}/{{ r.id }}?lang={{ lang }}">{{ r.title | truncate(90) }}</a></td>
+    {% for x in targets %}<td><span class="tr-state tr-{{ r.states[x] }}">{{ _(r.states[x]) }}</span></td>{% endfor %}
+    <td class="row">{% if r.edit %}<a href="{{ r.edit }}">{{ _("Edit") }}</a>{% endif %}</td></tr>
+  {% else %}
+  <tr><td colspan="{{ targets | length + 2 }}" class="muted">{{ _("Nothing here: all done.") if state == "todo" else _("Nothing here.") }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% if pages > 1 %}
+<nav class="row pager" aria-label="{{ _('Pages') }}">
+  {% if page > 1 %}<a href="?subject={{ kind.subject | urlencode }}&amp;lang={{ lang }}&amp;state={{ state }}&amp;page={{ page - 1 }}">← {{ _("Newer") }}</a>{% endif %}
+  <span class="muted">{{ page }} / {{ pages }} · {{ total }}</span>
+  {% if page < pages %}<a href="?subject={{ kind.subject | urlencode }}&amp;lang={{ lang }}&amp;state={{ state }}&amp;page={{ page + 1 }}">{{ _("Older") }} →</a>{% endif %}
+</nav>
+{% endif %}
+
+<section class="card stack tr-exchange" aria-labelledby="tr-x">
+  <h2 id="tr-x">{{ _("Translate elsewhere") }}</h2>
+  <p class="hint">{{ _("Download what is left to translate as a file, translate it (or give it to a translator), then bring it back. A text whose original changed meanwhile comes back outdated.") }}</p>
+  <div class="row">
+    <a class="button secondary" href="{{ base }}/export?lang={{ lang }}&amp;subject={{ kind.subject | urlencode }}&amp;only=todo">{{ _("Download: {kind}, left to do", kind=_(kind.label)) }}</a>
+    <a class="button secondary" href="{{ base }}/export?lang={{ lang }}&amp;only=all">{{ _("Download: everything in {language}", language=names[lang]) }}</a>
+  </div>
+  <form method="post" action="{{ base }}/import" enctype="multipart/form-data" class="row">
+    {{ csrf_field }}
+    <label for="tr-file">{{ _("Bring back a file") }}</label>
+    <input id="tr-file" type="file" name="file" accept="application/json,.json" required>
+    <button type="submit">{{ _("Import") }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

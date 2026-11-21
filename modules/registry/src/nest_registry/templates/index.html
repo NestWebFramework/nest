@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{#- The registry's catalog: every package, searched, by type. -#}
+{% block title %}{{ _("Nest packages") }} · {{ app.title }}{% endblock %}
+{% block nav %}{% include "registry/nav.html" %}{% endblock %}
+{% block content %}
+<section class="registry-hero">
+  <h1>{{ _("Nest packages") }}</h1>
+  <p class="lead">{{ _("Modules, themes, providers and game subsystems for Nest applications, installed with uv like any Python package.") }}</p>
+  <p class="muted">{{ _("{packages} packages · {releases} releases", packages=counts.packages, releases=counts.releases) }}</p>
+  <form class="search registry-search" method="get" action="{{ base }}/" hx-get="{{ base }}/" hx-target="#results" hx-select="#results" hx-push-url="true" hx-trigger="input changed delay:300ms from:input, change from:select">
+    <label class="visually-hidden" for="q">{{ _("Search") }}</label>
+    <input id="q" name="q" value="{{ q }}" placeholder="{{ _('Search: forum, map, dark theme…') }}" autocomplete="off">
+    <label class="visually-hidden" for="type">{{ _("Type") }}</label>
+    <select id="type" name="type">
+      <option value="">{{ _("every type") }}</option>
+      {% for t in types %}<option value="{{ t }}"{% if t == kind %} selected{% endif %}>{{ _(t) }}</option>{% endfor %}
+    </select>
+    <button type="submit">{{ _("Search") }}</button>
+  </form>
+</section>
+{% block results %}
+<div id="results">
+  {% if not items %}<p class="muted">{{ _("Nothing found.") }}</p>{% endif %}
+  <ul class="registry-list">
+    {% for i in items %}
+    <li class="card registry-item">
+      <a class="registry-name" href="{{ base }}/p/{{ i.name }}">{{ _(i.title) }}</a>
+      <code>{{ i.name }}</code> <span class="badge">{{ i.version }}</span> <span class="badge">{{ _(i.type) }}</span>
+      {% if i.part_of %}<span class="badge">{{ _("part of {host}", host=i.part_of) }}</span>{% endif %}
+      <p class="muted">{{ _(i.description) }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
+{% endblock %}

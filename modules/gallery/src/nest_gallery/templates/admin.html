@@ -1,0 +1,40 @@
+{% extends "admin/layout.html" %}
+{#- The galleries: every album and gallery as a tree (an album holds galleries), and a new one. -#}
+{% block title %}{{ _("Galleries") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<div class="row between"><h1>{{ _("Galleries") }}</h1>{% if base is not none %}<a class="button secondary" href="{{ base }}/">{{ _("View") }}</a>{% endif %}</div>
+<p class="hint">{{ _("An album holds galleries, a gallery holds photos. Make one, then open it to add its photos, put it in an album, describe it.") }}</p>
+<div class="grid gallery-facts">
+  <div class="card"><strong>{{ rows | length }}</strong> {{ _("galleries and albums") }}</div>
+  <div class="card"><strong>{{ photos }}</strong> {{ _("photos") }}</div>
+</div>
+
+<section class="card stack" aria-labelledby="new-h">
+  <h2 id="new-h">{{ _("New gallery") }}</h2>
+  <form method="post" action="{{ admin_root }}/gallery/new" class="row gallery-new">
+    {{ csrf_field }}
+    <div class="field"><label for="new-title">{{ _("Title") }}</label>
+      <input id="new-title" name="title" required maxlength="300"></div>
+    <div class="field"><label for="new-parent">{{ _("In the album") }}</label>
+      <select id="new-parent" name="parent_id">
+        <option value="">{{ _("— none: at the top —") }}</option>
+        {% for c, depth in parents %}<option value="{{ c.id }}">{{ "  " * depth }}{{ "· " if depth else "" }}{{ c.title }}</option>{% endfor %}
+      </select></div>
+    <button type="submit">{{ _("Make it") }}</button>
+  </form>
+</section>
+
+{% if rows %}
+<div class="table-wrap"><table class="gallery-tree">
+  <thead><tr><th>{{ _("Gallery") }}</th><th>{{ _("Photos") }}</th><th>{{ _("Galleries in it") }}</th><th></th></tr></thead>
+  <tbody>
+  {% for c, depth, n, kids in rows %}
+  <tr><td class="depth-{{ depth if depth < 4 else 4 }}"><a href="{{ admin_root }}/gallery/{{ c.id }}">{{ c.title }}</a>
+      {% if not c.published %}<span class="badge">{{ _("hidden") }}</span>{% endif %}{% if kids %}<span class="badge">{{ _("album") }}</span>{% endif %}</td>
+    <td>{{ n or "" }}</td><td>{{ kids or "" }}</td>
+    <td>{% if base is not none %}<a href="{{ base }}/{{ c.slug }}/">{{ _("View") }}</a>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="muted">{{ _("No gallery yet.") }}</p>{% endif %}
+{% endblock %}

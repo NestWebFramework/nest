@@ -112,6 +112,10 @@ class Registry:
     def __init__(self, types: dict[str, TypeSpec], taxonomies: dict[str, TaxonomySpec]):
         self.types = types
         self.taxonomies = taxonomies
+        # the site's languages: the default one's text is in the records' own columns (and
+        # mirrored in their text tables), the others' only in the text tables
+        self.default_language = ""
+        self.languages: list[str] = []
         for name, t in types.items():
             missing = [x for x in t.taxonomies if x not in taxonomies]
             if missing:

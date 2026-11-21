@@ -71,3 +71,46 @@ layout includes `admin/preview_bar.html` and `notifications/region.html` with
 An application's own templates and stylesheet stay on top of any theme: one that
 overrides `layout.html` (morlaca, voievodate) keeps its frame and gets the theme's
 tokens and shapes under its own skin.
+
+## A theme for any application: settings
+
+What is one site's own (its tagline, its banner, its footer's links, the categories its
+home page shows) is a theme **setting**, not text in a template, so the same theme serves
+any application. A theme declares its settings as a module does:
+
+```yaml
+settings:
+  tagline: {label: Tagline, default: ""}
+  banner:  {label: Banner picture, description: "A stored picture (uploads/...)", default: ""}
+```
+
+an application sets them in its manifest, and its administrator in **Settings** (each
+theme in use has its section there):
+
+```yaml
+application:
+  theme: morlaca-valley
+  theme_settings:
+    morlaca-valley: {tagline: "the village below the Măgura", banner: uploads/2017/12/panorama.jpg}
+```
+
+Templates read them with `{{ theme_setting("tagline") }}`: the setting of the theme in use,
+else of the theme it is built on, the first that is set, so themes built on one share its
+settings and may say any of them otherwise. Texts are written in the site's words for
+the translator (`{{ _(theme_setting("tagline")) }}`): the application's language packs
+translate them like all its wording.
+
+A theme links to a module without knowing the application: `{{ module_url("gallery") }}`
+is where the application mounts it, or nothing when it has none (the link is left out).
+A theme that uses a module's template helpers (content's `menu()`, `latest()`) lists it
+under `uses:` and checks `is defined`, so an application without that module still has
+its frame.
+
+A layout may extend a frame its themes share (`{% extends "morlaca/frame.html" %}`); the
+theme contract follows `extends` through the theme chain.
+
+Nest comes with three more written this way, made for morlaca.ro: `morlaca-valley` (the
+valley's colours, a cross-stitch band, a village's page as the home page), and built on
+it `morlaca-heritage` (the name over a banner, a sidebar) and `morlaca-chronicle` (an
+almanac's masthead, drop capitals). morlaca gives them its words; transilpedia uses them
+with its own.

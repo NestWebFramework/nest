@@ -37,6 +37,16 @@ def setup(host: ModuleHost) -> None:
     from nest_seo.web import admin, root
 
     host.state["settings"] = host.settings
+    db_ = host.bound("nest.db")
+    service.set_default(db_, host.default_language)
+    from sqlalchemy.exc import SQLAlchemyError
+
+    try:  # what was said before the text table: its default language's rows, once
+        service.backfill(db_, host.default_language)
+    except SQLAlchemyError as e:
+        host.log.warning(
+            "seo: the text table is not ready (%s); migrate the database", e.__class__.__name__
+        )
     host.answer("seo.site_url", lambda _key: str(host.settings.get("site_url") or "") or None)
     db = host.bound("nest.db")
 

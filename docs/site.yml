@@ -1,0 +1,22 @@
+# The documentation's shape: its sections, each with its pages in order (a page is
+# its .md file, without the .md). The docs module serves it at nest-framework.org/docs.
+title: Nest documentation
+sections:
+  - title: Start
+    pages: [start/what-is-nest, start/install, start/first-application, start/concepts, changelog]
+  - title: Building sites
+    pages: [guide/modules-and-applications, modules, themes, languages, guide/admin-panel, guide/content-and-media, guide/community, guide/search-and-seo]
+  - title: Developing modules
+    pages: [develop/a-module, develop/manifest, develop/lookups, develop/database, develop/scheduling, develop/templates-and-assets, develop/security, develop/testing, registry]
+  - title: Running sites
+    pages: [operate/overview, deploy, deploy-ispconfig, registry-deploy, operate/backups-and-upgrades, operate/keeper, operate/agent-status]
+  - title: Sites built with Nest
+    pages: [sites/overview, sites/gari, sites/regionalisme, sites/morlaca, sites/transilpedia]
+  - title: Modules
+    reference: modules
+  - title: Themes
+    reference: themes
+  - title: Providers
+    reference: providers
+  - title: Interfaces
+    reference: interfaces

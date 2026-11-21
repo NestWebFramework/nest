@@ -164,6 +164,50 @@ def _chain(entry: Entry, known: list[Entry]) -> list[Entry]:
     return chain
 
 
+_EXTENDS = re.compile(r"""{%-?\s*extends\s+["']([^"']+)["']""")
+
+
+def _blocks(template: Path, folders: list[Path], seen: frozenset[Path] = frozenset()) -> set[str]:
+    """The blocks a template has, with those of the template it extends (looked for in the
+    theme chain's folders): a layout may extend a frame its themes share."""
+    if template in seen:
+        return set()
+    text = template.read_text(encoding="utf-8")
+    found = set(_BLOCK.findall(text))
+    parent = _EXTENDS.search(text)
+    if parent:
+        name = parent.group(1)
+        start = (
+            folders.index(template.parent)
+            if template.parent in folders and name == template.name
+            else 0
+        )
+        for folder in folders[start + (1 if name == template.name else 0) :]:
+            candidate = folder / name
+            if candidate.is_file() and candidate != template:
+                found |= _blocks(candidate, folders, seen | {template})
+                break
+    return found
+
+
+def _mentions(template: Path, folders: list[Path], needle: str, seen: frozenset[Path] = frozenset()) -> bool:
+    """Whether a template (or one it includes, or extends, in the theme chain) holds ``needle``."""
+    if template in seen or not template.is_file():
+        return False
+    text = template.read_text(encoding="utf-8")
+    if needle in text:
+        return True
+    names = [m.group(1) for m in re.finditer(r'{%-?\s*(?:extends|include)\s+"([^"]+)"', text)]
+    for name in names:
+        for folder in folders:
+            candidate = folder / name
+            if candidate.is_file() and candidate != template:
+                if _mentions(candidate, folders, needle, seen | {template}):
+                    return True
+                break
+    return False
+
+
 def check_theme(entry: Entry, known: list[Entry]) -> list[str]:
     """What the theme (with the ones it extends) lacks of the theme contract."""
     chain = _chain(entry, known)
@@ -178,10 +222,15 @@ def check_theme(entry: Entry, known: list[Entry]) -> list[str]:
             problems.append(f"{entry.name} has no {template} (the theme contract)")
     layout = next((f / "layout.html" for f in folders if (f / "layout.html").is_file()), None)
     if layout is not None:
-        found = set(_BLOCK.findall(layout.read_text(encoding="utf-8")))
+        found = _blocks(layout, folders)
         missing = [b for b in BLOCKS if b not in found]
         if missing:
             problems.append(f"{entry.name}'s layout.html lacks the blocks: {', '.join(missing)}")
+        if not _mentions(layout, folders, "nest_credit"):
+            problems.append(
+                f"{entry.name}'s layout.html does not show {{{{ nest_credit }}}} in its footer"
+                " (outside the footer block, so a page that fills the block keeps it)"
+            )
     return problems
 
 

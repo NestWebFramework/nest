@@ -67,6 +67,38 @@ def modules_page(request: Request, user: CurrentUser = Depends(admin_only)):
     return _page(request)
 
 
+@router.get("/modules/registry")
+def modules_registry(request: Request, q: str = "", user: CurrentUser = Depends(admin_only)):
+    """The Nest registry's packages this application could use, searched (read-only: the
+    server's administrator installs them, then they are added here)."""
+    from nest.packages import PackageError, _installed, remote_offers  # noqa: PLC0415
+    from nest.remote import registry_url  # noqa: PLC0415
+
+    nest = request.app.state.nest
+    problems, rows = [], []
+    try:
+        offers = remote_offers(nest.environ)
+    except PackageError as e:
+        problems, offers = e.problems, {}
+    try:
+        installed = _installed(_app_dir(nest))
+    except Exception:  # noqa: BLE001 - an application installed with Nest's own packages
+        installed = {}
+    needle = q.strip().lower()
+    for o in sorted(offers.values(), key=lambda o: (o.type, o.name)):
+        if needle and needle not in f"{o.name} {o.title} {o.description}".lower():
+            continue
+        rows.append({"offer": o, "installed": o.dist.lower() in installed})
+    return render(
+        request,
+        "admin/modules_registry.html",
+        rows=rows,
+        problems=problems,
+        q=q,
+        registry=registry_url(nest.environ),
+    )
+
+
 @router.post("/modules/{name}/{action}")
 async def modules_change(
     request: Request, name: str, action: str, user: CurrentUser = Depends(admin_only)

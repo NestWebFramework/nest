@@ -61,14 +61,34 @@
       attribution: d.attribution,
       referrerPolicy: "strict-origin-when-cross-origin",
     }).addTo(map);
+    var shown = null, first = true;
+    function load() {
     fetch(d.map, { credentials: "same-origin" })
       .then(function (r) { return r.ok ? r.json() : { features: [] }; })
       .then(function (data) {
-        var layer = window.L.geoJSON(data, {
+        if (shown) map.removeLayer(shown);
+        var layer = shown = window.L.geoJSON(data, {
+          // a line keeps its colour and weight; a point marked "dot" is a small circle (a
+          // train's stops along its route), any other a marker
+          style: function (f) {
+            var p = f.properties || {};
+            return { color: /^#[0-9a-f]{3,8}$/i.test(p.color || "") ? p.color : "#12355b", weight: +p.weight || 4, opacity: .85 };
+          },
+          pointToLayer: function (f, at) {
+            var p = f.properties || {};
+            if (!p.dot) return window.L.marker(at);
+            return window.L.circleMarker(at, { radius: p.big ? 6 : 4, color: "#12355b", weight: 2, fillColor: p.big ? "#ffb400" : "#fff", fillOpacity: 1 });
+          },
           onEachFeature: function (f, l) { if (f.properties && f.properties.title) l.bindPopup(popup(f.properties)); }
         }).addTo(map);
-        if (d.fit && layer.getLayers().length > 1) map.fitBounds(layer.getBounds(), { padding: [24, 24], maxZoom: zoom });
+        if (first && d.fit && layer.getLayers().length > 1) map.fitBounds(layer.getBounds(), { padding: [24, 24], maxZoom: zoom });
+        first = false;
       });
+    }
+    load();
+    // a map of what moves (trains running now) asks again every so many seconds
+    var every = parseInt(d.refresh, 10);
+    if (every >= 10) setInterval(function () { if (!document.hidden) load(); }, every * 1000);
   }
 
   function scan() {

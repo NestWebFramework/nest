@@ -130,5 +130,8 @@ def setup(host: ModuleHost) -> None:
         "redirects.moved",
         lambda m: service.moved(db, m["source"], m["target"], m.get("note", "")) or True,
     )
+    # a module that answers old addresses itself (the glossary's /index.php/...) asks
+    # here for those it does not know, before it gives up on them
+    host.answer("redirects.request", answer)
     host.admin(router)  # all its pages are in the admin panel, at <admin route>/redirects
     host.fallback(answer, priority=-10)

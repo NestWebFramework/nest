@@ -1,0 +1,13 @@
+# The keeper's own context (BuildKit reads it instead of the repository's .dockerignore).
+# The documentation is not needed: it stays out.
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+.git
+tests
+**/tests
+applications/*/data
+docs

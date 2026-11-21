@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Search") }} · {{ tree.title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block nav %}{% if docs_nav %}{% include "docs/_top.html" %}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block content %}
+<div class="docs">
+  <aside class="docs-side">{% include "docs/_menu.html" %}</aside>
+  <article class="docs-page">
+    <h1>{{ _("Search") }}</h1>
+    {% block results %}
+    <div id="docs-results">
+    {% if q %}
+      <p class="muted">{{ ngettext("{n} page for “{q}”", "{n} pages for “{q}”", hits | length, q=q) }}</p>
+      <ol class="docs-hits">{% for h in hits %}<li><a href="{{ h.url }}">{{ h.title }}</a>{% if h.scope %} <span class="muted">· {{ h.scope }}</span>{% endif %}{% if h.snippet %}<p>{{ h.snippet }}</p>{% endif %}</li>{% endfor %}</ol>
+    {% endif %}
+    </div>
+    {% endblock %}
+  </article>
+</div>
+{% endblock %}

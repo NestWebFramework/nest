@@ -30,12 +30,14 @@
     {% block rows %}
     <div id="rows" class="table-wrap">
       <table>
-        <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Status") }}</th><th>{{ _("Address") }}</th><th>{{ _("Updated") }}</th></tr></thead>
+        <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Status") }}</th><th>{{ _("Address") }}</th>{% if tr_states %}<th>{{ _("Languages") }}</th>{% endif %}<th>{{ _("Updated") }}</th></tr></thead>
         <tbody>
           {% for e in entries %}
           <tr><td><a href="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td><td>{{ _(e.status) }}</td>
-              <td><a href="{{ e.path }}">{{ e.path }}</a></td><td>{{ e.updated_at.strftime("%d.%m.%Y %H:%M") }}</td></tr>
-          {% else %}<tr><td colspan="4" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
+              <td><a href="{{ e.path }}">{{ e.path }}</a></td>
+              {% if tr_states %}<td>{% for lang, state in (tr_states.get(e.id) or {}).items() %}<a class="tr-state tr-{{ state }}" href="{{ admin_root }}/translations/content.entry/{{ e.id }}?lang={{ lang }}" title="{{ _(state) }}">{{ lang | upper }}</a> {% endfor %}</td>{% endif %}
+              <td>{{ e.updated_at.strftime("%d.%m.%Y %H:%M") }}</td></tr>
+          {% else %}<tr><td colspan="{{ 5 if tr_states else 4 }}" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
         </tbody>
       </table>
       {% if pages > 1 %}<p class="muted">{{ page }} / {{ pages }}</p>{% endif %}

@@ -1,0 +1,3 @@
+{#- The links over the documentation's pages (the docs module's nav setting); without
+    them, the theme's own menu. -#}
+{% if docs_nav %}<ul class="menu docs-top">{% for label, href in docs_nav %}<li><a href="{{ href }}"{% if href.startswith("http") %} rel="noopener"{% endif %}{% if href != "/" and request.url.path.startswith(href.rstrip("/")) and not href.startswith("http") %} aria-current="page"{% endif %}>{{ label }}</a></li>{% endfor %}</ul>{% else %}{{ super_nav | default("") }}{% endif %}

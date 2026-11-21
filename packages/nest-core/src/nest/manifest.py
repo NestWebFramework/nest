@@ -173,9 +173,15 @@ class Instance(_Section):
 
 
 class Binding(_Section):
-    """Which providers answer an interface in this application, and their settings."""
+    """Which providers answer an interface in this application, and their settings.
+
+    ``alternatives`` are providers the environment may choose instead (``NEST_BIND__<IFACE>``,
+    the interface's name in capitals, dots as underscores: ``NEST_BIND__NEST_DB=db-postgres``):
+    SQLite while developing, PostgreSQL on the server, from one manifest. Only what is
+    chosen is made."""
 
     providers: list[str] = Field(min_length=1)
+    alternatives: list[str] = Field(default_factory=list)
     config: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
@@ -195,6 +201,19 @@ class Application(_Section):
     # whether the site speaks the browser's language before a visitor chooses (False: its
     # default, as a public site wants for search engines); the admin panel always does
     browser_language: bool = True
+    # how a page's language is chosen: "cookie" (one address, the visitor's choice) or
+    # "prefix" (an address per language: the default at /, the others under /en/, /hu/...;
+    # what a public site in several languages wants for search engines and caches)
+    language_urls: Literal["cookie", "prefix"] = "cookie"
+    # what it sets for its themes, by theme: {morlaca-valley: {tagline: "...", banner: "..."}}
+    # (a theme's settings, as a module's config sets a module's; the admin panel may change
+    # them, as any setting)
+    theme_settings: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    # the most a request may send, in MB (an upload's form included); NEST_MAX_BODY_MB wins
+    max_body_mb: int = 32
+    # the admin panel's frame: a page of its own (the default), or the site's, in its theme
+    # and skin (a game's masters' panel)
+    admin_frame: Literal["standalone", "site"] = "standalone"
 
     @field_validator("port", mode="before")
     @classmethod
@@ -246,6 +265,27 @@ class Subsystems(_Section):
     bundled: list[str] = Field(default_factory=list)  # the parts that come with it, by name
 
 
+class Translatable(_Section):
+    """Records of a module whose text is kept in every language of the site: their text
+    table (``nest_db.text_table``), as ``package.module:Class``, and how editors see them.
+    The translations module, when the application has it, finds them here."""
+
+    model: str
+    label: str | None = None  # what they are called in the admin panel ("Articles")
+    # how each field is edited: one line, an address part, a paragraph, rich text;
+    # left out, they come from the table (a String is one line, a Text a paragraph)
+    fields: dict[str, Literal["text", "slug", "textarea", "html"]] = Field(default_factory=dict)
+    title: str | None = None  # the field that names a record in lists (the first one)
+    edit: str | None = None  # its editor, "{admin}/content/entries/{id}"
+
+    @field_validator("model")
+    @classmethod
+    def _model(cls, v: str) -> str:
+        if ":" not in v:
+            raise ValueError("a text table is written 'package.module:Class'")
+        return v
+
+
 class Manifest(BaseModel):
     """A whole module.yml. Unknown top-level sections are kept for the contract to judge."""
 
@@ -256,6 +296,9 @@ class Manifest(BaseModel):
     provides: Provides = Field(default_factory=Provides)
     requires: Requires = Field(default_factory=Requires)
     deps: dict[str, str] = Field(default_factory=dict)
+    # the nest-core versions it works with (">=0.2,<1"): a registry refuses a package
+    # without it, and an application with a nest-core outside it does not start
+    nest: str | None = None
     # optional partners: used when the application includes them (and started before it
     # then), never pulled in by it; the package works without them
     uses: list[str] = Field(default_factory=list)
@@ -288,6 +331,8 @@ class Manifest(BaseModel):
     # a theme built on another: its templates and stylesheet come first, the other's fill
     # in what it does not have (it is in its deps too)
     extends: str | None = None
+    # its records whose text is kept per language, by kind ("entry", "term")
+    translatable: dict[str, Translatable] = Field(default_factory=dict)
     docs: dict[str, Any] = Field(default_factory=dict)
     system_deps: dict[str, Any] = Field(default_factory=dict)
     # Called as fn(nest) once bindings exist and before any module is set up,
@@ -296,6 +341,16 @@ class Manifest(BaseModel):
     # Called as fn(nest, entry) for every package uninstalled from the application, by
     # the packages that keep data for others (the db interface drops its tables).
     forget: str | None = None
+
+    @field_validator("nest")
+    @classmethod
+    def _nest_range(cls, v: str | None) -> str | None:
+        if v is not None:
+            try:
+                SpecifierSet(v)
+            except InvalidSpecifier as e:
+                raise ValueError(f"nest: '{v}' is not a version range (>=0.2,<1)") from e
+        return v
 
     @field_validator("startup", "forget")
     @classmethod

@@ -30,32 +30,36 @@
   <button type="submit" class="secondary">{{ _("Undo the last batch") }}</button></form>
 {% endif %}
 {% else %}
-<p class="hint">{{ ngettext("{n} page would change. Untick those you want to leave as they are; what you see is what is saved.", "{n} pages would change. Untick those you want to leave as they are; what you see is what is saved.", changing) }}</p>
+<p class="hint">{{ ngettext("{n} page would change. Tick those you want to leave as they are; what you see is what is saved.", "{n} pages would change. Tick those you want to leave as they are; what you see is what is saved.", changing) }}</p>
 {% if changing %}
 <form method="post" action="{{ admin_root }}/seo/batch/apply" class="stack">
   {{ csrf_field }}
-  <div class="row batch-tools"><button type="submit">{{ _("Save the checked pages") }}</button>
+  {#- the choice again, not each page's values: the server proposes them anew, so a batch of
+      thousands of pages is a form of a few fields (only the pages left out are listed) #}
+  {% for g in chosen %}<input type="hidden" name="group" value="{{ g }}">{% endfor %}
+  {% for f in fields %}<input type="hidden" name="field" value="{{ f }}">{% endfor %}
+  <input type="hidden" name="mode" value="{{ 'empty' if only_empty else 'all' }}">
+  <div class="row batch-tools"><button type="submit">{{ _("Save the pages not left out") }}</button>
     <a href="{{ admin_root }}/seo/batch">{{ _("Back, change the choice") }}</a></div>
   <div class="table-wrap"><table class="batch">
-    <thead><tr><th><span class="sr-only">{{ _("Save") }}</span></th><th>{{ _("Page") }}</th><th>{{ _("Now") }} → {{ _("Proposed") }}</th></tr></thead>
+    <thead><tr><th>{{ _("Leave out") }}</th><th>{{ _("Page") }}</th><th>{{ _("Now") }} → {{ _("Proposed") }}</th></tr></thead>
     <tbody>
     {% for r in rows if r.changes %}
       <tr>
-        <td><input type="checkbox" name="subject" value="{{ r.subject }}" checked aria-label="{{ r.item.get('title') or r.item.path }}"></td>
+        <td><input type="checkbox" name="skip" value="{{ r.subject }}" aria-label="{{ _('Leave out') }}: {{ r.item.get('title') or r.item.path }}"></td>
         <td><a href="{{ r.item.path }}">{{ r.item.get('title') or r.item.path }}</a><br><small class="muted">{{ _(r.item.get('group') or '') }} · {{ r.item.path }}</small></td>
         <td class="batch-changes">
           {% for f, c in r.changes.items() %}
-          <div class="batch-change"><span class="batch-field">{{ _({"title": "Title in search results", "description": "Description", "keywords": "Keywords"}[f]) }}</span>
+          <div class="batch-change" data-change="{{ f }}:{{ r.subject }}"><span class="batch-field">{{ _({"title": "Title in search results", "description": "Description", "keywords": "Keywords"}[f]) }}</span>
             {% if c.now %}<del>{{ c.now }}</del>{% endif %}
-            <ins>{{ c.new }}</ins>
-            <input type="hidden" name="new:{{ f }}:{{ r.subject }}" value="{{ c.new }}"></div>
+            <ins>{{ c.new }}</ins></div>
           {% endfor %}
         </td>
       </tr>
     {% endfor %}
     </tbody>
   </table></div>
-  <div class="row"><button type="submit">{{ _("Save the checked pages") }}</button></div>
+  <div class="row"><button type="submit">{{ _("Save the pages not left out") }}</button></div>
 </form>
 {% else %}
 <p><a class="button secondary" href="{{ admin_root }}/seo/batch">{{ _("Back, change the choice") }}</a></p>

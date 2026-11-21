@@ -1,0 +1,23 @@
+/* translations.css — every language's fields in an edit form, the backlog, the editor. */
+.tr-fields { border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem 1rem 1rem; }
+.tr-fields legend { font-weight: 600; padding: 0 .4rem; }
+.tr-lang + .tr-lang { margin-top: .5rem; border-top: 1px solid var(--border); padding-top: .5rem; }
+.tr-lang summary { cursor: pointer; font-weight: 600; display: flex; gap: .6rem; align-items: center; }
+.tr-tools { gap: .75rem; align-items: center; flex-wrap: wrap; }
+.tr-state { display: inline-block; font-size: .78rem; font-weight: 600; padding: .05rem .45rem; border-radius: 999px;
+  border: 1px solid currentColor; line-height: 1.5; white-space: nowrap; }
+.tr-published { color: var(--ok); }
+.tr-draft { color: var(--muted); }
+.tr-outdated { color: var(--warn, #b26b00); }
+.tr-missing { color: var(--danger); }
+.tr-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); margin: .75rem 0; }
+.tr-fact { margin: 0; text-decoration: none; display: flex; gap: .5rem; align-items: center; }
+.tr-fact strong { font-size: 1.3rem; }
+.tr-filter { gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: .75rem; }
+.tr-exchange { margin-top: 1.5rem; }
+.tr-exchange .row { gap: .75rem; flex-wrap: wrap; align-items: center; }
+.tr-side { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); align-items: start; }
+.tr-source { background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); padding: .75rem 1rem; }
+.tr-label { display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.tr-original { white-space: pre-wrap; overflow-wrap: anywhere; }
+.tr-original.tr-html { white-space: normal; max-height: 28rem; overflow: auto; }

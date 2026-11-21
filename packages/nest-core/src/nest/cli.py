@@ -280,12 +280,160 @@ def cmd_themes(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_keygen(args: argparse.Namespace) -> int:
+    """A signing key for what you publish; --register gives the registry its public half."""
+    from nest.remote import RemoteError, register_key  # noqa: PLC0415
+    from nest.signing import SigningError, fingerprint, keygen  # noqa: PLC0415
+
+    try:
+        path, public = keygen(args.name, force=args.force)
+    except SigningError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    print(f"✓ {path} (keep it; it is never sent anywhere)")
+    print(f"  public key: {public}")
+    print(f"  fingerprint: {fingerprint(public)}")
+    if args.register:
+        try:
+            print(
+                f"✓ registered with the registry as {register_key(public, args.name, args.registry)}"
+            )
+        except RemoteError as e:
+            for problem in e.problems:
+                print(f"✗ {problem}")
+            return 1
+    return 0
+
+
+def cmd_trust(args: argparse.Namespace) -> int:
+    """Pin the keys a package (or every package, *) must be signed with to be installed."""
+    from nest.signing import SigningError, fingerprint, trust, trusted, untrust  # noqa: PLC0415
+
+    if args.trust_action == "list":
+        for package, keys in sorted(trusted().items()):
+            print(f"{package:20} " + ", ".join(fingerprint(k) for k in keys))
+        return 0
+    try:
+        if args.trust_action == "add":
+            trust(args.package, args.key)
+        else:
+            untrust(args.package, args.key)
+    except SigningError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    pinned = ", ".join(fingerprint(k) for k in trusted().get(args.package, []))
+    print(f"✓ {args.package}: {pinned or 'no keys pinned'}")
+    return 0
+
+
+def cmd_visibility(args: argparse.Namespace) -> int:
+    from nest.remote import RemoteError, package, set_visibility  # noqa: PLC0415
+
+    try:
+        if args.visibility:
+            set_visibility(args.name, args.visibility, args.registry)
+        print(f"{args.name}: {package(args.name, args.registry).get('visibility')}")
+    except RemoteError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    return 0
+
+
+def cmd_yank(args: argparse.Namespace) -> int:
+    from nest.remote import RemoteError, yank  # noqa: PLC0415
+
+    undo = args.command == "unyank"
+    try:
+        yank(args.name, args.version, args.reason or "", undo=undo, url=args.registry)
+    except RemoteError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    print(f"✓ {args.name} {args.version} " + ("is back" if undo else "is withdrawn"))
+    return 0
+
+
+def cmd_login(args: argparse.Namespace) -> int:
+    """Keep a token for a Nest registry."""
+    import getpass  # noqa: PLC0415
+
+    from nest.remote import RemoteError, login, registry_url  # noqa: PLC0415
+
+    url = args.registry or registry_url()
+    token = args.token or getpass.getpass(f"token for {url}: ")
+    try:
+        account = login(url, token.strip())
+    except RemoteError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    print(f"✓ signed in to {url} as {account}")
+    return 0
+
+
+def cmd_publish(args: argparse.Namespace) -> int:
+    """Check, build and upload a package."""
+    from nest.remote import RemoteError, publish, publish_all  # noqa: PLC0415
+
+    if args.all:
+        from nest.packages import nest_home  # noqa: PLC0415
+
+        home = nest_home()
+        roots = [Path(p) for p in args.package] or (
+            [
+                home / f
+                for f in ("packages", "interfaces", "providers", "modules", "themes", "engines")
+            ]
+            if home
+            else []
+        )
+        try:
+            done, there, refused = publish_all(roots, args.registry, dry_run=args.dry_run)
+        except RemoteError as e:
+            for problem in e.problems:
+                print(f"✗ {problem}")
+            return 1
+        print(f"✓ {len(done)} published, {len(there)} there already, {len(refused)} refused")
+        for line in refused:
+            print(f"✗ {line}")
+        return 1 if refused else 0
+    if len(args.package) != 1:
+        print("✗ nest publish takes one package's folder (or --all)")
+        return 2
+    try:
+        done = publish(args.package[0], args.registry, dry_run=args.dry_run, private=args.private)
+    except RemoteError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    if args.dry_run:
+        print("✓ it would be published (nothing was uploaded)")
+    elif done:
+        print(f"✓ {done[0]['name']} {done[0]['version']}: {done[0].get('url', '')}")
+    return 0
+
+
 def cmd_packages(args: argparse.Namespace) -> int:
     """The packages this server trusts, installed in an application or not; add, remove."""
     from nest.packages import PackageError, add, remove, status  # noqa: PLC0415
 
     root = Path(args.app).resolve()
     try:
+        if args.action == "list" and args.remote:
+            from nest.packages import _installed, remote_offers  # noqa: PLC0415
+            from nest.remote import registry_url  # noqa: PLC0415
+
+            installed = _installed(root)
+            print(f"{registry_url()}:")
+            for o in sorted(remote_offers().values(), key=lambda o: (o.type, o.name)):
+                state = "installed" if o.dist.lower() in installed else "available"
+                print(
+                    f"{state:10} {o.name:16} {o.version:8} {o.type:10} {o.title}  (nest-core {o.nest})"
+                )
+            return 0
         if args.action == "list":
             rows = status(root)
             width = max((len(r.offer.name) for r in rows), default=4)
@@ -304,10 +452,14 @@ def cmd_packages(args: argparse.Namespace) -> int:
             print(f"✗ nest packages {args.action} needs a package's name")
             return 2
         if args.action == "add":
-            offer = add(root, args.name)
+            offer = add(root, args.name, remote=args.remote)
             if offer.type == "theme":
                 print(f"✓ {offer.name} installed: choose it in the admin panel's Themes page, or")
                 print(f"  nest themes {args.app} use {offer.name}")
+                return 0
+            if offer.type in ("provider", "interface"):
+                what = ", ".join(offer.implements) or offer.interface or offer.name
+                print(f"✓ {offer.name} installed: bind it in module.yml (bind: {what})")
                 return 0
             print(f"✓ {offer.name} installed: add it in the admin panel's Modules page, or")
             print(
@@ -408,9 +560,12 @@ def cmd_new(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from nest import __version__
+
     parser = argparse.ArgumentParser(
-        prog="nest", description="Nest: build and run web applications."
+        prog="nest", description=f"Nest {__version__}: build and run web applications."
     )
+    parser.add_argument("--version", action="version", version=f"Nest {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("validate", help="check manifests against their contracts")
@@ -474,7 +629,62 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove"])
     p.add_argument("name", nargs="?")
     p.add_argument("--installed", action="store_true", help="list: only those installed")
+    p.add_argument("--remote", action="store_true", help="from the Nest registry (nest login)")
     p.set_defaults(func=cmd_packages)
+
+    p = sub.add_parser("login", help="keep a token for a Nest registry (made on its Tokens page)")
+    p.add_argument("--registry", help="its address (default $NEST_REGISTRY_URL, else the last one)")
+    p.add_argument("--token", help="the token (else it is asked for)")
+    p.set_defaults(func=cmd_login)
+
+    p = sub.add_parser("keygen", help="a key to sign what you publish (Ed25519)")
+    p.add_argument("--name", default="default")
+    p.add_argument("--register", action="store_true", help="give its public half to the registry")
+    p.add_argument("--registry", help="the registry's address (default: nest login's)")
+    p.add_argument("--force", action="store_true", help="replace a key of that name (it is lost)")
+    p.set_defaults(func=cmd_keygen)
+
+    p = sub.add_parser("trust", help="the keys a package must be signed with to be installed")
+    tp = p.add_subparsers(dest="trust_action", required=True)
+    t = tp.add_parser("add", help="pin a key: nest trust add <package|*> <public key>")
+    t.add_argument("package")
+    t.add_argument("key")
+    t = tp.add_parser("remove", help="unpin a key (or every key of a package)")
+    t.add_argument("package")
+    t.add_argument("key", nargs="?")
+    tp.add_parser("list", help="the keys pinned, by package")
+    p.set_defaults(func=cmd_trust)
+
+    p = sub.add_parser("visibility", help="who may install a package you own: public or private")
+    p.add_argument("name")
+    p.add_argument("visibility", nargs="?", choices=["public", "private"])
+    p.add_argument("--registry")
+    p.set_defaults(func=cmd_visibility)
+
+    for verb, text in (
+        ("yank", "withdraw a version (installers pass it by)"),
+        ("unyank", "bring a withdrawn version back"),
+    ):
+        p = sub.add_parser(verb, help=text)
+        p.add_argument("name")
+        p.add_argument("version")
+        p.add_argument("--reason", default="")
+        p.add_argument("--registry")
+        p.set_defaults(func=cmd_yank)
+
+    p = sub.add_parser("publish", help="check, build and upload a package to a Nest registry")
+    p.add_argument("package", nargs="*", help="the package's folder (its pyproject.toml)")
+    p.add_argument(
+        "--all",
+        action="store_true",
+        help="every package under the folders given (default: this Nest checkout) not published yet",
+    )
+    p.add_argument("--registry", help="its address (default $NEST_REGISTRY_URL, else nest login's)")
+    p.add_argument("--dry-run", action="store_true", help="check and build, upload nothing")
+    p.add_argument(
+        "--private", action="store_true", help="a new package only you (and those you add) see"
+    )
+    p.set_defaults(func=cmd_publish)
 
     p = sub.add_parser("modules", help="an application's modules: list, enable, disable, uninstall")
     p.add_argument("app")

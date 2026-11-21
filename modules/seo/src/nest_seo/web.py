@@ -15,6 +15,7 @@ from xml.sax.saxutils import escape as xml
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response
 from nest_auth import CurrentUser, require_role
+from starlette.concurrency import run_in_threadpool
 
 from nest import render
 from nest_seo import service
@@ -48,7 +49,8 @@ def sitemap(request: Request) -> Response:
         meta = metas.get(item.get("subject", ""))
         if meta is not None and meta.noindex:
             continue
-        loc = absolute(request, meta.canonical if meta and meta.canonical else item["path"])
+        own = meta.canonical if meta and meta.canonical and not item.get("language") else ""
+        loc = absolute(request, own or item["path"])  # a translated page is its own
         row = f"<url><loc>{xml(loc)}</loc>"
         when = item.get("lastmod")
         if isinstance(when, datetime):
@@ -292,14 +294,22 @@ async def batch_apply(request: Request, user: CurrentUser = Depends(editor)):
 
     form = await request.form()
     db = request.app.state.nest.bindings.get("nest.db")
-    picked = set(form.getlist("subject"))
-    chosen: dict[str, dict[str, str]] = {}
-    for key, value in form.multi_items():
-        if not key.startswith("new:"):
-            continue
-        _new, field, subject = key.split(":", 2)
-        if subject in picked and field in batch.FIELDS:
-            chosen.setdefault(subject, {})[field] = str(value)
+    # the preview's choice again; each page's values proposed anew (as the preview showed
+    # them), so the form stays small however many pages the batch has
+    groups = [str(g) for g in form.getlist("group")]
+    fields = [f for f in form.getlist("field") if f in batch.FIELDS]
+    only_empty = str(form.get("mode", "empty")) != "all"
+    skip = {str(x) for x in form.getlist("skip")}
+    rows, metas = _rows(request)
+    items = [r["item"] for r in rows if r["group"] in groups]
+    planned = await run_in_threadpool(
+        batch.plan, request.app.state.nest, items, metas, fields, only_empty
+    )
+    chosen: dict[str, dict[str, str]] = {
+        r["subject"]: {f: c["new"] for f, c in r["changes"].items()}
+        for r in planned
+        if r["changes"] and r["subject"] not in skip
+    }
     t = translator(request)
     try:
         done = batch.apply(request.app.state.nest, db, chosen) if chosen else 0

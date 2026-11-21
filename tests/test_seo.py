@@ -318,15 +318,23 @@ def test_a_batch_is_previewed_applied_page_by_page_and_undone(site):
     ).text
     port = f"content.entry:{entries['Portul popular'].id}"
     assert (
-        f'name="new:description:{port}"' in preview and f'name="new:title:{port}"' not in preview
+        f'data-change="description:{port}"' in preview
+        and f'data-change="title:{port}"' not in preview
     )  # written: kept
-    assert "Salvează paginile bifate" in preview
-    import re
-
-    fields = dict(re.findall(r'name="(new:[^"]+)" value="([^"]*)"', preview))
+    assert "Salvează paginile nelăsate deoparte" in preview
+    assert 'name="new:' not in preview  # the values are proposed again on saving, not sent
     keep_out = f"content.entry:{entries['Cântece'].id}"
-    picked = [s for s in {k.split(":", 2)[2] for k in fields} if s != keep_out]
-    site.post("/admin/seo/batch/apply", data={"csrf_token": csrf, "subject": picked, **fields})
+    assert f'name="skip" value="{keep_out}"' in preview
+    site.post(
+        "/admin/seo/batch/apply",
+        data={
+            "csrf_token": csrf,
+            "group": ["Posts"],
+            "field": ["title", "description", "keywords"],
+            "mode": "empty",
+            "skip": [keep_out],
+        },
+    )
     istoria = site.get(entries["Istoria satului"].path).text
     assert '<meta name="description" content="Biserica a fost ridicată în 1838.">' in istoria
     assert "<title>Istoria satului" in istoria and '<meta name="keywords"' in istoria
@@ -339,7 +347,7 @@ def test_a_batch_is_previewed_applied_page_by_page_and_undone(site):
         data={"csrf_token": csrf, "group": ["Posts"], "field": ["title"], "mode": "all"},
     ).text
     assert (
-        f'name="new:title:{port}"' in every and "<del>Portul nostru</del>" in every
+        f'data-change="title:{port}"' in every and "<del>Portul nostru</del>" in every
     )  # offered, to choose
     assert "Anulează ultima operație" in site.get("/admin/seo/batch").text
     site.post("/admin/seo/batch/undo", data={"csrf_token": csrf})
@@ -412,4 +420,28 @@ def test_categories_take_part_in_the_overview_and_the_batch(site):
             "mode": "empty",
         },
     ).text
-    assert f'name="new:description:content.term:{term.id}"' in preview
+    assert f'data-change="description:content.term:{term.id}"' in preview
+
+
+def test_a_batch_of_thousands_of_pages_is_a_small_form(site):
+    """A dictionary's thousands of words in one batch: the form sends the choice, not each
+    page's values, so it stays far under the fields a form may have."""
+    from nest import security
+    from nest_seo import service as seo
+
+    for i in range(security.FORM_MAX_FIELDS // 2 + 10):  # 3 fields each: over the limit
+        post(site, f"Pagina {i}")
+    csrf = site.cookies["nest_csrf"]
+    r = site.post(
+        "/admin/seo/batch/apply",
+        data={
+            "csrf_token": csrf,
+            "group": ["Posts"],
+            "field": ["title", "description", "keywords"],
+            "mode": "empty",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    first = content.published_entries(site.db)[0]
+    assert seo.get(site.db, f"content.entry:{first.id}") is not None

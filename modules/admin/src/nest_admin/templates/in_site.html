@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{#- The admin panel inside the site's own frame (application.admin_frame: site): an
+    application that dresses its panel in its skin (a game's masters' panel). -#}
+{% block nav %}{% include "auth/status.html" %}{% endblock %}
+{% block content %}
+<div class="admin">
+  <div class="admin-side">
+    {% include "admin/_nav.html" %}
+    <nav class="admin-nav" aria-label="{{ _('Site') }}">
+      <a class="muted" href="/">{{ _("Site") }} ↗</a>
+      {% set language_scope = "admin" %}{% include "widgets/language.html" ignore missing %}
+    </nav>
+  </div>
+  <div class="admin-main">{% block admin_content %}{% endblock %}</div>
+</div>
+{% endblock %}

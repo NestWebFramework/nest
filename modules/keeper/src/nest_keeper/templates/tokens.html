@@ -1,7 +1,7 @@
 {% extends "admin/layout.html" %}
 {% block title %}{{ _("API tokens") }} · {{ app.title }}{% endblock %}
 {% block admin_content %}
-<p><a href="{{ base }}/">← {{ _("Applications") }}</a></p>
+<p><a href="{{ base }}/">← {{ _("Sites") }}</a></p>
 <h1>{{ _("API tokens") }}</h1>
 <p class="muted">{{ _("Another orchestrator reads the keeper's API (/api/v1) with a token: Authorization: Bearer … A token is shown once, when it is made, and kept only as a hash.") }}</p>
 {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}

@@ -1,0 +1,14 @@
+[project]
+name = "nest-storage-s3"
+version = "0.1.0"
+description = "S3-compatible object storage (MinIO, Ceph, AWS S3) as a provider of nest.storage."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-storage", "minio>=7.2,<8"]
+
+[project.entry-points."nest.modules"]
+storage-s3 = "nest_storage_s3"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

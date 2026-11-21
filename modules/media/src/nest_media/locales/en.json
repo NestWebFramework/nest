@@ -1,0 +1,5 @@
+{
+ "Only JPEG, PNG, WebP and GIF pictures.": "Only JPEG, PNG, WebP and GIF pictures.",
+ "The picture is too large ({w}×{h} pixels).": "The picture is too large ({w}×{h} pixels).",
+ "The picture cannot be read: it is damaged, or not what it claims to be.": "The picture cannot be read: it is damaged, or not what it claims to be."
+}

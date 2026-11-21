@@ -7,13 +7,13 @@
 {% set seo_description = (term.description | striptags | truncate(160)) if term and term.description else "" %}
 {% include "content/seo.html" %}
 {% endblock %}
-{% block nav %}{% include "content/menu.html" %}{% endblock %}
+{% block nav %}{% if theme_setting is defined and theme_setting("menu") %}{{ super() }}{% else %}{% include "content/menu.html" %}{% endif %}{% endblock %}
 {% block content %}
 {% if term %}<h1>{{ term.name }}</h1>{% if term.description %}<p>{{ term.description }}</p>{% endif %}{% endif %}
 {% block listing %}
 <section id="listing">
   {% for e in entries %}
-  <article class="card summary">
+  <article class="card summary"{% if e.language %} lang="{{ e.language }}"{% endif %}>
     <h2><a href="{{ e.path }}">{{ e.title }}</a></h2>
     {% if e.published_at %}<p class="muted"><time datetime="{{ e.published_at.isoformat() }}">{{ e.published_at.strftime("%d.%m.%Y") }}</time></p>{% endif %}
     <p>{{ (e.excerpt or e.body) | striptags | truncate(240) }}</p>

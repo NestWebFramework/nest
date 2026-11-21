@@ -1,0 +1,17 @@
+[project]
+name = "nest-translations"
+version = "0.1.0"
+description = "Every module's records in every language of the site: editors' fields, what is missing or outdated, export and import."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-auth"]
+
+[project.entry-points."nest.modules"]
+translations = "nest_translations"
+
+[project.entry-points."nest.commands"]
+translations = "nest_translations.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

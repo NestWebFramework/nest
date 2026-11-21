@@ -1,0 +1,17 @@
+# /etc/nest/docsite.conf: where nest-framework.org runs on this server (no secrets here).
+#   sudo install -m 0640 site.conf.example /etc/nest/docsite.conf
+
+# the host port nginx proxies to (127.0.0.1 only)
+PORT=8700
+# its workspace: the search index, the SEO fields, the settings (never in the container)
+DATA=/srv/nest/docsite
+# Nest's sources (the docsite is inside Nest's repository)
+SRC=/opt/nest/src
+REPO=nest
+# its own image recipe, in Nest's repository, built from the repository's root
+DOCKERFILE=applications/docsite/deploy/Dockerfile
+IMAGE=nest-docsite
+MEMORY=512m
+KEEP=7
+# the application inside the image (for nest commands: nest-site nest docsite docs check $APP)
+APP=/src/nest/applications/docsite

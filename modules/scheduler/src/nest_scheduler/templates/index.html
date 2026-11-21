@@ -1,0 +1,23 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Scheduler") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ _("Scheduler") }}</h1>
+<p class="muted">{{ _("The jobs the application's packages run at set times or intervals, once across all its workers.") }} {{ _("Time zone") }}: {{ zone }}.</p>
+{% for p in problems %}<p class="notice danger">{{ p }}</p>{% endfor %}
+{% block jobs %}
+<div id="jobs" hx-get="{{ base }}/" hx-trigger="every 10s" hx-select="#jobs" hx-swap="outerHTML">
+<p class="muted">{% if holder %}{{ _("Run by") }} <code>{{ holder[0] }}</code>{% else %}<span class="worse">{{ _("No process runs the jobs now.") }}</span>{% endif %}</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Job") }}</th><th>{{ _("When") }}</th><th>{{ _("Next") }}</th><th>{{ _("Last") }}</th><th></th></tr></thead>
+  <tbody>{% for r in rows %}{% set j, st = r.job, r.state %}<tr>
+    <td><a href="{{ base }}/job/{{ j.key }}"><strong>{{ j.key }}</strong></a>{% if j.description %}<br><span class="muted">{{ j.description }}</span>{% endif %}</td>
+    <td><code>{{ r.when }}</code>{% if not j.enabled %} · <span class="muted">{{ _("off") }}</span>{% endif %}</td>
+    <td>{% if st and st.running_since %}<span class="better">● {{ _("running") }}</span>{% elif st and st.paused %}<span class="muted">{{ _("paused") }}</span>{% elif st and st.run_now %}{{ _("asked") }}{% elif st and st.next_at and j.enabled %}{{ st.next_at.strftime("%d.%m %H:%M") }} UTC{% else %}—{% endif %}</td>
+    <td>{% if st and st.last_at %}<span class="{{ 'better' if st.last_ok else 'worse' }}">{{ '✓' if st.last_ok else '✗' }}</span> {{ st.last_at.strftime("%d.%m %H:%M") }} · {{ st.last_ms }} ms{% if st.failures and st.failures > 1 %} · <span class="worse">{{ st.failures }} {{ _("failures in a row") }}</span>{% endif %}{% if st.last_result %}<br><span class="muted">{{ st.last_result|truncate(120) }}</span>{% endif %}{% else %}<span class="muted">{{ _("not yet") }}</span>{% endif %}</td>
+    <td class="row">{% if st %}<form method="post" action="{{ base }}/job/{{ j.key }}/run">{{ csrf_field }}<button class="secondary" {% if st.running_since %}disabled{% endif %}>{{ _("Run now") }}</button></form>
+      <form method="post" action="{{ base }}/job/{{ j.key }}/{{ 'resume' if st.paused else 'pause' }}">{{ csrf_field }}<button class="secondary">{{ _("Resume") if st.paused else _("Pause") }}</button></form>{% endif %}</td>
+  </tr>{% else %}<tr><td colspan="5" class="muted">{{ _("No package of this application declares a job.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+</div>
+{% endblock %}
+{% endblock %}

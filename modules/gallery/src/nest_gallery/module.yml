@@ -1,0 +1,91 @@
+#
+# gallery — photo galleries and albums, reusable by any application.
+#
+# A gallery holds photos in order; an album holds galleries. Each has its own
+# page under the route the application gives the module, and can be embedded
+# in another module's page with [gallery slug="..."] or [album slug="..."].
+# Thumbnails open in a lightbox (one small static script, CSP-safe); without
+# JavaScript they are links. Editors make galleries and albums in the admin panel,
+# upload photos into them (checked by their bytes, at most upload_max_mb each), put
+# them in order, describe them and move galleries between albums. WordPress's Photo
+# Gallery and NextGEN galleries come in with `nest gallery import-wordpress`, their old
+# shortcodes kept.
+#
+module:
+  name: gallery
+  id: nest.module.gallery
+  type: module
+  title: Galleries
+  category: content
+  version: 0.3.0
+  description: Photo galleries and albums with pages, embeds, a lightbox, uploads in the admin panel and WordPress imports.
+  license: MIT
+  created: "2026-11-13"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_gallery
+styles: [gallery.css]  # its base look; an application restyles it
+admin_styles: [gallery-admin.css]  # the editor: uploads, the photos' order, the tree
+
+provides:
+  import: nest_gallery
+  exports: []
+
+requires:
+  interfaces: [nest.db, nest.storage]
+
+deps:
+  auth: ">=0.2,<1"
+  db: ">=0.2,<1"
+  storage: ">=0.1,<1"
+  media: ">=0.1,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_gallery.models:Base"
+
+# Its words in every language of the site: with the translations module, editors write
+# each gallery's title and description and each photo's caption and description in the
+# other languages (Admin → Translations); a gallery not yet translated shows the original's.
+uses: [translations]
+translatable:
+  collection:
+    model: "nest_gallery.models:CollectionText"
+    label: Galleries
+    fields: {title: text, description: textarea}
+    edit: "{admin}/gallery/{id}"
+  photo:
+    model: "nest_gallery.models:PhotoText"
+    label: Photo captions
+    fields: {caption: textarea, alt: text}
+
+settings:
+  upload_max_mb:
+    label: Largest photo (MB)
+    type: int
+    default: 15
+    description: The largest photo an editor may upload into a gallery, in MB.
+  index:
+    restart: true
+    type: bool
+    default: true
+    description: >
+      Whether the module answers its route itself with every top-level album
+      and gallery. Off when a page of the site lives at that address (a
+      WordPress page that embeds an album, say) and should stay.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+  - {locale: en, file: locales/en.json}
+
+docs:
+  title: Galleries
+  section: modules
+
+admin:
+  title: Galleries
+  order: 14
+  role: editor
+  description: "Albums and galleries: make them, upload and order their photos."

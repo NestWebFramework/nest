@@ -1,0 +1,21 @@
+{
+ "Documentation": "Documentație",
+ "Search the docs…": "Caută în documentație…",
+ "Search the docs": "Caută în documentație",
+ "Pages": "Pagini",
+ "Before": "Înapoi",
+ "Next": "Înainte",
+ "Improve this page": "Îmbunătățește pagina",
+ "On this page": "Pe această pagină",
+ "Search": "Caută",
+ "{n} page for “{q}”": [
+  "{n} pagină pentru „{q}”",
+  "{n} pagini pentru „{q}”",
+  "{n} de pagini pentru „{q}”"
+ ],
+ "No such page": "Pagina nu există",
+ "The documentation has no page here; the menu has every page there is, and search finds the rest.": "Documentația nu are o pagină aici; meniul are toate paginile, iar căutarea găsește restul.",
+ "What it does": "Ce face",
+ "Read more": "Citește mai mult",
+ "Built with it": "Construite cu el"
+}

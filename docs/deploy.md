@@ -152,3 +152,25 @@ and Caddy, which gets and renews the HTTPS certificate. Copy the backups off the
 Versioned assets (`/assets/<module>/<file>?v=…`) are kept a year (`immutable`), stored
 files a week, sized pictures are made once. Pages are not cached for visitors: each one
 carries the visitor's form token, and rendering one is a few milliseconds.
+
+## Request size and uploads
+
+A request may send at most `application.max_body_mb` MB (32 by default;
+`NEST_MAX_BODY_MB` in the environment wins). The limit is kept before anything reads a
+body: a request that declares more is refused with 413 at once, one that does not say
+(chunked) is counted and stopped at the limit. Keep the proxy's limit the same, so a
+large request stops at the door:
+
+| Proxy | Directive |
+|---|---|
+| Caddy | `request_body { max_size 25MB }` (morlaca's `deploy/Caddyfile`) |
+| nginx (ISPConfig: the site's **Options → nginx Directives**) | `client_max_body_size 25m;` |
+
+An uploaded picture (a gallery's photos, an article's pictures) is read whole with
+Pillow and written again: refused when it is not a JPEG, PNG, WebP or GIF that can be
+read, or would decode to more than 50 million pixels; turned upright; without its
+metadata (the EXIF and XMP a phone writes: the place it was taken, the camera, the time);
+its colour profile kept. Its type comes from its bytes and its name from the server
+(`uploads/<year>/<month>/<safe-name>.<type>`); who uploaded it is kept. Only editors
+upload, with the CSRF token in a header, so nothing reads the file before they are known.
+Files are served with their exact type and `nosniff`.

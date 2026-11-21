@@ -31,7 +31,11 @@ def visible_pages(request: Request, user: Any) -> list[AdminPage]:
 
 @router.get("/")
 def home(request: Request, user: CurrentUser = Depends(require_user)):
-    return render(request, "admin/home.html", pages=visible_pages(request, user))
+    waiting: dict[str, int] = {}  # what waits for someone, by module ("admin.waiting")
+    for answer in request.app.state.nest.gather("admin.waiting"):
+        if isinstance(answer, dict):
+            waiting.update({k: int(v) for k, v in answer.items() if v})
+    return render(request, "admin/home.html", pages=visible_pages(request, user), waiting=waiting)
 
 
 def setup(host: ModuleHost) -> None:
@@ -43,6 +47,7 @@ def setup(host: ModuleHost) -> None:
         user = current_user(request)
         return {"admin_root": root, "admin_nav": visible_pages(request, user) if user else []}
 
+    from nest_admin.languages import router as languages
     from nest_admin.modules import router as modules
     from nest_admin.settings import router as settings
     from nest_admin.themes import ThemePreview
@@ -58,4 +63,5 @@ def setup(host: ModuleHost) -> None:
     host.mount(settings)
     host.mount(modules)
     host.mount(themes)
+    host.mount(languages)
     host.mount(router)

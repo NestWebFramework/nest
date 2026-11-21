@@ -208,8 +208,11 @@ class LocaleMiddleware:
             root = self.admin_root()
             path = scope.get("path", "")
             in_admin = bool(root) and (path == root or path.startswith(root.rstrip("/") + "/"))
+            from_address = scope.get("state", {}).get("url_locale")  # /en/... (LanguageURLs)
             if in_admin:
                 locale = self.catalogs.negotiate(admin_chosen or chosen, accept, self.admin)
+            elif from_address:
+                locale = from_address
             else:
                 # the site: the browser's language, or (browser_language: false, for a
                 # public site) its default until a visitor chooses: one address serving two
@@ -230,3 +233,16 @@ def translator(request: Any) -> Translator:
     if found is not None:
         return found
     return request.app.state.nest.catalogs.translator()
+
+
+# A language's own name for itself, for switches and the admin panel's lists.
+LANGUAGE_NAMES = {
+    "ro": "Română", "en": "English", "hu": "Magyar", "de": "Deutsch", "fr": "Français",
+    "it": "Italiano", "es": "Español", "uk": "Українська", "pl": "Polski", "bg": "Български",
+    "sr": "Српски", "sk": "Slovenčina", "cs": "Čeština", "pt": "Português", "nl": "Nederlands",
+}  # fmt: skip
+
+
+def language_name(code: str) -> str:
+    """``ro`` → ``Română``; a code it does not know, as it is."""
+    return LANGUAGE_NAMES.get(code, code)

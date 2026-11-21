@@ -20,9 +20,24 @@ def _base(request: Request) -> str:
     return module_state(request, "gallery")["base"]
 
 
+def _locale(request: Any) -> str:
+    state = getattr(request, "state", None)
+    return str(getattr(state, "locale", "") or "") if state is not None else ""
+
+
+def _say_where(request: Request, shown: Any) -> None:
+    """A gallery not yet translated, at another language's address: the original's words
+    standing in, and search engines told so (its address is the same in every language)."""
+    if getattr(shown, "fallback", False):
+        nest = request.app.state.nest
+        request.state.language_fallback = True
+        request.state.alternates = {nest.catalogs.default: request.url.path}
+
+
 @index_router.get("/")
 def index(request: Request, db: Database = bound(Database)):
-    return render(request, "gallery/index.html", cards=service.cards(db, None), base=_base(request))
+    cards = service.shown_cards(db, service.cards(db, None), _locale(request))
+    return render(request, "gallery/index.html", cards=cards, base=_base(request))
 
 
 @router.get("/{slug}/")
@@ -30,8 +45,11 @@ def collection(request: Request, slug: str, db: Database = bound(Database)):
     c = service.by_slug(db, slug)
     if c is None:
         raise HTTPException(404)
-    children = service.cards(db, c.id)
-    shown = [] if children else service.photos(db, c.id)
+    locale = _locale(request)
+    children = service.shown_cards(db, service.cards(db, c.id), locale)
+    shown = [] if children else service.shown_photos(db, service.photos(db, c.id), locale)
+    c = service.shown_collection(db, c, locale)
+    _say_where(request, c)
     return render(
         request,
         "gallery/collection.html",
@@ -63,14 +81,15 @@ def items(c: Any, photos: list[Any]) -> list[dict[str, str]]:
 def embed(host: Any, request: Any, c: Any) -> str:
     """A collection inside another page: an album's tiles, or a gallery's photos."""
     db = host.bound("nest.db")
-    children = service.cards(db, c.id)
+    locale = _locale(request)
+    children = service.shown_cards(db, service.cards(db, c.id), locale)
     t = translator(request)
     return host.render_block(
         "gallery/embed.html",
         "embed",
-        collection=c,
+        collection=service.shown_collection(db, c, locale),
         cards=children,
-        photos=[] if children else service.photos(db, c.id),
+        photos=[] if children else service.shown_photos(db, service.photos(db, c.id), locale),
         base=host.state["base"],
         media=lambda key, width=None: media_url(request, key, width),
         _=t.gettext,

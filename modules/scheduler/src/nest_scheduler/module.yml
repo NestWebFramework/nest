@@ -1,0 +1,60 @@
+#
+# scheduler — jobs at set times or intervals, for every module of an application.
+#
+# A package declares its jobs in its own manifest, under schedule: (a name, the function
+# to run, and every: 6h, cron: "30 3 * * *" or every_setting: its own setting's seconds);
+# the application changes their timing in its manifest ({job: trains.sync, every: 12h}).
+# One process runs them: the holder of a lease in the database, so a job runs once
+# however many workers or containers serve the application, and one takes over when the
+# holder stops. Blocking jobs run in the scheduler's own threads, never in those that
+# answer the pages. Each job's next time, last result and runs are kept; the admin panel
+# shows them, runs one now, pauses and resumes. Game time is not this: Saga keeps its own.
+#
+module:
+  name: scheduler
+  id: nest.module.scheduler
+  type: module
+  title: Scheduler
+  category: admin
+  version: 0.1.0
+  description: Jobs at set times or intervals, declared in the packages' manifests, run once across the workers.
+  license: MIT
+  created: "2026-11-21"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.3,<1"
+
+main: nest_scheduler
+
+provides:
+  import: nest_scheduler
+  exports: [Context]
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.2,<1"
+  admin: ">=0.1,<1"
+
+settings:
+  timezone: {type: str, default: "Europe/Bucharest", description: "The time zone cron expressions are read in."}
+  threads: {type: int, default: 4, restart: true, description: "Threads for blocking jobs (1-32): the most that run at once."}
+  history_days: {type: int, default: 30, description: "How many days of runs are kept."}
+  lease_seconds: {type: int, default: 60, restart: true, description: "How long the process running the jobs holds them without renewing; then another takes over."}
+  enabled: {type: bool, default: true, restart: true, description: "Off: no job runs in this application (its jobs are still listed)."}
+
+db:
+  migrations: migrations
+  metadata: "nest_scheduler.models:Base"
+
+admin:
+  title: Scheduler
+  order: 40
+  role: admin
+  description: The jobs that run at set times, when they run next and how they went.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+  - {locale: en, file: locales/en.json}

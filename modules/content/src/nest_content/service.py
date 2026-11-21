@@ -19,11 +19,13 @@ from nest_search import Document
 from sqlalchemy import delete, func, or_, select
 
 from nest.text import slugify
+from nest_content import translated
 from nest_content.html import sanitize
 from nest_content.models import (
     STATUSES,
     Entry,
     EntryTerm,
+    EntryText,
     Media,
     Menu,
     MenuItem,
@@ -118,6 +120,7 @@ def ensure_term(
             term.legacy_id = legacy_id
         s.flush()
         _refresh_term_path(s, registry, term)
+        translated.mirror_term(s, registry, term)
         return term
 
 
@@ -272,8 +275,13 @@ def save_entry(
             _prune_revisions(s, e.id, spec.revisions)
         changed = _refresh_children(s, registry, e)
         s.flush()
+        for x in [e, *changed]:
+            translated.mirror_entry(s, registry, x)
+        # the other languages' addresses are made from these slugs where theirs are missing
+        others = translated.refresh_entries(s, registry, [x.id for x in [e, *changed]])
         documents = [(x, document(x)) for x in [e, *changed]]
     _index(search, documents)
+    translated.apply(search, others)
     return e
 
 
@@ -327,6 +335,7 @@ def _refresh_term_entries(
         for t in s.scalars(select(Term).where(Term.id.in_(ids))):
             before = t.path
             _refresh_term_path(s, registry, t)
+            translated.mirror_term(s, registry, t)
             if before and before != t.path:
                 moves.append((before, t.path))
         entries = list(
@@ -354,11 +363,16 @@ def _refresh_term_entries(
             )
             before = e.path
             e.path = _compute_path(s, registry, e, categories)
+            translated.mirror_entry(s, registry, e)
             if e.status == "published" and before != e.path:
                 moves.append((before, e.path))
         s.flush()
+        others = translated.refresh_terms(s, registry, ids) + translated.refresh_entries(
+            s, registry, extra_entries or []
+        )
         documents = [(e, document(e)) for e in entries]
     _index(search, documents)
+    translated.apply(search, others)
     return moves
 
 
@@ -419,6 +433,8 @@ def save_term(
         term.description = data.description.strip()
         if term_id is None:
             _refresh_term_path(s, registry, term)
+        s.flush()
+        translated.mirror_term(s, registry, term)
         s.flush()
         s.expunge(term)
     moves = _refresh_term_entries(db, search, registry, term.id) if moved else []
@@ -486,10 +502,19 @@ def term_tree(db: Any, taxonomy: str, type_name: str | None = None) -> list[tupl
 @_bumps
 def delete_entry(db: Any, search: Any, entry_id: int) -> None:
     with db.session() as s, s.begin():
+        locales = list(s.scalars(select(EntryText.locale).where(EntryText.owner_id == entry_id)))
         e = s.get(Entry, entry_id)
         if e is not None:
             s.delete(e)
     search.remove(KIND, [str(entry_id)])
+    _forget_texts(search, entry_id, locales)
+
+
+def _forget_texts(search: Any, entry_id: int, locales: list[str]) -> None:
+    """An entry out of its other languages' indexes (the default's kind is KIND; a kind
+    no language uses is nothing to remove)."""
+    for locale in locales:
+        search.remove(f"{KIND}.{locale}", [str(entry_id)])
 
 
 def text_of(markup: str) -> str:
@@ -516,7 +541,9 @@ def _index(search: Any, documents: list[tuple[Entry, Document]]) -> None:
         search.remove(KIND, hidden)
 
 
-def reindex(db: Any, search: Any, batch: int = 500) -> int:
+def reindex(db: Any, search: Any, batch: int = 500, registry: Registry | None = None) -> int:
+    if registry is not None:
+        translated.reindex(db, search, registry)
     search.clear(KIND)
     done, offset = 0, 0
     with db.session() as s:
@@ -827,13 +854,18 @@ def trash_entry(
         e.status = TRASH
         e.updated_at = utcnow()  # when it was put in the trash
         s.flush()
+        locales = list(s.scalars(select(EntryText.locale).where(EntryText.owner_id == entry_id)))
     search.remove(KIND, [str(entry_id)])
+    _forget_texts(search, entry_id, locales)
     return e
 
 
 @_bumps
-def untrash_entry(db: Any, search: Any, entry_id: int) -> Entry | None:
-    """Out of the trash, with the status it had."""
+def untrash_entry(
+    db: Any, search: Any, entry_id: int, registry: Registry | None = None
+) -> Entry | None:
+    """Out of the trash, with the status it had (and its translations back in the
+    index, given the registry)."""
     with db.session() as s, s.begin():
         e = s.get(Entry, entry_id)
         if e is None or e.status != TRASH:
@@ -846,7 +878,9 @@ def untrash_entry(db: Any, search: Any, entry_id: int) -> Entry | None:
         e.updated_at = utcnow()
         s.flush()
         documents = [(e, document(e))]
+        others = translated.documents_of(s, registry, [e.id]) if registry else []
     _index(search, documents)
+    translated.apply(search, others)
     return e
 
 
@@ -895,6 +929,7 @@ def add_media(
     title: str = "",
     content_type: str = "",
     legacy_id: int | None = None,
+    uploaded_by: int | None = None,
 ) -> Media:
     stat = storage.put(key, data, content_type)
     with db.session() as s, s.begin():
@@ -906,6 +941,8 @@ def add_media(
         m.size, m.alt, m.title = stat.size, alt or m.alt, title or m.title
         if legacy_id is not None:
             m.legacy_id = legacy_id
+        if uploaded_by is not None:
+            m.uploaded_by = uploaded_by
         s.flush()
         return m
 
@@ -1044,26 +1081,31 @@ def changed() -> None:
     _menus.clear()
 
 
-def cached_menu(db: Any, slug: str) -> list[MenuNode]:
-    """menu_tree, kept a while: a page asks for its menu on every view."""
+def cached_menu(
+    db: Any, slug: str, locale: str = "", registry: Registry | None = None
+) -> list[MenuNode]:
+    """menu_tree, kept a while (per language): a page asks for its menu on every view."""
     import time  # noqa: PLC0415
 
-    key = (slug, _generation)
+    if registry is None or not translated.wanted(registry, locale):
+        locale = ""
+    key = (slug, locale, _generation)
     now = time.monotonic()
     try:
         kept = _menus.setdefault(db, {})
     except TypeError:  # a database object that cannot be weakly referenced: no cache
-        return menu_tree(db, slug)
+        return menu_tree(db, slug, locale)
     found = kept.get(key)
     if found and found[0] > now:
         return found[1]
-    tree = menu_tree(db, slug)
+    tree = menu_tree(db, slug, locale)
     kept[key] = (now + MENU_TTL, tree)
     return tree
 
 
-def menu_tree(db: Any, slug: str) -> list[MenuNode]:
-    """A menu as nested nodes, with each item's title and address resolved."""
+def menu_tree(db: Any, slug: str, locale: str = "") -> list[MenuNode]:
+    """A menu as nested nodes, with each item's title and address resolved (in
+    ``locale``, another language than the default: its translations where there are)."""
     with db.session() as s:
         menu = s.scalar(select(Menu).where(Menu.slug == slug))
         if menu is None and slug == "main":  # a site whose menu has another name
@@ -1087,20 +1129,45 @@ def menu_tree(db: Any, slug: str) -> list[MenuNode]:
                 select(Term).where(Term.id.in_([i.term_id for i in items if i.term_id]))
             )
         }
+        if locale:
+            from nest_content.models import MenuItemText, TermText  # noqa: PLC0415
+
+            e_text = translated._published(s, EntryText, list(entries), locale)
+            t_text = translated._published(s, TermText, list(terms_), locale)
+            i_text = translated._published(s, MenuItemText, [i.id for i in items], locale)
+        else:
+            e_text = t_text = i_text = {}
     nodes: dict[int, MenuNode] = {}
     roots: list[MenuNode] = []
     for item in items:
         title, url = item.title, item.url
+        own = i_text.get(item.id)  # its label in this language
         if item.entry_id:
             e = entries.get(item.entry_id)
             if e is None or e.status != "published":
                 continue
-            title, url = title or e.title, e.path
+            there = e_text.get(e.id)  # the entry in this language
+            if there is not None:
+                title, url = (
+                    (own.title if own else "") or there.title or title or e.title,
+                    there.path or e.path,
+                )
+            else:
+                title, url = (own.title if own else "") or title or e.title, e.path
         elif item.term_id:
             t = terms_.get(item.term_id)
             if t is None:
                 continue
-            title, url = title or t.name, t.path
+            there = t_text.get(t.id)
+            if there is not None:
+                title, url = (
+                    (own.title if own else "") or there.name or title or t.name,
+                    there.path or t.path,
+                )
+            else:
+                title, url = (own.title if own else "") or title or t.name, t.path
+        elif own is not None:
+            title, url = own.title or title, own.url or url
         nodes[item.id] = MenuNode(title=title, url=url or "#", new_window=item.new_window)
     for item in items:
         node = nodes.get(item.id)

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from nest_db import model_base
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
+from datetime import datetime
+
+from nest_db import model_base, text_table
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 Base = model_base("gallery")
@@ -38,6 +40,9 @@ class Photo(Base):
     thumb: Mapped[str] = mapped_column(String(500), default="")
     caption: Mapped[str] = mapped_column(Text, default="")
     alt: Mapped[str] = mapped_column(String(300), default="")
+    # who uploaded it in the admin panel, and when (an imported photo has neither)
+    uploaded_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    uploaded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Alias(Base):
@@ -52,3 +57,10 @@ class Alias(Base):
     collection_id: Mapped[int] = mapped_column(
         ForeignKey("gallery_collection.id", ondelete="CASCADE")
     )
+
+
+# Their words in each language of the site, one row per language, the default one's
+# mirroring the records' own (written with them). A photo has a row only when it has real
+# words (not a file name, not a camera's record): nothing else is worth translating.
+CollectionText = text_table(Base, Collection, title=String(300), description=Text)
+PhotoText = text_table(Base, Photo, caption=Text, alt=String(300))

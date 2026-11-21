@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# nest-site: run a Nest site on one server, as a container whose data lives on the host.
+#
+# Each site has /etc/nest/<site>.conf (where its sources, data and port are) and
+# /etc/nest/<site>.env (its secrets); systemd runs it (nest-site@<site>.service). Its
+# workspace (databases, files, settings, backups) is a folder on the host mounted at
+# /data: a container restarted, rebuilt or replaced never touches it.
+#
+#   nest-site init SITE              the data folder, and an .env with a fresh secret
+#   nest-site build SITE             an image from the sources (nest + the site, side by side)
+#   nest-site start|stop|restart SITE
+#   nest-site upgrade SITE [--no-pull]
+#                                    pull the sources, build, back up, restart (the migrations
+#                                    run before it serves), wait until healthy; if it is not,
+#                                    roll back: the image before, the backup before
+#   nest-site rollback SITE [ARCHIVE] the image before, and the backup made before the upgrade
+#   nest-site backup SITE            a backup now, into the data folder's backups/ (14 kept)
+#   nest-site restore SITE ARCHIVE   an archive back (the site stopped meanwhile)
+#   nest-site nest SITE ARGS...      a nest command in the site (nest-site nest gari db status /src/app)
+#   nest-site status|logs SITE
+set -euo pipefail
+
+die() { echo "nest-site: $*" >&2; exit 1; }
+say() { echo "· $*"; }
+
+[[ $# -ge 1 ]] || { sed -n '2,24p' "$0"; exit 1; }
+CMD=$1; shift
+SITE=${1:-}; [[ -n $SITE || $CMD == help ]] || die "which site?"
+if [[ $# -gt 0 ]]; then shift; fi
+[[ $SITE =~ ^[a-z0-9][a-z0-9-]*$ || -z $SITE ]] || die "a site's name is lowercase letters, digits and dashes"
+
+ETC=${NEST_ETC:-/etc/nest}          # another folder only to try it out
+STATE=${NEST_STATE:-/var/lib/nest-site}  # what nest-site remembers (never in the data folder)
+CONF=$ETC/$SITE.conf
+ENVF=$ETC/$SITE.env
+if [[ -n $SITE && -f $CONF ]]; then
+  # shellcheck source=/dev/null
+  source "$CONF"
+fi
+: "${SRC:=/opt/nest/src}"            # nest/ and the site's repository side by side
+: "${REPO:=$SITE}"                   # the site's folder under SRC
+: "${DATA:=/srv/nest/$SITE}"         # its workspace, on the host
+: "${PORT:?set PORT in $CONF}"       # the host port nginx proxies to (127.0.0.1 only)
+: "${IMAGE:=nest-$SITE}"             # the image's name; :current and :previous are its tags
+: "${HEALTH_WAIT:=180}"
+: "${APP:=/src/app}"                 # the application inside the image
+NAME=nest-$SITE
+UNIT=nest-site@$SITE.service
+UID_NEST=10001                       # the user the image runs as
+
+running() { docker ps --format '{{.Names}}' | grep -qx "$NAME"; }
+
+healthy() {
+  local deadline=$((SECONDS + HEALTH_WAIT))
+  while ((SECONDS < deadline)); do
+    if curl -fsS -o /dev/null --max-time 4 "http://127.0.0.1:$PORT/healthz"; then return 0; fi
+    sleep 3
+  done
+  return 1
+}
+
+in_site() {  # a nest command against the site: in the running container, else in a one-off
+  if running; then
+    docker exec -i "$NAME" nest "$@"
+  else
+    docker run --rm -i --env-file "$ENVF" -v "$DATA:/data" "$IMAGE:current" nest "$@"
+  fi
+}
+
+backup() {  # the archive's path on the host
+  local said
+  said=$(in_site backup "$APP" --keep "${KEEP:-14}")
+  said=$(grep -o '/data/[^ ]*\.tar\.gz' <<<"$said" | tail -1)
+  [[ -n $said ]] || die "the backup did not say where it is"
+  echo "$DATA/${said#/data/}"
+}
+
+latest_backup() { ls -1t "$DATA"/backups/*.tar.gz 2>/dev/null | head -1; }
+
+case $CMD in
+  init)
+    [[ -f $CONF ]] || die "first put its settings in $CONF (see the site's deploy/site.conf.example)"
+    install -d -m 0750 -o "$UID_NEST" -g "$UID_NEST" "$DATA"
+    if [[ ! -f $ENVF ]]; then
+      install -m 0600 /dev/null "$ENVF"
+      echo "NEST_SECRET_KEY=$(openssl rand -hex 32)" >>"$ENVF"
+      say "$ENVF made with a fresh secret: add the rest from the site's deploy/$SITE.env.example"
+    fi
+    say "data folder $DATA (owned by the container's user, $UID_NEST)"
+    ;;
+  build)
+    [[ -d $SRC/nest && -d $SRC/$REPO ]] || die "the sources are not in $SRC/nest and $SRC/$REPO"
+    rev=$(git -C "$SRC/$REPO" rev-parse --short HEAD)-$(git -C "$SRC/nest" rev-parse --short HEAD)
+    say "building $IMAGE:$rev"
+    if [[ -n ${DOCKERFILE:-} ]]; then  # an application inside Nest's repository (the docsite, the registry)
+      docker build -f "$SRC/nest/$DOCKERFILE" -t "$IMAGE:$rev" "$SRC/nest"
+    else                               # a site in its own repository, beside Nest
+      docker build -f "$SRC/nest/deploy/Dockerfile" --build-context "nest=$SRC/nest" \
+        -t "$IMAGE:$rev" "$SRC/$REPO"
+    fi
+    if docker image inspect "$IMAGE:current" >/dev/null 2>&1; then
+      docker tag "$IMAGE:current" "$IMAGE:previous"
+    fi
+    docker tag "$IMAGE:$rev" "$IMAGE:current"
+    say "$IMAGE:current is $rev"
+    ;;
+  start|stop|restart|status)
+    systemctl "$CMD" "$UNIT"
+    ;;
+  logs)
+    journalctl -u "$UNIT" -n 200 -f
+    ;;
+  backup)
+    say "$(backup)"
+    ;;
+  restore)
+    archive=${1:-}; [[ -f $archive ]] || die "which archive? (one in $DATA/backups/)"
+    case $archive in "$DATA"/*) inside=/data/${archive#"$DATA"/} ;; *) cp "$archive" "$DATA/backups/" && inside=/data/backups/$(basename "$archive") ;; esac
+    systemctl stop "$UNIT" || true
+    docker run --rm --env-file "$ENVF" -v "$DATA:/data" "$IMAGE:current" nest restore "$APP" "$inside" --force
+    systemctl start "$UNIT"
+    healthy && say "restored from $(basename "$archive"), and serving" || die "restored, but it is not healthy: nest-site logs $SITE"
+    ;;
+  rollback)
+    archive=${1:-$(cat "$STATE/$SITE.before-upgrade" 2>/dev/null || true)}
+    docker image inspect "$IMAGE:previous" >/dev/null 2>&1 || die "there is no image before ($IMAGE:previous)"
+    systemctl stop "$UNIT" || true
+    docker tag "$IMAGE:current" "$IMAGE:failed" 2>/dev/null || true
+    docker tag "$IMAGE:previous" "$IMAGE:current"
+    if [[ -n $archive && -f $archive ]]; then  # the data as they were before its migrations
+      docker run --rm --env-file "$ENVF" -v "$DATA:/data" "$IMAGE:current" \
+        nest restore "$APP" "/data/${archive#"$DATA"/}" --force
+      say "data back from $(basename "$archive")"
+    fi
+    systemctl start "$UNIT"
+    healthy && say "rolled back, and serving" || die "rolled back, but it is not healthy: nest-site logs $SITE"
+    ;;
+  upgrade)
+    if [[ ${1:-} != --no-pull ]]; then
+      git -C "$SRC/nest" pull --ff-only
+      [[ $REPO == nest ]] || git -C "$SRC/$REPO" pull --ff-only
+    fi
+    "$0" build "$SITE"
+    if running; then
+      before=$(backup)
+      install -d -m 0750 "$STATE"
+      echo "$before" >"$STATE/$SITE.before-upgrade"
+      say "backup before the upgrade: $(basename "$before")"
+    fi
+    systemctl restart "$UNIT"   # the entrypoint migrates (nest db upgrade), then serves
+    if healthy; then
+      say "upgraded and serving: $(docker image inspect -f '{{index .RepoTags 0}}' "$IMAGE:current" 2>/dev/null || echo "$IMAGE:current")"
+      in_site db status "$APP" | sed 's/^/  /' || true
+    else
+      echo "nest-site: the new version is not healthy; rolling back" >&2
+      journalctl -u "$UNIT" -n 40 --no-pager >&2 || true
+      "$0" rollback "$SITE"
+      exit 1
+    fi
+    ;;
+  nest)
+    in_site "$@"
+    ;;
+  *)
+    die "unknown command '$CMD' (nest-site with no arguments says them)"
+    ;;
+esac

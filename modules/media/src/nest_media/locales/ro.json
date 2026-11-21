@@ -1,0 +1,5 @@
+{
+ "Only JPEG, PNG, WebP and GIF pictures.": "Doar imagini JPEG, PNG, WebP și GIF.",
+ "The picture is too large ({w}×{h} pixels).": "Imaginea este prea mare ({w}×{h} pixeli).",
+ "The picture cannot be read: it is damaged, or not what it claims to be.": "Imaginea nu poate fi citită: este deteriorată sau nu este ce pretinde că este."
+}

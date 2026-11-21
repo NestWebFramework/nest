@@ -1,0 +1,43 @@
+{% extends "admin/layout.html" %}
+{#- The site's languages and its default: added, removed, chosen here. -#}
+{% block title %}{{ _("Languages") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ _("Languages") }} <span class="muted">· {{ app.title }}</span></h1>
+<p class="hint">
+  {% if prefix %}{{ _("The default language is at the site's root; every other one has addresses of its own under its code (/en/...), for readers and search engines alike.") }}
+  {% else %}{{ _("Visitors choose among these languages with the switch on every page.") }}{% endif %}
+  {{ _("Adding a language changes nothing in the database: what is translated into it is added to the modules that keep their text per language.") }}
+</p>
+{% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
+{% if pending %}<p class="notice" role="status">{{ _("Waiting for the site to restart to apply the change.") }}</p>{% endif %}
+<ul class="module-list">
+  {% for code in site %}
+  <li class="card module">
+    <div class="module-head">
+      <strong>{{ names.get(code, code) }}</strong> <code>{{ code }}</code>
+      {% if code == default %}<span class="badge lock">{{ _("default") }}</span>{% endif %}
+      {% if prefix %}<span class="badge">{{ "/" if code == default else "/" ~ code ~ "/" }}</span>{% endif %}
+      {% if code not in translated %}<span class="badge" title="{{ _('The admin panel and the site show their words in English until a translation of them is added.') }}">{{ _("interface in English") }}</span>{% endif %}
+    </div>
+    {% if code != default %}
+    <div class="module-actions">
+      <form method="post" action="{{ admin_root }}/languages">{{ csrf_field }}<input type="hidden" name="code" value="{{ code }}"><button type="submit" name="action" value="default" class="secondary">{{ _("Make it the default") }}</button></form>
+      <form method="post" action="{{ admin_root }}/languages">{{ csrf_field }}<input type="hidden" name="code" value="{{ code }}"><button type="submit" name="action" value="remove" class="secondary">{{ _("Remove") }}</button></form>
+    </div>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+<section class="card stack" aria-labelledby="add-h">
+  <h2 id="add-h">{{ _("Add a language") }}</h2>
+  <form method="post" action="{{ admin_root }}/languages" class="row">
+    {{ csrf_field }}
+    <input type="hidden" name="action" value="add">
+    <label for="lang-code">{{ _("Its code") }}</label>
+    <input id="lang-code" name="code" list="lang-codes" placeholder="hu, de, fr…" required maxlength="10" autocomplete="off">
+    <datalist id="lang-codes">{% for code, name in names.items() if code not in site %}<option value="{{ code }}">{{ name }}</option>{% endfor %}</datalist>
+    <button type="submit">{{ _("Add") }}</button>
+  </form>
+  <p class="muted">{{ _("Removing a language hides it; nothing translated into it is deleted.") }}</p>
+</section>
+{% endblock %}

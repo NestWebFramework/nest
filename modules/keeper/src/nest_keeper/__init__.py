@@ -130,7 +130,7 @@ def _folders(request: Request) -> list[Path]:
     return module_state(request, "keeper")["folders"]
 
 
-@admin.get("/")
+@admin.get("/apps")
 async def index(request: Request, user: CurrentUser = Depends(keeper)):
     apps = await probed(await asyncio.to_thread(applications, _folders(request)))
     return render(
@@ -174,8 +174,26 @@ def _app_or_404(request: Request, name: str) -> Application:
     return apps[name]
 
 
+def _remote_rows(app: Application, q: str) -> tuple[list[Any], list[str]]:
+    """The Nest registry's packages that work with this nest-core, searched: (rows, problems)."""
+    from nest.packages import PackageError, _installed, remote_offers  # noqa: PLC0415
+
+    try:
+        offers = remote_offers()
+    except PackageError as e:
+        return [], e.problems
+    installed = _installed(app.root) if (app.root / "pyproject.toml").is_file() else {}
+    needle = q.strip().lower()
+    rows = [
+        {"offer": o, "installed": o.dist.lower() in installed}
+        for o in sorted(offers.values(), key=lambda o: (o.type, o.name))
+        if not needle or needle in f"{o.name} {o.title} {o.description}".lower()
+    ]
+    return rows, []
+
+
 def _packages_page(
-    request: Request, app: Application, *, steps=None, problems=None, status_code=200
+    request: Request, app: Application, *, steps=None, problems=None, status_code=200, q=None
 ):
     from nest.packages import PackageError, status  # noqa: PLC0415
 
@@ -196,12 +214,19 @@ def _packages_page(
         "with": [r for r in rows if r.installed and not r.direct and not r.used],
         "available": [r for r in rows if not r.installed],
     }
+    remote_rows, remote_problems = _remote_rows(app, q) if q is not None else ([], [])
+    from nest.remote import registry_url  # noqa: PLC0415
+
     return render(
         request,
         "keeper/app_packages.html",
         app=app,
         managed=managed,
         groups=groups,
+        q=q,
+        remote_rows=remote_rows,
+        remote_problems=remote_problems,
+        registry=registry_url(),
         steps=steps or [],
         problems=trouble,
         base=admin_url(request, "keeper"),
@@ -210,9 +235,11 @@ def _packages_page(
 
 
 @admin.get("/app/{name}/packages")
-async def app_packages(request: Request, name: str, user: CurrentUser = Depends(keeper)):
+async def app_packages(
+    request: Request, name: str, q: str | None = None, user: CurrentUser = Depends(keeper)
+):
     app = await asyncio.to_thread(_app_or_404, request, name)
-    return await asyncio.to_thread(_packages_page, request, app)
+    return await asyncio.to_thread(lambda: _packages_page(request, app, q=q))
 
 
 @admin.post("/app/{name}/packages/{package}/{action}")
@@ -223,14 +250,17 @@ async def app_package_change(
     its pyproject.toml and module.yml, then uv sync (nest.packages)."""
     from nest.packages import PackageError, add, remove  # noqa: PLC0415
 
-    if action not in ("add", "remove"):
+    if action not in ("add", "remove", "add-remote"):
         raise HTTPException(404)
     app = await asyncio.to_thread(_app_or_404, request, name)
     steps: list[str] = []
     try:
-        await asyncio.to_thread(
-            (add if action == "add" else remove), app.root, package, say=steps.append
-        )
+        if action == "add-remote":  # from the Nest registry's index
+            await asyncio.to_thread(lambda: add(app.root, package, say=steps.append, remote=True))
+        else:
+            await asyncio.to_thread(
+                (add if action == "add" else remove), app.root, package, say=steps.append
+            )
     except PackageError as e:
         return await asyncio.to_thread(
             _packages_page, request, app, problems=e.problems, status_code=400
@@ -304,10 +334,43 @@ def setup(host: ModuleHost) -> None:
     host.state["folders"] = [
         Path(os.path.expanduser(p.strip())).resolve() for p in raw.split(",") if p.strip()
     ]
+    host.state["seal"] = host.sign("agent-tokens")  # the key the agents' tokens are kept with
+    host.state["settings"] = host.settings  # host_url and host_token, read when used
     host.admin(admin)
+    _watch(host)
     if host.route is not None:
         host.mount(router)
         host.mount(api)  # the REST API, at <route>/api/v1
 
 
+def _watch(host: ModuleHost) -> None:
+    """One worker asks every watched site's agent for its status, every check_seconds:
+    the scheduler's keeper.watch when the application has it, else this loop."""
+    if host.has_module("scheduler"):
+        return
+    import logging  # noqa: PLC0415
+
+    from starlette.concurrency import run_in_threadpool  # noqa: PLC0415
+
+    log = logging.getLogger("nest.keeper.watch")
+
+    @host.background(single=True)
+    async def watch_sites() -> None:
+        await asyncio.sleep(5)
+        rounds = 0
+        while True:
+            seconds = max(60, int(host.settings.get("check_seconds") or 300))
+            try:
+                db = host.bound("nest.db")
+                await run_in_threadpool(sites.check_all, db, host.state["seal"])
+                if rounds % 60 == 0:
+                    days = max(1, int(host.settings.get("history_days") or 30))
+                    await run_in_threadpool(sites.prune, db, days)
+            except Exception:
+                log.exception("watching the sites failed")
+            rounds += 1
+            await asyncio.sleep(seconds)
+
+
+from nest_keeper import dashboard, sites  # noqa: E402,F401 - its pages, on the admin router
 from nest_keeper.rest import api  # noqa: E402 - after applications and probed, which it uses

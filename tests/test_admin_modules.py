@@ -1,6 +1,7 @@
 """The admin panel's modules page: core modules locked, the others disabled, enabled,
 uninstalled or added from it; each change logged, and applied to the running site."""
 
+import re
 import textwrap
 import time
 
@@ -104,3 +105,36 @@ def test_under_nest_run_the_site_is_made_again_in_place(site, tmp_path, monkeypa
             if c.get("/forum/").status_code == 200:
                 break
         assert c.get("/forum/").status_code == 200
+
+
+def test_the_modules_page_searches_the_nest_registry_read_only(site, tmp_path, monkeypatch):
+    import nest.packages  # noqa: PLC0415
+    from nest.packages import Offer  # noqa: PLC0415
+
+    found = Offer(
+        name="widgets", dist="acme-widgets", version="1.0.0", type="module", title="Widgets",
+        description="Small widgets.", source="remote", index="https://r.example/simple/", nest=">=0.2,<1",
+    )  # fmt: skip
+    monkeypatch.setattr(nest.packages, "remote_offers", lambda environ=None: {"widgets": found})
+    c = admin_client(site, tmp_path)
+    assert "/admin/modules/registry" in c.get("/admin/modules").text
+    part = c.get("/admin/modules/registry?q=widg", headers={"HX-Request": "true"}).text
+    assert "Widgets" in part and "nest packages . add widgets --remote" in part
+    assert "<form" not in part  # the panel installs nothing
+
+
+@pytest.mark.parametrize("frame", ["standalone", "site"])
+def test_the_admin_panel_is_a_page_of_its_own_unless_the_app_dresses_it(frame, site, tmp_path):
+    """By default the admin panel has its own page: no site theme, no site menu, the base
+    theme's tokens only; application.admin_frame: site puts it in the site's frame."""
+    text = (site / "module.yml").read_text()
+    text = text.replace("theme: base}", "theme: paper, admin_frame: " + frame + "}", 1)
+    (site / "module.yml").write_text(text, encoding="utf-8")
+    c = admin_client(site, tmp_path)
+    page = c.get("/admin/").text
+    css = c.get(re.search(r'href="(/assets/_bundle/admin\.css[^"]*)"', page).group(1)).text
+    if frame == "standalone":
+        assert 'class="admin-bar"' in page and 'class="site-header"' not in page
+        assert "/* paper:" not in css and "/* base:" in css
+    else:
+        assert 'class="admin-bar"' not in page and "/* paper:" in css

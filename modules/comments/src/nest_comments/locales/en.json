@@ -1,0 +1,29 @@
+{
+ "A comment has at most {n} characters.": "A comment has at most {n} characters.",
+ "Comment": "Comment",
+ "Comments": "Comments",
+ "Comments are not open here.": "Comments are not open here.",
+ "Delete": "Delete",
+ "Email (not shown)": "Email (not shown)",
+ "Name": "Name",
+ "Nothing waits.": "Nothing waits.",
+ "On": "On",
+ "Publish": "Publish",
+ "Published": "Published",
+ "Reply": "Reply",
+ "Say who you are.": "Say who you are.",
+ "Send": "Send",
+ "Sign in to comment.": "Sign in to comment.",
+ "Spam": "Spam",
+ "Thank you. Your comment awaits approval.": "Thank you. Your comment awaits approval.",
+ "That comment can no longer be answered.": "That comment can no longer be answered.",
+ "That was quick. Please send it again.": "That was quick. Please send it again.",
+ "Too many comments from here; try again later.": "Too many comments from here; try again later.",
+ "Waiting": "Waiting",
+ "Write something first.": "Write something first.",
+ "Your comment is published.": "Your comment is published.",
+ "{n} comment": [
+  "{n} comment",
+  "{n} comments"
+ ]
+}

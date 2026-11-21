@@ -1,15 +1,16 @@
 #
-# keeper — Nest's own application: the applications it knows, how each is
-# planned, which run, the packages they are made of. What is specific to one
-# application is in that application's admin panel; what is generic, here.
+# keeper — Nest's own application: it watches the deployed sites (Nest sites
+# through their agents, other services with a web check), restarts and upgrades
+# them through the host helper, and shows the applications Nest knows, their
+# plans and packages. One person's: run your own (deploy/DEPLOY.md).
 #
 module:
   name: keeper
   id: nest.app.keeper
   type: application
   title: Nest keeper
-  version: 0.1.0
-  description: Nest-level orchestration of its applications.
+  version: 0.2.0
+  description: Watches the deployed sites, restarts and upgrades them, and shows Nest's applications.
   license: MIT
   created: "2026-11-14"
 
@@ -28,6 +29,7 @@ modules:
     route: /admin
   - name: auth
     route: /cont
+  - name: scheduler  # the keeper's checks and clean-ups (keeper.watch, keeper.prune)
 
 bind:
   nest.db:

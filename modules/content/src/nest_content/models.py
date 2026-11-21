@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from nest_db import model_base
+from nest_db import model_base, text_table
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -109,6 +109,7 @@ class Media(Base):
     title: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     legacy_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    uploaded_by: Mapped[int | None] = mapped_column(Integer, nullable=True)  # who, in the editor
 
 
 class Menu(Base):
@@ -140,5 +141,32 @@ class MenuItem(Base):
     )
     new_window: Mapped[bool] = mapped_column(Boolean, default=False)
 
+
+# Each record's text in every language: one row per language, the default one included
+# (a mirror of the columns above, which the default language's pages read, so its pages
+# need no join). A translated address (path) is made from the translated slugs of the
+# entry, its category and its parents, like the default one; NULL until it is made.
+EntryText = text_table(
+    Base,
+    Entry,
+    title=String(300),
+    slug=String(200),
+    path=mapped_column(String(500), nullable=True),
+    excerpt=Text,
+    body=Text,
+    unique=("path",),
+)
+TermText = text_table(
+    Base,
+    Term,
+    name=String(200),
+    slug=String(200),
+    path=mapped_column(String(500), nullable=True),
+    description=Text,
+    index=("path",),
+)
+# a menu item's own label (an item that links an entry or a term shows that one's title
+# when it has none) and, for a link of its own, its address
+MenuItemText = text_table(Base, MenuItem, title=String(200), url=String(1000))
 
 STATUSES = ("draft", "published", "private")

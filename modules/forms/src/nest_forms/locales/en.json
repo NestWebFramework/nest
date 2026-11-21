@@ -1,0 +1,19 @@
+{
+ "Choose at least one.": "Choose at least one.",
+ "Choose one of the options.": "Choose one of the options.",
+ "Enter a number.": "Enter a number.",
+ "Enter a whole number.": "Enter a whole number.",
+ "Enter {n} or less.": "Enter {n} or less.",
+ "Enter {n} or more.": "Enter {n} or more.",
+ "This field is required.": "This field is required.",
+ "This is not in the expected form.": "This is not in the expected form.",
+ "This value is not valid.": "This value is not valid.",
+ "Use at least {n} character.": [
+  "Use at least {n} character.",
+  "Use at least {n} characters."
+ ],
+ "Use at most {n} character.": [
+  "Use at most {n} character.",
+  "Use at most {n} characters."
+ ]
+}

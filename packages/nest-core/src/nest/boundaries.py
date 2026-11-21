@@ -80,6 +80,16 @@ def check(entries: list[Entry], known: list[Entry]) -> list[Finding]:
         if folder is None:
             continue
         mine = _root(entry)
+        for kind, spec in entry.manifest.translatable.items():  # its own text, never another's
+            if spec.model.split(":")[0].split(".")[0] != mine:
+                findings.append(
+                    Finding(
+                        "error",
+                        entry.name,
+                        f"module.yml translatable.{kind}",
+                        f"names {spec.model}, a table of another package's: a module translates its own records",
+                    )
+                )
         deps = set(entry.manifest.deps)
         uses = set(entry.manifest.uses)
         for path in _files(folder):

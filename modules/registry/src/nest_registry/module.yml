@@ -1,0 +1,87 @@
+#
+# registry — a registry of Nest packages, as registry.nest-framework.org runs it.
+#
+# Two faces on one store. To uv and pip it is a Python package index (the simple API,
+# PEP 503 pages and PEP 691 JSON, at /simple/), so an application installs a Nest
+# package as any Python one, its files' sha256 pinned in uv.lock. To Nest it is a
+# catalog: what each package is (its module.yml, read from the wheel when it is
+# published: type, ecosystem, the nest-core versions it works with, what it needs and
+# uses), searched by `nest packages` and the keeper, and browsed at /.
+#
+# Publishing (`nest publish`) presents a token made here (an account's Tokens page);
+# the first account to publish a name owns it, and only it publishes that name again;
+# ids under nest. are the registry administrators'. A published file is never
+# replaced: a fix is a new version.
+#
+module:
+  name: registry
+  id: nest.module.registry
+  type: module
+  title: Registry
+  category: packages
+  version: 0.1.0
+  description: A registry of Nest packages, a Python package index for uv and pip, and a catalog of what each package is.
+  license: MIT
+  created: "2026-11-20"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_registry
+
+provides:
+  import: nest_registry
+  exports: []
+
+requires:
+  interfaces: [nest.db, nest.storage]
+
+deps:
+  db: ">=0.2,<1"
+  storage: ">=0.1,<1"
+  auth: ">=0.3,<1"
+
+settings:
+  public_url:
+    type: str
+    default: ""
+    label: Public address
+    description: "The registry's address as the world reaches it (https://registry.nest-framework.org): in the commands its pages show. Empty: the address a request came to."
+  publishers:
+    type: str
+    default: approved
+    choices: [approved, anyone]
+    label: Who may publish
+    description: "approved: accounts the administrators give the publisher role (and administrators); anyone: every account."
+  official_prefix:
+    type: str
+    default: "nest."
+    description: Package ids under this prefix are published by the registry's administrators only.
+  index_only:
+    type: str
+    default: "nest-core"
+    description: Distributions without a Nest manifest (the host itself) that administrators may publish to the index only, by comma.
+  require_signatures:
+    type: bool
+    default: false
+    description: Refuse a file that is not signed by a key its publisher registered (nest keygen --register).
+  max_upload_mb:
+    type: int
+    default: 50
+    description: The largest file a publish may upload, in megabytes.
+
+db:
+  migrations: migrations
+  metadata: "nest_registry.models:Base"
+
+styles: [registry.css]
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}
+admin:
+  title: Registry
+  order: 20
+  role: admin
+  description: The packages published here, their owners and versions.

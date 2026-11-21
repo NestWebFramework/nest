@@ -1,0 +1,53 @@
+#
+# agent — a site tells the keeper how it is, and does what the keeper asks of it.
+#
+# An application includes it with a route (/_agent). Its API, to a bearer token:
+#   GET  <route>/v1/status          name, versions, uptime, requests and errors, health
+#                                    of its providers, pending migrations, last backup, disk
+#   GET  <route>/v1/events          its recent warnings and errors, its starts, the actions run
+#   GET  <route>/v1/check           what production needs (as `nest check`), each item ok,
+#                                    a warning or a failure
+#   GET  <route>/v1/actions         what it can be asked to do (a backup; its modules' own:
+#                                    the timetable's sync, ...)
+#   POST <route>/v1/actions/{name}  do one (the control token only)
+# Two tokens: one that reads, one that reads and acts. The site keeps only their
+# SHA-256 (`nest agent token APP` makes one and prints both halves); the keeper keeps
+# the token itself. Cookies are not read, so a browser cannot be made to call it.
+#
+module:
+  name: agent
+  id: nest.module.agent
+  type: module
+  title: Agent
+  category: admin
+  version: 0.1.0
+  description: The site's status, events and checks, and the actions it allows, for the keeper, to a token.
+  license: MIT
+  created: "2026-11-20"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.3,<1"
+
+main: nest_agent
+
+provides:
+  import: nest_agent
+  exports: []
+
+settings:
+  read_token:
+    type: str
+    secret: true
+    description: The SHA-256 of the token that reads the agent (sha256:…, from `nest agent token`). Set in the environment.
+  control_token:
+    type: str
+    secret: true
+    description: The SHA-256 of the token that also runs its actions (sha256:…, from `nest agent token --control`). Set in the environment.
+  backup_keep:
+    type: int
+    default: 7
+    description: Backups kept when the keeper asks for one (the oldest go).
+  events:
+    type: int
+    default: 200
+    description: How many recent events it remembers (in memory, since it started).

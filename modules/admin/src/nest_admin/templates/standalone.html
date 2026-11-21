@@ -1,0 +1,36 @@
+<!doctype html>
+{#- The admin panel as a page of its own (application.admin_frame: standalone, the default): not the site's theme or its menus, only what working in
+    it needs (the base theme's tokens and shapes, the modules' admin styles). A module's
+    admin page extends "admin/layout.html" and fills admin_content (and title, head). -#}
+<html lang="{% block lang %}{{ locale }}{% endblock %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}{{ _("Admin") }} · {{ app.title }}{% endblock %}</title>
+  {% for href in styles %}<link rel="stylesheet" href="{{ href }}">
+  {% endfor %}
+  {% include "htmx/head.html" ignore missing %}
+  {% block head %}{% endblock %}
+</head>
+<body class="admin-page"{% if user is defined and user %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
+  <a class="skip" href="#admin-main">{{ _("Skip to content") }}</a>
+  <header class="admin-bar">
+    <a class="admin-brand" href="{{ admin_root or '' }}/"><strong>{{ app.title }}</strong> <span class="muted">{{ _("Admin") }}</span></a>
+    <div class="admin-bar-end">
+      <a class="admin-site" href="/">{{ _("Site") }} ↗</a>
+      {% set language_scope = "admin" %}{% include "widgets/language.html" ignore missing %}
+      {% block nav %}{% include "auth/status.html" ignore missing %}{% endblock %}
+    </div>
+  </header>
+  {% block content %}
+  <div class="admin">
+    {% include "admin/_nav.html" %}
+    <main class="admin-main" id="admin-main">{% block admin_content %}{% endblock %}</main>
+  </div>
+  {% endblock %}
+  {% include "admin/preview_bar.html" ignore missing %}
+  {% include "notifications/region.html" ignore missing %}
+</body>
+</html>

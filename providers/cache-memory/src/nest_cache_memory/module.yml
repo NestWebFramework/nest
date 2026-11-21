@@ -1,0 +1,29 @@
+module:
+  name: cache-memory
+  id: nest.provider.cache-memory
+  type: provider
+  title: Memory cache
+  version: 0.2.0
+  description: >
+    Keeps values in the application's own memory: nothing to run, gone on
+    restart, one process only. For development and small applications.
+  license: MIT
+  created: "2026-11-13"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_cache_memory
+implements: [nest.cache]
+# each process has its own: under nest serve's workers, a value one worker stored is
+# not there for the others (bind nest.cache to redis to share them)
+process_local: true
+
+deps:
+  cache: ">=0.2,<1"
+
+settings:
+  max_items:
+    type: int
+    default: 10000
+    description: The oldest entries are evicted beyond this many.

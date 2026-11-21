@@ -24,6 +24,9 @@
   {% if seo_fields is defined %}
   {{ seo_fields("content.term:" ~ term.id, path=term.path, default_title=term.name, default_description=values.description | truncate(160), form=posted) }}
   {% endif %}
+  {% if translation_fields is defined %}
+  {{ translation_fields("content.term", term.id, form=posted) }}
+  {% endif %}
   <button type="submit">{{ _("Save") }}</button>
 </form>
 <form method="post" action="{{ admin_root }}/content/taxonomies/{{ taxonomy }}/{{ term.id }}/delete" class="danger-zone">{{ csrf_field }}

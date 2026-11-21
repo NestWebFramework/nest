@@ -1,0 +1,11 @@
+{
+ "Near me": "În apropiere",
+ "Near {lat}, {lon}": "Lângă {lat}, {lon}",
+ "Nothing near here.": "Nimic în apropiere.",
+ "Find what is near me": "Caută ce e în apropierea mea",
+ "Your browser asks first; the position is used for this search only and kept nowhere.": "Browserul întreabă întâi; poziția e folosită doar pentru această căutare și nu e păstrată nicăieri.",
+ "Or give a place by hand": "Sau dă un loc de mână",
+ "Latitude": "Latitudine",
+ "Longitude": "Longitudine",
+ "Search": "Caută"
+}

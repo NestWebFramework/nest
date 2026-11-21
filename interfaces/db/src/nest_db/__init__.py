@@ -10,6 +10,8 @@ What stays the same across engines lives here:
 * :class:`Database`, the Protocol every provider is checked against;
 * :class:`SqlDatabase`, the wrapper each provider builds on (it only has to
   bring a configured SQLAlchemy engine);
+* :func:`text_table` and its helpers (``nest_db/localized.py``): a record's text in every
+  language, one row per language in a companion table;
 * :func:`model_base`, a declarative base per module with a naming convention
   for constraints (so migrations read the same on every engine) and table
   names prefixed by the module, so modules can never collide.
@@ -26,6 +28,20 @@ from typing import Any, Protocol, runtime_checkable
 from sqlalchemy import Engine, MetaData, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
+# a record's text in every language (nest_db/localized.py), loaded when first asked for
+TEXT = (
+    "Localized",
+    "Overlaid",
+    "overlay",
+    "by_slug",
+    "delete_text",
+    "localize",
+    "save_text",
+    "text_rows",
+    "text_state",
+    "text_table",
+)
+
 __all__ = [
     "NAMING_CONVENTION",
     "Database",
@@ -33,7 +49,9 @@ __all__ = [
     "SqlDatabase",
     "build_url",
     "model_base",
+    "pending_migrations",
     "require_driver",
+    *TEXT,
 ]
 
 
@@ -44,10 +62,18 @@ def __getattr__(name: str) -> object:
         from nest_db.mysqldump import Dump  # noqa: PLC0415
 
         return Dump
+    if name == "pending_migrations":
+        from nest_db.migrate import pending_migrations  # noqa: PLC0415
+
+        return pending_migrations
     if name in ("build_url", "require_driver"):
         from nest_db import server  # noqa: PLC0415
 
         return getattr(server, name)
+    if name in TEXT:
+        from nest_db import localized  # noqa: PLC0415
+
+        return getattr(localized, name)
     raise AttributeError(f"module 'nest_db' has no attribute {name!r}")
 
 

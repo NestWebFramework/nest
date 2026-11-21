@@ -15,7 +15,14 @@ from __future__ import annotations
 
 from nest import ModuleHost
 from nest_auth.passwords import hash_password, verify_password
-from nest_auth.sessions import CurrentUser, find_person, find_user, known_as, users_by_ids
+from nest_auth.sessions import (
+    CurrentUser,
+    active_user,
+    find_person,
+    find_user,
+    known_as,
+    users_by_ids,
+)
 from nest_auth.throttle import make_throttle
 from nest_auth.users import admin
 from nest_auth.web import (
@@ -28,6 +35,7 @@ from nest_auth.web import (
 
 __all__ = [
     "CurrentUser",
+    "active_user",
     "current_user",
     "find_person",
     "find_user",

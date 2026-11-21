@@ -1,0 +1,17 @@
+[project]
+name = "nest-agent"
+version = "0.1.0"
+description = "A site's agent: its status, events and checks, and the actions it allows, for the keeper, to a token."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db"]
+
+[project.entry-points."nest.modules"]
+agent = "nest_agent"
+
+[project.entry-points."nest.commands"]
+agent = "nest_agent.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

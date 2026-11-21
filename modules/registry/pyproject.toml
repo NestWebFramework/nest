@@ -1,0 +1,17 @@
+[project]
+name = "nest-registry"
+version = "0.1.0"
+description = "A registry of Nest packages: a Python package index (uv, pip) and a catalog of what each package is for Nest."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-db", "nest-storage", "nest-auth"]
+
+[project.entry-points."nest.modules"]
+registry = "nest_registry"
+
+[project.entry-points."nest.commands"]
+registry = "nest_registry.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

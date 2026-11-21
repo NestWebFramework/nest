@@ -34,6 +34,19 @@ def setup(host: ModuleHost) -> None:
     db = host.bound("nest.db")
     host.answer("module.removed", lambda name: forget_module(db, str(name)))
 
+    def waiting(_key: object) -> dict[str, int] | None:
+        from sqlalchemy import func, select
+
+        from nest_comments.models import Comment
+
+        with db.session() as s:
+            n = s.scalar(
+                select(func.count()).select_from(Comment).where(Comment.status == "pending")
+            )
+        return {"comments": n} if n else None
+
+    host.answer("admin.waiting", waiting)  # the panel shows how many wait for a moderator
+
     @host.context
     def _comments(request):
         return {"comments": lambda subject: thread_html(request, subject)}

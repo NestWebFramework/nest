@@ -28,7 +28,7 @@ from nest_db import Dump
 from sqlalchemy import select
 
 from nest_content import service
-from nest_content.html import autop
+from nest_content.html import autop, strip_joomla_tags
 from nest_content.models import Entry
 from nest_content.service import EntryData
 
@@ -220,7 +220,8 @@ def import_dump(
         for taxonomy, term_id in sorted(relations.get(p["ID"], []), key=lambda x: x[1]):
             if taxonomy in spec.taxonomies:
                 terms[taxonomy].append(term_id)
-        body = rewrite(autop(p["post_content"] or ""), sites)
+        # a Joomla plugin's tags, left by a move to WordPress, point at nothing here
+        body = strip_joomla_tags(rewrite(autop(p["post_content"] or ""), sites))
         thumbnail = meta[p["ID"]].get("_thumbnail_id")
         data = EntryData(
             type=p["post_type"],

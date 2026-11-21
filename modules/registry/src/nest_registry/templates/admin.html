@@ -1,0 +1,14 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Registry") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<h1>{{ _("Registry") }}</h1>
+<p class="muted">{{ _("{packages} packages · {releases} releases · {files} files", packages=counts.packages, releases=counts.releases, files=counts.files) }}</p>
+<p class="hint">{{ _("Who may publish: {who}. An account publishes when it has the publisher role (give it in Accounts); the first account to publish in a namespace owns it; nest. is the administrators'.", who=_(publishers)) }}</p>
+{% if namespaces %}<h2>{{ _("Namespaces") }}</h2>
+<ul>{% for name, owner_id in namespaces %}<li><code>{{ name }}.</code> · #{{ owner_id }}</li>{% endfor %}</ul>{% endif %}
+<h2>{{ _("Packages") }}</h2>
+<table>
+  <thead><tr><th>{{ _("Package") }}</th><th>{{ _("Type") }}</th><th>{{ _("Version") }}</th><th>nest-core</th></tr></thead>
+  <tbody>{% for i in items %}<tr><td><a href="{{ base }}/p/{{ i.name }}">{{ i.name }}</a></td><td>{{ _(i.type) }}</td><td>{{ i.version }}</td><td>{{ i.nest }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}

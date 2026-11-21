@@ -69,6 +69,46 @@ def seo_pages(host: ModuleHost, db: object, registry: Registry) -> list[dict]:
                 else None,
             }
         )
+    from nest_content import translated
+
+    for locale in translated.others(registry):  # each translated page at its own address
+        entries, terms = translated.published_texts(db, registry, locale)
+        tag = locale.upper()
+        editor = (
+            f"{admin_root}/translations" if admin_root and host.has_module("translations") else None
+        )
+        for e, row in entries:
+            group = registry.types[e.type].title if e.type in registry.types else e.type
+            out.append(
+                {
+                    "path": host.language_url(row.path, locale),
+                    "title": row.title or e.title,
+                    "subject": f"content.entry:{e.id}",
+                    "lastmod": row.updated_at,
+                    "description": summary(row) if (row.excerpt or "").strip() else "",
+                    "images": [{"key": e.featured, "title": row.title}] if e.featured else [],
+                    "kind": group,
+                    "group": f"{group} · {tag}",
+                    "language": locale,
+                    "text": [row.excerpt or "", row.body or ""],
+                    "edit": f"{editor}/content.entry/{e.id}?lang={locale}" if editor else None,
+                }
+            )
+        for term, row in terms:
+            group = "Categories" if term.taxonomy == "category" else "Tags"
+            out.append(
+                {
+                    "path": host.language_url(row.path, locale),
+                    "title": row.name or term.name,
+                    "subject": f"content.term:{term.id}",
+                    "description": row.description,
+                    "kind": group,
+                    "group": f"{group} · {tag}",
+                    "language": locale,
+                    "text": [row.description],
+                    "edit": f"{editor}/content.term/{term.id}?lang={locale}" if editor else None,
+                }
+            )
     return out
 
 
@@ -76,12 +116,54 @@ def setup(host: ModuleHost) -> None:
     if host.route != "/":
         raise HostError("content serves whole-site paths; include it with route: /")
     registry = Registry.from_sections(host.sections("content_types"), host.sections("taxonomies"))
-    host.state.update(types=registry, settings=host.settings)
+    registry.default_language, registry.languages = host.default_language, host.languages
+    host.state.update(types=registry, settings=host.settings, language_url=host.language_url)
     db = host.bound("nest.db")
+    # records made before their text tables (or by an older version): their default
+    # language's text rows, once (one statement per table, nothing when none is missing)
+    from sqlalchemy.exc import SQLAlchemyError
+
+    from nest_content import translated
+
+    try:
+        made = translated.backfill(db, registry.default_language)
+    except SQLAlchemyError as e:  # not migrated yet (NEST_MIGRATE=off, a db command)
+        made = 0
+        host.log.warning(
+            "content: the text tables are not ready (%s); migrate the database",
+            e.__class__.__name__,
+        )
+    if made:
+        host.log.info(
+            "content: %d texts in %s written to the text tables", made, registry.default_language
+        )
+
+    def on_translated(change: dict) -> None:
+        """A translation was written (translations module): its addresses and its search
+        index follow, and the menus are made again."""
+        subject, ids, locales = (
+            change.get("subject"),
+            list(change.get("ids") or []),
+            list(change.get("locales") or []),
+        )
+        search = host.bound("nest.search")
+        if subject == "content.entry":
+            with db.session() as s, s.begin():
+                documents = translated.refresh_entries(s, registry, ids, locales)
+            translated.apply(search, documents)
+        elif subject == "content.term":
+            with db.session() as s, s.begin():
+                documents = translated.refresh_terms(s, registry, ids, locales)
+            translated.apply(search, documents)
+        elif subject != "content.menu_item":
+            return
+        service_mod.changed()
+
+    host.answer("translations.changed", on_translated)
 
     listed = [t for t, s in registry.types.items() if not s.hierarchical]
 
-    def latest(n: int, category: str | None) -> list:
+    def latest(n: int, category: str | None, locale: str = "") -> list:
         """The newest published entries, for a template (of a category, by its slug)."""
         term = service_mod.term_by(db, "category", slug=category) if category else None
         if category and term is None:
@@ -89,19 +171,61 @@ def setup(host: ModuleHost) -> None:
         entries, _ = service_mod.listing(
             db, types=listed, term_id=term.id if term else None, per_page=max(1, min(int(n), 50))
         )
-        return entries
+        return translated.show_entries(db, registry, entries, locale)
 
     from nest_content import service as service_mod
+
+    def category(slug: str, taxonomy: str, locale: str) -> object:
+        """A category (a tag) by its default slug, as the page's language shows it (its
+        name, its address), or None: a theme's section titled by the category's own name."""
+        term = service_mod.term_by(db, taxonomy, slug=slug) if slug else None
+        return translated.show_terms(db, registry, [term], locale)[0] if term else None
+
+    def categories(taxonomy: str, locale: str) -> list:
+        """A taxonomy's terms that hold a published entry, each with how many, in the page's
+        language: a sidebar's list ({% for t, n in categories() %})."""
+        if taxonomy not in registry.taxonomies:
+            return []
+        found = [(t, n) for t, _depth, n in service_mod.term_tree(db, taxonomy) if n]
+        shown = translated.show_terms(db, registry, [t for t, _n in found], locale)
+        return list(zip(shown, [n for _t, n in found], strict=True))
+
+    def related(entry: object, n: int, locale: str) -> list:
+        """Other published entries of an entry's first category, newest first, in the page's
+        language: what to read next under an article."""
+        own = getattr(entry, "id", None)
+        if own is None:
+            return []
+        first = (service_mod.terms_of(db, own).get("category") or [None])[0]
+        if first is None:
+            return []
+        entries, _ = service_mod.listing(db, types=listed, term_id=first.id, per_page=int(n) + 1)
+        others = [e for e in entries if e.id != own][: int(n)]
+        return translated.show_entries(db, registry, others, locale)
+
+    def term_url(slug: str, taxonomy: str, locale: str) -> str:
+        """A category's (a tag's) address in the page's language, by its default slug: what a
+        template links to ({{ term_url("stiai-ca") }}), so its English page links in English."""
+        term = service_mod.term_by(db, taxonomy, slug=slug)
+        if term is None:
+            return f"/category/{slug}/"
+        return translated.show_terms(db, registry, [term], locale)[0].path or term.path
 
     @host.context
     def _content(request):
         from nest_content import service
+        from nest_content.web import locale_of
 
+        locale = locale_of(request)
         return {
-            "menu": lambda slug: service.cached_menu(db, slug),
+            "menu": lambda slug: service.cached_menu(db, slug, locale, registry),
             "content_types": registry.types,
             "absolute_url": lambda path: absolute(request, path),
-            "latest": lambda n=3, category=None: latest(n, category),
+            "latest": lambda n=3, category=None: latest(n, category, locale),
+            "term_url": lambda slug, taxonomy="category": term_url(slug, taxonomy, locale),
+            "categories": lambda taxonomy="category": categories(taxonomy, locale),
+            "category": lambda slug, taxonomy="category": category(slug, taxonomy, locale),
+            "related": lambda entry, n=3: related(entry, n, locale),
         }
 
     from nest_content import service as _service
@@ -116,14 +240,19 @@ def setup(host: ModuleHost) -> None:
 
     located = [n for n, t in registry.types.items() if "lat" in t.fields and "lng" in t.fields]
 
-    def map_points(_key: object = None) -> list[dict] | None:
-        """Each published entry whose type has lat and lng fields, as a place for a map."""
+    def map_points(key: object = None) -> list[dict] | None:
+        """Each published entry whose type has lat and lng fields, as a place for a map
+        (in the map's language, ``{"locale": "en"}``: its words and address there)."""
         if not located:
             return None
         from nest_content.seo import summary
 
+        locale = str(key.get("locale") or "") if isinstance(key, dict) else ""
+        entries = translated.show_entries(
+            db, registry, _service.published_of_types(db, located), locale
+        )
         out = []
-        for e in _service.published_of_types(db, located):
+        for e in entries:
             f = e.fields or {}
             try:
                 lat, lng = float(f["lat"]), float(f["lng"])
@@ -134,7 +263,7 @@ def setup(host: ModuleHost) -> None:
                     "lat": lat,
                     "lng": lng,
                     "title": e.title,
-                    "url": e.path,
+                    "url": host.language_url(e.path, locale) if locale else e.path,
                     "kind": e.type,
                     "description": summary(e, 120),
                 }

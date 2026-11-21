@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("No such page") }} · {{ tree.title }}{% endblock %}
+{% block nav %}{% if docs_nav %}{% include "docs/_top.html" %}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block content %}
+<div class="docs">
+  <aside class="docs-side">{% include "docs/_menu.html" %}</aside>
+  <article class="docs-page"><h1>{{ _("No such page") }}</h1><p>{{ _("The documentation has no page here; the menu has every page there is, and search finds the rest.") }}</p></article>
+</div>
+{% endblock %}

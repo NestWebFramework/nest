@@ -1,0 +1,41 @@
+#
+# admin — the admin panel of an application: one shell for the admin pages of
+# every module it includes.
+#
+# A module gives the panel its pages (host.admin(router)) and says in its own
+# manifest how they are listed (admin: {title, order, role, description}).
+# The panel mounts them under its route (<route>/<module>), and shows each
+# user the pages its roles open (the admin role opens all). So the panel is
+# made of what the application is made of: two sites with the same modules
+# (morlaca, transilpedia) have the same panel; a game has the game's; no panel
+# is written for an application. Include it once, at a route (/admin).
+#
+module:
+  name: admin
+  id: nest.module.admin
+  type: module
+  title: Admin panel
+  category: admin
+  version: 0.1.0
+  description: One admin shell gathering the admin pages of every module an application includes.
+  license: MIT
+  created: "2026-11-14"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_admin
+admin_styles: [admin.css]  # its base look; an application restyles it
+styles: [preview.css]  # the bar an administrator previewing a theme sees, on site pages
+
+provides:
+  import: nest_admin
+  exports: [visible_pages]
+
+deps:
+  auth: ">=0.2,<1"
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}

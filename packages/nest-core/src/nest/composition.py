@@ -67,6 +67,17 @@ def load_theme(workspace: Path) -> str | None:
     return str(theme) if theme else None
 
 
+def load_languages(workspace: Path) -> tuple[list[str] | None, str | None]:
+    """The site's languages and its default as the administrator chose them (None: the
+    manifest's)."""
+    raw = _raw(workspace).get("languages")
+    if not isinstance(raw, dict) or not raw.get("site"):
+        return None, None
+    site = [str(x) for x in raw["site"]]
+    default = str(raw.get("default") or site[0])
+    return site, default if default in site else site[0]
+
+
 def load(workspace: Path) -> dict[str, Choice]:
     """The administrator's choices, by module ({} when none were made)."""
     file = path(workspace)
@@ -91,18 +102,28 @@ def load(workspace: Path) -> dict[str, Choice]:
 _KEEP = object()
 
 
-def save(workspace: Path, choices: dict[str, Choice] | None = None, theme: Any = _KEEP) -> None:
-    """Write the choices (``choices`` None: the modules as they are; ``theme`` left out:
-    the theme as it is, None: back to the manifest's)."""
+def save(
+    workspace: Path,
+    choices: dict[str, Choice] | None = None,
+    theme: Any = _KEEP,
+    languages: Any = _KEEP,
+) -> None:
+    """Write the choices (``choices`` None: the modules as they are; ``theme``, ``languages``
+    left out: as they are, None: back to the manifest's). ``languages``: (site, default)."""
     file = path(workspace)
     file.parent.mkdir(parents=True, exist_ok=True)
     if choices is None:
         choices = load(workspace)
     if theme is _KEEP:
         theme = load_theme(workspace)
+    if languages is _KEEP:
+        site, default = load_languages(workspace)
+        languages = (site, default) if site else None
     body: dict[str, Any] = {"modules": {name: c.as_dict() for name, c in sorted(choices.items())}}
     if theme:
         body = {"theme": theme, **body}
+    if languages:
+        body = {"languages": {"site": list(languages[0]), "default": languages[1]}, **body}
     tmp = file.with_suffix(".tmp")
     tmp.write_text(
         "# The modules and the theme this application runs, as its administrator chose\n"

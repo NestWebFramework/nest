@@ -32,10 +32,11 @@
       {% if t.default %}<span class="badge">{{ _("the application's default") }}</span>{% endif %}
       {% if t.extends %}<span class="badge">{{ _("built on {name}", name=t.extends) }}</span>{% endif %}
       {% if t.description %}<p class="muted">{{ _(t.description) }}</p>{% endif %}
-      {% if not t.active %}
+      {% if not t.active or settings_of.get(t.name) %}
       <div class="theme-actions">
-        <a class="button secondary" href="{{ admin_root }}/themes/{{ t.name }}/preview">{{ _("Preview") }}</a>
-        <form method="post" action="{{ admin_root }}/themes/{{ t.name }}/use">{{ csrf_field }}<button type="submit">{{ _("Use this theme") }}</button></form>
+        {% if not t.active %}<a class="button secondary" href="{{ admin_root }}/themes/{{ t.name }}/preview">{{ _("Preview") }}</a>{% endif %}
+        {% if settings_of.get(t.name) %}<a class="button secondary" href="{{ admin_root }}/settings/{{ settings_of[t.name] }}">{{ _("Settings") }}</a>{% endif %}
+        {% if not t.active %}<form method="post" action="{{ admin_root }}/themes/{{ t.name }}/use">{{ csrf_field }}<button type="submit">{{ _("Use this theme") }}</button></form>{% endif %}
       </div>
       {% endif %}
     </div>

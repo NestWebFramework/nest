@@ -1,0 +1,14 @@
+{#- The documentation's menu: its sections and their pages, the current one marked. -#}
+<nav class="docs-menu" aria-label="{{ _('Documentation') }}">
+  <form class="docs-search" role="search" method="get" action="{{ tree.base }}/search">
+    <input type="search" name="q" value="{{ q | default('') }}" placeholder="{{ _('Search the docs…') }}" aria-label="{{ _('Search the docs') }}">
+  </form>
+  <a class="docs-menu-home{% if current == 'index' %} current{% endif %}" href="{{ tree.url('index') }}">{{ tree.title }}</a>
+  {% if nest_version is defined %}<p class="docs-version">Nest {{ nest_version }}</p>{% endif %}
+  {% for s in tree.sections %}
+  <details class="docs-section"{% if s.title == section | default('') or not section | default('') %} open{% endif %}>
+    <summary>{{ s.title }}</summary>
+    <ul>{% for e in s.entries %}<li><a href="{{ tree.url(e.key) }}"{% if e.key == current %} aria-current="page"{% endif %}>{{ e.title }}</a></li>{% endfor %}</ul>
+  </details>
+  {% endfor %}
+</nav>

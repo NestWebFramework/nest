@@ -1,0 +1,34 @@
+{% extends "admin/layout.html" %}
+{% from "keeper/_site_macros.html" import state_label, bars, pct, ago with context %}
+{% block title %}{{ _("Sites") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<div class="row between"><h1>{{ _("Sites") }}</h1><span class="row"><a href="{{ base }}/apps">{{ _("Applications") }}</a> <a href="{{ base }}/packages">{{ _("Packages") }}</a> <a href="{{ base }}/tokens">{{ _("API tokens") }}</a> <a class="button" href="{{ base }}/sites/new">{{ _("Watch a site") }}</a></span></div>
+<p class="muted">{{ _("The deployed sites the keeper watches, each through its agent: whether it answers and is well, since when, how often these last days.") }}</p>
+{% block sites %}
+<div id="sites" hx-get="{{ base }}/" hx-trigger="every 15s" hx-select="#sites" hx-swap="outerHTML">
+{% if sites %}
+<p class="keeper-summary"><span><strong>{{ counts.up }}</strong> {{ _("up") }}</span>{% if counts.warn %}<span><strong>{{ counts.warn }}</strong> {{ _("need care") }}</span>{% endif %}<span><strong>{{ counts.down }}</strong> {{ _("down") }}</span>{% if counts.paused %}<span><strong>{{ counts.paused }}</strong> {{ _("paused") }}</span>{% endif %}</p>
+<div class="keeper-sites">{% for s in sites %}{% set st = s.status %}
+  <article class="keeper-site {{ s.state }}">
+    <h2><a href="{{ base }}/sites/{{ s.id }}">{{ s.name }}</a> {{ state_label(s) }}</h2>
+    <a class="site-link" href="{{ s.url }}" rel="noopener" target="_blank">{{ s.url }} ↗</a>
+    {{ bars(s.recent) }}
+    <dl class="keeper-facts">
+      <dt>{{ _("Uptime") }}</dt><dd>{{ pct(s.uptime_24h) }} <span class="muted">24 h</span> · {{ pct(s.uptime_7d) }} <span class="muted">7 {{ _("days") }}</span></dd>
+      <dt>{{ _("Answer") }}</dt><dd>{% if s.ms is not none %}{{ s.ms }} ms <span class="muted">({{ _("average, 24 h") }})</span>{% else %}—{% endif %}</dd>
+      {% if st.get("app") %}<dt>{{ _("Version") }}</dt><dd>{{ st.app.get("version", "") }}{% if st.get("nest") %} <span class="muted">· Nest {{ st.nest }}</span>{% endif %}</dd>{% elif s.kind == "web" %}<dt>{{ _("Watched") }}</dt><dd class="muted">{{ _("web check") }}</dd>{% endif %}
+      {% if s.since %}<dt>{% if s.up %}{{ _("Up since") }}{% else %}{{ _("Down since") }}{% endif %}</dt><dd>{{ s.since.strftime("%d.%m.%Y %H:%M") }} UTC</dd>{% endif %}
+      {% if st.get("backups") %}<dt>{{ _("Backup") }}</dt><dd>{{ ago(st.backups.get("age_hours")) }}</dd>{% endif %}
+    </dl>
+    {% if s.token_lost %}<p class="keeper-problem">{{ _("Its token cannot be read (the keeper's key changed): give it again.") }}</p>
+    {% elif s.problem %}<p class="keeper-problem">{{ s.problem }}</p>{% endif %}
+  </article>{% endfor %}
+</div>
+{% else %}
+<div class="notice"><p>{{ _("No site watched yet.") }}</p>
+<p class="muted">{{ _("Include the agent module in a site (at /_agent), make its token with `nest agent token APP`, put the line it prints in the site's environment, then watch it here.") }}</p>
+<p><a class="button" href="{{ base }}/sites/new">{{ _("Watch a site") }}</a></p></div>
+{% endif %}
+</div>
+{% endblock %}
+{% endblock %}

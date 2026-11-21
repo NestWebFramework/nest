@@ -1,0 +1,25 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ job.key }} · {{ _("Scheduler") }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/">← {{ _("Scheduler") }}</a></p>
+<div class="row between"><h1>{{ job.key }}</h1>
+{% if state %}<span class="row"><form method="post" action="{{ base }}/job/{{ job.key }}/run">{{ csrf_field }}<button {% if state.running_since %}disabled{% endif %}>{{ _("Run now") }}</button></form>
+<form method="post" action="{{ base }}/job/{{ job.key }}/{{ 'resume' if state.paused else 'pause' }}">{{ csrf_field }}<button class="secondary">{{ _("Resume") if state.paused else _("Pause") }}</button></form></span>{% endif %}</div>
+{% if job.description %}<p>{{ job.description }}</p>{% endif %}
+<dl class="setting">
+  <dt>{{ _("When") }}</dt><dd><code>{{ when }}</code>{% if not job.enabled %} · {{ _("off in the application's manifest") }}{% endif %}</dd>
+  <dt>{{ _("Function") }}</dt><dd><code>{{ job.run }}</code> · {{ _("in the job threads") if job.thread else _("on the event loop") }}{% if job.timeout %} · {{ _("timeout") }} {{ job.timeout|int }} s{% endif %}</dd>
+  <dt>{{ _("Missed while down") }}</dt><dd>{{ _("runs once when back") if job.catch_up == "once" else _("waits for its next time") }}{% if job.at_start %} · {{ _("runs at each start") }}{% endif %}</dd>
+  {% if state and state.next_at %}<dt>{{ _("Next") }}</dt><dd>{{ state.next_at.strftime("%d.%m.%Y %H:%M:%S") }} UTC</dd>{% endif %}
+</dl>
+{% block runs %}<div id="runs" hx-get="{{ base }}/job/{{ job.key }}" hx-trigger="every 5s" hx-select="#runs" hx-swap="outerHTML">
+<h2>{{ _("Runs") }}</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Started") }}</th><th>{{ _("Why") }}</th><th class="num">ms</th><th>{{ _("Result") }}</th></tr></thead>
+  <tbody>{% for r in runs %}<tr>
+    <td>{% if r.ok is none %}<span class="better">●</span>{% else %}<span class="{{ 'better' if r.ok else 'worse' }}">{{ '✓' if r.ok else '✗' }}</span>{% endif %} {{ r.started_at.strftime("%d.%m.%Y %H:%M:%S") }} UTC</td>
+    <td>{{ r.why }}</td><td class="num">{{ r.ms if r.ms is not none else "…" }}</td><td><span class="muted">{{ r.result|truncate(300) }}</span></td>
+  </tr>{% else %}<tr><td colspan="4" class="muted">{{ _("Not run yet.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+</div>{% endblock %}
+{% endblock %}

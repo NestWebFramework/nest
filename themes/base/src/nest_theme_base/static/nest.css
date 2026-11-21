@@ -112,3 +112,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 progress { width: 100%; max-width: 32rem; }
 /* the language switch: its choices apart, in any theme */
 .language { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem .6rem; }
+
+/* the line every site carries: built with Nest */
+.nest-credit { margin: .35rem 0 0; font-size: .78rem; opacity: .75; }
+.nest-credit a { color: inherit; }

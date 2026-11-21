@@ -1,7 +1,7 @@
 {% extends "admin/layout.html" %}
 {% block title %}{{ _("Packages") }} · {{ app.title }}{% endblock %}
 {% block admin_content %}
-<p><a href="{{ base }}/">← {{ _("Applications") }}</a></p>
+<p><a href="{{ base }}/apps">← {{ _("Applications") }}</a></p>
 <h1>{{ _("Packages") }}</h1>
 {% if problems %}<div class="notice danger" role="alert"><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>{% endif %}
 {% for type, entries in by_type.items() %}

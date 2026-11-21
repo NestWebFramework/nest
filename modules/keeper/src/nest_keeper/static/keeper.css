@@ -1,0 +1,44 @@
+/* keeper.css: the dashboard of the sites the keeper watches. Built on the theme's tokens. */
+.keeper-summary { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin: .25rem 0 1rem; color: var(--muted); }
+.keeper-summary strong { color: var(--text); }
+.keeper-sites { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 1rem; }
+.keeper-site { border: 1px solid var(--border); border-left: 5px solid var(--border); border-radius: var(--radius, 8px);
+  background: var(--surface); padding: .9rem 1rem; display: flex; flex-direction: column; gap: .45rem; min-width: 0; }
+.keeper-site.up { border-left-color: var(--ok); }
+.keeper-site.warn { border-left-color: #d29a14; }
+.keeper-site.down { border-left-color: var(--danger); }
+.keeper-site.paused, .keeper-site.unknown { border-left-color: var(--muted); }
+.keeper-site h2 { font-size: 1.05rem; margin: 0; display: flex; justify-content: space-between; gap: .5rem; align-items: baseline; }
+.keeper-site h2 a { color: var(--text); text-decoration: none; }
+.keeper-site .site-link { font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
+.keeper-state { font-size: .8rem; font-weight: 600; padding: .1rem .5rem; border-radius: 999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--muted) 15%, transparent); color: var(--muted); }
+.keeper-state.up { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.keeper-state.warn { background: color-mix(in srgb, #d29a14 18%, transparent); color: #a87a08; }
+.keeper-state.down { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
+.keeper-facts { display: grid; grid-template-columns: auto 1fr; gap: .15rem .75rem; font-size: .87rem; margin: 0; }
+.keeper-facts dt { color: var(--muted); }
+.keeper-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.keeper-problem { font-size: .85rem; color: var(--danger); margin: 0; overflow-wrap: anywhere; }
+/* the last checks, one bar each: green answered well, amber answered unwell, red no answer */
+.keeper-bars { display: flex; gap: 2px; align-items: flex-end; height: 1.6rem; }
+.keeper-bars i { flex: 1 1 0; min-width: 2px; max-width: 8px; height: 100%; border-radius: 2px; background: var(--ok); opacity: .85; }
+.keeper-bars i.bad { background: var(--danger); }
+.keeper-bars i.slow { background: #d29a14; }
+.keeper-bars.big { height: 2.5rem; }
+.keeper-events { list-style: none; padding: 0; margin: 0; font-size: .87rem; }
+.keeper-events li { padding: .3rem 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 9.5rem 4.5rem 1fr; gap: .5rem; }
+.keeper-events .lvl-error, .keeper-events .lvl-critical { color: var(--danger); font-weight: 600; }
+.keeper-events .lvl-warning { color: #a87a08; font-weight: 600; }
+.keeper-events code { overflow-wrap: anywhere; }
+.keeper-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.keeper-actions form { border: 1px solid var(--border); border-radius: var(--radius, 8px); padding: .6rem .8rem; max-width: 22rem; }
+.keeper-actions p { margin: .25rem 0 .5rem; font-size: .85rem; color: var(--muted); }
+.keeper-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1.25rem; }
+@media (max-width: 40rem) { .keeper-events li { grid-template-columns: 1fr; gap: 0; } }
+.keeper-output { background: #14171a; color: #d8dee4; padding: .8rem 1rem; border-radius: var(--radius, 8px); font-size: .8rem;
+  max-height: 70vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.keeper-confirm { border: 1px solid var(--border); border-radius: var(--radius, 8px); padding: .5rem .8rem; max-width: 22rem; }
+.keeper-confirm summary { cursor: pointer; font-weight: 600; }
+.keeper-confirm form { border: 0; padding: 0; }
+.keeper-actions > form:not(:has(strong)) { border: 0; padding: 0; align-self: center; }

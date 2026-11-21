@@ -24,16 +24,34 @@ router = APIRouter()
 admin_only = require_role("admin")
 
 
+THEMES = "themes"  # the tab that holds every theme's settings, a tab each under it
+
+
 def _sections(request: Request) -> list[dict[str, Any]]:
+    """Every package's settings, a section each: the modules' in the plan's order, then the
+    installed themes' (``theme``: True), the one in use and those it is built on first."""
     nest = request.app.state.nest
+    themes = getattr(nest, "installed_themes", {})
+    chain = [t.name for t in nest.plan.themes]
     titles = {u.name: (u.entry.manifest.module.title or u.name) for u in nest.plan.units}
-    order = [u.name for u in nest.plan.units]
+    titles.update(themes)
+    order = [u.name for u in nest.plan.units if u.name not in themes]
+    order += chain + sorted(n for n in themes if n not in chain)
     sections: dict[str, dict[str, Any]] = {}
     for key, owner, name, spec in nest.settings.specs():
         if not spec.editable or owner not in titles:
             continue
         source = nest.settings.source(key)
-        section = sections.setdefault(owner, {"owner": owner, "title": titles[owner], "items": []})
+        section = sections.setdefault(
+            owner,
+            {
+                "owner": owner,
+                "title": titles[owner],
+                "items": [],
+                "theme": owner in themes,
+                "in_use": owner in chain,
+            },
+        )
         section["items"].append(
             {
                 "key": key,
@@ -53,18 +71,40 @@ def settings_home(request: Request, user: CurrentUser = Depends(admin_only)):
     sections = _sections(request)
     nest = request.app.state.nest
     if not sections:
-        return render(request, "admin/settings.html", sections=[], current=None, errors={})
-    return RedirectResponse(f"{nest.admin_root}/settings/{sections[0]['owner']}", status_code=303)
+        return render(request, "admin/settings.html", **_tabs(sections, None), errors={})
+    first = next((s for s in sections if not s["theme"]), sections[0])
+    return RedirectResponse(f"{nest.admin_root}/settings/{first['owner']}", status_code=303)
+
+
+def _tabs(sections: list[dict[str, Any]], current: dict[str, Any] | None) -> dict[str, Any]:
+    """The tabs: a module's section each, and one for the themes, whose own tabs are under
+    it when it is open (the theme in use first)."""
+    return {
+        "sections": [s for s in sections if not s["theme"]],
+        "themes": [s for s in sections if s["theme"]],
+        "current": current,
+    }
+
+
+@router.get("/settings/themes")
+def settings_themes(request: Request, user: CurrentUser = Depends(admin_only)):
+    """The themes' tab: the theme in use's settings (or the first theme's that has any)."""
+    themes = [s for s in _sections(request) if s["theme"]]
+    if not themes:
+        raise HTTPException(404)
+    return RedirectResponse(
+        f"{request.app.state.nest.admin_root}/settings/{themes[0]['owner']}", status_code=303
+    )
 
 
 @router.get("/settings/{owner}")
 def settings_page(request: Request, owner: str, user: CurrentUser = Depends(admin_only)):
-    """One module's settings, the others a tab away."""
+    """One module's (or theme's) settings, the others a tab away."""
     sections = _sections(request)
     current = next((s for s in sections if s["owner"] == owner), None)
     if current is None:
         raise HTTPException(404)
-    return render(request, "admin/settings.html", sections=sections, current=current, errors={})
+    return render(request, "admin/settings.html", **_tabs(sections, current), errors={})
 
 
 @router.post("/settings/{owner}")
@@ -117,8 +157,7 @@ async def save_settings(request: Request, owner: str, user: CurrentUser = Depend
         return render(
             request,
             "admin/settings.html",
-            sections=sections,
-            current=next(s for s in sections if s["owner"] == owner),
+            **_tabs(sections, next(s for s in sections if s["owner"] == owner)),
             errors={owner: problems},
             status_code=400,
         )

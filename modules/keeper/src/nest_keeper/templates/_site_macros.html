@@ -1,0 +1,8 @@
+{% macro state_label(s) -%}
+<span class="keeper-state {{ s.state }}">{% if s.state == "up" %}● {{ _("up") }}{% elif s.state == "warn" %}● {{ _("needs care") }}{% elif s.state == "down" %}● {{ _("down") }}{% elif s.state == "paused" %}{{ _("paused") }}{% else %}{{ _("not checked yet") }}{% endif %}</span>
+{%- endmacro %}
+{% macro bars(checks, big=false) -%}
+<div class="keeper-bars{% if big %} big{% endif %}" role="img" aria-label="{{ _('Last checks') }}">{% for c in checks %}<i class="{% if not c.up %}bad{% elif c.ms and c.ms > 2000 %}slow{% endif %}" title="{{ c.at.strftime('%d.%m %H:%M') }}{% if c.ms is not none %} · {{ c.ms }} ms{% endif %}{% if c.problem %} · {{ c.problem }}{% endif %}"></i>{% endfor %}</div>
+{%- endmacro %}
+{% macro pct(v) -%}{% if v is none %}—{% else %}{{ "%.2f"|format(v) }}%{% endif %}{%- endmacro %}
+{% macro ago(hours) -%}{% if hours is none %}—{% elif hours < 1 %}{{ _("under an hour ago") }}{% elif hours < 48 %}{{ hours|round|int }} h{% else %}{{ (hours / 24)|round|int }} {{ _("days") }}{% endif %}{%- endmacro %}

@@ -9,7 +9,7 @@
 {% include "content/seo.html" %}
 {% if "data-video=" in body %}<script src="{{ asset('content', 'video.js') }}" defer></script>{% endif %}
 {% endblock %}
-{% block nav %}{% include "content/menu.html" %}{% endblock %}
+{% block nav %}{% if theme_setting is defined and theme_setting("menu") %}{{ super() }}{% else %}{% include "content/menu.html" %}{% endif %}{% endblock %}
 {% block content %}
 <article class="entry" lang="{{ entry.language or languages[0] }}">
   <header>

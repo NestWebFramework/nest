@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nest_db import model_base
+from nest_db import model_base, text_table
 from sqlalchemy import Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,3 +34,9 @@ class Marker(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     link: Mapped[str] = mapped_column(String(500), default="")
     position: Mapped[int] = mapped_column(Integer, default=0)
+
+
+# Their words in each language of the site, one row per language, the default one's
+# mirroring the records' own (written with them). A marker without words has none.
+MapText = text_table(Base, Map, title=String(200), description=Text)
+MarkerText = text_table(Base, Marker, title=String(200), description=Text)

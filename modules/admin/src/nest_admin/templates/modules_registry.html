@@ -1,0 +1,18 @@
+{#- The Nest registry, searched from the Modules page (an htmx fragment). -#}
+<div id="registry-results">
+  {% for p in problems %}<p class="notice danger">{{ p }}</p>{% endfor %}
+  {% if not rows and not problems %}<p class="muted">{{ _("Nothing there works with this Nest yet.") }}</p>{% endif %}
+  {% if rows %}
+  <p class="hint">{{ _("These work with this application's Nest. The server's administrator installs one (the keeper's Packages page, or the command below); it then appears above, ready to add.") }}</p>
+  <ul class="module-list">
+    {% for r in rows %}
+    <li class="card module">
+      <div class="module-head"><strong>{{ _(r.offer.title) }}</strong> <code>{{ r.offer.name }}</code> <span class="badge">{{ r.offer.version }}</span> <span class="badge">{{ _(r.offer.type) }}</span>
+        {% if r.installed %}<span class="badge lock">{{ _("installed") }}</span>{% endif %}</div>
+      {% if r.offer.description %}<p class="muted module-text">{{ _(r.offer.description) }}</p>{% endif %}
+      {% if not r.installed %}<p class="module-links"><code>nest packages . add {{ r.offer.name }} --remote</code></p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>

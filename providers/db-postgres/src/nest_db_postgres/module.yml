@@ -1,0 +1,63 @@
+#
+# db-postgres — PostgreSQL as nest.db, through psycopg 3.
+#
+# For the dedicated database server. Configure it with one secret url, or by
+# parts with the password as a secret; either comes from the environment:
+#   NEST_<APP>__DB_POSTGRES__URL=postgresql://user:pass@db.lan:5432/glossary
+#   NEST_<APP>__DB_POSTGRES__PASSWORD=...
+# Sessions run in UTC and say which application they belong to.
+#
+module:
+  name: db-postgres
+  id: nest.provider.db-postgres
+  type: provider
+  title: PostgreSQL
+  version: 0.1.0
+  description: PostgreSQL through psycopg 3, pooled, in UTC, with TLS modes and a statement timeout.
+  license: MIT
+  created: "2026-11-13"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_db_postgres
+implements: [nest.db]
+
+deps:
+  db: ">=0.1,<1"
+
+settings:
+  url:
+    type: str
+    secret: true
+    description: A whole URL (postgresql://user:password@host:port/database); wins over the parts.
+  host:
+    type: str
+    default: 127.0.0.1
+  port:
+    type: int
+    default: 5432
+  database:
+    type: str
+  user:
+    type: str
+  password:
+    type: str
+    secret: true
+  sslmode:
+    type: str
+    default: prefer
+    choices: [disable, allow, prefer, require, verify-ca, verify-full]
+  pool_size:
+    type: int
+    default: 5
+  max_overflow:
+    type: int
+    default: 5
+  pool_timeout:
+    type: int
+    default: 30
+  statement_timeout_ms:
+    type: int
+    default: 0
+    description: Cancel a statement running longer than this; 0 means never.

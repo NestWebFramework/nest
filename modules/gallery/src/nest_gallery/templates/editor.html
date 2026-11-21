@@ -1,45 +1,123 @@
 {% extends "admin/layout.html" %}
-{#- A gallery's editor: its words, each photo's alt text and caption, its search fields. -#}
+{#- A gallery's editor: new photos, its words and its place (which album), each photo's
+    words, order and whether it stays, the cover; its galleries when it is an album. -#}
 {% block title %}{{ collection.title }} · {{ _("Galleries") }}{% endblock %}
 {% block admin_content %}
+{% set v = posted if posted else {} %}
 <p class="muted"><a href="{{ admin_root }}/gallery/">{{ _("Galleries") }}</a></p>
 <div class="row between"><h1>{{ collection.title }}</h1><a class="button secondary" href="{{ public }}">{{ _("View") }}</a></div>
 {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
-<form method="post" class="stack gallery-editor">
+
+<section class="card stack gallery-upload" id="upload" aria-labelledby="upload-h"
+  data-done="{{ _('Uploaded') }}" data-failed="{{ _('Not uploaded') }}" data-reload="{{ _('Showing the new photos…') }}">
+  <h2 id="upload-h">{{ _("Add photos") }}</h2>
+  <form method="post" action="{{ admin_root }}/gallery/{{ collection.id }}/photos" enctype="multipart/form-data" class="stack">
+    {{ csrf_field }}
+    <label class="gallery-drop" for="files">
+      <span>{{ _("Drop photos here, or choose them") }}</span>
+      <small class="hint">{{ _("JPEG, PNG, WebP or GIF, at most {n} MB each; they go at the end, to describe and order below.", n=limit_mb) }}</small>
+      <input id="files" name="files" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple required>
+    </label>
+    <ol class="gallery-progress" aria-live="polite"></ol>
+    <div class="row"><button type="submit">{{ _("Upload") }}</button></div>
+  </form>
+</section>
+
+<form method="post" class="stack gallery-editor" id="gallery-form">
   {{ csrf_field }}
-  <div class="field"><label for="title">{{ _("Title") }}</label>
-    <input id="title" name="title" value="{{ posted.get('title') if posted else collection.title }}" required maxlength="300"></div>
-  <div class="field"><label for="description">{{ _("Description") }}</label>
-    <textarea id="description" name="description" rows="3">{{ posted.get('description') if posted else collection.description }}</textarea>
-    <small class="hint">{{ _("Shown above the photos, and to search engines when the search description is empty.") }}</small></div>
+  {#- Enter in a field saves (the form's first button), never moves a photo -#}
+  <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">{{ _("Save") }}</button>
   <div class="grid">
-    <div class="field"><label for="cover">{{ _("Cover") }}</label>
-      <input id="cover" name="cover" value="{{ collection.cover }}" placeholder="{{ _('the first photo') }}"></div>
-    <div class="field check"><input id="published" name="published" type="checkbox" value="1"{% if collection.published %} checked{% endif %}>
+    <div class="field"><label for="title">{{ _("Title") }}</label>
+      <input id="title" name="title" value="{{ v.get('title', collection.title) }}" required maxlength="300"></div>
+    <div class="field"><label for="slug">{{ _("Address") }}</label>
+      <input id="slug" name="slug" value="{{ v.get('slug', collection.slug) }}" maxlength="200" spellcheck="false">
+      <small class="hint">{{ _("Its page: {path}", path=public) }}</small></div>
+  </div>
+  <div class="grid">
+    <div class="field"><label for="parent_id">{{ _("In the album") }}</label>
+      <select id="parent_id" name="parent_id">
+        <option value="">{{ _("— none: at the top —") }}</option>
+        {% set current_parent = (v.get('parent_id') | string) if posted else (collection.parent_id | string) %}
+        {% for c, depth in parents %}<option value="{{ c.id }}"{% if (c.id | string) == current_parent %} selected{% endif %}>{{ "  " * depth }}{{ "· " if depth else "" }}{{ c.title }}</option>{% endfor %}
+      </select></div>
+    <div class="field check"><input id="published" name="published" type="checkbox" value="1"{% if (v.get('published') if posted else collection.published) %} checked{% endif %}>
       <label for="published">{{ _("Shown on the site") }}</label></div>
   </div>
-  {% if children %}
-  <p class="muted">{{ _("An album: its galleries are described each on its own page.") }}
-    {% for card in children %}<a href="{{ admin_root }}/gallery/{{ card.collection.id }}">{{ card.collection.title }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
-  {% endif %}
+  <div class="field"><label for="description">{{ _("Description") }}</label>
+    <textarea id="description" name="description" rows="3">{{ v.get('description', collection.description) }}</textarea>
+    <small class="hint">{{ _("Shown above the photos, and to search engines when the search description is empty.") }}</small></div>
+
+  {% set keys = photos | map(attribute="key") | list %}
   {% if photos %}
-  <fieldset class="gallery-photos"><legend>{{ ngettext("{n} photo", "{n} photos", photos | length) }}</legend>
-    <p class="hint">{{ _("The description of a photo is what a reader who cannot see it hears, and what search engines know of it; the caption is shown under it in the lightbox.") }}</p>
+  <fieldset class="gallery-photos" id="photos"><legend>{{ ngettext("{n} photo", "{n} photos", photos | length) }}</legend>
+    <p class="hint">{{ _("Drag a photo, or use its arrows, to put it in its place. The description of a photo is what a reader who cannot see it hears, and what search engines know of it; the caption is shown under it in the lightbox.") }}</p>
+    <div class="field check gallery-cover-first"><input type="radio" id="cover-first" name="cover" value=""{% if not collection.cover %} checked{% endif %}>
+      <label for="cover-first">{{ _("Cover: the first photo") }}</label></div>
+    {% if collection.cover and collection.cover not in keys %}
+    <div class="field check"><input type="radio" id="cover-kept" name="cover" value="{{ collection.cover }}" checked>
+      <label for="cover-kept">{{ _("Cover: as it is ({key})", key=collection.cover) }}</label></div>
+    {% endif %}
+    <ol class="gallery-rows" data-sortable>
     {% for p in photos %}
-    <div class="gallery-photo-row">
+    <li class="gallery-photo-row" id="photo-{{ p.id }}" draggable="true">
+      <input type="hidden" name="order" value="{{ p.id }}">
+      <div class="gallery-move">
+        <span class="gallery-handle" aria-hidden="true">⋮⋮</span>
+        <button type="submit" name="move" value="{{ p.id }}:up" class="secondary" aria-label="{{ _('Move up') }}"{% if loop.first %} disabled{% endif %}>↑</button>
+        <button type="submit" name="move" value="{{ p.id }}:down" class="secondary" aria-label="{{ _('Move down') }}"{% if loop.last %} disabled{% endif %}>↓</button>
+      </div>
       <a href="{{ media_url(p.key) }}"><img src="{{ media_url(p.key, 320) }}" alt="" loading="lazy" width="160" height="107"></a>
       <div class="stack">
-        <label>{{ _("Description of the photo") }}<input name="alt_{{ p.id }}" value="{{ posted.get('alt_' ~ p.id) if posted else p.alt }}" maxlength="300"></label>
-        <label>{{ _("Caption") }}<textarea name="caption_{{ p.id }}" rows="2">{{ posted.get('caption_' ~ p.id) if posted else p.caption }}</textarea></label>
+        <label>{{ _("Description of the photo") }}<input name="alt_{{ p.id }}" value="{{ v.get('alt_' ~ p.id, p.alt) }}" maxlength="300"></label>
+        <label>{{ _("Caption") }}<textarea name="caption_{{ p.id }}" rows="2">{{ v.get('caption_' ~ p.id, p.caption) }}</textarea></label>
+        <div class="row gallery-photo-tools">
+          <span class="check"><input type="radio" id="cover-{{ p.id }}" name="cover" value="{{ p.key }}"{% if collection.cover == p.key %} checked{% endif %}>
+            <label for="cover-{{ p.id }}">{{ _("Use as cover") }}</label></span>
+          <span class="check"><input type="checkbox" id="remove-{{ p.id }}" name="remove" value="{{ p.id }}">
+            <label for="remove-{{ p.id }}">{{ _("Remove from the gallery") }}</label></span>
+        </div>
       </div>
-    </div>
+    </li>
     {% endfor %}
+    </ol>
   </fieldset>
+  {% else %}
+  <div class="field"><label for="cover">{{ _("Cover") }}</label>
+    <input id="cover" name="cover" value="{{ collection.cover }}" placeholder="{{ _('the first photo of its first gallery') }}">
+    <small class="hint">{{ _("A stored picture (uploads/...); empty, the first photo it holds.") }}</small></div>
   {% endif %}
+  {% if translation_fields is defined %}{{ translation_fields("gallery.collection", collection.id, form=posted) }}{% endif %}
   {% if seo_fields is defined %}
   {{ seo_fields("gallery.collection:" ~ collection.id, path=public, default_title=collection.title,
       default_description=collection.description | truncate(160), form=posted) }}
   {% endif %}
   <button type="submit">{{ _("Save") }}</button>
 </form>
+
+<section class="card stack" aria-labelledby="inside-h">
+  <h2 id="inside-h">{{ _("Galleries in it") }}</h2>
+  {% if children %}
+  <ul class="gallery-children">{% for card in children %}<li><a href="{{ admin_root }}/gallery/{{ card.collection.id }}">{{ card.collection.title }}</a> <span class="muted">{{ ngettext("{n} photo", "{n} photos", card.count) if not card.is_album else ngettext("{n} gallery", "{n} galleries", card.count) }}</span></li>{% endfor %}</ul>
+  {% else %}<p class="muted">{{ _("None: it is a gallery of photos. Make a gallery in it, and it becomes an album.") }}</p>{% endif %}
+  <form method="post" action="{{ admin_root }}/gallery/new" class="row gallery-new">
+    {{ csrf_field }}
+    <input type="hidden" name="parent_id" value="{{ collection.id }}">
+    <label for="child-title" class="visually-hidden">{{ _("Title") }}</label>
+    <input id="child-title" name="title" required maxlength="300" placeholder="{{ _('A new gallery in it') }}">
+    <button type="submit" class="secondary">{{ _("Make it") }}</button>
+  </form>
+</section>
+
+<details class="card danger-zone" id="delete">
+  <summary>{{ _("Delete the gallery") }}</summary>
+  <form method="post" action="{{ admin_root }}/gallery/{{ collection.id }}/delete" class="stack">
+    {{ csrf_field }}
+    <p>{{ _("Its photos go with it (their files stay, an article may show them); its own galleries move up to its album.") }}</p>
+    <div class="field"><label for="confirm">{{ _("Type its title to confirm: {title}", title=collection.title) }}</label>
+      <input id="confirm" name="confirm" autocomplete="off" required></div>
+    <button type="submit" class="danger">{{ _("Delete") }}</button>
+  </form>
+</details>
+<script src="{{ asset('gallery', 'gallery-admin.js') }}" defer></script>
 {% endblock %}

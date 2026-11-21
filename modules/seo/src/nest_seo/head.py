@@ -55,9 +55,34 @@ def _meta(request: Any, subject: str) -> Any:
     return cache[subject]
 
 
+def _translated(request: Any) -> str:
+    """The language of a page that is in another language than the default (its own
+    text, not the original's standing in for it), else ""."""
+    state = request.scope.get("state", {})
+    locale = str(state.get("locale") or "")
+    default = request.app.state.nest.catalogs.default
+    if not locale or locale == default or state.get("language_fallback"):
+        return ""
+    return locale
+
+
+def _words(request: Any, subject: str) -> Any:
+    """What editors said of a page in words (title, description, keywords), in the page's
+    language: the default's row, or, on a translated page, that language's (None when it
+    has none: the page's own translated text is better than the original's words)."""
+    locale = _translated(request)
+    if not locale:
+        return _meta(request, subject)
+    cache = request.scope.setdefault("state", {}).setdefault("seo_text", {})
+    if subject not in cache:
+        db = request.app.state.nest.bindings.get("nest.db")
+        cache[subject] = service.text(db, subject, locale) if subject else None
+    return cache[subject]
+
+
 def title(request: Any, subject: str, default: str) -> str:
     """A page's title in search results and the browser tab, as the site writes them."""
-    m = _meta(request, subject)
+    m = _words(request, subject)
     own = (m.title if m and m.title else default) or ""
     site = request.app.state.nest.title
     if not own or own == site:
@@ -127,19 +152,22 @@ def head(
 ) -> Markup:
     s = _settings(request)
     nest = request.app.state.nest
-    m = _meta(request, subject)
-    page_title = (m.title if m and m.title else title) or nest.title
-    desc = (m.description if m and m.description else description) or str(
-        s.get("description") or ""
-    )
+    m = _meta(request, subject)  # the page's picture, canonical, noindex
+    said = _words(request, subject)  # its words, in the page's language
+    translated = bool(_translated(request))
+    # the site-wide description and keywords are written in the default language
+    site_desc = "" if translated else str(s.get("description") or "")
+    site_words = "" if translated else str(s.get("keywords") or "")
+    page_title = (said.title if said and said.title else title) or nest.title
+    desc = (said.description if said and said.description else description) or site_desc
     desc = " ".join(desc.split())[:300]
     words = service.keywords(
-        ", ".join(
-            x for x in ((m.keywords if m else ""), keywords, str(s.get("keywords") or "")) if x
-        )
+        ", ".join(x for x in ((said.keywords if said else ""), keywords, site_words) if x)
     )
     path = path if path is not None else request.url.path
-    canonical = absolute(request, (m.canonical if m and m.canonical else "") or path)
+    # a canonical address editors set is the original's page (a translated one is its own)
+    own_canonical = m.canonical if m and m.canonical and not translated else ""
+    canonical = absolute(request, own_canonical or path)
     pic = picture(request, (m.image if m and m.image else "") or image or str(s.get("image") or ""))
     noindex = bool(m and m.noindex)
     og_type = "article" if kind == "article" else "website"

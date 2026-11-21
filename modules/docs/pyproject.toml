@@ -1,0 +1,17 @@
+[project]
+name = "nest-docs"
+version = "0.1.0"
+description = "Documentation as a site: Markdown pages in a tree, a menu, search, images, and every module's reference made from its manifest."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core", "nest-search", "pyyaml", "pygments"]
+
+[project.entry-points."nest.modules"]
+docs = "nest_docs"
+
+[project.entry-points."nest.commands"]
+docs = "nest_docs.cli:register"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

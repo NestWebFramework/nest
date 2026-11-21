@@ -48,3 +48,7 @@ button, .button { border-radius: 2px; letter-spacing: .02em; }
 /* the footer */
 .site-footer { text-align: center; border-top: 3px double var(--border); font: .78rem var(--sans);
   letter-spacing: .08em; text-transform: uppercase; padding-block: 1.5rem; }
+
+/* the line every site carries: built with Nest */
+.nest-credit { margin: .35rem 0 0; font-size: .78rem; opacity: .75; }
+.nest-credit a { color: inherit; }

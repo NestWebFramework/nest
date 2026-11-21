@@ -206,6 +206,14 @@ def users_by_ids(db: Any, ids: list[int]) -> dict[int, CurrentUser]:
         return {u.id: _current(u) for u in s.scalars(select(User).where(User.id.in_(set(ids))))}
 
 
+def active_user(db: Any, user_id: int) -> CurrentUser | None:
+    """A member by id if the account is active (a disabled one acts for nobody: its API
+    tokens, say, stop working)."""
+    with db.session() as s:
+        user = s.get(User, user_id)
+        return _current(user) if user is not None and user.active else None
+
+
 def find_user(db: Any, who: str) -> CurrentUser | None:
     """An active member by email, or by name when only one has it."""
     who = (who or "").strip()

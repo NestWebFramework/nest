@@ -1,0 +1,43 @@
+# One Nest site, run as a container (systemd template: nest-site@gari.service, ...).
+#
+# Its settings are /etc/nest/<site>.conf (PORT, DATA, IMAGE) and its secrets
+# /etc/nest/<site>.env. Its workspace (databases, files, settings, backups) is a folder on
+# the host, DATA, mounted at /data: the container is thrown away at each stop, the data
+# stay. The image's entrypoint migrates (nest db upgrade) before it serves. The port is
+# bound to the loopback: nginx (ISPConfig's vhost) is what faces the network.
+#
+#   sudo install -m 0644 nest-site@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now nest-site@gari
+
+[Unit]
+Description=Nest site %i
+Documentation=https://nest-framework.org/docs/deploy
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+ConditionPathExists=/etc/nest/%i.conf
+ConditionPathExists=/etc/nest/%i.env
+
+[Service]
+Type=simple
+Environment=IMAGE=nest-%i
+Environment=MEMORY=768m
+# the site's own settings override these defaults
+EnvironmentFile=/etc/nest/%i.conf
+ExecStartPre=-/usr/bin/docker rm -f nest-%i
+ExecStart=/usr/bin/docker run --rm --name nest-%i \
+    --env-file /etc/nest/%i.env \
+    -v ${DATA}:/data \
+    -p 127.0.0.1:${PORT}:8000 \
+    --memory ${MEMORY} \
+    --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+    ${IMAGE}:current
+ExecStop=/usr/bin/docker stop -t 30 nest-%i
+
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=300
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target

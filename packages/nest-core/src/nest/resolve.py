@@ -155,7 +155,7 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
             if iface not in provider.manifest.implements:
                 problems.append(f"'{provider.name}' does not implement {iface}")
             roots.append(provider)
-        unknown = set(binding.config) - set(binding.providers)
+        unknown = set(binding.config) - set(binding.providers) - set(binding.alternatives)
         for ref in sorted(unknown):
             problems.append(f"{app.name} configures '{ref}' for {iface}, but does not bind it")
 
@@ -233,8 +233,12 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
 
     # 3. Every included package keeps its contract and asks only for what exists.
     bound = set(manifest.bind)
+    core = _core_version()
     for entry in included.values():
         problems += [f"{entry.name}: {p}" for p in contract.validate(entry.manifest)]
+        wants = entry.manifest.nest
+        if wants and core and not SpecifierSet(wants).contains(core, prereleases=True):
+            problems.append(f"{entry.name} works with nest-core {wants}; this is {core}")
         host_name = entry.manifest.part_of
         if host_name:  # a part (an engine's subsystem) joins the host it names
             host = included.get(host_name)
@@ -339,6 +343,15 @@ def plan(app: Entry, catalog: Catalog, contract: Contract) -> Plan:
         disabled=disabled,
         themes=chain,
     )
+
+
+def _core_version() -> str | None:
+    from importlib.metadata import PackageNotFoundError, version  # noqa: PLC0415
+
+    try:
+        return version("nest-core")
+    except PackageNotFoundError:
+        return None
 
 
 def _reaches(edges: dict[str, set[str]], start: str, goal: str) -> bool:

@@ -178,3 +178,57 @@ def test_the_keeper_installs_from_its_page(site, tmp_path, monkeypatch):
         assert uv.calls and "nest-forum" in (site / "pyproject.toml").read_text()
         refused = c.post("/admin/keeper/app/site/packages/auth/remove", data={"csrf_token": token})
         assert refused.status_code == 400 and "uses auth" in refused.text
+
+
+def test_the_keeper_searches_the_nest_registry_and_installs_from_it(site, tmp_path, monkeypatch):
+    import nest.packages  # noqa: PLC0415
+    from nest.packages import Offer  # noqa: PLC0415
+
+    found = Offer(
+        name="widgets", dist="acme-widgets", version="1.0.0", type="module", title="Widgets",
+        description="Small widgets.", source="remote", index="https://r.example/simple/", nest=">=0.2,<1",
+    )  # fmt: skip
+    monkeypatch.setattr(nest.packages, "remote_offers", lambda environ=None: {"widgets": found})
+    installed = []
+    real_add = nest.packages.add
+    monkeypatch.setattr(
+        "nest.packages.add",
+        lambda root, name, **kw: installed.append((name, kw.get("remote"))) or real_add,
+    )
+    root = tmp_path / "keeper"
+    root.mkdir()
+    (root / "module.yml").write_text(
+        textwrap.dedent(KEEPER).replace("APPS", str(site)), encoding="utf-8"
+    )
+    app = create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "kws")})
+    with TestClient(app) as c:
+        create_user(
+            app.state.nest.bindings.get("nest.db"),
+            "root@example.ro",
+            "correct horse battery",
+            roles=("admin",),
+        )
+        c.get("/healthz")
+        c.post(
+            "/cont/login",
+            data={
+                "csrf_token": c.cookies["nest_csrf"],
+                "email": "root@example.ro",
+                "password": "correct horse battery",
+            },
+        )
+        page = c.get("/admin/keeper/app/site/packages?q=widg").text
+        assert "Widgets" in page and "/packages/widgets/add-remote" in page
+        c.post(
+            "/admin/keeper/app/site/packages/widgets/add-remote",
+            data={"csrf_token": c.cookies["nest_csrf"]},
+        )
+        assert installed == [("widgets", True)]
+
+
+def test_a_provider_brings_the_interfaces_it_implements(site):
+    add(site, "redis", runner=Uv(), say=lambda _l: None)
+    deps = tomllib.loads((site / "pyproject.toml").read_text())["project"]["dependencies"]
+    assert {"nest-redis>=0.1,<1", "nest-cache>=0.2,<1", "nest-pubsub>=0.1,<1"} <= set(deps)
+    manifest = load_manifest(site)
+    assert {"redis", "cache", "pubsub"} <= set(manifest.deps)  # the app binds them: it names them

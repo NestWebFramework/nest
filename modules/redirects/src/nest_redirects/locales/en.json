@@ -1,0 +1,21 @@
+{
+ "A new address is a path on this site or an http(s) address.": "A new address is a path on this site or an http(s) address.",
+ "Add": "Add",
+ "An address cannot send to itself.": "An address cannot send to itself.",
+ "An old address is a path on this site, starting with '/'.": "An old address is a path on this site, starting with '/'.",
+ "Delete": "Delete",
+ "Find": "Find",
+ "for now": "for now",
+ "gone": "gone",
+ "Hits": "Hits",
+ "Kind": "Kind",
+ "moved for good": "moved for good",
+ "New address": "New address",
+ "No redirects.": "No redirects.",
+ "Old address": "Old address",
+ "Redirect added.": "Redirect added.",
+ "Redirect removed.": "Redirect removed.",
+ "Redirects": "Redirects",
+ "Status {status} is not a redirect.": "Status {status} is not a redirect.",
+ "That would send visitors round in a circle.": "That would send visitors round in a circle."
+}

@@ -1,0 +1,58 @@
+#
+# storage-s3 — files in an S3-compatible object store (MinIO, Ceph, AWS S3) as nest.storage.
+#
+# For the dedicated storage server: every worker and every machine reads and writes the
+# same files. The keys are prefixed with the application's name, so applications share a
+# bucket. The credentials are secrets, from the environment:
+#   NEST_<APP>__STORAGE_S3__ACCESS_KEY=...   NEST_<APP>__STORAGE_S3__SECRET_KEY=...
+#
+module:
+  name: storage-s3
+  id: nest.provider.storage-s3
+  type: provider
+  title: S3 storage
+  version: 0.1.0
+  description: Files in an S3-compatible object store (MinIO, Ceph, AWS S3), shared by every worker and machine.
+  license: MIT
+  created: "2026-11-20"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_storage_s3
+implements: [nest.storage]
+
+deps:
+  storage: ">=0.1,<1"
+
+settings:
+  endpoint:
+    type: str
+    required: true
+    description: "The server, host:port (minio.lan:9000), without a scheme."
+  bucket:
+    type: str
+    required: true
+  access_key:
+    type: str
+    secret: true
+    required: true
+  secret_key:
+    type: str
+    secret: true
+    required: true
+  secure:
+    type: bool
+    default: true
+    description: Speak TLS (https) to the server.
+  region:
+    type: str
+    default: ""
+  prefix:
+    type: str
+    default: ""
+    description: Put before every key; the application's name when empty.
+  create_bucket:
+    type: bool
+    default: false
+    description: Make the bucket at startup when it is not there.

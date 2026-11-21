@@ -1,0 +1,90 @@
+#
+# keeper — Nest's own orchestration: the deployed sites it watches, and the
+# applications it knows, how each is planned, the packages they are made of.
+#
+# Its dashboard (the admin panel's first page) watches deployed sites, each through
+# its agent (the agent module, at the site's /_agent, to a token made with
+# `nest agent token`): up or down and since when, uptime over 24 hours and 7 days,
+# answer time, versions, pending migrations, backups, recent events, `nest check`,
+# and the actions the site allows (a backup, a timetable sync) with who ran which.
+# One worker asks every check_seconds; the checks are kept history_days.
+# With host_url and host_token, a site given its name on the server can be restarted,
+# backed up, upgraded and rolled back from its page, through nest-host (deploy/site/).
+#
+# Applications are found as installed packages of type application (a site in
+# a repo of its own) and as folders of the apps setting (./applications). For
+# each: its manifest, its plan (start order, routes, bindings, notes), its
+# problems, and whether it answers its health check on its port. The keeper's
+# pages are its admin panel's (admin role); its route sends to the panel.
+# What is generic to every application is here; what is specific to one is in
+# that application's own admin panel. Its REST API (<route>/api/v1) tells
+# another orchestrator the same, to a bearer token (made in the panel or with
+# `nest keeper token`, kept as a hash, revocable).
+#
+module:
+  name: keeper
+  id: nest.module.keeper
+  type: module
+  title: Keeper
+  category: admin
+  version: 0.2.0
+  description: The deployed sites Nest watches through their agents, and Nest's applications, their plans and packages.
+  license: MIT
+  created: "2026-11-14"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_keeper
+
+provides:
+  import: nest_keeper
+  exports: [applications]
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  db: ">=0.2,<1"
+  auth: ">=0.2,<1"
+  admin: ">=0.1,<1"
+
+admin_styles: [keeper.css]  # the sites' dashboard
+
+settings:
+  apps: {type: str, default: "applications", description: "Folders of applications, or an application's own folder (a repo of its own), by comma (relative to where Nest runs)."}
+  check_seconds: {type: int, default: 300, description: "How often, in seconds, each watched site is asked how it is (60 at least; 300 is every 5 minutes)."}
+  history_days: {type: int, default: 30, description: "How many days of checks are kept (for the uptime figures)."}
+  host_url: {type: str, default: "", description: "The host helper's address (nest-host on the server: http://127.0.0.1:8090, or the Docker bridge's http://172.17.0.1:8090 when the keeper is a container). Empty: no restarts from the keeper."}
+  host_token:
+    type: str
+    secret: true
+    description: The host helper's token (nh_…, from `nest-host token`). Set in the environment.
+
+db:
+  migrations: migrations
+  metadata: "nest_keeper.models:Base"
+
+admin:
+  title: Keeper
+  order: 1
+  role: admin
+  description: The deployed sites it watches (uptime, versions, events, actions), and every application Nest knows.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}
+
+# with the scheduler in the application, it runs these; without, the keeper's own loop does
+schedule:
+  - name: watch
+    run: nest_keeper.jobs:watch
+    every_setting: check_seconds
+    at_start: true
+    catch_up: skip
+    description: Ask every watched site how it is (its agent, or its address).
+  - name: prune
+    run: nest_keeper.jobs:prune
+    cron: "15 4 * * *"
+    description: Forget the checks older than history_days.

@@ -1,10 +1,11 @@
 {% extends "admin/layout.html" %}
 {% block title %}{{ _("Applications") }} · {{ app.title }}{% endblock %}
 {% block admin_content %}
+<p><a href="{{ base }}/">← {{ _("Sites") }}</a></p>
 <div class="row between"><h1>{{ _("Applications") }}</h1><span class="row"><a href="{{ base }}/packages">{{ _("Packages") }}</a> <a href="{{ base }}/tokens">{{ _("API tokens") }} →</a></span></div>
 <p class="muted">{{ _("Every application Nest can see: installed packages and the application folders. Whether one runs is asked of its port on this machine.") }}</p>
 {% block apps %}
-<div id="apps" class="table-wrap" hx-get="{{ base }}/" hx-trigger="every 10s" hx-select="#apps" hx-swap="outerHTML"><table>
+<div id="apps" class="table-wrap" hx-get="{{ base }}/apps" hx-trigger="every 10s" hx-select="#apps" hx-swap="outerHTML"><table>
   <thead><tr><th>{{ _("Application") }}</th><th>{{ _("Version") }}</th><th class="num">{{ _("Port") }}</th><th class="num">{{ _("Packages") }}</th><th>{{ _("Runs") }}</th><th>{{ _("Problems") }}</th></tr></thead>
   <tbody>{% for a in apps %}<tr>
     <td><a href="{{ base }}/app/{{ a.name }}"><strong>{{ a.title }}</strong></a> <span class="muted">{{ a.name }}{% if a.name == here %} · {{ _("this one") }}{% endif %}</span></td>

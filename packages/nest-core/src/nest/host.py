@@ -48,6 +48,8 @@ from nest.composition import Choice
 from nest.contract import load_contracts
 from nest.engine import ROLES, EngineGate, EngineProxy
 from nest.i18n import ADMIN_LOCALE_COOKIE, LOCALE_COOKIE, Catalogs, LocaleMiddleware, translator
+from nest.language_urls import LanguageURLs, with_prefix
+from nest.limits import BodyLimit, limit_of
 from nest.loader import import_main, import_object
 from nest.manifest import load_manifest
 from nest.realtime import Broker, Topic
@@ -95,6 +97,31 @@ class _Token:
 
     def __bool__(self) -> bool:
         return bool(self._value)
+
+
+NEST_URL = "https://nest-framework.org"
+_CREDIT = {  # the words around the link, when the application's catalogs give none
+    "ro": "Construit cu platforma {nest}",
+    "en": "Built with the {nest} platform",
+}
+
+
+def _nest_version() -> str:
+    from nest import __version__
+
+    return __version__
+
+
+def nest_credit(t: Any) -> Markup:
+    """The line every site's footer carries: built with Nest, linked, in its language."""
+    key = "Built with the {nest} platform"
+    said = t.gettext(key)
+    words = said if said != key else _CREDIT.get(str(t.locale or "en")[:2], _CREDIT["en"])
+    link = f'<a href="{NEST_URL}" rel="noopener" target="_blank">Nest</a>'
+    head, _, tail = words.partition("{nest}")
+    return Markup(
+        f'<p class="nest-credit">{escape(head)}{link}{escape(tail)}</p>'
+    )
 
 
 class HostError(Exception):
@@ -217,6 +244,8 @@ class Nest:
         if "csp" in self.manifest.raw:
             csp.append((self.name, self.manifest.raw["csp"]))
         self.settings_checks: dict[str, Callable[[dict[str, Any]], list[str]]] = {}
+        # the installed themes, by name: their titles (their settings are declared too)
+        self.installed_themes: dict[str, str] = {}
         self._csp_sections = csp
         self._csp_runtime: dict[tuple[str, str], tuple[str, str]] = {}
         try:
@@ -247,6 +276,7 @@ class Nest:
         languages = application.languages if application else ["en"]
         default = (application.default_language if application else None) or languages[0]
         self.site_languages = list(languages)
+        self.admin_frame = (application.admin_frame if application else None) or "standalone"
         self.admin_languages = list(
             (application.admin_languages if application else None) or languages
         )
@@ -290,7 +320,11 @@ class Nest:
         # the theme, each module's look, (in the admin panel, each module's admin look,)
         # and the application's own last: it restyles everything before it
         themes = plan.themes or ([plan.theme] if plan.theme is not None else [])
-        for theme in reversed(themes):  # the theme it extends first; this theme restyles it
+        # the admin panel is a page of its own, not the site's: the base theme's tokens and
+        # shapes only (the chain's root), never the theme in use's look or the app's skin;
+        # unless the application dresses it in its own (admin_frame: site)
+        standalone = kind == "admin" and self.admin_frame != "site"
+        for theme in reversed(themes[-1:] if standalone else themes):  # the one it extends first
             add(theme, theme.manifest.styles)
         theme_names = {t.name for t in themes}
         for u in plan.units:
@@ -300,7 +334,8 @@ class Nest:
             for u in plan.units:
                 add(u.entry, u.entry.manifest.admin_styles)
             add(plan.app, self.manifest.admin_styles)
-        add(plan.app, self.manifest.styles)
+        if not standalone:
+            add(plan.app, self.manifest.styles)  # the site's own skin, last
         return files
 
     def _build_bundle(self, kind: str) -> tuple[str, bytes, float]:
@@ -367,12 +402,20 @@ class Nest:
             languages=self.site_languages,  # the site's switch offers these
             admin_languages=self.admin_languages,  # the admin panel's switch, these
             in_admin=in_admin,
+            admin_frame=self.admin_frame,  # "standalone" (the default) or "site"
             styles=styles,  # the site's stylesheet, and in the admin panel its own
+            # an address per language: "/en" on an English page, "" on the default's (for
+            # an address a template builds in a script; links in the page get it on their own)
+            lang_prefix=request.scope.get("state", {}).get("url_prefix", ""),
         )
         context.update(
             # any module's shortcode, where an application's template wants it:
             # {{ shortcodes('[map]') }}, {{ shortcodes('[album slug="sat"]') }}
             shortcodes=lambda text: self.shortcodes.expand(text, request),
+            # a theme's settings ({{ theme_setting("tagline") }}) and where a module is
+            # ({{ module_url("gallery") }}, None without it): a theme made for any application
+            theme_setting=self.theme_setting,
+            module_url=self.module_url,
             request=request,
             csrf_token=token,
             csrf_field=field,
@@ -380,6 +423,10 @@ class Nest:
             _=t.gettext,
             ngettext=t.ngettext,
             locale=t.locale,
+            # every theme's footer says what the site is built with (the theme contract
+            # asks it): in the page's language, an application may say it its own way
+            nest_credit=nest_credit(t),
+            nest_version=_nest_version(),
         )
         return context
 
@@ -424,6 +471,26 @@ class Nest:
             if answer is not None:
                 found.append(answer)
         return found
+
+    def theme_setting(self, name: str, default: Any = "") -> Any:
+        """A setting of the theme in use, or of a theme it is built on: the first that is
+        set along the chain (a theme built on another may say it otherwise)."""
+        for theme in self.plan.themes:  # the theme first, then the one it extends...
+            key = f"{theme.name}.{name}"
+            if self.settings.declared(key):
+                value = self.settings.get(key)
+                if value not in (None, ""):
+                    return value
+        return default
+
+    def module_url(self, name: str, path: str = "") -> str | None:
+        """Where the application mounts a module (with ``path`` under it), or None when it
+        does not include it: what a theme links to without knowing the application."""
+        unit = self.plan.unit(name)
+        if unit is None or unit.instance is None or unit.instance.route is None:
+            return None
+        root = unit.instance.route.rstrip("/")
+        return f"{root}/{path.lstrip('/')}" if path else f"{root}/"
 
     def answered(self, name: str) -> bool:
         """Whether any module answers ``name`` (so another may rely on it instead of its own way)."""
@@ -566,6 +633,39 @@ class ModuleHost:
         return self._nest.title
 
     @property
+    def languages(self) -> list[str]:
+        """The site's languages (chosen in the admin panel), the default among them."""
+        return list(self._nest.site_languages)
+
+    @property
+    def app_root(self) -> Path:
+        """The application's folder (where its module.yml is): what a module's setting
+        naming a folder of the application is read from."""
+        return Path(self._nest.plan.app.root)
+
+    @property
+    def default_language(self) -> str:
+        """The site's default language: the one at its root address, and a text's source."""
+        return self._nest.catalogs.default
+
+    def translator(self, locale: str | None = None) -> Any:
+        """The site's words in ``locale`` (the default language when not given): for what a
+        module says outside a request, a sitemap's titles or a search proposal."""
+        return self._nest.catalogs.translator(locale or self._nest.catalogs.default)
+
+    def language_url(self, path: str, locale: str) -> str:
+        """The site's own ``path`` as a visitor of ``locale`` reaches it: ``/en/...`` when
+        each language has its address (language_urls: prefix), else as it is. For what is
+        made outside a page (a sitemap, a feed); a page's links get theirs on the way out."""
+        application = self._nest.manifest.application
+        prefixed = (
+            application is not None
+            and application.language_urls == "prefix"
+            and len(self._nest.site_languages) > 1
+        )
+        return with_prefix(path, locale, self.default_language) if prefixed else path
+
+    @property
     def role(self) -> str:
         """ "engine" (this process holds the one-process modules' state and serves them),
         "web" (a worker: it passes their requests to the engine and must not open their
@@ -636,13 +736,18 @@ class ModuleHost:
                 return None
         return providers[0].impl
 
-    def mount(self, router: APIRouter) -> None:
-        """Serve ``router`` at the route the application chose for this module."""
+    def mount(self, router: APIRouter, *, csrf: bool = True) -> None:
+        """Serve ``router`` at the route the application chose for this module.
+
+        ``csrf=False`` only for an API whose clients prove who they are with a token on
+        every request (``Authorization: Bearer``), never a cookie: a forged request from a
+        browser carries no token, so there is nothing to forge (the registry's uploads)."""
         if self.route is None:
             raise HostError(f"{self.name} has no route; an application must include it with one")
         prefix = "" if self.route == "/" else self.route
         assert self._nest.app is not None
-        self._nest.app.include_router(router, prefix=prefix, dependencies=[Depends(csrf_protect)])
+        deps = [Depends(csrf_protect)] if csrf else []
+        self._nest.app.include_router(router, prefix=prefix, dependencies=deps)
 
     def serve_at_root(self, router: APIRouter) -> None:
         """Serve ``router`` at the site's root, whatever this module's route: for the files
@@ -736,6 +841,11 @@ class ModuleHost:
         """Ask the application's modules (see Nest.lookup); how a module finds another's service."""
         return self._nest.lookup(name, key)
 
+    def gather(self, name: str, key: Any = None) -> list[Any]:
+        """Every module's answer to ``name`` (see Nest.gather); also how a module tells the
+        others something happened ("translations.changed")."""
+        return self._nest.gather(name, key)
+
     def answer(self, name: str, fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
         """Answer a lookup other modules may ask (see Nest.lookup)."""
         self._nest._lookups.setdefault(name, []).append((self.name, fn))
@@ -754,9 +864,30 @@ class ModuleHost:
         units.sort(key=lambda u: listed.get(u.name, -1))
         return [u.entry.manifest for u in units]
 
+    def resolve(self, package: str, ref: str) -> Any:
+        """An object another package names in its manifest (``package.module:Attr``), found
+        the way that package's own code is (installed, or in the application's folder)."""
+        from nest.loader import import_object  # noqa: PLC0415
+
+        unit = self._nest.plan.unit(package)
+        if unit is None:
+            raise HostError(f"{self.name}: the application has no package '{package}'")
+        return import_object(ref, unit.entry)
+
     def has_module(self, name: str) -> bool:
         """Whether the application includes a package of that name (to cooperate, not depend)."""
         return self._nest.plan.unit(name) is not None
+
+    @property
+    def app_name(self) -> str:
+        """The application's name (its manifest's ``module.name``)."""
+        return self._nest.name
+
+    def host_of(self, package: str) -> ModuleHost | None:
+        """Another package's host, to run its code on its behalf (its settings, bindings,
+        workspace): how the scheduler gives a job its own package's. None if absent."""
+        unit = self._nest.plan.unit(package)
+        return ModuleHost(self._nest, unit) if unit is not None else None
 
     def shortcode(self, name: str, fn: Callable[[dict[str, str], Any], str] | None = None) -> Any:
         """Answer ``[name ...]`` in rich text: ``host.shortcode("album", fn)`` or as a decorator."""
@@ -820,6 +951,26 @@ def module_state(request: Request, module: str) -> dict[str, Any]:
     return request.app.state.nest.module_state.setdefault(module, {})
 
 
+def choose_bindings(manifest: Any, environ: Mapping[str, str]) -> Any:
+    """The providers the environment chose among a binding's providers and alternatives
+    (NEST_BIND__<IFACE>=a,b); the manifest's own otherwise."""
+    chosen = {}
+    for iface, binding in manifest.bind.items():
+        var = "NEST_BIND__" + re.sub(r"[^A-Za-z0-9]+", "_", iface).upper()
+        value = str(environ.get(var, "")).strip()
+        if not value:
+            continue
+        names = [n.strip() for n in value.split(",") if n.strip()]
+        allowed = [*binding.providers, *binding.alternatives]
+        wrong = [n for n in names if n not in allowed]
+        if wrong:
+            raise HostError(f"{var} names {', '.join(wrong)}; {iface} may use {', '.join(allowed)}")
+        chosen[iface] = binding.model_copy(update={"providers": names})
+    if not chosen:
+        return manifest
+    return manifest.model_copy(update={"bind": {**manifest.bind, **chosen}})
+
+
 class _OptionalFailed(Exception):
     def __init__(self, name: str, reason: str):
         self.name, self.reason = name, reason
@@ -867,6 +1018,15 @@ def _create_app(
     base_env = dict(os.environ if environ is None else environ)
     workspace = resolve_workspace(manifest.name, base_env)
     chosen = dict(composition.load(workspace) if choices is None else choices)
+    site, default = composition.load_languages(workspace)
+    if site and manifest.application:  # the administrator's languages, over the manifest's
+        manifest = manifest.model_copy(
+            update={
+                "application": manifest.application.model_copy(
+                    update={"languages": site, "default_language": default}
+                )
+            }
+        )
     look = theme or composition.load_theme(workspace)
     if look and manifest.application and look != manifest.application.theme:
         found, _ = Catalog.discover(app_root).find(look)
@@ -887,6 +1047,7 @@ def _create_app(
         manifest = manifest.model_copy(update={"modules": composition.compose(manifest, chosen)})
     except composition.CompositionError as e:
         raise HostError(str(e)) from e
+    manifest = choose_bindings(manifest, base_env)
     app_entry = Entry(manifest=manifest, source="application")
     catalog = Catalog.discover(app_root)
     for problem in catalog.problems:
@@ -947,9 +1108,11 @@ def _create_app(
         # themes and an ecosystem's own types (a game subsystem); interfaces and
         # providers are not, they are bound.
         if entry.type not in ("interface", "provider", "application"):
-            nest.settings.declare(
-                unit.name, entry.manifest.settings, unit.instance.config if unit.instance else None
-            )
+            config = unit.instance.config if unit.instance else None
+            application = the_plan.app.manifest.application
+            if entry.type == "theme" and application is not None:
+                config = application.theme_settings.get(unit.name)  # what the app sets for it
+            nest.settings.declare(unit.name, entry.manifest.settings, config)
             try:
                 _setup(nest, unit)
             except _OptionalFailed:
@@ -957,6 +1120,15 @@ def _create_app(
                 raise
         else:
             nest.states[unit.name].state = "ready"
+    # Every installed theme's settings, not only the one in use's: an administrator sets a
+    # theme up before choosing it (Settings → Themes). Their titles, for the admin panel.
+    application = the_plan.app.manifest.application
+    in_plan = {u.name for u in the_plan.units}
+    for entry in catalog.of_type("theme"):
+        nest.installed_themes[entry.name] = entry.manifest.module.title or entry.name
+        if entry.name not in in_plan and entry.manifest.settings:
+            preset = application.theme_settings.get(entry.name) if application else None
+            nest.settings.declare(entry.name, entry.manifest.settings, preset)
 
     if nest.admin_pages and nest.admin_root is None:
         log.warning(
@@ -981,6 +1153,19 @@ def _create_app(
         if nest.manifest.application
         else True,
     )
+    application = nest.manifest.application
+    if application and application.language_urls == "prefix" and len(nest.site_languages) > 1:
+        # outer to LocaleMiddleware: it reads the language from the address, and hands the
+        # modules their usual paths (and rewrites the site's links on the way out)
+        app.add_middleware(
+            LanguageURLs,
+            languages=nest.site_languages,
+            default=nest.catalogs.default,
+            keep=lambda: [nest.admin_root] if nest.admin_root else [],
+            origin=lambda: (
+                nest.lookup("seo.site_url", None) if nest.answered("seo.site_url") else None
+            ),
+        )
     hosts = [h.strip() for h in nest.environ.get("NEST_ALLOWED_HOSTS", "").split(",") if h.strip()]
     if hosts:  # a request for any other host is refused (400); the health check asks locally
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=[*hosts, "localhost", "127.0.0.1"])
@@ -993,6 +1178,8 @@ def _create_app(
         secure_cookies=nest.production,
         csp=lambda: nest.csp,  # read per response: a module may add a source while running
     )
+    # Outermost of all: what a request may send is kept before anything reads its body.
+    app.add_middleware(BodyLimit, limit=limit_of(nest.manifest.application, nest.environ))
     if nest.role == "web" and nest.environ.get("NEST_ENGINE_URL"):
         # outermost: the engine's answers go out as the engine made them
         app.add_middleware(EngineProxy, nest=nest, url=nest.environ["NEST_ENGINE_URL"])
@@ -1130,8 +1317,14 @@ def _core_routes(app: FastAPI, nest: Nest) -> None:
     def _language(request: Request, form: dict[str, Any]) -> RedirectResponse:
         chosen = str(form.get("language", ""))
         target = local_path(str(form.get("next", "/")))
-        response = RedirectResponse(target, status_code=303)
         admin = str(form.get("scope", "")) == "admin"  # the admin panel's language, or the site's
+        application = nest.manifest.application
+        if not admin and application and application.language_urls == "prefix":
+            # an address per language: the same page under the chosen language's prefix
+            if chosen in nest.site_languages:
+                target = with_prefix(target, chosen, nest.catalogs.default)
+            return RedirectResponse(target, status_code=303)
+        response = RedirectResponse(target, status_code=303)
         offered = nest.admin_languages if admin else nest.site_languages
         if chosen in offered:
             response.set_cookie(

@@ -1,0 +1,12 @@
+# The docsite's own context (BuildKit reads it instead of the repository's .dockerignore):
+# as the other images leave out, but the documentation (docs/) comes in: it is what it serves.
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+.git
+tests
+**/tests
+applications/*/data

@@ -1,0 +1,50 @@
+#
+# docsite — nest-framework.org: what Nest is, and its documentation.
+#
+# The documentation is Nest's own docs/ folder (its site.yml says the sections and
+# their order), served by the docs module: a menu, search, the pages' pictures, and a
+# reference page made from every installed package's manifest. Its home is the tree's
+# landing.md. Built into one image with Nest (deploy/Dockerfile), so the documentation a
+# release ships is the documentation of that release.
+#
+module:
+  name: docsite
+  id: nest.app.docsite
+  type: application
+  title: Nest
+  version: 0.1.0
+  created: "2026-11-20"
+
+application:
+  title: Nest
+  port: 8700
+  theme: slate     # the registry's look: the two sites of nest-framework.org match
+  languages: [en]
+
+modules:
+  - name: docs
+    route: /docs
+    core: true
+    config:
+      tree: ../../docs
+      home: true
+      edit_url: "https://github.com/NestWebFramework/nest/edit/main/docs/{path}"
+      nav: "Documentation = /docs/; Get started = /docs/start/install; Modules = /docs/reference/modules/content; Sites = /docs/sites/overview; Packages = https://registry.nest-framework.org; GitHub = https://github.com/NestWebFramework/nest"
+  - name: seo
+    config:
+      site_url: https://nest-framework.org
+      description: "Nest: build web sites and applications from modules: content, galleries, dictionaries, timetables, games; themes, languages, an admin panel, and a registry of packages."
+  - {name: agent, route: /_agent}  # the keeper watches the site through it (nest agent token)
+  - {name: admin, route: /admin, core: true}
+  - name: auth
+    route: /cont
+    core: true
+    config: {allow_registration: false}
+
+bind:
+  nest.db: {providers: [db-sqlite]}
+  nest.search: {providers: [search-sqlite]}
+
+deploy:
+  port: 8700
+  service: docsite

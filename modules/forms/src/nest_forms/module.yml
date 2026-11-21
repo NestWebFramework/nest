@@ -1,0 +1,36 @@
+#
+# forms — a form is a Pydantic model.
+#
+# read() takes the submitted fields, validates them against the model and
+# answers what a page needs to show the form again: the values as typed, one
+# translated message per field, or the valid data. An empty field counts as
+# not given, so "required" means "not blank". The field macros render labels,
+# hints and errors with the attributes screen readers need.
+#
+module:
+  name: forms
+  id: nest.module.forms
+  type: module
+  title: Forms
+  category: ui
+  version: 0.1.0
+  description: Pydantic-validated forms with translated messages and accessible field macros.
+  license: MIT
+  created: "2026-11-13"
+
+# the nest-core versions it works with (a registry refuses a package without)
+nest: ">=0.2,<1"
+
+main: nest_forms
+
+provides:
+  import: nest_forms
+  exports: [Form, Submission, read, validate, blank]
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}
+docs:
+  title: Forms
+  section: modules

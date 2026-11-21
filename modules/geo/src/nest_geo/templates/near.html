@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Near me") }} · {{ app.title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex"><script src="{{ asset('geo', 'locate.js') }}" defer></script>{% endblock %}
+{% block content %}
+<h1>{{ _("Near me") }}</h1>
+{% include "geo/locate.html" %}
+{% block near %}
+<div id="geo-near" aria-live="polite">
+  {% if point %}
+  <p class="muted">{{ _("Near {lat}, {lon}", lat="%.4f" | format(point[0]), lon="%.4f" | format(point[1])) }}</p>
+  {% for g in groups %}
+  <section class="geo-group"><h2>{{ g.title }}</h2>
+    <ol class="geo-places">{% for p in g.places %}<li><a href="{{ p.url }}">{{ p.title }}</a> <span class="muted">· {{ p.km }} km{% if p.get("note") %} · {{ p.note }}{% endif %}</span></li>{% endfor %}</ol>
+  </section>
+  {% else %}<p class="muted">{{ _("Nothing near here.") }}</p>{% endfor %}
+  {% endif %}
+</div>
+{% endblock %}
+{% endblock %}

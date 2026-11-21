@@ -68,13 +68,16 @@ class Offer:
     title: str
     description: str
     ecosystem: str = "nest"
-    source: str = "nest"  # nest (the checkout) | registry (the file)
+    source: str = "nest"  # nest (the checkout) | registry (the file) | remote (a Nest registry)
     path: Path | None = None  # a path source (Nest's own)
     git: str | None = None
     rev: str | None = None
     index: str | None = None
     part_of: str | None = None
     interface: str | None = None  # an interface's name (nest.db), as applications bind it
+    dep_dists: list[str] = field(default_factory=list)  # a remote offer's Nest dependencies
+    implements: list[str] = field(default_factory=list)  # a provider's interfaces (nest.db)
+    nest: str | None = None  # the nest-core versions it works with
     deps: list[str] = field(default_factory=list)
 
 
@@ -133,6 +136,7 @@ def registry(environ: Mapping[str, str] | None = None) -> dict[str, Offer]:
                 part_of=m.part_of,
                 interface=m.interface.name if m.interface else None,
                 deps=sorted(m.deps),
+                implements=list(m.implements),
             )
     file = Path(environ.get("NEST_REGISTRY") or Path.home() / ".config" / "nest" / "registry.yml")
     if file.is_file():
@@ -308,10 +312,85 @@ def run_uv(args: list[str], cwd: Path) -> tuple[int, str]:
     env = {
         k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "UV_PROJECT_ENVIRONMENT")
     }
+    from nest.remote import registry_url, token_for  # noqa: PLC0415
+
+    token = token_for(registry_url())
+    if (
+        token and "UV_INDEX_NEST_PASSWORD" not in env
+    ):  # private packages: uv signs in, nothing written
+        env.update(UV_INDEX_NEST_USERNAME="__token__", UV_INDEX_NEST_PASSWORD=token)
     done = subprocess.run(  # noqa: S603 - our arguments, never a shell
         [uv, *args], cwd=cwd, env=env, capture_output=True, text=True, timeout=900, check=False
     )
     return done.returncode, (done.stdout + done.stderr).strip()
+
+
+def _signed_file(offer: Offer, environ: Mapping[str, str] | None) -> dict[str, Any] | None:
+    """The wheel uv will take for a remote offer, checked against the keys this machine
+    trusts for it (nest trust): refused when it is not signed by one of them."""
+    from nest.remote import RemoteError, package  # noqa: PLC0415
+    from nest.signing import check  # noqa: PLC0415
+
+    try:
+        detail = package(offer.name, None, environ)
+    except RemoteError as e:
+        raise PackageError(e.problems) from None
+    wheels = [
+        f
+        for f in detail.get("files", [])
+        if f.get("kind") == "wheel" and f.get("version") == offer.version
+    ]
+    if not wheels:
+        return None
+    problems = check(offer.name, wheels[0])
+    if problems:
+        raise PackageError(problems)
+    return wheels[0]
+
+
+def _locked_hashes(app_dir: Path, dist: str) -> set[str]:
+    lock = app_dir / "uv.lock"
+    if not lock.is_file():
+        return set()
+    data = tomllib.loads(lock.read_text(encoding="utf-8"))
+    out = set()
+    for p in data.get("package", []):
+        if p.get("name") == dist:
+            for w in [*p.get("wheels", []), *([p["sdist"]] if p.get("sdist") else [])]:
+                out.add(str(w.get("hash", "")).split(":", 1)[-1])
+    return out
+
+
+def remote_offers(environ: Mapping[str, str] | None = None) -> dict[str, Offer]:
+    """What the remote Nest registry offers (nest.remote), as offers to install."""
+    from nest.remote import RemoteError, catalog, registry_url  # noqa: PLC0415
+    from nest.resolve import _core_version  # noqa: PLC0415
+
+    url = registry_url(environ)
+    try:
+        items = catalog(url, environ, core=_core_version())  # what works with this nest-core
+    except RemoteError as e:
+        raise PackageError(e.problems) from None
+    return {
+        i["name"]: Offer(
+            name=i["name"],
+            dist=i["dist"],
+            version=i["version"],
+            type=i["type"],
+            title=i.get("title") or i["name"],
+            description=i.get("description") or "",
+            ecosystem=i.get("ecosystem") or "nest",
+            source="remote",
+            index=f"{url}/simple/",
+            part_of=i.get("part_of"),
+            nest=i.get("nest"),
+            deps=list(i.get("deps") or []),
+            dep_dists=list(i.get("dep_dists") or []),
+            interface=i.get("interface"),
+            implements=list(i.get("implements") or []),
+        )
+        for i in items
+    }
 
 
 def add(
@@ -321,17 +400,34 @@ def add(
     *,
     runner: Runner | None = None,
     say: Callable[[str], None] = print,
+    remote: bool = False,
 ) -> Offer:
-    """Install a registry package in the application (installed, not used)."""
+    """Install a package in the application (installed, not used): from this server's
+    registry (the Nest checkout, the registry file), or, ``remote``, from the Nest
+    registry's index (nest.remote)."""
     runner = runner or run_uv
     app_dir = Path(app_dir).resolve()
-    offer = registry(environ).get(name)
+    offer = (remote_offers(environ) if remote else registry(environ)).get(name)
     if offer is None:
-        raise PackageError([f"'{name}' is not in this server's registry"])
+        where = "the Nest registry" if remote else "this server's registry"
+        raise PackageError([f"'{name}' is not in {where}"])
+    if offer.nest:
+        from packaging.specifiers import SpecifierSet  # noqa: PLC0415
+
+        from nest.resolve import _core_version  # noqa: PLC0415
+
+        core = _core_version()
+        if core and not SpecifierSet(offer.nest).contains(core, prereleases=True):
+            raise PackageError(
+                [f"{name} {offer.version} works with nest-core {offer.nest}; this is {core}"]
+            )
     installed = _installed(app_dir)
     if offer.dist.lower() in installed:
         raise PackageError([f"{name} is installed already"])
     spec = f"=={offer.version}" if offer.source == "registry" else _range(offer.version)
+    if offer.source == "remote" and offer.dist.lower() in _installed(app_dir):
+        raise PackageError([f"{name} is installed already"])
+    signed = _signed_file(offer, environ) if offer.source == "remote" else None
     files = _keep(app_dir)
     try:
         _add_dependency(app_dir, offer, spec)
@@ -340,11 +436,27 @@ def add(
         code, out = runner(["sync"], app_dir)
         if code != 0:
             raise PackageError([f"uv sync failed:\n{out}"])
+        if signed is not None:  # what uv pinned is what its publisher signed
+            locked = _locked_hashes(app_dir, offer.dist)
+            if locked and signed["sha256"] not in locked:
+                raise PackageError(
+                    [f"uv.lock pins {offer.dist} at a file that is not the signed one"]
+                )
+            if signed.get("key"):
+                from nest.signing import fingerprint  # noqa: PLC0415
+
+                say(f"{offer.dist} {offer.version} is signed by {fingerprint(signed['key'])}")
         say(f"{app_dir.name}: installed {offer.dist} {offer.version}")
     except Exception:
         _restore(files)
         runner(["sync"], app_dir)  # the environment as the files say again
         raise
+    if offer.implements:  # a provider: the interfaces it implements, which the app binds
+        source = remote_offers(environ) if remote else registry(environ)
+        for iface in offer.implements:
+            package = next((o for o in source.values() if o.interface == iface), None)
+            if package is not None and package.dist.lower() not in _installed(app_dir):
+                add(app_dir, package.name, environ, runner=runner, say=say, remote=remote)
     return offer
 
 
@@ -411,6 +523,16 @@ def _add_dependency(app_dir: Path, offer: Offer, spec: str) -> None:
     line = f'    "{offer.dist}{spec}",\n'
     text = text[: m.end(1)] + line + text[m.end(1) :]
     sources = tomllib.loads(text).get("tool", {}).get("uv", {}).get("sources", {})
+    if offer.source == "remote":
+        text = _with_index(text, offer)
+        if offer.dist in sources:  # a path source (a Nest checkout) would win: the index is it
+            text = re.sub(
+                rf"(?m)^{re.escape(offer.dist)}\s*=\s*\{{[^\n]*\}}\s*$",
+                f'{offer.dist} = {{ index = "nest" }}',
+                text,
+                count=1,
+            )
+            sources = {offer.dist: "replaced"}
     if offer.dist not in sources:
         entry = _source(app_dir, offer)
         if entry:
@@ -427,7 +549,32 @@ def _add_dependency(app_dir: Path, offer: Offer, spec: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def _with_index(text: str, offer: Offer) -> str:
+    """The Nest registry's index, named "nest", ahead of PyPI. uv takes a package from the
+    first index that has it (its default, first-index), so a Nest package and its Nest
+    dependencies come from the registry only, never from a package of the same name on
+    PyPI; what the registry does not have (fastapi...) comes from PyPI."""
+    indexes = tomllib.loads(text).get("tool", {}).get("uv", {}).get("index", [])
+    for index in indexes:
+        if index.get("name") == "nest":
+            if index.get("url", "").rstrip("/") != (offer.index or "").rstrip("/"):
+                raise PackageError(
+                    [f"pyproject.toml names another index 'nest' ({index.get('url')})"]
+                )
+            if index.get("explicit"):  # explicit: its packages' own Nest dependencies would miss it
+                text = re.sub(
+                    r'(?ms)(\[\[tool\.uv\.index\]\]\s*\nname = "nest"\s*\nurl = "[^"]*"\s*\n)explicit = true\s*\n',
+                    r"\1",
+                    text,
+                    count=1,
+                )
+            return text
+    return text.rstrip("\n") + f'\n\n[[tool.uv.index]]\nname = "nest"\nurl = "{offer.index}"\n'
+
+
 def _source(app_dir: Path, offer: Offer) -> str | None:
+    if offer.source == "remote":
+        return '{ index = "nest" }'
     if offer.path is not None:
         rel = os.path.relpath(offer.path, app_dir)
         return f'{{ path = "{Path(rel).as_posix()}", editable = true }}'

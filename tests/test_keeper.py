@@ -108,7 +108,8 @@ def test_the_keepers_pages(tmp_path):
         sign_in("ed@example.ro")
         assert c.get("/admin/keeper/").status_code == 403  # the admin role only
         sign_in("root@example.ro")
-        page = c.get("/admin/keeper/").text
+        assert "Watch a site" in c.get("/admin/keeper/").text  # the dashboard of watched sites
+        page = c.get("/admin/keeper/apps").text
         assert "Voievodate" in page or "voievodate" in page
         assert "/admin/keeper/app/hello" in page and ("runs" in page or "stopped" in page)
         detail = c.get("/admin/keeper/app/voievodate").text

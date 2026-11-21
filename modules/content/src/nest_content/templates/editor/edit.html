@@ -93,6 +93,9 @@
       form=posted if posted is defined else none,
       picker={"labels": labels | tojson | forceescape, "list": media_list, "upload": media_upload, "base": media_url('x')[:-2]}) }}
   {% endif %}
+  {% if translation_fields is defined %}{# the other languages, with the translations module #}
+  {{ translation_fields("content.entry", entry.id if entry else none, form=posted if posted is defined else none) }}
+  {% endif %}
   <button type="submit">{{ _("Save") }}</button>
 </form>
 {% endif %}

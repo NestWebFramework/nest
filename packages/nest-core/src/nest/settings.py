@@ -109,6 +109,10 @@ class SettingsStore:
             raise SettingsError(f"'{key}' is not a declared setting")
         return self._specs[key]
 
+    def declared(self, key: str) -> bool:
+        """Whether ``key`` ("owner.name") is a setting some package declared."""
+        return key in self._specs
+
     def get(self, key: str, default: Any = _MISSING) -> Any:
         owner, name, spec = self._spec(key)
         self._fresh()

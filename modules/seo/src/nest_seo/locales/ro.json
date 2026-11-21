@@ -56,11 +56,6 @@
  "Galleries": "Galerii",
  "Maps": "Hărți",
  "Other": "Altele",
- "Propose a description from its text for the {n} page without one": [
-  "Propune o descriere din text pentru pagina fără descriere",
-  "Propune descrieri din text pentru cele {n} pagini fără descriere",
-  "Propune descrieri din text pentru cele {n} de pagini fără descriere"
- ],
  "{n} description proposed: read it and correct what is wrong.": [
   "{n} descriere propusă: citește-o și corectează ce nu e bine.",
   "{n} descrieri propuse: citește-le și corectează ce nu e bine.",
@@ -113,5 +108,12 @@
   "{n} de pagini au revenit cum erau."
  ],
  "There is no batch to undo.": "Nu e nicio operație de anulat.",
- "Tags": "Etichete"
+ "Tags": "Etichete",
+ "Leave out": "Lasă deoparte",
+ "Save the pages not left out": "Salvează paginile nelăsate deoparte",
+ "{n} page would change. Tick those you want to leave as they are; what you see is what is saved.": [
+  "{n} pagină s-ar schimba. Bifează-le pe cele pe care vrei să le lași cum sunt; ce vezi este ce se salvează.",
+  "{n} pagini s-ar schimba. Bifează-le pe cele pe care vrei să le lași cum sunt; ce vezi este ce se salvează.",
+  "{n} de pagini s-ar schimba. Bifează-le pe cele pe care vrei să le lași cum sunt; ce vezi este ce se salvează."
+ ]
 }

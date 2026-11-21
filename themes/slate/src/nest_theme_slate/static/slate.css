@@ -36,3 +36,7 @@ input, select, textarea { border-radius: 10px; }
 .badge { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); }
 .notice { border-radius: 10px; }
 .site-footer { border-top: 1px solid var(--border); }
+
+/* the line every site carries: built with Nest */
+.nest-credit { margin: .35rem 0 0; font-size: .78rem; opacity: .75; }
+.nest-credit a { color: inherit; }

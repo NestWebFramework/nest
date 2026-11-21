@@ -1,0 +1,38 @@
+# systemd unit for the Nest registry, run as a container (as rho's registry runs).
+#
+# systemd pulls the image, runs the container in the foreground and restarts it; the
+# container has no restart policy of its own (one supervisor, not two). The port is
+# bound to the loopback: nginx (ISPConfig's vhost) is what faces the network.
+#
+#   sudo install -m 0644 registry-docker.service /etc/systemd/system/nest-registry.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now nest-registry
+
+[Unit]
+Description=Nest registry (registry.nest-framework.org)
+Documentation=https://github.com/NestWebFramework/nest/blob/main/docs/registry-deploy.md
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Environment=IMAGE=miraur/nest-registry:latest
+
+# the cached image when the pull fails, so a host without network at boot still starts
+ExecStartPre=-/usr/bin/docker pull ${IMAGE}
+ExecStartPre=-/usr/bin/docker rm -f nest-registry
+ExecStart=/usr/bin/docker run --rm --name nest-registry \
+    --env-file /etc/nest/registry.env \
+    -v nest-registry-data:/data \
+    -p 127.0.0.1:8600:8000 \
+    --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+    ${IMAGE}
+ExecStop=/usr/bin/docker stop -t 30 nest-registry
+
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=180
+TimeoutStopSec=40
+
+[Install]
+WantedBy=multi-user.target

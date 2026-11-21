@@ -1,0 +1,93 @@
+{% extends "admin/layout.html" %}
+{% from "keeper/_site_macros.html" import state_label, bars, pct, ago with context %}
+{% block title %}{{ site.name }} · {{ _("Sites") }}{% endblock %}
+{% block admin_content %}
+{% set st = site.status %}
+<p><a href="{{ base }}/">← {{ _("Sites") }}</a></p>
+<div class="row between"><h1>{{ site.name }} {{ state_label(site) }}</h1>
+<span class="row"><form method="post" action="{{ base }}/sites/{{ site.id }}/check">{{ csrf_field }}<button class="secondary">{{ _("Check now") }}</button></form>
+{% if site.kind == "agent" %}<a href="{{ base }}/sites/{{ site.id }}/findings">{{ _("Production check") }}</a>{% endif %} <a href="{{ base }}/sites/{{ site.id }}/edit">{{ _("Change") }}</a></span></div>
+<p><a href="{{ site.url }}" rel="noopener" target="_blank">{{ site.url }} ↗</a> · <span class="muted">{% if site.kind == "web" %}{{ _("web check") }}{% else %}{{ _("agent") }}{% endif %} {{ site.agent }}{% if site.scope %} · {{ _("token") }}: {{ site.scope }}{% endif %}</span></p>
+{% if result %}<div class="notice {{ 'ok' if result.ok else 'danger' }}" role="status"><p><strong>{{ result.action }}</strong>: {% if result.ok %}{{ _("done") }}{% if result.seconds is not none %} ({{ result.seconds }} s){% endif %}{% else %}{{ _("failed") }}{% endif %}</p>{% if result.text %}<p><code>{{ result.text if result.text is string else result.text|tojson }}</code></p>{% endif %}</div>{% endif %}
+{% if site.token_lost %}<p class="notice danger">{{ _("Its token cannot be read (the keeper's key changed): give it again.") }}</p>{% endif %}
+{% if site.problem %}<p class="notice danger" role="alert">{{ site.problem }}</p>{% endif %}
+{% for p in problems %}<p class="notice danger">{{ p }}</p>{% endfor %}
+
+{% block live %}<div id="live" hx-get="{{ base }}/sites/{{ site.id }}" hx-trigger="every 30s" hx-select="#live" hx-swap="outerHTML">{% set st = site.status %}
+<h2>{{ _("Last checks") }}</h2>
+{{ bars(site.recent, big=true) }}
+<div class="keeper-cols">
+<dl class="keeper-facts">
+  <dt>{{ _("Uptime") }}</dt><dd>{{ pct(site.uptime_24h) }} <span class="muted">24 h</span> · {{ pct(site.uptime_7d) }} <span class="muted">7 {{ _("days") }}</span></dd>
+  <dt>{{ _("Answer") }}</dt><dd>{% if site.ms is not none %}{{ site.ms }} ms{% else %}—{% endif %}</dd>
+  {% if site.since %}<dt>{% if site.up %}{{ _("Up since") }}{% else %}{{ _("Down since") }}{% endif %}</dt><dd>{{ site.since.strftime("%d.%m.%Y %H:%M") }} UTC</dd>{% endif %}
+  {% if site.checked_at %}<dt>{{ _("Checked") }}</dt><dd>{{ site.checked_at.strftime("%d.%m.%Y %H:%M:%S") }} UTC</dd>{% endif %}
+  {% set app_ = st.get("app") or {} %}
+  {% if app_ %}<dt>{{ _("Version") }}</dt><dd>{{ app_.get("name", "") }} {{ app_.get("version", "") }}{% if st.get("nest") %} · Nest {{ st.nest }}{% endif %}{% if st.get("python") %} · Python {{ st.python }}{% endif %}</dd>{% endif %}
+  {% if st.get("uptime_s") is not none %}<dt>{{ _("Running for") }}</dt><dd>{% set up_s = st.uptime_s or 0 %}{% if up_s >= 86400 %}{{ (up_s // 86400) }} {{ _("days") }} {% endif %}{{ (up_s % 86400) // 3600 }} h {{ (up_s % 3600) // 60 }} min{% if st.get("production") is false %} · <span class="worse">{{ _("not in production mode") }}</span>{% endif %}</dd>{% endif %}
+</dl>
+{% if app_ %}<dl class="keeper-facts">
+  {% set rq = st.get("requests") %}{% if rq %}<dt>{{ _("Requests") }}</dt><dd>{{ rq.get("total", 0) }} · <span class="{{ 'worse' if rq.get('errors') else 'muted' }}">{{ rq.get("errors", 0) }} {{ _("server errors") }}</span> · {{ rq.get("slow", 0) }} {{ _("slow") }}</dd>{% endif %}
+  {% set mg = st.get("migrations") %}{% if mg %}<dt>{{ _("Migrations") }}</dt><dd>{% if mg.get("pending") %}<span class="worse">{{ _("pending") }}: {{ mg.pending|join(", ") }}</span>{% else %}{{ _("up to date") }}{% endif %}</dd>{% endif %}
+  {% set bk = st.get("backups") %}{% if bk %}<dt>{{ _("Backup") }}</dt><dd>{% if bk.get("count") %}{{ bk.get("last", "") }} · {{ ago(bk.get("age_hours")) }}{% if bk.get("size_mb") is not none %} · {{ bk.size_mb }} MB{% endif %} · {{ bk.count }} {{ _("kept") }}{% else %}<span class="worse">{{ _("none yet") }}</span>{% endif %}</dd>{% endif %}
+  {% if st.get("databases") %}<dt>{{ _("Databases") }}</dt><dd>{% for d in st.databases %}{{ d.get("name", "") }}{% if d.get("size_mb") is not none %} {{ d.size_mb }} MB{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</dd>{% endif %}
+  {% set dk = st.get("disk") %}{% if dk %}<dt>{{ _("Disk") }}</dt><dd>{{ dk.get("free_gb", "?") }} GB {{ _("free of") }} {{ dk.get("total_gb", "?") }} GB</dd>{% endif %}
+  {% if st.get("checks") %}<dt>{{ _("Checks") }}</dt><dd>{% for k, v in st.checks.items() %}<span class="{{ 'better' if v else 'worse' }}">{{ '✓' if v else '✗' }} {{ k }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</dd>{% endif %}
+</dl>{% elif site.kind == "web" %}<p class="muted">{{ _("A web check: whether the address answers (below 400) and how fast. A service that answers the agent's status format tells more.") }}</p>{% endif %}
+</div>
+</div>{% endblock %}
+
+{% if server %}
+<h2>{{ _("Server") }}</h2>
+{% if not server.configured %}<p class="muted">{{ _("No host helper yet: set the keeper's host_url and host_token (nest-host on the server) to restart, back up and upgrade this site from here.") }}</p>
+{% elif server.problem %}<p class="notice danger">{{ _("The host helper did not answer") }}: {{ server.problem }}</p>
+{% else %}{% set sv = server.state %}
+<dl class="keeper-facts">
+  <dt>{{ _("Service") }}</dt><dd><code>{{ sv.unit }}</code> · <span class="{{ 'better' if sv.active == 'active' else 'worse' }}">{{ sv.active }}</span>{% if sv.healthy is not none %} · <span class="{{ 'better' if sv.healthy else 'worse' }}">{{ _("healthy") if sv.healthy else _("not healthy") }}</span>{% endif %}</dd>
+  <dt>{{ _("Image") }}</dt><dd><code>{{ sv.image }}</code> · {{ _("current") }} {{ (sv.built.current or "—")[:16]|replace("T", " ") }} · {{ _("previous") }} {{ (sv.built.previous or "—")[:16]|replace("T", " ") }}</dd>
+  {% if sv.job %}<dt>{{ _("Running") }}</dt><dd><a href="{{ base }}/sites/{{ site.id }}/server/jobs/{{ sv.job }}">{{ _("a job is running") }} →</a></dd>{% endif %}
+</dl>
+<div class="keeper-actions">
+{% for name in ("restart", "backup") if name in sv.allow %}
+  <form method="post" action="{{ base }}/sites/{{ site.id }}/server/{{ name }}">{{ csrf_field }}<button {% if sv.job %}disabled{% endif %}>{{ _(server.actions[name]) }}</button></form>
+{% endfor %}
+{% for name in ("upgrade", "rollback", "stop", "start") if name in sv.allow %}
+  <details class="keeper-confirm"><summary>{{ _(server.actions[name]) }}…</summary>
+    <form method="post" action="{{ base }}/sites/{{ site.id }}/server/{{ name }}">{{ csrf_field }}
+      <p>{% if name == "upgrade" %}{{ _("Pull the sources, build, back up, restart; if it is not healthy, roll back by itself.") }}{% elif name == "rollback" %}{{ _("The image before, and the data as they were before the last upgrade.") }}{% elif name == "stop" %}{{ _("The site stops answering until it is started again.") }}{% else %}{{ _("Start the site's service.") }}{% endif %}</p>
+      <button class="{{ 'danger' if name in ('rollback', 'stop') else '' }}" {% if sv.job %}disabled{% endif %}>{{ _(server.actions[name]) }} {{ site.name }}</button>
+    </form></details>
+{% endfor %}
+</div>
+<p><a href="{{ base }}/sites/{{ site.id }}/server/logs">{{ _("Its log") }} →</a>{% if sv.jobs %} · {{ _("Last jobs") }}: {% for j in sv.jobs[:5] %}<a href="{{ base }}/sites/{{ site.id }}/server/jobs/{{ j.id }}">{{ j.action }}</a> <span class="{{ 'muted' if j.running else ('better' if j.code == 0 else 'worse') }}">{% if j.running %}…{% elif j.code == 0 %}✓{% else %}✗{% endif %}</span>{% if not loop.last %} · {% endif %}{% endfor %}{% endif %}</p>
+{% endif %}
+{% endif %}
+
+{% if offered.get("actions") %}
+<h2>{{ _("Actions") }}</h2>
+{% if not offered.get("allowed") %}<p class="muted">{{ _("This site's token reads only: give it a control token (nest agent token APP --control) to run these.") }}</p>{% endif %}
+<div class="keeper-actions">{% for a in offered.actions %}
+  <form method="post" action="{{ base }}/sites/{{ site.id }}/actions/{{ a.name }}">{{ csrf_field }}
+    <strong>{{ a.title }}</strong> <code class="muted">{{ a.name }}</code>
+    {% if a.description %}<p>{{ a.description }}</p>{% endif %}
+    <button {% if not offered.get("allowed") or a.running %}disabled{% endif %}>{% if a.running %}{{ _("Running…") }}{% else %}{{ _("Run") }}{% endif %}</button>
+  </form>{% endfor %}
+</div>
+{% endif %}
+
+{% if events %}
+<h2>{{ _("Recent events") }}</h2>
+<ul class="keeper-events">{% for e in events %}
+  <li><span class="muted">{{ e.at[:19]|replace("T", " ") }}</span><span class="lvl-{{ e.level }}">{{ e.level }}</span><span><code>{{ e.source }}</code> {{ e.text }}</span></li>
+{% endfor %}</ul>
+{% endif %}
+
+{% if log %}
+<h2>{{ _("Actions run") }}</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("When") }}</th><th>{{ _("Action") }}</th><th>{{ _("Who") }}</th><th>{{ _("Result") }}</th></tr></thead>
+  <tbody>{% for a in log %}<tr><td class="muted">{{ a.at.strftime("%d.%m.%Y %H:%M") }}</td><td><code>{{ a.action }}</code></td><td>{{ a.who }}</td>
+    <td><span class="{{ 'better' if a.ok else 'worse' }}">{{ '✓' if a.ok else '✗' }}</span> <span class="muted">{{ a.result|truncate(160) }}</span></td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

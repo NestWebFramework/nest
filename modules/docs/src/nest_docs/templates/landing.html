@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{#- The site's home, from the tree's landing.md: its front matter gives the hero (title,
+    lead, actions), the features and the showcase; its text follows. -#}
+{% block title %}{{ meta.get("title") or tree.title }}{% endblock %}
+{% block head %}{% set desc = meta.get("description") or meta.get("lead") or "" %}{% if seo_head is defined %}{{ seo_head("docs.landing", title=meta.get("title") or tree.title, description=desc, path="/") }}{% else %}<meta name="description" content="{{ desc }}">{% endif %}{% endblock %}
+{% block nav %}{% if docs_nav %}{% include "docs/_top.html" %}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block content %}
+{% set hero = meta.get("hero") or {} %}
+<section class="landing-hero">
+  {% if nest_version is defined %}<p class="landing-version"><a href="{{ tree.base }}/changelog">Nest {{ nest_version }}</a></p>{% endif %}
+  <h1>{{ hero.get("title") or meta.get("title") or tree.title }}</h1>
+  {% if hero.get("lead") %}<p class="landing-lead">{{ hero.lead }}</p>{% endif %}
+  {% if hero.get("actions") %}<p class="landing-actions">{% for a in hero.actions %}<a class="button{% if not loop.first %} secondary{% endif %}" href="{{ a.href }}">{{ a.label }}</a>{% endfor %}</p>{% endif %}
+  {% if hero.get("code") %}<pre class="landing-code"><code>{{ hero.code }}</code></pre>{% endif %}
+</section>
+{% if meta.get("features") %}
+<section class="landing-features" aria-label="{{ _('What it does') }}">
+  {% for f in meta.features %}<div class="landing-feature"><h2>{{ f.title }}</h2><p>{{ f.text }}</p>{% if f.get("href") %}<a href="{{ f.href }}">{{ f.get("more") or _("Read more") }} →</a>{% endif %}</div>{% endfor %}
+</section>
+{% endif %}
+{% if meta.get("showcase") %}
+<section class="landing-showcase" aria-labelledby="showcase-h">
+  <h2 id="showcase-h">{{ meta.get("showcase_title") or _("Built with it") }}</h2>
+  <div class="landing-shots">{% for s in meta.showcase %}
+    <figure class="landing-shot">{% if s.get("image") %}<a href="{{ s.get('url', '#') }}" rel="noopener"><img src="{{ tree.base }}/_files/{{ s.image }}" alt="{{ s.title }}" loading="lazy"></a>{% endif %}
+      <figcaption><strong>{{ s.title }}</strong>{% if s.get("text") %}<span>{{ s.text }}</span>{% endif %}</figcaption></figure>
+  {% endfor %}</div>
+</section>
+{% endif %}
+<section class="landing-body docs-body">{{ page.html }}</section>
+{% endblock %}

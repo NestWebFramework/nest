@@ -9,14 +9,17 @@ anywhere (OpenStreetMap shows a place's coordinates when it is clicked)::
 
 from __future__ import annotations
 
+import contextlib
 import re
 import unicodedata
+import weakref
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import delete, func, select
 
-from nest_maps.models import Map, Marker
+from nest_maps.models import Map, MapText, Marker, MarkerText
 
 
 class MapsError(ValueError):
@@ -65,6 +68,89 @@ class MapData:
     description: str = ""
     markers: list[MarkerData] = field(default_factory=list)
     legacy_id: int | None = None
+
+
+# Each application's default language, by its database (an application made again has a
+# new one): what is written is mirrored in the text tables, the translations' source.
+_defaults: weakref.WeakKeyDictionary[Any, str] = weakref.WeakKeyDictionary()
+
+
+def set_default(db: Any, language: str) -> None:
+    with contextlib.suppress(TypeError):  # a database object that cannot be weakly referenced
+        _defaults[db] = language
+
+
+def _mirror(s: Any, db: Any, m: Map, marks: list[Marker]) -> None:
+    from nest_db import delete_text, save_text  # noqa: PLC0415
+
+    default = _defaults.get(db)
+    if not default:
+        return
+    save_text(
+        s,
+        MapText,
+        m.id,
+        default,
+        {"title": m.title, "description": m.description or ""},
+        status="published",
+    )
+    for mk in marks:
+        if mk.title or mk.description:
+            values = {"title": mk.title, "description": mk.description or ""}
+            save_text(s, MarkerText, mk.id, default, values, status="published")
+        else:
+            delete_text(s, MarkerText, mk.id, default)
+
+
+def backfill(db: Any, default: str) -> int:
+    """The default language's rows of what was written before the text tables."""
+    from sqlalchemy import exists, insert, literal, null  # noqa: PLC0415
+
+    if not default:
+        return 0
+    now = datetime.now(UTC).replace(tzinfo=None)
+    made = 0
+    with db.session() as s, s.begin():
+        for model, owner, said in (
+            (MapText, Map, Map.id.is_not(None)),
+            (MarkerText, Marker, (Marker.title != "") | (Marker.description != "")),
+        ):
+            has = exists().where(model.owner_id == owner.id, model.locale == default)
+            made += int(
+                s.execute(
+                    insert(model).from_select(
+                        [
+                            "owner_id",
+                            "locale",
+                            "status",
+                            "updated_at",
+                            "source_updated_at",
+                            "title",
+                            "description",
+                        ],
+                        select(
+                            owner.id,
+                            literal(default),
+                            literal("published"),
+                            literal(now),
+                            null(),
+                            owner.title,
+                            owner.description,
+                        ).where(~has, said),
+                    )
+                ).rowcount
+                or 0
+            )
+    return made
+
+
+def shown_map(db: Any, m: Map, locale: str) -> Any:
+    from nest_db import overlay  # noqa: PLC0415
+
+    with db.session() as s:
+        return overlay(s, MapText, [m], locale, _defaults.get(db, ""), keep_empty=("description",))[
+            0
+        ]
 
 
 def slugify(text: str) -> str:
@@ -157,10 +243,17 @@ def markers(db: Any, map_id: int) -> list[Marker]:
         )
 
 
-def points(db: Any, map_id: int) -> list[Point]:
-    return [
-        Point(m.lat, m.lng, m.title, m.link, "marker", m.description) for m in markers(db, map_id)
-    ]
+def points(db: Any, map_id: int, locale: str = "") -> list[Point]:
+    """A map's markers as points, their words in ``locale`` (the original's where none)."""
+    from nest_db import overlay  # noqa: PLC0415
+
+    marks = markers(db, map_id)
+    if locale and locale != _defaults.get(db, ""):
+        with db.session() as s:
+            marks = overlay(
+                s, MarkerText, marks, locale, _defaults.get(db, ""), keep_empty=("description",)
+            )
+    return [Point(m.lat, m.lng, m.title, m.link, "marker", m.description) for m in marks]
 
 
 def geojson(points: list[Point]) -> dict[str, Any]:
@@ -193,19 +286,25 @@ def save_map(db: Any, data: MapData, existing_id: int | None = None) -> Map:
         if data.legacy_id is not None:
             m.legacy_id = data.legacy_id
         s.flush()
-        s.execute(delete(Marker).where(Marker.map_id == m.id))
-        for i, mk in enumerate(data.markers):
-            s.add(
-                Marker(
-                    map_id=m.id,
-                    lat=mk.lat,
-                    lng=mk.lng,
-                    title=mk.title[:200],
-                    link=mk.link,
-                    description=mk.description,
-                    position=i,
-                )
+        # the markers in their order, each kept where it was (its translations with it):
+        # the first ones changed in place, the extra ones gone, the new ones added
+        kept = list(
+            s.scalars(
+                select(Marker).where(Marker.map_id == m.id).order_by(Marker.position, Marker.id)
             )
+        )
+        marks = []
+        for i, mk in enumerate(data.markers):
+            row = kept[i] if i < len(kept) else Marker(map_id=m.id)
+            row.lat, row.lng, row.title = mk.lat, mk.lng, mk.title[:200]
+            row.link, row.description, row.position = mk.link, mk.description, i
+            if i >= len(kept):
+                s.add(row)
+            marks.append(row)
+        for extra in kept[len(data.markers) :]:
+            s.delete(extra)
+        s.flush()
+        _mirror(s, db, m, marks)
         s.flush()
         return m
 

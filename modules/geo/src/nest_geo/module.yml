@@ -1,0 +1,45 @@
+#
+# geo — where the reader is, and what is near: shared by every module that has places.
+#
+# A module with places answers the "geo.near" lookup ({lat, lon, km, limit} → a group of
+# places with their distance); this module's page asks the browser where the reader is
+# (only this page may: every other keeps the strict policy) and shows what every module
+# has near. nest_geo.distance_km and nest_geo.box are there for any module's own search.
+#
+module:
+  name: geo
+  id: nest.module.geo
+  type: module
+  title: Near me
+  category: maps
+  version: 0.1.0
+  description: A near-me page every module with places contributes to; distances and a locate button.
+  license: MIT
+  created: "2026-11-20"
+
+nest: ">=0.2,<1"
+
+main: nest_geo
+styles: [geo.css]
+
+provides:
+  import: nest_geo
+  exports: [distance_km, box, near]
+
+settings:
+  radius_km:
+    type: int
+    default: 50
+    description: How far, in km, the near-me page looks.
+  limit:
+    type: int
+    default: 10
+    description: How many places of each kind it shows.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+  - {locale: en, file: locales/en.json}
+docs:
+  title: Near me
+  section: modules

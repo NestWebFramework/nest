@@ -291,3 +291,40 @@ def test_a_member_keeps_their_own_account(site, tmp_path):
             post(c, "/auth/login", email="ana@example.ro", password="a new long secret").status_code
             == 303
         )
+
+
+def test_behind_a_proxy_the_sites_own_origin_is_accepted_and_others_refused(site, tmp_path):
+    """nginx may pass its upstream (127.0.0.1:8600) as Host: the Origin a browser sends is
+    then the site's name, which NEST_ALLOWED_HOSTS (or X-Forwarded-Host) declares."""
+    with client_for(site, tmp_path / "ws") as c:
+        register(c)
+    env = {"NEST_ALLOWED_HOSTS": "registry.example.org,localhost,testserver"}
+    with client_for(site, tmp_path / "ws", **env) as c:
+        tok = token(c)
+        form = {"csrf_token": tok, "email": "ana@example.ro", "password": PASSWORD}
+        upstream = {"host": "127.0.0.1:8600"}
+        ok = c.post(
+            "/auth/login",
+            data=form,
+            headers={**upstream, "origin": "https://registry.example.org"},
+            follow_redirects=False,
+        )
+        assert ok.status_code == 303
+        evil = c.post(
+            "/auth/login",
+            data=form,
+            headers={**upstream, "origin": "https://evil.example"},
+            follow_redirects=False,
+        )
+        assert evil.status_code == 403 and "cross-origin" in evil.text
+        fwd = c.post(
+            "/auth/login",
+            data=form,
+            headers={
+                **upstream,
+                "origin": "https://other.example.org",
+                "x-forwarded-host": "other.example.org",
+            },
+            follow_redirects=False,
+        )
+        assert fwd.status_code == 303

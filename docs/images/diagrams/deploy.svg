@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 380" font-family="Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">A Nest site on a server</title>
+  <desc id="d">nginx (ISPConfig, Let's Encrypt) proxies to a container on the loopback; the container mounts the site's data folder from the host.</desc>
+  <rect width="860" height="380" rx="14" fill="#f7f8fa"/>
+  <text x="430" y="34" text-anchor="middle" font-size="15" fill="#556">Internet · https://site.ro</text>
+  <path d="M430 42 V64" stroke="#888" stroke-width="2" marker-end="url(#a)"/>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#888"/></marker></defs>
+  <rect x="230" y="68" width="400" height="56" rx="10" fill="#e8f0fb" stroke="#9bb8dd"/>
+  <text x="430" y="92" text-anchor="middle" font-size="16" font-weight="700" fill="#12355b">nginx · ISPConfig website</text>
+  <text x="430" y="112" text-anchor="middle" font-size="12.5" fill="#345">Let's Encrypt · proxy_pass 127.0.0.1:&lt;port&gt;</text>
+  <path d="M430 124 V146" stroke="#888" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="150" y="150" width="560" height="92" rx="10" fill="#12355b"/>
+  <text x="430" y="176" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">container nest-&lt;site&gt; · image nest-&lt;site&gt;:current</text>
+  <text x="430" y="198" text-anchor="middle" font-size="12.5" fill="#cfe0f2">systemd: nest-site@&lt;site&gt; · entrypoint: nest db upgrade, then nest serve (workers)</text>
+  <text x="430" y="220" text-anchor="middle" font-size="12.5" fill="#cfe0f2">thrown away at every stop: rebuilt, upgraded, rolled back at will</text>
+  <path d="M430 242 V266" stroke="#888" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <text x="440" y="259" font-size="12" fill="#556">-v /srv/nest/&lt;site&gt;:/data</text>
+  <rect x="150" y="270" width="560" height="80" rx="10" fill="#eef7ee" stroke="#93c493"/>
+  <text x="430" y="296" text-anchor="middle" font-size="16" font-weight="700" fill="#1e5a1e">/srv/nest/&lt;site&gt; on the host: the data</text>
+  <text x="430" y="318" text-anchor="middle" font-size="12.5" fill="#2f6f2f">data/ (SQLite) · media/ (uploads) · settings · backups/ (every night, before every upgrade)</text>
+  <text x="430" y="337" text-anchor="middle" font-size="12.5" fill="#2f6f2f">secrets in /etc/nest/&lt;site&gt;.env, never in the image nor a backup</text>
+</svg>

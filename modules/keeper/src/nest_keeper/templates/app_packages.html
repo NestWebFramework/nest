@@ -7,6 +7,29 @@
 <p class="hint">{{ _("Install a package this server trusts (Nest's own, or one pinned in its registry file) into the application; its administrator then adds it in the admin panel's Modules page. A package the application uses is uninstalled there before it can be removed here.") }}</p>
 {% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
 {% if steps %}<div class="notice ok" role="status"><ul>{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ul></div>{% endif %}
+{% if managed %}
+<section class="card stack" aria-labelledby="remote-h">
+  <h2 id="remote-h">{{ _("From the Nest registry") }} <span class="muted">· {{ registry }}</span></h2>
+  <form method="get" action="{{ base }}/app/{{ app.name }}/packages" class="row">
+    <label class="visually-hidden" for="rq">{{ _("Search") }}</label>
+    <input id="rq" name="q" value="{{ q or '' }}" placeholder="{{ _('forum, map, theme…') }}">
+    <button type="submit">{{ _("Search the registry") }}</button>
+  </form>
+  {% for p in remote_problems %}<p class="notice danger">{{ p }}</p>{% endfor %}
+  {% if q is not none and not remote_rows and not remote_problems %}<p class="muted">{{ _("Nothing there works with this Nest yet.") }}</p>{% endif %}
+  {% if remote_rows %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ _("Package") }}</th><th>{{ _("Type") }}</th><th>{{ _("Version") }}</th><th>{{ _("What it is") }}</th><th></th></tr></thead>
+    <tbody>{% for r in remote_rows %}<tr>
+      <td><strong>{{ _(r.offer.title) }}</strong><br><code>{{ r.offer.name }}</code></td>
+      <td>{{ r.offer.type }}</td><td>{{ r.offer.version }}<br><small class="muted">nest-core {{ r.offer.nest }}</small></td>
+      <td><small>{{ _(r.offer.description) }}</small></td>
+      <td>{% if r.installed %}<span class="badge">{{ _("installed") }}</span>{% else %}<form method="post" action="{{ base }}/app/{{ app.name }}/packages/{{ r.offer.name }}/add-remote">{{ csrf_field }}<button type="submit">{{ _("Install") }}</button></form>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+</section>
+{% endif %}
 {% if not managed %}
 <p class="notice">{{ _("This application has no pyproject.toml of its own: its packages are installed with Nest's.") }}</p>
 {% else %}

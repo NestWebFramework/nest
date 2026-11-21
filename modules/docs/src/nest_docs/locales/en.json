@@ -1,0 +1,20 @@
+{
+ "Documentation": "Documentation",
+ "Search the docs…": "Search the docs…",
+ "Search the docs": "Search the docs",
+ "Pages": "Pages",
+ "Before": "Before",
+ "Next": "Next",
+ "Improve this page": "Improve this page",
+ "On this page": "On this page",
+ "Search": "Search",
+ "{n} page for “{q}”": [
+  "{n} page for “{q}”",
+  "{n} pages for “{q}”"
+ ],
+ "No such page": "No such page",
+ "The documentation has no page here; the menu has every page there is, and search finds the rest.": "The documentation has no page here; the menu has every page there is, and search finds the rest.",
+ "What it does": "What it does",
+ "Read more": "Read more",
+ "Built with it": "Built with it"
+}
