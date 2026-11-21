@@ -9,6 +9,17 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## 0.4.1
+
+- **core 0.4.1**: `script-src` may be extended with the script sources core reviewed
+  (`CSP_SCRIPT_SOURCES`, now only `https://www.googletagmanager.com`); any other script
+  source is still refused, and styles stay `'self'`.
+- **seo 0.2.0**: Google Analytics (GA4). Admin → Settings → SEO → Google Analytics
+  measurement ID (`G-…`) loads Google's tag on every public page (never the admin panel),
+  after the visitor agrees when `analytics_consent` is on (the default), with IPs
+  anonymized. Themes base 0.2.2, paper, rail-signage and morlaca-valley 0.1.2 include
+  `seo/analytics.html` in their layouts.
+
 ## 0.4.0
 
 Nest core 0.4.0; the packages that need it say `nest: ">=0.4,<1"` (admin, content,

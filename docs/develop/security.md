@@ -88,7 +88,9 @@ A package that needs another origin adds it in a top-level `csp:` section of its
 `module.yml`. Only `img-src`, `frame-src`, `media-src` and `connect-src` may be extended,
 and only with https sources (a host, optionally a path); a bare wildcard, a keyword or a
 plain-http source stops the start. Scripts and styles stay `'self'`, so no package can
-loosen what runs on a page.
+loosen what runs on a page; the one exception is a short list of script sources reviewed
+in core (`nest.security.CSP_SCRIPT_SOURCES`: Google's tag server, which the seo module
+adds only while a Google Analytics ID is set). A package cannot grow that list.
 
 ```yaml
 csp:

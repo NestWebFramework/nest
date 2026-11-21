@@ -426,8 +426,9 @@ def test_categories_take_part_in_the_overview_and_the_batch(site):
 def test_a_batch_of_thousands_of_pages_is_a_small_form(site):
     """A dictionary's thousands of words in one batch: the form sends the choice, not each
     page's values, so it stays far under the fields a form may have."""
-    from nest import security
     from nest_seo import service as seo
+
+    from nest import security
 
     for i in range(security.FORM_MAX_FIELDS // 2 + 10):  # 3 fields each: over the limit
         post(site, f"Pagina {i}")
@@ -445,3 +446,30 @@ def test_a_batch_of_thousands_of_pages_is_a_small_form(site):
     assert r.status_code == 303
     first = content.published_entries(site.db)[0]
     assert seo.get(site.db, f"content.entry:{first.id}") is not None
+
+
+def test_google_analytics_loads_on_every_page_only_when_set(site):
+    """The measurement ID set (Settings → SEO), every page loads Nest's own analytics script
+    (which asks the visitor first) and the page policy lets Google in; unset or not an ID,
+    nothing of Google's is on the page nor in the policy; never in the admin panel."""
+    page = site.get("/harta/")
+    assert "analytics.js" not in page.text
+    assert "googletagmanager" not in page.headers["content-security-policy"]
+
+    site.nest.settings.set("seo.google_analytics", "not-an-id")
+    assert "analytics.js" not in site.get("/harta/").text
+
+    site.nest.settings.set("seo.google_analytics", "g-1hp4jwjhpv")  # as typed: made upper case
+    page = site.get("/harta/")
+    tag = page.text.split("analytics.js")[1].split("</script>")[0]
+    assert 'data-ga="G-1HP4JWJHPV"' in tag and 'data-consent="1"' in tag
+    assert "cookie" in tag.lower()  # the visitor is asked, in the site's language
+    assert "<script>" not in page.text  # nothing inline: the policy stays strict
+    policy = page.headers["content-security-policy"]
+    assert "https://www.googletagmanager.com" in policy.split("script-src")[1].split(";")[0]
+    assert "https://*.google-analytics.com" in policy.split("connect-src")[1].split(";")[0]
+    assert site.get("/assets/seo/analytics.js").status_code == 200
+
+    site.nest.settings.set("seo.analytics_consent", "false")
+    assert 'data-consent="0"' in site.get("/harta/").text
+    assert "analytics.js" not in site.get("/admin/seo/").text  # never in the admin panel

@@ -18,6 +18,7 @@ from markupsafe import Markup
 
 from nest import ModuleHost
 from nest_seo import service
+from nest_seo.analytics import analytics
 from nest_seo.head import head, title
 from nest_seo.service import SeoError
 
@@ -114,6 +115,8 @@ def setup(host: ModuleHost) -> None:
             "seo_page_title": lambda subject, default: title(request, subject, default),
             "seo_fields": fields,
             "seo_meta": lambda subject: service.get(db, subject) if subject else None,
+            # Google Analytics, when its ID is set (the layouts include seo/analytics.html)
+            "seo_analytics": lambda: analytics(host),
         }
 
     host.serve_at_root(root)

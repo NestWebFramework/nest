@@ -18,7 +18,7 @@ module:
   id: nest.module.seo
   type: module
   title: SEO
-  version: 0.1.1
+  version: 0.2.0
   description: >
     Search titles, descriptions, keywords, sharing pictures and indexing for every page of
     every module; meta tags, Open Graph and JSON-LD; a sitemap with photos; robots.txt.
@@ -27,7 +27,7 @@ module:
   category: seo
   fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
-nest: ">=0.2,<1"
+nest: ">=0.4.1,<1"
 
 main: nest_seo
 admin_styles: [seo.css]  # the editors' fields, in the admin panel
@@ -101,6 +101,16 @@ settings:
     default: ""
     label: Bing Webmaster code
     description: The code of the meta tag Bing gives to confirm the site is yours.
+  google_analytics:
+    type: str
+    default: ""
+    label: Google Analytics measurement ID
+    description: "The site's Google Analytics 4 ID, as G-XXXXXXXXXX (Analytics: Admin → Data streams → the web stream). Set, every page loads Google's tag (gtag.js) from Nest's own script, and the page policy lets Google's addresses in; empty, nothing of Google's loads."
+  analytics_consent:
+    type: bool
+    default: true
+    label: Ask visitors before analytics
+    description: "A small notice asks each visitor before Google Analytics loads, and remembers the answer (the law in the EU asks consent for analytics cookies). Off, it loads at once."
   robots_closed:
     type: str
     default: ""

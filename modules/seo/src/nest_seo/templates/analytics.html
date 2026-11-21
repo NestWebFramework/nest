@@ -1,0 +1,11 @@
+{#- Google Analytics on every page, when the seo module's ID is set: Nest's own script loads
+    Google's tag, after asking the visitor when consent is asked (the layouts include this
+    at the end of the page). Never in the admin panel. -#}
+{% set ga = seo_analytics() if seo_analytics is defined else none %}
+{% if ga and not in_admin %}
+<link rel="stylesheet" href="{{ asset('seo', 'analytics.css') }}">
+<script src="{{ asset('seo', 'analytics.js') }}" defer
+  data-ga="{{ ga.id }}" data-consent="{{ 1 if ga.consent else 0 }}"
+  data-text="{{ _('This site counts its visits with Google Analytics, which sets cookies. Do you agree?') }}"
+  data-yes="{{ _('I agree') }}" data-no="{{ _('No, thank you') }}"></script>
+{% endif %}
