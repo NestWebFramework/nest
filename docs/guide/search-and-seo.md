@@ -78,7 +78,7 @@ of any module, without the modules depending on it.
 modules:
   - name: seo
     config:
-      site_url: https://www.gari.ro
+      site_url: https://example.org
       description: "The Romanian train timetable: stations, trains, journeys."
 ```
 

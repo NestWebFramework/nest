@@ -1,39 +1,40 @@
 ---
 title: "Nest sites on a server with ISPConfig (nginx)"
-description: "Run Nest sites as Docker images from Docker Hub, each a systemd service whose data live in a folder on the host, behind ISPConfig's nginx."
+description: "Run Nest sites as Docker images from Docker Hub, each a systemd service whose data live in a folder on the host, behind ISPConfig's nginx; Docker from the snap."
 ---
 # Nest sites on a server with ISPConfig (nginx)
 
 Every Nest application on the server runs the same way, as the Nest registry does: a
 **Docker image** from Docker Hub, run by a **systemd service**, behind an **ISPConfig
 website** (nginx, Let's Encrypt). Each application's repository has a `deploy/` folder
-with what the server needs: the service, an `.env` example, the nginx directives and a
-`DEPLOY.md` with its own commands.
+with what the server needs: the service, the nginx directives and a `DEPLOY.md` with its
+own commands. Two small scripts in Nest's `deploy/site/` do the rest: `nest-secret-key` and
+`nest-agent-tokens`.
 
 ![A Nest site on a server: nginx, the container, the data on the host](images/diagrams/deploy.svg)
 
 **The data are never in the image.** An application's workspace (its SQLite databases, its
-uploaded files, its settings, its backups) is a folder on the host, `/srv/nest/<app>`,
-mounted at `/data`. The container is thrown away at every stop; a restart, a new image,
-going back to an older one or a crash leaves the data where they are. The secrets are in
-`/etc/nest/<app>.env` (root only), never in an image, a repository or a backup.
+uploaded files, its settings, its backups, and a `.env` with its secrets) is a folder on the
+host, `/var/snap/docker/common/nest/<app>`, mounted at `/data`, and owned by the ISPConfig
+website's user: the container runs as that user. The container is thrown away at every
+stop; a restart, a new image, going back to an older one, a crash or a reboot of the server
+leaves the data where they are.
+
+The folders are under `/var/snap/docker/common/` because Docker installed from the snap may
+mount folders only there (and in `/home`). With Docker from the distribution's packages,
+the services use `/usr/bin/docker` and `docker.service`, and the folders may be anywhere.
 
 ## What is where
 
 | | |
 |---|---|
-| `miraur/nest-sites:<site>-latest` | a site's image (private repository, a tag per site); `miraur/nest-docsite`, `miraur/nest-keeper` (public) |
-| `/etc/systemd/system/nest-<app>.service` | runs it (the repository's `deploy/nest-<app>.service`) |
-| `/etc/nest/<app>.env` | its secrets and production settings (`deploy/<app>.env.example`) |
-| `/srv/nest/<app>` | its workspace: `data/`, `media/`, `backups/`, owned by uid 10001, the image's user |
+| `<you>/nest-sites:<site>-latest` | a site's image (private repository, a tag per site); `miraur/nest-docsite`, `miraur/nest-keeper` (public) |
+| `/etc/systemd/system/nest-<app>.service` | runs it (the repository's `deploy/nest-<app>.service`): the image, the port, the production settings |
+| `/var/snap/docker/common/nest/<app>` | its workspace: `data/`, `media/`, `backups/`, and `.env` (`NEST_SECRET_KEY`, the agent's token) |
 
 | application | port | domain |
 |---|---|---|
-| regionalisme | 8200 | regionalisme.ro |
-| morlaca | 8300 | morlaca.ro |
-| transilpedia | 8310 | transilpedia.ro |
-| gari | 8400 | gari.ro |
-| voievodate (later) | 8500 | voievodate.ro |
+| your sites | 8200, 8300, 8400, … (one each) | their own domains |
 | registry | 8600 | registry.nest-framework.org (its own guide: [registry-deploy.md](registry-deploy.md)) |
 | docsite | 8700 | nest-framework.org |
 | keeper | 8800 | your own domain |
@@ -49,42 +50,46 @@ deploy/site/nest-images push             # refused for an image built from uncom
 
 Each image is tagged with its version, the commits it was made from, and `latest`. Nest's
 own images (`nest-docsite`, `nest-keeper`) are public, each in its own repository. The
-sites' images are private and share one repository, `miraur/nest-sites`, a tag per site
-(`gari-latest`, `gari-0.1.0`, `morlaca-latest`, ...): Docker Hub's free plan has one
+sites' images are private and share one repository, `<you>/nest-sites`, a tag per site
+(`mysite-latest`, `mysite-0.1.0`, `othersite-latest`, ...): Docker Hub's free plan has one
 private repository, and the layers the sites share (Python, Nest) are stored once. Create
 it as private before the first push (a push creates a missing repository with the
-account's default visibility). The server logs in once, with a read-only access token:
+account's default visibility). The server logs in once, **as root** (the services run as
+root), with an access token that can read:
 
 ```sh
-sudo docker login -u miraur
+sudo docker login -u <you>
 ```
 
 ## An application, step by step
 
 Each `deploy/DEPLOY.md` has the exact commands; for an application `A`:
 
-1. **Its data folder.** Bring the current workspace (stop it where it runs, then
-   `rsync -a --exclude run/ --exclude backups/ ~/.local/share/nest/A/ server:/tmp/A-data/`,
-   move it to `/srv/nest/A`, `chown -R 10001:10001`), or start with an empty one.
-2. **Its environment.** `scp deploy/A.env.example deploy/nest-A.service server:/tmp/`, then
-   `/etc/nest/A.env` from the example (`chmod 600`). `NEST_SECRET_KEY` is the workspace's
-   `data/secret.key` when its data came along: everyone stays signed in. One `KEY=VALUE`
-   per line, nothing after the value.
-3. **Its service.** `/etc/systemd/system/nest-A.service`, then
+1. **Its data folder.** A site brings its current workspace: stop it where it runs,
+   `rsync -a --exclude run/ --exclude backups/ ~/.local/share/nest/A/ server:/tmp/A/`, then
+   on the server move it to `/var/snap/docker/common/nest/A` and give it to the website's
+   user (`chown -R webN:clientN`). The docsite and the keeper start with an empty folder.
+2. **Its secret key.** `sudo sh nest-secret-key A`, in `/var/snap/docker/common/nest`:
+   `NEST_SECRET_KEY` into the folder's `.env`, from the site's own `data/secret.key` (everyone
+   stays signed in) or a new one.
+3. **Its service.** `deploy/nest-A.service` into `/etc/systemd/system/`, then
    `sudo systemctl daemon-reload && sudo systemctl enable --now nest-A`. At each start it
-   pulls the image, then runs it with the data folder mounted; the image migrates the
-   database before it serves.
+   pulls the image, then runs it as the folder's owner with the folder mounted; the image
+   migrates the database before it serves. `enable` starts it at every boot.
 4. **Its website** in ISPConfig: domain, auto-subdomain `www.`, PHP disabled, Let's Encrypt
    on, the SEO redirect from `www.`; under **Options → nginx Directives**, `deploy/nginx.conf`
    (it proxies to `127.0.0.1:<port>`, lets uploads and live updates through).
-5. **Its backups**, one a night, by root's crontab:
-   `30 3 * * * docker exec nest-A nest backup /src/app --keep 14 >/dev/null`
+5. **Its first account**, for an application that starts empty (the docsite, the keeper):
+   right after the first start, `sudo docker exec -i nest-A nest auth create-user …`. A site
+   that brought its data has its accounts already.
+6. **Its backups**, one a night, by root's crontab:
+   `30 3 * * * /snap/bin/docker exec nest-A nest backup /src/app --keep 14 >/dev/null`
    (`/src/nest/applications/A` for the docsite and the keeper). Copy them off the server too.
 
-For the [keeper](operate/keeper.md) to watch a site, give its agent a token:
-`nest agent token A --control` prints the token for the keeper and a
-`NEST_A__AGENT__CONTROL_TOKEN=sha256:…` line for `/etc/nest/A.env`, then
-`sudo systemctl restart nest-A`. Until then the agent answers nobody.
+For the [keeper](operate/keeper.md) to watch the sites, `sudo sh nest-agent-tokens mysite
+othersite …`: each site's container makes a token, its SHA-256 goes into the site's `.env`,
+the site restarts, and the script prints the tokens for the keeper's **Watch a site**.
+Until then a site's agent answers nobody.
 
 ## Updates and migrations
 
@@ -97,7 +102,7 @@ sudo systemctl restart nest-A                     # pulls the new image, migrate
 
 The image's entrypoint runs `nest db upgrade` (every module's migrations) before it serves;
 a production site never migrates otherwise. To go back to an older version, name its tag in
-the service (`Environment=IMAGE=miraur/nest-sites:gari-0.1.0`), `daemon-reload`, restart;
+the service (`Environment=IMAGE=<you>/nest-sites:mysite-0.1.0`), `daemon-reload`, restart;
 if the newer one had migrated the database, restore the backup made before it
 (`nest restore`, the site stopped). Each `DEPLOY.md` has the commands.
 
@@ -121,10 +126,10 @@ with the same data folder, through its own units (`nest-site@<app>.service` and 
 
 ```text
 PORT=8400
-DATA=/srv/nest/gari
-PULL=miraur/nest-sites
-TAG=gari-latest
-IMAGE=nest-gari
+DATA=/var/snap/docker/common/nest/mysite
+PULL=<you>/nest-sites
+TAG=mysite-latest
+IMAGE=nest-mysite
 MEMORY=1g
 KEEP=14
 ```
@@ -133,9 +138,9 @@ KEEP=14
 sudo install -m 0755 nest-site /usr/local/bin/
 sudo install -m 0644 nest-site*@.* /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo nest-site build gari                         # pulls the image (PULL, TAG)
-sudo systemctl enable --now nest-site@gari nest-site-backup@gari.timer
-sudo nest-site upgrade gari                       # later: pull, back up, restart, check, roll back
+sudo nest-site build mysite                         # pulls the image (PULL, TAG)
+sudo systemctl enable --now nest-site@mysite nest-site-backup@mysite.timer
+sudo nest-site upgrade mysite                       # later: pull, back up, restart, check, roll back
 ```
 
 Without `PULL`, `nest-site build` builds the image on the server from the sources in

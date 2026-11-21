@@ -64,7 +64,7 @@ settings:
     default: ""
     label: Public address
     description: >
-      The address the public uses (https://morlaca.ro): the canonical links, the sitemap
+      The address the public uses (https://example.org): the canonical links, the sitemap
       and what a shared page shows are made with it; empty takes the request's.
   title_pattern:
     type: str

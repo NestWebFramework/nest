@@ -90,25 +90,31 @@ A site's own page adds:
 
    Add `nest-agent` to the site's `pyproject.toml` too.
 
-2. Make the tokens, on any machine with Nest:
+2. Make the tokens. On a server set up as in [the ISPConfig guide](../deploy-ispconfig.md),
+   Nest's `deploy/site/nest-agent-tokens` does it all, for each site named:
 
    ```sh
-   nest agent token gari              # a token that reads
-   nest agent token gari --control    # a token that also runs actions
+   sudo sh nest-agent-tokens mysite othersite docsite
    ```
 
-   Each prints a token (`na_…`) for the keeper, and a line for the site:
+   Each site's container makes a control token; its SHA-256 goes into the site's `.env`
+   (in `/var/snap/docker/common/nest/<site>`), the site restarts, the script checks that the agent answers and
+   prints the token for the keeper.
+
+   By hand, on any machine with Nest: `nest agent token mysite` (a token that reads) or
+   `nest agent token mysite --control` (one that also runs actions) prints a token (`na_…`)
+   for the keeper and a line for the site:
 
    ```text
-   NEST_GARI__AGENT__READ_TOKEN=sha256:3f1c…
+   NEST_MYSITE__AGENT__READ_TOKEN=sha256:3f1c…
    ```
 
-3. Put that line in the site's environment (`/etc/nest/gari.env` on the server, the
-   workspace's `.env` locally), then restart the site (`sudo nest-site restart gari`).
-   The site keeps only the SHA-256 of the token.
+3. That line goes into the site's environment: the `.env` of its data folder on the server
+   (the workspace's `.env` locally), then the site restarts (`sudo systemctl restart
+   nest-mysite`). The site keeps only the SHA-256 of the token.
 
 4. In the keeper, click **Watch a site** and enter the site's name, its address
-   (`https://gari.ro`) and the token. The agent's address defaults to the site's address
+   (`https://example.org`) and the token. The agent's address defaults to the site's address
    followed by `/_agent`. The keeper checks the site at once, then every `check_seconds` (5 minutes).
 
 To let the keeper run actions, give it the control token instead (on the site's
@@ -139,11 +145,11 @@ A site runs in a container, and neither the site nor the keeper (another contain
 restart it. `nest-host` (in `deploy/site/`) is a small service on the server that does it
 for them: it runs `nest-site` when the keeper asks with its token.
 
-Give a watched site its **name on the server** (its `nest-site` name, `gari`) on its
+Give a watched site its **name on the server** (its `nest-site` name, `mysite`) on its
 **Change** page, and set the keeper's `host_url` and `host_token`. The site's page then has
 a **Server** section:
 
-- its systemd unit (`nest-site@gari.service`) active or not, healthy or not, and when its
+- its systemd unit (`nest-site@mysite.service`) active or not, healthy or not, and when its
   current and previous images were built;
 - **Restart** and **Back up**, one click each;
 - **Upgrade**, **Roll back**, **Stop** and **Start**, each behind a confirmation;
@@ -226,7 +232,7 @@ The keeper application sets:
 modules:
   - name: keeper
     route: /
-    config: {apps: "applications,../voievodate,../gari,../morlaca,../regionalisme,../transilpedia"}
+    config: {apps: "applications,../mysite,../othersite"}
 ```
 
 That covers Nest's own applications (`applications/`: the keeper, hello, the registry and
@@ -321,23 +327,22 @@ keeper to sign up to: you run your own, on a domain of yours, and your tokens ne
 your server.
 
 It is an ordinary Nest application, deployed like any site: the public image
-`miraur/nest-keeper`, a systemd service, its data in `/srv/nest/keeper` on the host. The kit
+`miraur/nest-keeper`, a systemd service, its data in `/var/snap/docker/common/nest/keeper` on the host. The kit
 is in `applications/keeper/deploy/`:
 
 | File | What it is |
 |---|---|
 | `DEPLOY.md` | the steps below, in full |
 | `Dockerfile` | its image, built from Nest's repository (`deploy/site/nest-images build keeper`) |
-| `nest-keeper.service` | the systemd service: the image, port 8800, `/srv/nest/keeper` mounted at `/data` |
-| `keeper.env.example` | `/etc/nest/keeper.env`: its secret, its domain, the host helper |
+| `nest-keeper.service` | the systemd service: the image, port 8800, `/var/snap/docker/common/nest/keeper` mounted at `/data`, your domain in `NEST_ALLOWED_HOSTS` |
 | `nginx.conf` | the ISPConfig nginx directives, with optional `allow` lines for your own addresses |
 
 In short:
 
 ```sh
-sudo install -d -m 0750 -o 10001 -g 10001 /srv/nest/keeper
-sudo install -m 0600 /tmp/keeper.env.example /etc/nest/keeper.env && sudo editor /etc/nest/keeper.env
-sudo install -m 0644 /tmp/nest-keeper.service /etc/systemd/system/
+sudo mkdir -p /var/snap/docker/common/nest/keeper && sudo chown webN:clientN /var/snap/docker/common/nest/keeper    # the website's user
+cd /var/snap/docker/common/nest && sudo sh /tmp/nest-secret-key keeper                  # NEST_SECRET_KEY in its .env
+sudo install -m 0644 /tmp/nest-keeper.service /etc/systemd/system/          # your domain set in it
 sudo systemctl daemon-reload && sudo systemctl enable --now nest-keeper
 echo 'a long password' | sudo docker exec -i nest-keeper nest auth create-user /src/nest/applications/keeper you@example.org --role admin --password-stdin
 ```

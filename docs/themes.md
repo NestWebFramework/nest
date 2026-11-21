@@ -69,7 +69,7 @@ layout includes `admin/preview_bar.html` and `notifications/region.html` with
 `ignore missing`, as base's does.
 
 An application's own templates and stylesheet stay on top of any theme: one that
-overrides `layout.html` (morlaca, voievodate) keeps its frame and gets the theme's
+overrides `layout.html` keeps its frame and gets the theme's
 tokens and shapes under its own skin.
 
 ## A theme for any application: settings
@@ -91,7 +91,7 @@ theme in use has its section there):
 application:
   theme: morlaca-valley
   theme_settings:
-    morlaca-valley: {tagline: "the village below the Măgura", banner: uploads/2017/12/panorama.jpg}
+    morlaca-valley: {tagline: "the village below the hill", banner: uploads/panorama.jpg}
 ```
 
 Templates read them with `{{ theme_setting("tagline") }}`: the setting of the theme in use,
@@ -109,8 +109,8 @@ its frame.
 A layout may extend a frame its themes share (`{% extends "morlaca/frame.html" %}`); the
 theme contract follows `extends` through the theme chain.
 
-Nest comes with three more written this way, made for morlaca.ro: `morlaca-valley` (the
+Nest comes with three more written this way: `morlaca-valley` (the
 valley's colours, a cross-stitch band, a village's page as the home page), and built on
 it `morlaca-heritage` (the name over a banner, a sidebar) and `morlaca-chronicle` (an
-almanac's masthead, drop capitals). morlaca gives them its words; transilpedia uses them
-with its own.
+almanac's masthead, drop capitals). Each site gives them its own words through their
+settings.

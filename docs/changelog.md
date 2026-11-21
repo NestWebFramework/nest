@@ -28,7 +28,7 @@ This documentation is for **Nest %NEST_VERSION%**.
   year in December); journeys with changes (Connection Scan Algorithm), through a station,
   direct only, by day; running days; trains' cars drawn, replacement buses; split-flap,
   LED and station boards other sites embed, and their webmasters' page; the trains
-  running now on a map; stations' places checked against the tracks; gari.ro's old
+  running now on a map; stations' places checked against the tracks; an old site's
   addresses; an admin panel for the timetable.
 - **geo**: where the reader is and what is near: a near-me page every module with places
   contributes to (`geo.near`), distances, a locate button.
@@ -51,7 +51,7 @@ This documentation is for **Nest %NEST_VERSION%**.
   (`schedule:`, `every: 6h` or `cron: "30 3 * * *"`), changed by the application, run once
   across workers and containers (a lease in the database), remembered across restarts, in
   their own threads; Admin → Scheduler, `nest scheduler jobs|run`. The timetable's sync
-  (`trains.sync`, every 6 hours on gari) and the keeper's checks (`keeper.watch`, every 5
+  (`trains.sync`, every 6 hours) and the keeper's checks (`keeper.watch`, every 5
   minutes; `keeper.prune`, nightly) are its first jobs.
 - **core**: `ModuleHost.host_of(package)` and `ModuleHost.app_name`.
 - **nest-host** (`deploy/site/`): the keeper's hands on the server: restart, back up,
@@ -67,7 +67,7 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 **Themes**
 
-- **rail-signage**: Romanian station signage (gari.ro).
+- **rail-signage**: Romanian station signage.
 - The **morlaca** themes take a top **menu** setting; **morlaca-chronicle**'s footer compact.
 
 **Core**

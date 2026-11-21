@@ -54,10 +54,9 @@ def test_every_application_of_nest_states_its_version(app):
 
 
 @pytest.mark.parametrize("site", ["gari", "morlaca", "transilpedia", "regionalisme"])
-def test_the_sites_documented_say_their_version(site):
+def test_the_sites_readmes_say_their_version(site):
     manifest = SITES / site / "module.yml"
     if not manifest.is_file():
         pytest.skip(f"{site} is not checked out beside Nest")
     v = yaml.safe_load(manifest.read_text(encoding="utf-8"))["module"]["version"]
     assert f"**Version {v}**" in (SITES / site / "README.md").read_text(encoding="utf-8")
-    assert f"**Version {v}**" in (ROOT / "docs/sites" / f"{site}.md").read_text(encoding="utf-8")

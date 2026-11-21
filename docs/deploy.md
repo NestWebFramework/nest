@@ -1,13 +1,13 @@
 # Deploying a Nest application
 
-An application in its own repository (morlaca, transilpedia, voievodate…) runs in one
+An application in its own repository runs in one
 container image built from Nest's `deploy/Dockerfile`, with Nest checked out beside it.
 
 ## The image
 
 ```sh
-cd ~/projects/morlaca
-docker build -f ../nest/deploy/Dockerfile --build-context nest=../nest -t morlaca .
+cd ~/projects/mysite
+docker build -f ../nest/deploy/Dockerfile --build-context nest=../nest -t mysite .
 ```
 
 The application's `uv.lock` fixes every version. Inside, the application is `/src/app`
@@ -27,7 +27,7 @@ docker compose run --rm app nest auth create-user /src/app you@example.ro --role
 | variable | |
 |---|---|
 | `NEST_SECRET_KEY` | required in production, 32+ characters: signs sessions and forms |
-| `NEST_ALLOWED_HOSTS` | the hosts it answers (`morlaca.ro,www.morlaca.ro`); others get 400 |
+| `NEST_ALLOWED_HOSTS` | the hosts it answers (`example.org,www.example.org`); others get 400 |
 | `NEST_TRUSTED_PROXIES` | whose `X-Forwarded-*` headers are believed (`*` only when the port is reachable from the proxy alone) |
 | `PORT`, `NEST_WORKERS`, `NEST_LOG_LEVEL` | the port, processes, log level |
 
@@ -119,7 +119,7 @@ To run the engine as a service of its own (another container), start `nest engin
 --host 0.0.0.0 --port 8001` there and give the workers `NEST_ENGINE_URL=http://engine:8001`;
 both need the same workspace secret key.
 
-Measured with morlaca (4 workers x 8 threads): about 280 category pages a second
+Measured with a content site (4 workers x 8 threads): about 280 category pages a second
 and 320 feeds, a worker killed is replaced in seconds, and 3,000 requests made
 during a HUP reload all succeeded.
 
@@ -163,7 +163,7 @@ large request stops at the door:
 
 | Proxy | Directive |
 |---|---|
-| Caddy | `request_body { max_size 25MB }` (morlaca's `deploy/Caddyfile`) |
+| Caddy | `request_body { max_size 25MB }` |
 | nginx (ISPConfig: the site's **Options → nginx Directives**) | `client_max_body_size 25m;` |
 
 An uploaded picture (a gallery's photos, an article's pictures) is read whole with

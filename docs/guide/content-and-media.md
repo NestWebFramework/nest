@@ -111,7 +111,7 @@ A WordPress site moves in from its mysqldump and uploads folder; no MySQL server
 needed:
 
 ```sh
-uv run nest content import-wordpress ../morlaca ~/legacy/morlaca.sql \
+uv run nest content import-wordpress ../mysite ~/legacy/mysite.sql \
     --uploads ~/legacy/wp-content/uploads
 ```
 
@@ -122,7 +122,7 @@ to the old site's uploads become `/media/uploads/...`.
 A Geticus site's pages come in the same way:
 
 ```sh
-uv run nest content import-geticus ../gari ~/legacy/gari.sql --root ~/legacy/gari
+uv run nest content import-geticus ../mysite ~/legacy/mysite.sql --root ~/legacy/mysite
 ```
 
 Both are safe to run again: what they brought before is updated, not duplicated.
@@ -178,9 +178,9 @@ from WordPress, and Geticus galleries, and keep the plugins' ids, so
 `[nggallery id=1]` in imported pages keeps working.
 
 ```sh
-uv run nest gallery import-wordpress ../morlaca ~/legacy/morlaca.sql --uploads ~/legacy/wp-content/uploads
-uv run nest gallery list ../morlaca
-uv run nest gallery tidy ../morlaca     # clear descriptions that are file names or camera data
+uv run nest gallery import-wordpress ../mysite ~/legacy/mysite.sql --uploads ~/legacy/wp-content/uploads
+uv run nest gallery list ../mysite
+uv run nest gallery tidy ../mysite     # clear descriptions that are file names or camera data
 ```
 
 ## Maps
@@ -217,7 +217,7 @@ provider's tile host.
 ### A map on another module's page
 
 A module that has its own data can put a map on its page without depending on
-`maps`, through the `maps.element` lookup. gari.ro's station pages do this:
+`maps`, through the `maps.element` lookup. The trains module's station pages do this:
 
 ```python
 nest = request.app.state.nest

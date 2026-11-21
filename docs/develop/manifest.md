@@ -131,8 +131,8 @@ failing later.
 
 Setting names are snake_case. The environment variable for a setting is
 `NEST_<APP>__<OWNER>__<KEY>`, upper-case, other characters as `_`: the trains module's
-secret `legacy_key` in the application `gari` is `NEST_GARI__TRAINS__LEGACY_KEY`; the
-PostgreSQL provider's password is `NEST_GARI__DB_POSTGRES__PASSWORD`.
+secret `legacy_key` in the application `mysite` is `NEST_MYSITE__TRAINS__LEGACY_KEY`; the
+PostgreSQL provider's password is `NEST_MYSITE__DB_POSTGRES__PASSWORD`.
 
 ## Files: templates, static, styles, locales
 

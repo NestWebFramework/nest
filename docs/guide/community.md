@@ -122,7 +122,7 @@ include it in any site with an admin panel.
 
 ## Glossary proposals
 
-The `glossary` module (regionalisme.ro's dictionaries) can let visitors propose new
+The `glossary` module can let visitors propose new
 words and meanings, which an editor approves one by one.
 
 ```yaml
@@ -151,8 +151,6 @@ senses. Rejected, it stays out of sight.
 `hangman` is a word game on any module's words. It asks for a word through the
 `words.random` lookup, which the glossary answers, and shows the word's meaning as a
 clue and a link to its page at the end.
-
-![Hangman on regionalisme.ro](../images/sites/regionalisme-hangman.png)
 
 | Setting | Default | Meaning |
 |---|---|---|

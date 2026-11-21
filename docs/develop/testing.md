@@ -93,7 +93,7 @@ def test_hangman_without_words_says_so(tmp_path):
 
 When several tests share a larger application, keep it as a folder in
 `tests/fixtures/` (the glossary's tests use `tests/fixtures/glossary-app/module.yml`,
-the glossary as regionalisme.ro mounts it) and make it in a fixture. Data is put in
+the glossary as a dictionary site mounts it) and make it in a fixture. Data is put in
 through the module's own service functions, with the bound providers:
 
 ```python
@@ -218,10 +218,10 @@ in `tmp_path` to test ordering and errors.
 
 ## Contract tests in an application
 
-An application kept in its own repository (gari.ro, regionalisme.ro) depends on Nest's
+An application kept in its own repository depends on Nest's
 packages twice: in `module.yml`'s `deps` (by ecosystem, with version ranges) and in
-`pyproject.toml`'s dependencies. A contract test keeps them in step. From
-`gari/tests/test_contract.py`:
+`pyproject.toml`'s dependencies. A contract test keeps them in step, in the
+application's `tests/test_contract.py`:
 
 ```python
 from nest.catalog import Catalog, Entry
@@ -250,7 +250,7 @@ application itself, loads a small sample of real data, and asks for its main pag
 def test_pages(tmp_path):
     app = create_app(APPLICATION, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
     with TestClient(app) as c:
-        for path in ("/cfr/gari", "/cfr/gara/brasov", "/in-apropiere/"):
+        for path in ("/", "/cfr/", "/in-apropiere/"):
             assert c.get(path).status_code == 200, path
 ```
 

@@ -65,14 +65,14 @@ with rsync: the same data, and the settings and `.env` with them.)
 ## On a server: a service per image
 
 On a server set up as in [the ISPConfig guide](../deploy-ispconfig.md), each application
-runs as `nest-<app>`, with its data in `/srv/nest/<app>` mounted at `/data`:
+runs as `nest-<app>`, with its data in `/var/snap/docker/common/nest/<app>` mounted at `/data`:
 
 | Command | What it does |
 |---|---|
-| `sudo docker exec nest-A nest backup /src/app --keep 14` | a backup now, into `/srv/nest/A/backups/` (root's crontab runs it every night) |
+| `sudo docker exec nest-A nest backup /src/app --keep 14` | a backup now, into `/var/snap/docker/common/nest/A/backups/` (root's crontab runs it every night) |
 | `sudo systemctl restart nest-A` | an update: pulls the newest image, migrates, serves |
 | `sudo docker exec nest-A nest db status /src/app` | each module's migrations |
-| a restore | stop the service, then `sudo docker run --rm --env-file /etc/nest/A.env -v /srv/nest/A:/data <image> nest restore /src/app /data/backups/<archive> --force`, start it |
+| a restore | stop the service, then `sudo docker run --rm --user "$(stat -c %u:%g /var/snap/docker/common/nest/A)" -v /var/snap/docker/common/nest/A:/data <image> nest restore /src/app /data/backups/<archive> --force`, start it |
 
 Back up before each update: a new image may migrate the database, and going back to the
 older image then needs the data from before.
@@ -80,12 +80,12 @@ older image then needs the data from before.
 ## On a server: `nest-site`
 
 On a server run with the `nest-site` tool instead (the guide's "Another way"), it wraps
-these commands and runs them inside the site's image, against `/srv/nest/<site>`
+these commands and runs them inside the site's image, against the data folder (`DATA` in its `.conf`)
 mounted at `/data`.
 
 | Command | What it does |
 |---|---|
-| `sudo nest-site backup S` | a backup now, into `/srv/nest/S/backups/`, keeping `KEEP` (14 by default) |
+| `sudo nest-site backup S` | a backup now, into the data folder's `backups/`, keeping `KEEP` (14 by default) |
 | `sudo nest-site restore S ARCHIVE` | stops the site, restores with `--force`, starts it, waits for `/healthz`. An archive outside the data folder is copied into `backups/` first |
 | `sudo nest-site upgrade S [--no-pull]` | pull, build, back up, restart, wait until healthy; roll back otherwise |
 | `sudo nest-site rollback S [ARCHIVE]` | the image before, and the backup made before the upgrade |
@@ -158,13 +158,13 @@ three `NEST_MIGRATE` modes and [Databases](../develop/database.md) for writing m
 
 ## Copy backups off the server
 
-Backups in `/srv/nest/S/backups/` survive a broken container, but not a lost disk. Copy them
+Backups in the data folder (`/var/snap/docker/common/nest/S/backups/`) survive a broken container, but not a lost disk. Copy them
 elsewhere: rsync the folder to another machine, or include it in the hosting provider's
 backup. The archives contain everything except the secrets, so store them where you would
 store the site's data.
 
 ```sh
-rsync -a server:/srv/nest/S/backups/ /backups/S/
+rsync -a server:/var/snap/docker/common/nest/S/backups/ /backups/S/
 ```
 
 ## Test a restore

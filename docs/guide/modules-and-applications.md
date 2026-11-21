@@ -52,7 +52,7 @@ modules:
 | Key | Meaning |
 |---|---|
 | `name` | The package's name, as `nest catalog` lists it |
-| `route` | Where its pages are served. Choose any path; old sites often keep their old ones (gari.ro's timetable is at `/cfr`). |
+| `route` | Where its pages are served. Choose any path; old sites often keep their old ones (a timetable can stay at `/cfr`). |
 | `config` | Values for the module's settings, for this application |
 | `core: true` | It can never be disabled or uninstalled; nor can what it depends on |
 | `enabled: false` | Listed, but off until an administrator turns it on |
@@ -82,7 +82,7 @@ guests may comment, whether registration is open.
       allow_guests: true    # guests' comments wait for a moderator
 ```
 
-Secrets never go here. A module's secret (gari.ro's old address key, a database
+Secrets never go here. A module's secret (an old site's address key, a database
 password) is set in the environment or the workspace's `.env`.
 
 ## Changing modules on a running site
@@ -129,14 +129,14 @@ of its own, beside the Nest checkout:
 ```text
 ~/projects/
   nest/          the framework
-  gari/          module.yml, pyproject.toml, locales/, tests/
-  morlaca/
+  mysite/        module.yml, pyproject.toml, locales/, tests/
+  othersite/
 ```
 
 ### deps, by ecosystem
 
 Such an application lists what it needs in `deps`, grouped by the ecosystem each
-package belongs to, with a version range. From gari.ro's `module.yml`, shortened:
+package belongs to, with a version range. From a timetable site's `module.yml`, shortened:
 
 ```yaml
 deps:
@@ -163,7 +163,7 @@ where Nest is:
 
 ```toml
 [project]
-name = "gari"
+name = "mysite"
 requires-python = ">=3.12"
 dependencies = [
     "nest-core>=0.2,<1",
@@ -183,7 +183,7 @@ nest-trains = { path = "../nest/modules/trains", editable = true }
 Then, from the site's folder:
 
 ```sh
-cd ~/projects/gari
+cd ~/projects/mysite
 uv sync
 uv run nest run .
 ```
@@ -197,7 +197,7 @@ The sites carry `tests/test_contract.py`, which checks two things:
 - `pyproject.toml` asks for exactly the versions `deps` gives, and nothing that
   `deps` does not list (apart from `nest-core`).
 
-Copy it from an existing site (gari, morlaca) into a new one. When you add a Nest
+Copy it from an existing site into a new one. When you add a Nest
 module later, add it to `deps` first, then to `pyproject.toml`, and the test tells
 you if you forgot one.
 
@@ -206,7 +206,7 @@ you if you forgot one.
 The keeper (`applications/keeper`, port 8000) watches the deployed sites through their
 agents, and its **Applications** page (`/admin/keeper/apps`) finds every application on
 this machine: Nest's own in `applications/`, and the sites in the folders of its `apps`
-setting (`../gari`, `../morlaca`, ...). For each it shows the manifest, the plan (start
+setting (`../mysite`, ...). For each it shows the manifest, the plan (start
 order, routes, bindings, notes), any problems, and whether it answers its health check.
 Its **Packages** page per application installs and removes packages the same way
 `nest packages` does.

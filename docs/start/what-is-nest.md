@@ -33,7 +33,7 @@ published name, never through its internals.
 
 | Layer | What it is | Example |
 |---|---|---|
-| **Application** | The site itself: a `module.yml` that lists modules, binds interfaces to providers, and names a theme and languages. It runs on one port. | `applications/hello`, `../gari` |
+| **Application** | The site itself: a `module.yml` that lists modules, binds interfaces to providers, and names a theme and languages. It runs on one port. | `applications/hello`, `../mysite` |
 | **Module** | Reusable code with routes, templates, settings, admin pages and its own tables. It owns no port; the application mounts it at a route. | `content`, `gallery`, `comments`, `forum` |
 | **Interface** | A named contract with no implementation. Modules depend on it, never on a particular provider. | `nest.db`, `nest.search`, `nest.storage`, `nest.cache` |
 | **Provider** | An implementation of an interface, with its own settings. The application chooses one. | `db-sqlite`, `db-postgres`, `search-sqlite`, `storage-local` |
@@ -105,23 +105,6 @@ The repository holds the host and a set of packages any site can use:
 
 Every module has a reference page, for example
 [the content module](/docs/reference/modules/content).
-
-## Sites built with it
-
-Real sites run on Nest. Each lives in a repository of its own, beside the Nest
-checkout, and lists the Nest packages it needs.
-
-| Site | What it is | Main modules |
-|---|---|---|
-| [gari.ro](../sites/gari.md) | The Romanian train timetable: stations, trains, journeys with changes, departure boards | `trains`, `content`, `gallery`, `maps`, `geo` |
-| [regionalisme.ro](../sites/regionalisme.md) | A dictionary of Romanian regional words, with visitor proposals and a word game | `glossary`, `comments`, `hangman` |
-| [morlaca.ro](../sites/morlaca.md) | A village site moved in from WordPress, in Romanian and English | `content`, `gallery`, `maps`, `translations` |
-| [transilpedia](../sites/transilpedia.md) | An encyclopedia of Transylvania | `content`, `gallery`, `translations` |
-| voievodate.ro | A text browser game about a life in the medieval Romanian lands, on the Saga engine | `saga` and its subsystems |
-
-morlaca and transilpedia are made of almost the same modules, so they have the same
-admin panel. They look different only because they use different themes. See the
-[overview of the sites](../sites/overview.md).
 
 ## What Nest is not
 

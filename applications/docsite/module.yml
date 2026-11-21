@@ -29,7 +29,7 @@ modules:
       tree: ../../docs
       home: true
       edit_url: "https://github.com/NestWebFramework/nest/edit/main/docs/{path}"
-      nav: "Documentation = /docs/; Get started = /docs/start/install; Modules = /docs/reference/modules/content; Sites = /docs/sites/overview; Packages = https://registry.nest-framework.org; GitHub = https://github.com/NestWebFramework/nest"
+      nav: "Documentation = /docs/; Get started = /docs/start/install; Modules = /docs/reference/modules/content; Packages = https://registry.nest-framework.org; GitHub = https://github.com/NestWebFramework/nest"
   - name: seo
     config:
       site_url: https://nest-framework.org

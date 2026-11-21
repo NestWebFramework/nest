@@ -60,14 +60,15 @@ nest db upgrade APP       # apply the pending migrations
 ## The environment
 
 Secrets and per-server values come from the environment or the workspace's `.env`, never
-from `module.yml`. On a server set up with `nest-site`, they live in `/etc/nest/<site>.env`
-(readable by root only).
+from `module.yml`. On a server, a site's secrets are in the `.env` of its data folder
+(readable by the site's user only), and its service passes the other production settings
+(`-e NEST_ALLOWED_HOSTS=…`).
 
 | Variable | What it does |
 |---|---|
 | `NEST_ENV` | `production` on a server (the image sets it) |
 | `NEST_SECRET_KEY` | 32 characters or more; signs sessions and forms. Required in production. `nest-site init` writes a fresh one |
-| `NEST_ALLOWED_HOSTS` | the host names the site answers, comma-separated (`gari.ro,www.gari.ro`). Any other host gets 400 |
+| `NEST_ALLOWED_HOSTS` | the host names the site answers, comma-separated (`example.org,www.example.org`). Any other host gets 400 |
 | `NEST_TRUSTED_PROXIES` | the proxies whose `X-Forwarded-*` headers are believed. `*` only when the port is reachable from the proxy alone (bound to `127.0.0.1`, as `nest-site` does) |
 | `NEST_WORKERS` | processes for `nest serve`; each uses about 85 MB |
 | `NEST_THREADS` | each worker's threads for synchronous handlers |
@@ -97,8 +98,8 @@ the names are in capitals, and any character other than a letter or digit become
 Gări's examples:
 
 ```ini
-NEST_GARI__TRAINS__SYNC=false          # trains.sync for the application gari
-NEST_GARI__TRAINS__SYNC_HOURS=24
+NEST_MYSITE__TRAINS__SYNC=false        # trains.sync for the application mysite
+NEST_MYSITE__TRAINS__SYNC_HOURS=24
 ```
 
 Secret settings (the trains module's `legacy_key`, a provider's password) belong here or
@@ -112,8 +113,7 @@ NEST_BIND__NEST_DB=db-postgres
 NEST_BIND__NEST_STORAGE=storage-s3
 ```
 
-Each site's `deploy/<site>.env.example` has these lines commented out, ready for a database
-and file server.
+They go in the data folder's `.env` when a site moves to a database and file server.
 
 ## Is it ready? `nest check`
 
@@ -173,14 +173,13 @@ manifest.
 
 ## Deploying
 
-![nginx in front, the site's container behind it, its data in /srv/nest/<site> on the host](../images/diagrams/deploy.svg)
+![nginx in front, the site's container behind it, its data in a folder on the host](../images/diagrams/deploy.svg)
 
-**One container per site, data on the host.** This is how Gări, Regionalisme, Morlaca and
-Transilpedia run. Each site has an image built from its repository and Nest
-(`deploy/Dockerfile`). systemd runs it (`nest-site@<site>.service`), bound to
-`127.0.0.1:<port>`, behind the server's nginx. Its workspace is a folder on the host,
-`/srv/nest/<site>`, mounted at `/data`. A rebuild, restart or crash never touches the data.
-The `nest-site` tool builds, upgrades, rolls back, backs up and restores. Read
+**One image per site, data on the host.** Each site has an image built from its repository and Nest
+(`deploy/site/nest-images`), on Docker Hub. systemd runs it (`nest-<site>.service`), bound
+to `127.0.0.1:<port>`, behind the server's nginx. Its workspace is a folder on the host,
+`/var/snap/docker/common/nest/<site>`, mounted at `/data`, and the container runs as that folder's owner. A
+restart, a new image or a crash never touches the data. Read
 [the ISPConfig guide](../deploy-ispconfig.md) for the full procedure, and
 [Deploying](../deploy.md) for the image, its environment and `nest serve`.
 
@@ -192,8 +191,7 @@ Each site repository has a `deploy/` folder:
 | File | Purpose |
 |---|---|
 | `DEPLOY.md` | that site's own commands, step by step |
-| `nest-<site>.service` | the systemd service: its image from Docker Hub, its port, its data folder `/srv/nest/<site>` mounted at `/data` |
-| `<site>.env.example` | the lines for `/etc/nest/<site>.env` (secrets and production settings) |
+| `nest-<site>.service` | the systemd service: its image from Docker Hub, its port, its data folder `/var/snap/docker/common/nest/<site>` mounted at `/data` |
 | `nginx.conf` | the directives for the ISPConfig website: the proxy, upload size, unbuffered live updates |
 
 > [!TIP]
@@ -205,4 +203,3 @@ Each site repository has a `deploy/` folder:
 - [Backups and upgrades](backups-and-upgrades.md): `nest backup`, `nest restore`,
   `nest-site upgrade` and its automatic rollback.
 - [The keeper](keeper.md): watching the deployed sites through their agents (uptime, versions, events, backups), and every application at once.
-- [Sites built with Nest](../sites/overview.md): four real deployments.

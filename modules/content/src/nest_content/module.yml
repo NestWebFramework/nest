@@ -113,7 +113,7 @@ settings:
     type: str
     default: ""
     description: >
-      The address the public uses (https://morlaca.ro), for the absolute links of the
+      The address the public uses (https://example.org), for the absolute links of the
       sitemap, the feed and what a shared page shows; empty takes the request's.
 
 # Videos play from YouTube's cookieless player, and only when a reader plays one.

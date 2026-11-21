@@ -7,7 +7,7 @@ description: "How a Nest application's admin panel is made from its modules: set
 
 Every Nest application has one admin panel, and nobody writes it. The `admin` module
 is a shell; each module the application includes adds its own pages to it. Two sites
-made of the same modules (morlaca and transilpedia) have the same panel. A game made
+made of the same modules have the same panel. A game made
 with the Saga engine has the engine's panel.
 
 ## Adding it
