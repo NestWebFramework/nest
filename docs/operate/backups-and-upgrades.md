@@ -1,6 +1,6 @@
 ---
 title: "Backups and upgrades"
-description: "nest backup and nest restore, the nightly backup timer, nest-site upgrade with its automatic rollback, and checking migrations."
+description: "nest backup and nest restore, backups and updates on the server, nest-site upgrade with its automatic rollback, and checking migrations."
 ---
 
 # Backups and upgrades
@@ -59,12 +59,28 @@ extracting, it removes any stale `-wal` and `-shm` files, so an old write-ahead 
 replayed over the restored copy. Then it prints what the archive did not include.
 
 The same pair moves a site: back it up where it was imported, copy the archive, and restore
-it on the server. Each site's `deploy/DEPLOY.md` does exactly this for its first deployment.
+it on the server. (Each site's `deploy/DEPLOY.md` moves the whole workspace folder instead,
+with rsync: the same data, and the settings and `.env` with them.)
+
+## On a server: a service per image
+
+On a server set up as in [the ISPConfig guide](../deploy-ispconfig.md), each application
+runs as `nest-<app>`, with its data in `/srv/nest/<app>` mounted at `/data`:
+
+| Command | What it does |
+|---|---|
+| `sudo docker exec nest-A nest backup /src/app --keep 14` | a backup now, into `/srv/nest/A/backups/` (root's crontab runs it every night) |
+| `sudo systemctl restart nest-A` | an update: pulls the newest image, migrates, serves |
+| `sudo docker exec nest-A nest db status /src/app` | each module's migrations |
+| a restore | stop the service, then `sudo docker run --rm --env-file /etc/nest/A.env -v /srv/nest/A:/data <image> nest restore /src/app /data/backups/<archive> --force`, start it |
+
+Back up before each update: a new image may migrate the database, and going back to the
+older image then needs the data from before.
 
 ## On a server: `nest-site`
 
-On a server set up as in [the ISPConfig guide](../deploy-ispconfig.md), the `nest-site` tool
-wraps these commands and runs them inside the site's image, against `/srv/nest/<site>`
+On a server run with the `nest-site` tool instead (the guide's "Another way"), it wraps
+these commands and runs them inside the site's image, against `/srv/nest/<site>`
 mounted at `/data`.
 
 | Command | What it does |

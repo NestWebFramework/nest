@@ -86,7 +86,7 @@ module.yml          the application: modules and routes, settings, theme and the
 pyproject.toml      Nest's packages at the same versions, installed from ../nest
 locales/            ro.json and en.json: its own words (tagline, menu, footer)
 tests/              test_contract.py keeps module.yml and pyproject.toml in step
-deploy/             DEPLOY.md, site.conf.example, <site>.env.example, nginx.conf
+deploy/             DEPLOY.md, nest-<site>.service, <site>.env.example, nginx.conf
 ```
 
 **The contract.** `deps:` lists every Nest package the site uses, by ecosystem, each with

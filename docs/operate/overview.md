@@ -192,12 +192,12 @@ Each site repository has a `deploy/` folder:
 | File | Purpose |
 |---|---|
 | `DEPLOY.md` | that site's own commands, step by step |
-| `site.conf.example` | becomes `/etc/nest/<site>.conf`: `PORT`, `DATA`, `SRC`, `REPO`, `IMAGE`, `MEMORY`, `KEEP` (no secrets) |
+| `nest-<site>.service` | the systemd service: its image from Docker Hub, its port, its data folder `/srv/nest/<site>` mounted at `/data` |
 | `<site>.env.example` | the lines for `/etc/nest/<site>.env` (secrets and production settings) |
 | `nginx.conf` | the directives for the ISPConfig website: the proxy, upload size, unbuffered live updates |
 
 > [!TIP]
-> Run `nest check` once the site is up, set up the nightly backup timer, and copy the
+> Run `nest check` once the site is up, set up the nightly backup, and copy the
 > backups off the server. [Backups and upgrades](backups-and-upgrades.md) explains how.
 
 ## Where next

@@ -1,90 +1,140 @@
-# Deploying the keeper
+# Running the keeper
 
-The keeper watches your deployed sites: Nest sites through their agents, any other service
-(a RoboHub instance, say) with a web check. It can restart, back up, upgrade and roll back
-the Nest sites on its own server through the host helper. It is one person's tool: you run
-your own, on a domain of yours. This kit uses `keeper.example.org`: put your own domain in
-`keeper.env` and `nginx.conf`.
+The keeper runs on the server as the Nest registry does: one Docker image, run by a systemd
+service, behind an ISPConfig website (nginx, Let's Encrypt). What differs is its data:
+**they are not in the image, nor in a Docker volume**, but in a folder on the host,
+mounted into the container. Restarting, updating or replacing the container leaves them
+as they are.
 
-It runs like every Nest site on the server: a container (`nest-site@keeper`), its data on
-the host (`/srv/nest/keeper`), behind nginx. See `docs/deploy-ispconfig.md` for the server
-itself (Docker, `nest-site`, the systemd units).
+| | |
+|---|---|
+| image | `miraur/nest-keeper:latest` |
+| service | `nest-keeper` (`deploy/nest-keeper.service`) |
+| data | `/srv/nest/keeper` on the host, `/data` in the container |
+| secrets, settings | `/etc/nest/keeper.env` (`deploy/keeper.env.example`) |
+| port | `127.0.0.1:8800` (loopback only: nginx faces the network) |
+| domain | `keeper.example.org` |
 
-## 1. The keeper
+## 1. The image
 
-```sh
-sudo install -m 0640 /opt/nest/src/nest/applications/keeper/deploy/site.conf.example /etc/nest/keeper.conf
-sudo nest-site init keeper              # /srv/nest/keeper, and /etc/nest/keeper.env with a fresh secret
-sudo editor /etc/nest/keeper.env         # the rest, from deploy/keeper.env.example
-sudo nest-site build keeper              # pulls miraur/nest-keeper:latest (public)
-sudo systemctl enable --now nest-site@keeper nest-site-backup@keeper.timer
-```
-
-## 2. Your account, before the domain is on
-
-The first account made on a fresh keeper becomes its administrator. Make yours from the
-server, before nginx sends anyone to it:
+`miraur/nest-keeper:latest`, public on Docker Hub (also `:0.2.0`). It is built and pushed from
+Nest's repository, out of committed code only:
 
 ```sh
-sudo nest-site nest keeper auth create-user /src/nest/applications/keeper you@example.org --role admin --password-stdin
+deploy/site/nest-images build keeper
+deploy/site/nest-images push keeper
 ```
 
-Registration stays off (`auth.allow_registration` is false): nobody else can make an
-account. Others who want a keeper run their own (docs: "Run your own keeper").
+It holds the code only. It runs `nest db upgrade`, then serves on port 8000, as an
+unprivileged user (uid 10001).
 
-## 3. The domain
+## 2. DNS
 
-ISPConfig → Sites → Website `keeper.example.org`: PHP disabled, Let's Encrypt on; under
-**Options → nginx Directives**, `deploy/nginx.conf`. It proxies to `127.0.0.1:8800`. Its
-`allow` lines can limit the keeper to your own addresses.
+An `A` (and `AAAA`) record: `keeper.example.org` → the server.
 
-Then sign in at `https://keeper.example.org/cont/login`.
+## 3. The data, outside the image
 
-## 4. The sites it watches
-
-For each Nest site, on the server (or any machine with Nest):
+`/srv/nest/keeper` on the host, mounted at `/data` in the container: the databases
+(`data/app.db`, `data/search.db`), the uploaded files (`media/`), the settings made in the
+admin panel (`data/settings.conf`), the backups (`backups/`). The container is thrown away
+at each stop; this folder stays, through restarts, new images and going back to an older
+one. It belongs to uid 10001, the user the image runs as.
 
 ```sh
-nest agent token gari                  # or --control, to also run its actions
+sudo install -d -m 0755 /srv/nest
+sudo install -d -m 0750 -o 10001 -g 10001 /srv/nest/keeper
 ```
 
-Put the `NEST_GARI__AGENT__…_TOKEN=sha256:…` line in `/etc/nest/gari.env`, run
-`sudo nest-site restart gari`, then **Watch a site** in the keeper with
-`https://gari.ro` and the `na_…` token. The keeper reaches each site at its public address.
-
-For a service without an agent (a RoboHub instance), choose **as a web address**: the keeper
-asks the address and counts an answer below 400 as up. A service that answers the agent's
-status format (docs: "The agent's status format") gets the full card.
-
-## 5. Restarts and upgrades (optional)
-
-Install the host helper (`docs/deploy-ispconfig.md`, "Restarts and upgrades from the
-keeper") with `BIND=172.17.0.1` in `/etc/nest/host.conf`. The keeper's container reaches the
-host there. If ufw guards the host, let the containers in:
+Once the service runs, and **before** the domain points at it, make your account (the first
+account of a fresh keeper becomes its administrator; registration is off after it):
 
 ```sh
-sudo ufw allow in on docker0 to 172.17.0.1 port 8090 proto tcp
+echo 'a long password' | sudo docker exec -i nest-keeper nest auth create-user /src/nest/applications/keeper you@example.org --role admin --password-stdin
 ```
 
-Then, in `/etc/nest/keeper.env`:
+## 4. The environment
+
+The two files the server needs are in this repository's `deploy/` folder, on your machine
+(or on GitHub). Copy them over, from the repository's folder:
+
+```sh
+scp deploy/keeper.env.example deploy/nest-keeper.service server:/tmp/
+```
+
+Then on the server, the environment, filled in:
+
+```sh
+sudo install -d -m 0750 /etc/nest
+sudo install -m 0600 /tmp/keeper.env.example /etc/nest/keeper.env
+sudo editor /etc/nest/keeper.env
+```
+
+`NEST_SECRET_KEY` signs the sessions and links: `openssl rand -hex 32`.
+One `KEY=VALUE` per line, nothing after the value.
+
+## 5. The service
+
+The service, copied over in step 4:
+
+```sh
+sudo install -m 0644 /tmp/nest-keeper.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now nest-keeper
+curl -s http://127.0.0.1:8800/healthz        # {"status":"ok"}
+```
+
+At each start it pulls the image (the cached one if Docker Hub cannot be reached), then
+runs the container with the data folder mounted. The image migrates the database before it
+serves.
+
+## 6. ISPConfig
+
+**Sites → Website**: domain `keeper.example.org`, PHP **disabled**, SSL and **Let's Encrypt SSL**
+on. Under
+**Options → nginx Directives**, paste `deploy/nginx.conf` (it proxies to `127.0.0.1:8800`).
+
+## 7. Updates
+
+After a new image is pushed (step 1):
+
+```sh
+sudo docker exec nest-keeper nest backup /src/nest/applications/keeper     # a backup first, in /srv/nest/keeper/backups/
+sudo systemctl restart nest-keeper                       # pulls the new image, migrates, serves
+```
+
+To go back: `Environment=IMAGE=miraur/nest-keeper:0.2.0` (an older tag) in the service, then
+`sudo systemctl daemon-reload && sudo systemctl restart nest-keeper`. If the newer one had
+migrated the database, restore the backup made before: stop the service, then
+`sudo docker run --rm --env-file /etc/nest/keeper.env -v /srv/nest/keeper:/data miraur/nest-keeper:<that tag> nest restore /src/nest/applications/keeper /data/backups/<archive> --force`.
+
+## 8. Backups
+
+One a night, 14 kept, by root's crontab (`sudo crontab -e`):
 
 ```text
-NEST_KEEPER__KEEPER__HOST_URL=http://172.17.0.1:8090
-NEST_KEEPER__KEEPER__HOST_TOKEN=nh_…
+30 3 * * * docker exec nest-keeper nest backup /src/nest/applications/keeper --keep 14 >/dev/null
 ```
 
-and `sudo nest-site restart keeper`. On each Nest site's **Change** page, give its name on
-the server (`gari`): its page gets the Server section.
+Each is one archive in `/srv/nest/keeper/backups/`: the databases (copied consistently while
+the site runs), the files, the settings; not the `.env`. **Copy them off the server** too.
 
-## Upgrades
+## Watching the sites, restarting them
 
-```sh
-sudo nest-site upgrade keeper
-```
+In the keeper, **Watch a site** for each one: its address and its agent's token (each site's
+DEPLOY.md, "The keeper"). For services without a Nest agent (a RoboHub instance), choose
+**as a web address**.
 
-It pulls `miraur/nest-keeper:latest` (pushed with `deploy/site/nest-images build keeper`
-and `push keeper`), backs up, migrates and restarts, and rolls back by itself
-if the new keeper is not healthy. The keeper can also be upgraded from its own page
-through the host helper (give it the name `keeper` on the server), but the page goes away
-while it restarts, so the job's output is lost from view. It is still written to
-`journalctl -u nest-host`.
+To restart, back up and upgrade the sites from the keeper, install the host helper
+(Nest's `docs/deploy-ispconfig.md`, "Restarts and upgrades from the keeper") with
+`BIND=172.17.0.1`, and set `NEST_KEEPER__KEEPER__HOST_URL` and `..._HOST_TOKEN` in
+`/etc/nest/keeper.env`.
+
+## Every day
+
+| | |
+|---|---|
+| its log | `sudo journalctl -u nest-keeper -f` |
+| restart | `sudo systemctl restart nest-keeper` |
+| what production asks of it | `sudo docker exec nest-keeper nest check /src/nest/applications/keeper` |
+| its migrations | `sudo docker exec nest-keeper nest db status /src/nest/applications/keeper` |
+| any nest command | `sudo docker exec -it nest-keeper nest <command> /src/nest/applications/keeper …` |

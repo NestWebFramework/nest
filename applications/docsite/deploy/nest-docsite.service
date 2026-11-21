@@ -1,0 +1,43 @@
+# systemd unit for nest-framework.org, run as a container (as the Nest registry runs).
+#
+# systemd pulls the image, runs the container in the foreground and restarts it; the
+# container has no restart policy of its own (one supervisor, not two). Its data are a
+# folder on the host, /srv/nest/docsite, mounted at /data: databases, uploaded files,
+# settings, backups. The container is thrown away at each stop; the folder stays, through
+# restarts, new images and rollbacks. The port is bound to the loopback: nginx (ISPConfig's
+# vhost) is what faces the network.
+#
+#   sudo install -m 0644 nest-docsite.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now nest-docsite
+
+[Unit]
+Description=nest-framework.org (Nest)
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+ConditionPathIsDirectory=/srv/nest/docsite
+
+[Service]
+Type=simple
+# a version instead of latest pins it (0.1.0), or goes back to it
+Environment=IMAGE=miraur/nest-docsite:latest
+
+# the cached image when the pull fails, so a host without network at boot still starts
+ExecStartPre=-/usr/bin/docker pull ${IMAGE}
+ExecStartPre=-/usr/bin/docker rm -f nest-docsite
+ExecStart=/usr/bin/docker run --rm --name nest-docsite \
+    --env-file /etc/nest/docsite.env \
+    -v /srv/nest/docsite:/data \
+    -p 127.0.0.1:8700:8000 \
+    --memory 512m \
+    --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+    ${IMAGE}
+ExecStop=/usr/bin/docker stop -t 30 nest-docsite
+
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=300
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target

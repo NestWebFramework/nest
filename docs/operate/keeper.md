@@ -320,25 +320,26 @@ control tokens and the host helper it can restart and upgrade them. So there is 
 keeper to sign up to: you run your own, on a domain of yours, and your tokens never leave
 your server.
 
-It is an ordinary Nest application, deployed like any site with `nest-site`. The kit is in
-`applications/keeper/deploy/`:
+It is an ordinary Nest application, deployed like any site: the public image
+`miraur/nest-keeper`, a systemd service, its data in `/srv/nest/keeper` on the host. The kit
+is in `applications/keeper/deploy/`:
 
 | File | What it is |
 |---|---|
 | `DEPLOY.md` | the steps below, in full |
-| `Dockerfile` | its image, built from Nest's repository |
-| `site.conf.example` | `/etc/nest/keeper.conf`: port 8800, data in `/srv/nest/keeper` |
+| `Dockerfile` | its image, built from Nest's repository (`deploy/site/nest-images build keeper`) |
+| `nest-keeper.service` | the systemd service: the image, port 8800, `/srv/nest/keeper` mounted at `/data` |
 | `keeper.env.example` | `/etc/nest/keeper.env`: its secret, its domain, the host helper |
 | `nginx.conf` | the ISPConfig nginx directives, with optional `allow` lines for your own addresses |
 
 In short:
 
 ```sh
-sudo install -m 0640 /opt/nest/src/nest/applications/keeper/deploy/site.conf.example /etc/nest/keeper.conf
-sudo nest-site init keeper && sudo editor /etc/nest/keeper.env
-sudo nest-site build keeper
-sudo systemctl enable --now nest-site@keeper nest-site-backup@keeper.timer
-sudo nest-site nest keeper auth create-user /src/nest/applications/keeper you@example.org --role admin --password-stdin
+sudo install -d -m 0750 -o 10001 -g 10001 /srv/nest/keeper
+sudo install -m 0600 /tmp/keeper.env.example /etc/nest/keeper.env && sudo editor /etc/nest/keeper.env
+sudo install -m 0644 /tmp/nest-keeper.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now nest-keeper
+echo 'a long password' | sudo docker exec -i nest-keeper nest auth create-user /src/nest/applications/keeper you@example.org --role admin --password-stdin
 ```
 
 > [!IMPORTANT]
