@@ -14,6 +14,12 @@ This documentation is for **Nest %NEST_VERSION%**.
 Nest core 0.4.0; the packages that need it say `nest: ">=0.4,<1"` (admin, content,
 translations, keeper, registry, the Saga subsystems with rules).
 
+- **trains 0.2.0**: data.gov.ro is asked through its CKAN API only: `package_search`
+  filtered by the organisation that publishes the timetables (`sync_organization`,
+  `sc-informatica-feroviara-sa`, replacing the free-text `sync_query`), page by page until
+  the count; each operator's XML resources by their `format`/`mimetype`; every download
+  checked against the `size` the API announces; the portal's own error said when it
+  refuses.
 - **What fits, and placing it without code** (Nest core, admin, content, forum, glossary,
   feed, every theme): application types (`application.type`: site, game, registry,
   keeper); each package's identity card says its `category` (a fixed list) and the types

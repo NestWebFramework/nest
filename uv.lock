@@ -1876,7 +1876,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-trains"
-version = "0.1.1"
+version = "0.2.0"
 source = { editable = "modules/trains" }
 dependencies = [
     { name = "nest-auth" },
