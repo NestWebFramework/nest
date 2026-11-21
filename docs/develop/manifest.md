@@ -82,7 +82,8 @@ docs:
 | `version` | yes | a PEP 440 version (`0.1.0`) |
 | `title` | no | the name people read (admin panel, reference pages) |
 | `description` | no | one or two sentences |
-| `category` | no | a grouping shown on reference pages (`content`, `community`, `maps`) |
+| `category` | no | what it is about, one of `content`, `community`, `media`, `maps`, `seo`, `transport`, `game`, `admin`, `platform`, `infrastructure`, `look` (the registry's filters, the reference pages) |
+| `fits` | no | the application types it is made for, as tags: `[site, game]`, `[game]`, `[keeper]`, or `[any]` (left out: any). Nest defines the types: `site`, `game`, `registry`, `keeper`; an application says its own with `application.type`. Only what fits is offered to it in the admin panel's Registry |
 | `license` | no | an SPDX name (`MIT`) |
 | `maintainer`, `created` | no | who looks after it; when it was made (quote the date) |
 | `previous_ids` | no | ids it had before, so bindings written with an old id still find it |
@@ -188,8 +189,30 @@ A theme is a package of type `theme`: templates, a stylesheet and settings.
 | `settings` | what an application may set for it (`application.theme_settings`) |
 | `preview` | colours its card in the admin panel's Themes page shows (`bg`, `surface`, `text`, `muted`, `accent`, `border`) |
 
+| `regions` | the places its pages have room for blocks: `[{name: home, title: Home page}, {name: footer, title: Footer}]`; its layout shows each with `{{ region("footer") }}` |
+| `menus` | the menus it shows, by address: `[{name: main, title: Main menu}]` (Content → Menus says which are shown) |
+
 The theme contract (the templates and blocks every theme provides) is described in
 [templates and assets](templates-and-assets.md) and [themes](../themes.md).
+
+## offers: reaching a module without code
+
+A module says how a site reaches it, so an administrator places it without touching the
+site's code (the admin panel's module page, **Place it on the site**):
+
+```yaml
+offers:
+  menu: {title: Forum, path: /}            # a link a menu may hold, under its address
+  shortcodes:
+    - {code: '[feed name="settlement"]', description: "A feed's readings, as a table."}
+  blocks:                                   # for a theme's regions (the home page among them)
+    - {name: latest, title: Latest forum topics, template: forum/block_latest.html,
+       description: "The topics with the newest replies.", settings: {count: "How many"}}
+```
+
+A block's template is rendered with the page's context and `block`, its settings (a dict
+of strings). Its words in other languages are in the module's catalog by identifier:
+`@block.latest`, `@block.latest.description`, `@block.latest.count`, `@shortcode.1`.
 
 ## Applications
 
@@ -235,8 +258,9 @@ bind:
 | `language_urls` | `cookie` | `cookie` (one address) or `prefix` (`/en/...` per language) |
 | `theme_settings` | `{}` | settings by theme: `{rail-signage: {tagline: "..."}}` |
 | `max_body_mb` | `32` | the largest request body, in MB (`NEST_MAX_BODY_MB` wins) |
+| `type` | `site` | what it is: `site`, `game`, `registry` or `keeper`; the packages offered to it are those whose `fits` names it |
 | `admin_frame` | `standalone` | the admin panel as a page of its own, or `site` (in the site's theme) |
-| `admin_menu` | `[]` | the panel menu's groups in order, `[{title: Economy, modules: [farm, guild]}]`; it overrides the modules' own `group` |
+| `admin_menu` | `[]` | the panel menu's groups in order, `[{group: economy, modules: [farm, guild]}]` (identifiers; labels are `group@<id>` in a catalog); it overrides the modules' own `group` |
 
 | Key of a `modules:` entry | Meaning |
 |---|---|

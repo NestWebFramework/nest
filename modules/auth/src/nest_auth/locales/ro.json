@@ -48,5 +48,9 @@
  "Your name": "Numele tău",
  "Your name is saved.": "Numele tău e salvat.",
  "Your password": "Parola ta",
- "Your password is changed; you are signed out everywhere else.": "Parola e schimbată; ai ieșit din cont peste tot în altă parte."
+ "Your password is changed; you are signed out everywhere else.": "Parola e schimbată; ai ieșit din cont peste tot în altă parte.",
+ "@title": "Conturi",
+ "@description": "Conturi cu roluri, intrare și ieșire, sesiuni pe server în baza de date, și protecția rutelor pentru celelalte module.",
+ "@admin.title": "Conturi",
+ "@admin.description": "Cine are cont, ce roluri are și dacă e activ."
 }

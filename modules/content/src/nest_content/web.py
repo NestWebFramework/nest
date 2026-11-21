@@ -266,7 +266,9 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
         body=Markup(
             responsive_images(
                 request.app.state.nest.shortcodes.expand(
-                    embed_videos(e.body, translator(request)("Play the video")),
+                    # cleaned when saved, and again here: a body that came in another way
+                    # (an import, a script, an old row) is never shown as it was sent
+                    embed_videos(sanitize(e.body or ""), translator(request)("Play the video")),
                     Context(db, e, request),
                 ),
                 media_base(request),

@@ -1,6 +1,6 @@
 [project]
 name = "nest-db-sqlite"
-version = "0.1.0"
+version = "0.1.1"
 description = "SQLite as a provider of nest.db: a file in the application's workspace."
 requires-python = ">=3.12"
 license = "MIT"

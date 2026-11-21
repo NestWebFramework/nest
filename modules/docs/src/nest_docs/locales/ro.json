@@ -17,5 +17,7 @@
  "The documentation has no page here; the menu has every page there is, and search finds the rest.": "Documentația nu are o pagină aici; meniul are toate paginile, iar căutarea găsește restul.",
  "What it does": "Ce face",
  "Read more": "Citește mai mult",
- "Built with it": "Construite cu el"
+ "Built with it": "Construite cu el",
+ "@title": "Documentație",
+ "@description": "Documentație în Markdown, cu meniu, căutare, imagini și o referință făcută din manifestul fiecărui pachet."
 }

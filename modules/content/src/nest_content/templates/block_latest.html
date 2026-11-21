@@ -1,0 +1,9 @@
+{#- Content's block (a theme's region): the newest articles, of one category or all. -#}
+{% set count = (block.get("count") or 5) | int %}
+{% set items = latest(count, block.get("category") or none) if latest is defined else [] %}
+{% if items %}
+<h2>{{ _("Newest articles") }}</h2>
+<ul class="block-list">{% for e in items %}
+  <li><a href="{{ e.path }}">{{ e.title }}</a>{% if e.published_at %} <small class="muted">{{ e.published_at.strftime("%d.%m.%Y") }}</small>{% endif %}</li>
+{% endfor %}</ul>
+{% endif %}

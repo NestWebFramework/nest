@@ -37,6 +37,11 @@ nest modules APP disable gallery         # its data stays
 nest modules APP enable gallery
 nest modules APP enable forum --route /forum    # one the manifest does not list
 nest modules APP uninstall comments --yes       # its data and settings go (after a backup)
+nest modules APP versions                # each package's version: running, chosen, the registry's
+nest modules APP version forum=0.3.0 content=0.2.1   # another version (up or down), one change
+nest modules APP version forum=image     # back to the image's version
+nest modules APP migrations forum        # its revisions: applied, current, its code's
+nest modules APP migrate forum forum_0003   # up or down to a revision (head, base), after a backup
 ```
 
 A change is never patched into the running application. It is:
@@ -55,6 +60,58 @@ A change is never patched into the running application. It is:
    engine process with them), so no request is lost; under `nest run`, a change made in
    the panel makes the application again in place. A change made with the command line
    reloads `nest serve`; `nest run` is then restarted by hand.
+
+## Versions and migrations
+
+A site may run another version of a package than the one it was built with: an update
+from the registry, an older version, a module added from the registry. The admin panel
+does it (Modules: **Update**, **Update all**, a module's **Use this version**, the
+Registry tab's **Add**), and so does `nest modules APP version`.
+
+A container's code is read only and made again at every restart, so the versions chosen
+are kept in the workspace, which lasts: `packages/pins.json` says what was chosen, and
+each version is unpacked from its wheel into `packages/<dist>-<version>/`, loaded ahead of
+the image's packages when the application is made. Each choice remembers the image's
+version at the time. A site deployed later with another image, whose packages may all be
+other versions, decides again at every start:
+
+| The image now has… | The choice |
+|---|---|
+| the version it was chosen over | used |
+| a newer version, or the same one | set aside: the image wins (its tables migrate up at start) |
+| an older version | kept: its tables may be migrated past what the image's knows |
+
+and a choice used must still fit: what it requires must be there (the image's packages,
+the other choices), and what the image's packages require of it must hold. One that does
+not is set aside, and the panel says why. So a redeploy is never undone by an older
+choice, nor broken by one that no longer fits.
+
+A change runs in a process of its own, never in the running site:
+
+1. each version is found in the registry (it must work with this nest-core and not be
+   withdrawn), its wheel downloaded and checked: its sha256 as the registry lists it, and
+   its signature when the package is pinned to keys (`nest trust`);
+2. what each needs must be there after the change: a Nest package at a version its range
+   takes (asked in the same change, chosen before, or the image's); anything else must be
+   in the image already. A site never installs what is not Nest's (rebuild the image for
+   that). Only pure-Python wheels are taken;
+3. the workspace is **backed up**;
+4. a module going to an **older** version has its **migrations taken down first**, with the
+   code it runs now, to the newest revision the older version knows;
+5. the choices are written and the application is made with them in a new process, which
+   **migrates up** what moved up and proves the site starts (as production starts:
+   migrations must be applied);
+6. if it does not start, the choices before are put back and the application made again
+   (its migrations up again where they were taken down); the backup stays for the worst
+   case (`nest restore`, the site stopped);
+7. the running site is **reloaded**: `nest serve`'s master takes the old code out before
+   it forks the workers again, one by one; `nest run` makes the application again.
+
+A module's migrations can also be moved by hand, up or down to any revision (the panel's
+**Up to here** / **Down to here**, or `nest modules APP migrate`), after a backup. Below
+the revision its code expects, the module may not work until it is migrated up again.
+
+Every change, done or refused, is written in `data/modules.log` (the panel's History).
 
 Settings work the same way. Most are read when used (`host.live`), so a change in the
 admin panel applies at once; the few that decide which routes exist (`restart: true` in

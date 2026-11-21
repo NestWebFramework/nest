@@ -15,11 +15,12 @@ module:
   id: nest.module.admin
   type: module
   title: Admin panel
-  category: admin
   version: 0.2.0
   description: One admin shell gathering the admin pages of every module an application includes.
   license: MIT
   created: "2026-11-14"
+  category: admin
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"

@@ -3,12 +3,13 @@
 
 SQLite in the application's workspace, with WAL and foreign keys on.
 
-**Version 0.1.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-db-sqlite` |
 | name in a manifest | `db-sqlite` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/db-sqlite |
 
 ## Using it

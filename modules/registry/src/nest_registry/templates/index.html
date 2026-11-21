@@ -24,10 +24,10 @@
   <ul class="registry-list">
     {% for i in items %}
     <li class="card registry-item">
-      <a class="registry-name" href="{{ base }}/p/{{ i.name }}">{{ _(i.title) }}</a>
+      <a class="registry-name" href="{{ base }}/p/{{ i.name }}">{{ about(i.name, "title", i.title) }}</a>
       <code>{{ i.name }}</code> <span class="badge">{{ i.version }}</span> <span class="badge">{{ _(i.type) }}</span>
       {% if i.part_of %}<span class="badge">{{ _("part of {host}", host=i.part_of) }}</span>{% endif %}
-      <p class="muted">{{ _(i.description) }}</p>
+      <p class="muted">{{ about(i.name, "description", i.description) }}</p>
     </li>
     {% endfor %}
   </ul>

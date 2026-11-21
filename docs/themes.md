@@ -68,6 +68,24 @@ and, to be at home with every module, it keeps base's tokens (`--bg`, `--surface
 layout includes `admin/preview_bar.html` and `notifications/region.html` with
 `ignore missing`, as base's does.
 
+**Regions and menus.** A theme says where its pages have room for blocks and which menus
+it shows, so a site arranges itself without code:
+
+```yaml
+regions:
+  - {name: home, title: Home page}
+  - {name: after_content, title: Under every page}
+  - {name: footer, title: Footer}
+menus:
+  - {name: main, title: Main menu}
+```
+
+and its layout shows a region with `{{ region("footer") }}` (nothing when it is empty).
+Nest's themes have `home` (under the home page's content), `after_content` and `footer`;
+morlaca-heritage also `sidebar`. What goes in them is chosen in **Themes → Regions**: the
+blocks the site's modules offer (newest articles, the latest forum topics, live readings,
+a search box), each with its settings, kept in the workspace (`data/regions.yml`).
+
 An application's own templates and stylesheet stay on top of any theme: one that
 overrides `layout.html` keeps its frame and gets the theme's
 tokens and shapes under its own skin.

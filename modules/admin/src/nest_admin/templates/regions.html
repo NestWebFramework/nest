@@ -1,0 +1,41 @@
+{% extends "admin/layout.html" %}
+{#- The theme's regions and the blocks placed in them, in order, with their settings. -#}
+{% block title %}{{ _("Regions") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/themes">{{ _("Themes") }}</a></p>
+<h1>{{ _("Regions") }}</h1>
+<p class="hint">{{ _("The places the theme's pages have room for, and the blocks the site's modules offer to show there: newest articles, the latest forum topics, live readings, a search box… Nothing in the theme is edited; the choice is kept with the site's data.") }}</p>
+{% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
+{% if not regions %}<p class="muted">{{ _("The theme in use has no regions.") }}</p>{% endif %}
+{% for theme, r in regions %}
+<section class="card region-card" aria-labelledby="r-{{ r.name }}">
+  <h2 id="r-{{ r.name }}">{{ about(theme, "region." ~ r.name, r.title) }} <code>{{ r.name }}</code></h2>
+  {% if r.description %}<p class="muted">{{ about(theme, "region." ~ r.name ~ ".description", r.description) }}</p>{% endif %}
+  {% set items = placed.get(r.name, []) %}
+  {% if items %}<ol class="region-blocks">{% for p in items %}{% set offer = blocks.get((p.module, p.block)) %}
+    <li>
+      <strong>{{ about(p.module, "block." ~ p.block, offer.title if offer else p.block) }}</strong> <small class="muted">{{ about(p.module, "title", p.module) }}</small>
+      {% if not offer %}<span class="badge">{{ _("not offered any more") }}</span>{% endif %}
+      <form class="inline" method="post" action="{{ admin_root }}/themes/regions/{{ r.name }}/{{ loop.index0 }}">{{ csrf_field }}
+        <button class="link" name="action" value="up" title="{{ _('Up') }}" aria-label="{{ _('Up') }}">↑</button>
+        <button class="link" name="action" value="down" title="{{ _('Down') }}" aria-label="{{ _('Down') }}">↓</button>
+        <button class="link danger" name="action" value="remove">{{ _("Remove") }}</button></form>
+      {% if offer and offer.settings %}<details{% if not p.settings %} open{% endif %}><summary>{{ _("Settings") }}</summary>
+        <form class="stack" method="post" action="{{ admin_root }}/themes/regions/{{ r.name }}/{{ loop.index0 }}">{{ csrf_field }}
+          {% for k, what in offer.settings.items() %}<div class="field"><label for="s-{{ r.name }}-{{ loop.index }}-{{ k }}">{{ about(p.module, "block." ~ p.block ~ "." ~ k, what) }}</label>
+            <input id="s-{{ r.name }}-{{ loop.index }}-{{ k }}" name="setting:{{ k }}" value="{{ p.settings.get(k, '') }}" maxlength="200"></div>{% endfor %}
+          <button name="action" value="save">{{ _("Save") }}</button></form></details>{% endif %}
+    </li>{% endfor %}</ol>
+  {% else %}<p class="muted">{{ _("Nothing here yet.") }}</p>{% endif %}
+  {% if blocks %}
+  <details><summary>{{ _("Add a block here") }}</summary>
+    <form class="stack" method="post" action="{{ admin_root }}/themes/regions/add">{{ csrf_field }}<input type="hidden" name="region" value="{{ r.name }}">
+      <div class="field"><label for="b-{{ r.name }}">{{ _("Block") }}</label>
+        <select id="b-{{ r.name }}" name="block">{% for (m, b), offer in blocks.items() %}<option value="{{ m }}.{{ b }}">{{ about(m, "block." ~ b, offer.title) }} — {{ about(m, "title", m) }}</option>{% endfor %}</select></div>
+      <small class="hint">{{ _("A block with settings (which feed, how many) asks for them once it is placed.") }}</small>
+      <button>{{ _("Place the block") }}</button></form>
+  </details>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

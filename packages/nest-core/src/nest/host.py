@@ -276,9 +276,9 @@ class Nest:
         default = (application.default_language if application else None) or languages[0]
         self.site_languages = list(languages)
         self.admin_frame = (application.admin_frame if application else None) or "standalone"
-        # the admin menu's groups, as the application orders them: (title, its modules)
+        # the admin menu's groups, as the application orders them: (identifier, its modules)
         self.admin_menu = [
-            (g.title, list(g.modules)) for g in (application.admin_menu if application else [])
+            (g.group, list(g.modules)) for g in (application.admin_menu if application else [])
         ]
         self.admin_languages = list(
             (application.admin_languages if application else None) or languages
@@ -295,6 +295,7 @@ class Nest:
             app={"name": self.name, "title": self.title},
             _=fallback.gettext,
             ngettext=fallback.ngettext,
+            about=fallback.about,
             locale=fallback.locale,
             languages=self.catalogs.languages,
             styles=[self.bundle_url("site")],
@@ -386,6 +387,20 @@ class Nest:
             raise LookupError(f"no module '{module}' in this application")
         return f"/assets/{module}/{path}?v={self._versions[module]}"
 
+    @property
+    def _region(self) -> Any:
+        from jinja2 import pass_context  # noqa: PLC0415
+
+        from nest import regions  # noqa: PLC0415
+
+        nest = self
+
+        @pass_context
+        def region(context: Any, name: str) -> Any:
+            return regions.render(nest, context, name)
+
+        return region
+
     def template_context(self, request: Request) -> dict[str, Any]:
         state = request.scope.setdefault("state", {})
         token = _Token(state, request.state.csrf_token)
@@ -425,6 +440,10 @@ class Nest:
             is_htmx=is_htmx(request),
             _=t.gettext,
             ngettext=t.ngettext,
+            # a package's own words by its name: {{ about("forum", "title", "Forum") }}
+            about=t.about,
+            # the blocks an administrator placed in a theme's region: {{ region("sidebar") }}
+            region=self._region,
             locale=t.locale,
             # every theme's footer says what the site is built with (the theme contract
             # asks it): in the page's language, an application may say it its own way
@@ -1021,6 +1040,9 @@ def _create_app(
     manifest = load_manifest(app_root)
     base_env = dict(os.environ if environ is None else environ)
     workspace = resolve_workspace(manifest.name, base_env)
+    from nest import overlay  # noqa: PLC0415
+
+    overlay.activate(workspace)  # module versions chosen in the panel, before any is imported
     chosen = dict(composition.load(workspace) if choices is None else choices)
     site, default = composition.load_languages(workspace)
     if site and manifest.application:  # the administrator's languages, over the manifest's
@@ -1428,6 +1450,10 @@ class Reloadable:
     async def reload(self) -> None:
         """Make the application again (its workspace's composition, as it is now)."""
         async with self._lock:
+            from nest import overlay  # noqa: PLC0415
+
+            # module versions changed in the panel: the old code out, so the new is imported
+            overlay.activate(self.app.state.nest.workspace, purge=True)
             new = await run_in_threadpool(self._make)
             running = new.router.lifespan_context(new)
             await running.__aenter__()

@@ -1,0 +1,4 @@
+{
+ "@title": "SQLite",
+ "@description": "SQLite în spațiul de lucru al aplicației, cu WAL și chei străine active."
+}

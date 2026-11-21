@@ -88,5 +88,11 @@
  ],
  "— none: at the top —": "— niciunul: sus de tot —",
  "“{title}” is deleted; its galleries moved up to its album.": "„{title}” a fost ștearsă; galeriile ei au urcat în albumul ei.",
- "“{title}” is made; add its photos.": "„{title}” a fost făcută; adaugă-i fotografiile."
+ "“{title}” is made; add its photos.": "„{title}” a fost făcută; adaugă-i fotografiile.",
+ "@title": "Galerii",
+ "@description": "Galerii foto și albume, cu pagini, încorporări, vizualizare mărită, încărcare din panoul de administrare și import din WordPress.",
+ "@admin.title": "Galerii",
+ "@admin.description": "Albume și galerii: creați-le, încărcați și ordonați fotografiile.",
+ "@shortcode.1": "Fotografiile unui album, într-o pagină.",
+ "@shortcode.2": "Albumele unei galerii, într-o pagină."
 }

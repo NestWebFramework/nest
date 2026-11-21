@@ -1,6 +1,6 @@
 [project]
 name = "nest-theme-slate"
-version = "0.1.0"
+version = "0.1.1"
 description = "The Slate theme for Nest, built on the base theme."
 requires-python = ">=3.12"
 license = "MIT"

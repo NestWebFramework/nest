@@ -1,6 +1,6 @@
 [project]
 name = "nest-geo"
-version = "0.1.0"
+version = "0.1.1"
 description = "Where the reader is, and what is near: a near-me page every module contributes to, distances, a locate button."
 requires-python = ">=3.12"
 license = "MIT"

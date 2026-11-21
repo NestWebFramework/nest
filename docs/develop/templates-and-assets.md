@@ -231,3 +231,23 @@ Catalogs merge in start order and the application's come last, so an application
 reword any module. To reword one module only, its catalog uses a scoped key:
 `"hangman::Hangman": "Spânzurătoare"` applies in hangman's templates alone. See
 [languages](../languages.md).
+
+A package's own words (its title, its description, its admin page's) are never found by
+their English text, which may change or be the same as another's: they are found by the
+package's name in its `module.yml`. Its catalog says them with keys that start with `@`,
+which belong to it alone:
+
+```json
+{
+  "@title": "Forum",
+  "@description": "Secțiuni, subiecte și mesaje, cu moderare…",
+  "@admin.title": "Forum",
+  "@admin.description": "Secțiunile, subiectele și mesajele lor."
+}
+```
+
+`"@title"` in forum's catalog is kept as `forum@title`; an application's catalog may
+reword it with that whole key. A template asks with `about(name, field, default)`:
+`{{ about("forum", "title", "Forum") }}`, the default being the manifest's words. The
+admin menu's groups are identifiers too, their labels `group@<id>`. Every Nest package
+carries its Romanian words this way.

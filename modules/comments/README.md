@@ -3,7 +3,7 @@
 
 Threaded comments on any module's records, with moderation and spam defences.
 
-**Version 0.1.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|

@@ -3,12 +3,13 @@
 
 PostgreSQL through psycopg 3, pooled, in UTC, with TLS modes and a statement timeout.
 
-**Version 0.1.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-db-postgres` |
 | name in a manifest | `db-postgres` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/db-postgres |
 
 ## Using it

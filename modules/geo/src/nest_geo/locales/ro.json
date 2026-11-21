@@ -7,5 +7,7 @@
  "Or give a place by hand": "Sau dă un loc de mână",
  "Latitude": "Latitudine",
  "Longitude": "Longitudine",
- "Search": "Caută"
+ "Search": "Caută",
+ "@title": "În apropiere",
+ "@description": "O pagină „în apropiere” la care contribuie fiecare modul cu locuri; distanțe și un buton de localizare."
 }

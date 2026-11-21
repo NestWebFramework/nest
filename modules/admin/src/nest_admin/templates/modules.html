@@ -1,113 +1,145 @@
 {% extends "admin/layout.html" %}
-{#- What the application is made of: core modules locked, the others managed here. -#}
+{#- The site's modules: installed (by state, with versions and their database), updates,
+    the Nest registry, the history of changes. -#}
 {% block title %}{{ _("Modules") }} · {{ app.title }}{% endblock %}
 {% block admin_content %}
 <h1>{{ _("Modules") }} <span class="muted">· {{ app.title }}</span></h1>
-<p class="hint">{{ _("Core modules are what this application cannot run without. The others may be disabled (their data is kept), enabled again, or uninstalled (their data and settings are removed, after a backup). Every change is checked first and applied without stopping the site.") }}
-  {{ _("New modules are installed on the server by its administrator (the keeper, or nest packages); they then appear here, ready to add.") }}</p>
+<nav class="tabs" aria-label="{{ _('Modules') }}">
+  {% set here = admin_root ~ "/modules" %}
+  <a href="{{ here }}"{% if tab == "installed" %} aria-current="page"{% endif %}>{{ _("Installed") }}</a>
+  <a href="{{ here }}?tab=updates"{% if tab == "updates" %} aria-current="page"{% endif %}>{{ _("Updates") }}{% if updates %} <span class="count">{{ updates | length }}</span>{% endif %}</a>
+  <a href="{{ here }}?tab=registry"{% if tab == "registry" %} aria-current="page"{% endif %}>{{ _("Registry") }}</a>
+  <a href="{{ here }}?tab=history"{% if tab == "history" %} aria-current="page"{% endif %}>{{ _("History") }}</a>
+</nav>
 {% block panel %}
 <div id="modules-panel" class="modules">
   {% if pending %}<p class="notice" role="status">{{ _("Waiting for the site to restart: {names}.", names=pending | join(", ")) }}</p>{% endif %}
   {% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
   {% if steps %}<div class="notice ok" role="status"><ul class="steps">{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ul></div>{% endif %}
-  <p id="modules-busy" class="notice busy htmx-indicator" role="status">{{ _("Applying: backup, checks, migrations, reload…") }}</p>
+  {% if place %}<p class="notice" role="status"><a href="{{ admin_root }}/modules/{{ place }}#place"><strong>{{ _("Now place it on the site: a menu link, a block, a shortcode →") }}</strong></a></p>{% endif %}
+  <p id="modules-busy" class="notice busy htmx-indicator" role="status">{{ _("Applying: download, checks, backup, migrations, reload… this can take a minute.") }}</p>
+  {% set here = admin_root ~ "/modules" %}
 
-  {% set headings = {
-    "core": _("Core"),
-    "enabled": _("Enabled"),
-    "disabled": _("Disabled"),
-    "available": _("Installed, not used"),
-  } %}
+  {% if tab == "installed" %}
+  {% if updates %}<p class="notice" role="status">{{ _("Newer versions in the registry: {n}.", n=updates | length) }} <a href="{{ here }}?tab=updates">{{ _("See the updates") }}</a></p>{% endif %}
+  <p class="hint">{{ _("Core modules are what this site cannot run without. The others may be disabled (their data is kept), enabled again, or uninstalled (their data and settings are removed, after a backup). Open a module for its versions and its migrations.") }}</p>
+  {% set headings = {"core": _("Core"), "enabled": _("Enabled"), "disabled": _("Disabled"), "available": _("Installed, not used")} %}
   {% for group, rows in groups.items() if rows %}
   <section class="module-group" aria-labelledby="g-{{ group }}">
     <h2 id="g-{{ group }}">{{ headings[group] }} <span class="muted">({{ rows | length }})</span></h2>
-    <ul class="module-list">
-      {% for r in rows %}
-      <li class="card module {{ r.state }}{% if r.locked %} locked{% endif %}" id="m-{{ r.name }}">
-        <div class="module-head">
-          <strong>{{ _(r.title) }}</strong>
-          <code>{{ r.name }}</code>
-          <span class="badge">{{ r.version }}</span>
+    <div class="table-wrap"><table class="module-table">
+      <thead><tr><th>{{ _("Module") }}</th><th>{{ _("Version") }}</th><th>{{ _("Database") }}</th><th>{{ _("Actions") }}</th></tr></thead>
+      <tbody>
+      {% for r in rows %}{% set v = versions.get(r.name) %}{% set db = database.get(r.name) %}
+      <tr id="m-{{ r.name }}" class="module {{ r.state }}{% if r.locked %} locked{% endif %}">
+        <td><a href="{{ here }}/{{ r.name }}"><strong>{{ about(r.name, "title", r.title) }}</strong></a> <code>{{ r.name }}</code>
           {% if r.route %}<span class="badge route">{{ r.route }}</span>{% endif %}
           {% if r.locked %}<span class="badge lock" title="{{ _('Locked: the application cannot run without it.') }}">{{ _("core") if r.state == "core" else _("needed by the core") }}</span>{% endif %}
-          {% if r.data %}<span class="badge">{{ _("keeps data") }}</span>{% endif %}
           {% if r.part_of %}<span class="badge">{{ _("part of {host}", host=r.part_of) }}</span>{% endif %}
-        </div>
-        {% if r.description %}<p class="muted module-text">{{ _(r.description) }}</p>{% endif %}
-        {% if r.deps or r.needed_by or r.uses or r.used_by %}
-        <p class="module-links">
-          {% if r.deps %}<span>{{ _("Needs") }}: {{ r.deps | join(", ") }}</span>{% endif %}
-          {% if r.needed_by and r.state != "available" %}<span>{{ _("Needed by") }}: {{ r.needed_by | join(", ") }}</span>{% endif %}
-          {% if r.uses %}<span title="{{ _('Used when the application has them; it works without.') }}">{{ _("Works with") }}: {{ r.uses | join(", ") }}</span>{% endif %}
-          {% if r.used_by and r.state != "available" %}<span title="{{ _('They carry on without it.') }}">{{ _("Used by") }}: {{ r.used_by | join(", ") }}</span>{% endif %}
-        </p>
-        {% endif %}
-        {% if not r.locked and not r.part_of %}
-        <div class="module-actions">
-          {% set target = admin_root ~ "/modules/" ~ r.name %}
+          {% if r.description %}<br><small class="muted">{{ about(r.name, "description", r.description) }}</small>{% endif %}</td>
+        <td class="nowrap"><span class="badge">{{ r.version }}</span>
+          {% if v and v.pinned %}<br><small class="muted">{{ _("chosen here; the image has {v}", v=v.image or "—") }}</small>{% endif %}
+          {% if v and v.aside %}<br><small class="muted">{{ _("{v} set aside: the image changed", v=v.aside) }}</small>{% endif %}
+          {% if v and v.latest and v.latest != r.version and v in updates %}<br><small><strong>{{ _("{v} available", v=v.latest) }}</strong></small>{% endif %}</td>
+        <td class="nowrap">{% if db %}{% if db.state == "current" %}<span class="muted">✓ {{ _("up to date") }}</span>{% elif db.state == "behind" %}<a href="{{ here }}/{{ r.name }}#migrations"><strong>{{ _("migrations to apply") }}</strong></a>{% else %}<span class="muted">{{ _("no tables yet") }}</span>{% endif %}{% elif r.data %}<span class="muted">{{ _("keeps data") }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td class="module-actions">
+          {% set target = here ~ "/" ~ r.name %}
+          {% if v and v in updates %}
+          <form method="post" action="{{ target }}/version" hx-post="{{ target }}/version" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}<input type="hidden" name="version" value="{{ v.latest }}"><button type="submit">{{ _("Update to {v}", v=v.latest) }}</button></form>
+          {% endif %}
+          {% if not r.locked and not r.part_of %}
           {% if r.state == "enabled" %}
-          <form method="post" action="{{ target }}/disable" hx-post="{{ target }}/disable" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">
-            {{ csrf_field }}<button type="submit" class="secondary">{{ _("Disable") }}</button>
-          </form>
+          <form method="post" action="{{ target }}/disable" hx-post="{{ target }}/disable" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Disable") }}</button></form>
           {% elif r.state == "disabled" %}
-          <form method="post" action="{{ target }}/enable" hx-post="{{ target }}/enable" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">
-            {{ csrf_field }}<button type="submit">{{ _("Enable") }}</button>
-          </form>
+          <form method="post" action="{{ target }}/enable" hx-post="{{ target }}/enable" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}<button type="submit">{{ _("Enable") }}</button></form>
           {% elif r.state == "available" %}
-          <form method="post" action="{{ target }}/enable" class="add" hx-post="{{ target }}/enable" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">
-            {{ csrf_field }}
-            <label for="route-{{ r.name }}">{{ _("At the address") }}</label>
-            <input id="route-{{ r.name }}" name="route" value="/{{ r.name }}" autocomplete="off" spellcheck="false">
-            <button type="submit">{{ _("Add") }}</button>
-          </form>
+          <form method="post" action="{{ target }}/enable" class="add" hx-post="{{ target }}/enable" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}
+            <label for="route-{{ r.name }}" class="visually-hidden">{{ _("At the address") }}</label>
+            <input id="route-{{ r.name }}" name="route" value="/{{ r.name }}" size="10" autocomplete="off" spellcheck="false">
+            <button type="submit">{{ _("Add") }}</button></form>
           {% endif %}
           {% if r.state in ("enabled", "disabled") %}
-          <details class="uninstall">
-            <summary>{{ _("Uninstall…") }}</summary>
-            <form method="post" action="{{ target }}/uninstall" hx-post="{{ target }}/uninstall" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">
-              {{ csrf_field }}
+          <details class="uninstall"><summary>{{ _("Uninstall…") }}</summary>
+            <form method="post" action="{{ target }}/uninstall" hx-post="{{ target }}/uninstall" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}
               <p class="hint">{{ _("Its data and settings are removed (a backup is made first). Type its name to confirm.") }}</p>
               <label for="confirm-{{ r.name }}" class="visually-hidden">{{ _("The module's name") }}</label>
               <input id="confirm-{{ r.name }}" name="confirm" placeholder="{{ r.name }}" autocomplete="off" spellcheck="false" required>
-              <button type="submit" class="danger">{{ _("Uninstall") }}</button>
-            </form>
+              <button type="submit" class="danger">{{ _("Uninstall") }}</button></form>
           </details>
           {% endif %}
-        </div>
-        {% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endfor %}
-
-  <section class="module-group" aria-labelledby="g-registry">
-    <h2 id="g-registry">{{ _("More in the Nest registry") }}</h2>
-    <form method="get" action="{{ admin_root }}/modules/registry" class="row" hx-get="{{ admin_root }}/modules/registry" hx-target="#registry-results" hx-swap="outerHTML">
-      <label class="visually-hidden" for="registry-q">{{ _("Search") }}</label>
-      <input id="registry-q" name="q" placeholder="{{ _('forum, map, theme…') }}">
-      <button type="submit" class="secondary">{{ _("Search the registry") }}</button>
-    </form>
-    <div id="registry-results"></div>
-  </section>
-
-  {% if log %}
-  <section class="module-group" aria-labelledby="g-log">
-    <h2 id="g-log">{{ _("Latest changes") }}</h2>
-    <table class="module-log">
-      <thead><tr><th>{{ _("When") }}</th><th>{{ _("Who") }}</th><th>{{ _("What") }}</th><th>{{ _("Outcome") }}</th></tr></thead>
-      <tbody>
-      {% for e in log %}
-      <tr>
-        <td><time datetime="{{ e.at }}">{{ e.at | replace("T", " ") | replace("Z", "") }}</time></td>
-        <td>{{ e.who or "—" }}</td>
-        <td>{% for action in ("enable", "disable", "uninstall") if e.get(action) %}{{ {"enable": _("enable"), "disable": _("disable"), "uninstall": _("uninstall")}[action] }} {{ e[action] | join(", ") }}{% endfor %}</td>
-        <td>{% if e.outcome == "done" %}✓ {{ _("done") }}{% else %}✗ {{ _("refused") }}: {{ e.details | join("; ") }}{% endif %}</td>
+          {% endif %}
+          <a href="{{ target }}">{{ _("Versions…") }}</a>
+        </td>
       </tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
   </section>
+  {% endfor %}
+
+  {% elif tab == "updates" %}
+  {% for p in registry_problems %}<p class="notice danger">{{ _("The registry could not be asked: {why}", why=p) }}</p>{% endfor %}
+  {% if updates %}
+  <div class="row between">
+    <p>{{ _("Newer versions in the registry ({url}) that work with this site's Nest.", url=registry_url) }}</p>
+    {% if updates | length > 1 %}
+    <form method="post" action="{{ here }}/update-all" hx-post="{{ here }}/update-all" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}<button type="submit">{{ _("Update all ({n})", n=updates | length) }}</button></form>
+    {% endif %}
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ _("Module") }}</th><th>{{ _("Running") }}</th><th>{{ _("Newest") }}</th><th></th></tr></thead>
+    <tbody>{% for v in updates %}<tr>
+      <td><a href="{{ here }}/{{ v.name }}"><strong>{{ about(v.name, "title", v.title) }}</strong></a> <code>{{ v.name }}</code> <span class="badge">{{ _(v.type) }}</span></td>
+      <td>{{ v.running }}</td><td><strong>{{ v.latest }}</strong></td>
+      <td class="module-actions"><form method="post" action="{{ here }}/{{ v.name }}/version" hx-post="{{ here }}/{{ v.name }}/version" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}<input type="hidden" name="version" value="{{ v.latest }}"><button type="submit">{{ _("Update") }}</button></form>
+        <a href="{{ here }}/{{ v.name }}">{{ _("Other versions…") }}</a></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  <p class="hint">{{ _("Each update is checked, backed up and migrated, and undone if the site cannot start with it. The versions chosen here are kept with the site's data; deploying a newer image of the site takes the image's versions again.") }}</p>
+  {% elif not registry_problems %}<p class="muted">✓ {{ _("Everything is up to date.") }}</p>{% endif %}
+
+  {% elif tab == "registry" %}
+  {% for p in registry_problems %}<p class="notice danger">{{ _("The registry could not be asked: {why}", why=p) }}</p>{% endfor %}
+  <form method="get" action="{{ here }}" class="row registry-search">
+    <input type="hidden" name="tab" value="registry">
+    <label class="visually-hidden" for="registry-q">{{ _("Search") }}</label>
+    <input id="registry-q" name="q" value="{{ q }}" placeholder="{{ _('forum, map, theme…') }}">
+    <label class="visually-hidden" for="registry-category">{{ _("Category") }}</label>
+    <select id="registry-category" name="category"><option value="">{{ _("every category") }}</option>{% for c in categories %}<option value="{{ c }}"{% if c == category %} selected{% endif %}>{{ about("category", c, c | capitalize) }}</option>{% endfor %}</select>
+    <label class="check"><input type="checkbox" name="everything" value="1"{% if everything %} checked{% endif %}> {{ _("show everything") }}</label>
+    <button type="submit" class="secondary">{{ _("Search") }}</button>
+  </form>
+  <p class="hint">{{ _("The packages of {url} made for this kind of application ({type}) that work with its Nest. A module not installed is added from here: its newest version, with the Nest packages it needs, then enabled at an address, and placed where you choose.", url=registry_url, type=about("apptype", app_type, app_type)) }}
+    {% if hidden and not everything %}{{ _("{n} others are for other kinds of applications, are parts an engine brings, or are set up by the server's administrator.", n=hidden) }}{% endif %}</p>
+  <div id="registry-results" class="table-wrap"><table class="module-table">
+    <thead><tr><th>{{ _("Package") }}</th><th>{{ _("Category") }}</th><th>{{ _("Newest") }}</th><th></th></tr></thead>
+    <tbody>{% for r in registry %}{% set o = r.offer %}<tr>
+      <td><strong>{{ about(o.name, "title", o.title) }}</strong> <code>{{ o.name }}</code>{% if o.description %}<br><small class="muted">{{ about(o.name, "description", o.description) }}</small>{% endif %}
+        {% if o.deps %}<br><small class="muted">{{ _("Needs") }}: {{ o.deps | join(", ") }}</small>{% endif %}</td>
+      <td>{{ about("category", o.category, o.category | capitalize) if o.category else "—" }}{% if o.type == "theme" %} · {{ _("theme") }}{% endif %}{% if not r.usable %}<br><small class="muted">{{ _("not for this application") }}</small>{% endif %}</td><td>{{ o.version }}</td>
+      <td class="module-actions">{% if r.installed %}<span class="badge lock">{{ _("installed") }}</span> <a href="{{ here }}/{{ o.name }}">{{ _("Versions…") }}</a>
+        {% elif r.usable and o.type in ("module", "subsystem", "content", "theme") %}
+        <form method="post" action="{{ here }}/add" class="add" hx-post="{{ here }}/add" hx-target="#modules-panel" hx-swap="outerHTML" hx-indicator="#modules-busy">{{ csrf_field }}<input type="hidden" name="name" value="{{ o.name }}">
+          {% if o.type == "module" %}<label for="add-{{ o.name }}" class="visually-hidden">{{ _("At the address") }}</label><input id="add-{{ o.name }}" name="route" value="/{{ o.name }}" size="10" autocomplete="off" spellcheck="false">{% endif %}
+          <button type="submit">{{ _("Add") if o.type != "theme" else _("Install") }}</button></form>
+        {% else %}<span class="muted">{{ _("set up by the server's administrator") }}</span>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="4" class="muted">{{ _("Nothing found.") if (q or kind) else _("Nothing there works with this Nest yet.") }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+
+  {% else %}
+  {% if log %}
+  <div class="table-wrap"><table class="module-log">
+    <thead><tr><th>{{ _("When") }}</th><th>{{ _("Who") }}</th><th>{{ _("What") }}</th><th>{{ _("Outcome") }}</th></tr></thead>
+    <tbody>{% for e in log %}<tr>
+      <td><time datetime="{{ e.at }}">{{ e.at | replace("T", " ") | replace("Z", "") }}</time></td>
+      <td>{{ e.who or "—" }}</td>
+      <td>{% for action in ("enable", "disable", "uninstall") if e.get(action) %}{{ {"enable": _("enable"), "disable": _("disable"), "uninstall": _("uninstall")}[action] }} {{ e[action] | join(", ") }} {% endfor %}
+        {%- if e.get("versions") %}{{ _("versions") }}: {{ e.versions | join(", ") }}{% endif %}
+        {%- if e.get("migrate") %}{{ _("migrations") }}: {{ e.migrate | join(", ") }}{% endif %}</td>
+      <td>{% if e.outcome == "done" %}✓ {{ _("done") }}{% else %}✗ {{ _("refused") }}: {{ e.details | join("; ") }}{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted">{{ _("No change yet.") }}</p>{% endif %}
   {% endif %}
 </div>
 {% endblock %}

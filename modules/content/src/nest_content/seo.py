@@ -23,6 +23,7 @@ from nest_db import Database
 from nest import bound
 from nest.host import module_state
 from nest_content import service
+from nest_content.html import sanitize
 
 router = APIRouter()  # the feed: always the content module's
 files = APIRouter()  # sitemap and robots: its own only where the seo module is not
@@ -161,7 +162,7 @@ def summary(entry: Any, length: int = 160) -> str:
     source = entry.excerpt or entry.body or ""
     if not entry.excerpt and len(source) > length * 15:  # the opening is enough: no need
         source = re.sub(r"<[^>]*$", "", source[: length * 15])  # to read a long article whole
-    text = Markup(source).striptags()
+    text = Markup(sanitize(source)).striptags()  # cleaned first: a script's words are not text
     text = " ".join(_SHORTCODE.sub(" ", text).split())
     if len(text) <= length:
         return text

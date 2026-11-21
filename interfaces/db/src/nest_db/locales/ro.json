@@ -1,0 +1,4 @@
+{
+ "@title": "Baza de date",
+ "@description": "O bază de date relațională prin SQLAlchemy: sesiuni, motorul pentru migrări, dialectul și posibilitățile lui, și o verificare de sănătate."
+}

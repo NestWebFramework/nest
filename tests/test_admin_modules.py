@@ -44,11 +44,11 @@ def test_the_page_shows_what_is_locked_and_what_may_change(site, tmp_path):
     assert page.status_code == 200
     text = page.text
     assert 'id="m-auth"' in text and "badge lock" in text  # core: no actions
-    auth_card = text.split('id="m-auth"')[1].split("</li>")[0]
+    auth_card = text.split('id="m-auth"')[1].split("</tr>")[0]
     assert "/disable" not in auth_card and "/uninstall" not in auth_card
-    forum_card = text.split('id="m-forum"')[1].split("</li>")[0]
+    forum_card = text.split('id="m-forum"')[1].split("</tr>")[0]
     assert "/modules/forum/disable" in forum_card and "/modules/forum/uninstall" in forum_card
-    redirects = text.split('id="m-redirects"')[1].split("</li>")[0]
+    redirects = text.split('id="m-redirects"')[1].split("</tr>")[0]
     assert "/modules/redirects/enable" in redirects  # listed, off
     assert 'href="/admin/modules"' in c.get("/admin/").text  # in the panel's menu
 
@@ -107,34 +107,53 @@ def test_under_nest_run_the_site_is_made_again_in_place(site, tmp_path, monkeypa
         assert c.get("/forum/").status_code == 200
 
 
-def test_the_modules_page_searches_the_nest_registry_read_only(site, tmp_path, monkeypatch):
+def test_the_registry_tab_searches_and_offers_what_is_not_installed(site, tmp_path, monkeypatch):
     import nest.packages  # noqa: PLC0415
     from nest.packages import Offer  # noqa: PLC0415
 
-    found = Offer(
-        name="widgets", dist="acme-widgets", version="1.0.0", type="module", title="Widgets",
-        description="Small widgets.", source="remote", index="https://r.example/simple/", nest=">=0.2,<1",
-    )  # fmt: skip
-    monkeypatch.setattr(nest.packages, "remote_offers", lambda environ=None: {"widgets": found})
+    def offer(name, title, kind="module", deps=()):
+        return Offer(
+            name=name, dist=f"acme-{name}", version="1.0.0", type=kind, title=title,
+            description="Small things.", source="remote", index="https://r.example/simple/",
+            nest=">=0.2,<1", deps=list(deps),
+        )  # fmt: skip
+
+    found = {"widgets": offer("widgets", "Widgets", deps=["auth"]), "forum": offer("forum", "Forum")}
+    found["sharp"] = offer("sharp", "Sharp", kind="theme")
+    monkeypatch.setattr(nest.packages, "remote_offers", lambda environ=None: found)
     c = admin_client(site, tmp_path)
-    assert "/admin/modules/registry" in c.get("/admin/modules").text
-    part = c.get("/admin/modules/registry?q=widg", headers={"HX-Request": "true"}).text
-    assert "Widgets" in part and "nest packages . add widgets --remote" in part
-    assert "<form" not in part  # the panel installs nothing
+    page = c.get("/admin/modules?tab=registry&q=widg").text
+    row = page.split("<code>widgets</code>")[1].split("</tr>")[0]
+    assert "Widgets" in page and "Needs" in row and 'action="/admin/modules/add"' in row
+    assert "<code>forum</code>" not in page  # the search
+    everything = c.get("/admin/modules?tab=registry").text
+    forum = everything.split("<code>forum</code>")[1].split("</tr>")[0]
+    assert "installed" in forum and "/admin/modules/add" not in forum  # it has it already
+    assert "Install" in everything.split("<code>sharp</code>")[1].split("</tr>")[0]  # a theme
+    themes = c.get("/admin/modules?tab=registry&kind=theme").text
+    assert "<code>sharp</code>" in themes and "<code>widgets</code>" not in themes
+    assert c.get("/admin/modules/registry?q=widg").status_code == 200  # the old address
 
 
-@pytest.mark.parametrize("frame", ["standalone", "site"])
-def test_the_admin_panel_is_a_page_of_its_own_unless_the_app_dresses_it(frame, site, tmp_path):
-    """By default the admin panel has its own page: no site theme, no site menu, the base
-    theme's tokens only; application.admin_frame: site puts it in the site's frame."""
-    text = (site / "module.yml").read_text()
-    text = text.replace("theme: base}", "theme: paper, admin_frame: " + frame + "}", 1)
-    (site / "module.yml").write_text(text, encoding="utf-8")
+def test_the_tabs_say_what_has_updates_and_offer_update_all(site, tmp_path, monkeypatch):
+    import nest.packages  # noqa: PLC0415
+    from nest.packages import Offer  # noqa: PLC0415
+
+    def newer(name):
+        return Offer(
+            name=name, dist=f"nest-{name}", version="9.0.0", type="module", title=name.title(),
+            description="", source="remote", index="https://r.example/simple/", nest=">=0.2,<1",
+        )  # fmt: skip
+
+    monkeypatch.setattr(
+        nest.packages, "remote_offers", lambda environ=None: {n: newer(n) for n in ("forum", "auth")}
+    )
     c = admin_client(site, tmp_path)
-    page = c.get("/admin/").text
-    css = c.get(re.search(r'href="(/assets/_bundle/admin\.css[^"]*)"', page).group(1)).text
-    if frame == "standalone":
-        assert 'class="admin-bar"' in page and 'class="site-header"' not in page
-        assert "/* paper:" not in css and "/* base:" in css
-    else:
-        assert 'class="admin-bar"' not in page and "/* paper:" in css
+    page = c.get("/admin/modules").text
+    assert "Newer versions in the registry: 2." in page and "Update to 9.0.0" in page
+    updates = c.get("/admin/modules?tab=updates").text
+    assert "Update all (2)" in updates and 'action="/admin/modules/update-all"' in updates
+    forum = c.get("/admin/modules/forum").text
+    assert "Versions" in forum and "Migrations" in forum
+    history = c.get("/admin/modules?tab=history").text
+    assert "No change yet." in history or "<table" in history

@@ -11,10 +11,12 @@ module:
   id: nest.provider.db-mariadb
   type: provider
   title: MariaDB
-  version: 0.1.0
+  version: 0.1.1
   description: MariaDB or MySQL through PyMySQL, utf8mb4, strict mode, UTC, pooled.
   license: MIT
   created: "2026-11-13"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -61,3 +63,6 @@ settings:
     type: int
     default: 280
     description: Seconds before a pooled connection is replaced (below the server's wait_timeout).
+
+locales:
+  - {locale: ro, file: locales/ro.json}

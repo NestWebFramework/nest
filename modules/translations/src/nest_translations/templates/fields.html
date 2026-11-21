@@ -11,7 +11,7 @@
     {% for field, how in kind.fields.items() %}{% set id = "tr_" ~ lang ~ "_" ~ field %}
       <div class="field"><label for="{{ id }}">{{ _(field.replace("_", " ") | capitalize) }}</label>
         {% if how in ("textarea", "html") %}
-        <textarea id="{{ id }}" name="{{ id }}" lang="{{ lang }}" rows="{{ 14 if how == 'html' else 3 }}"{% if how == "html" %} data-editor="html"{% endif %}>{{ v[field] }}</textarea>
+        <textarea id="{{ id }}" name="{{ id }}" lang="{{ lang }}" rows="{{ 14 if how == 'html' else 3 }}"{% if how == "html" %} data-editor="html"{% if rich_editor is defined %} {{ rich_editor().attrs }}{% endif %}{% endif %}>{{ v[field] }}</textarea>
         {% else %}
         <input id="{{ id }}" name="{{ id }}" lang="{{ lang }}" value="{{ v[field] }}"{% if how == "slug" %} spellcheck="false" autocomplete="off" pattern="[^\s/?#]+"{% endif %}>
         {% endif %}

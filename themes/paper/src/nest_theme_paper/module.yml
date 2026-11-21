@@ -8,10 +8,12 @@ module:
   id: nest.theme.paper
   type: theme
   title: Paper
-  version: 0.1.0
+  version: 0.1.1
   description: An editorial look, a masthead and a serif to read by, on warm paper; dark at night.
   license: MIT
   created: "2026-11-20"
+  category: look
+  fits: [site, game]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -27,3 +29,16 @@ styles: [paper.css]
 
 # the colours its card in the admin panel's Themes page shows
 preview: {bg: "#fbf8f1", surface: "#fffdf8", text: "#1f1b16", muted: "#6b6358", accent: "#9c2a1a", border: "#e4dccb"}
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+
+# the menus it shows, by their address (Admin → Content → Menus)
+menus:
+  - {name: main, title: Main menu}
+
+# where its pages have room for blocks (Themes → Regions)
+regions:
+  - {name: home, title: Home page, description: "Under the home page's own content."}
+  - {name: after_content, title: Under every page, description: "Under each page's content."}
+  - {name: footer, title: Footer, description: "In the footer, on every page."}

@@ -1,6 +1,6 @@
 [project]
 name = "nest-storage"
-version = "0.1.0"
+version = "0.1.1"
 description = "The nest.storage interface: files kept by key, wherever the provider keeps them."
 requires-python = ">=3.12"
 license = "MIT"

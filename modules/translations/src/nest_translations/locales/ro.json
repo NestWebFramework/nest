@@ -40,11 +40,19 @@
   "Import": "Importă",
   "Start from the {language} text": "Pornește de la textul în {language}",
   "This is not a Nest translations file.": "Acesta nu este un fișier de traduceri Nest.",
-  "{n} translation saved.": ["{n} traducere salvată.", "{n} traduceri salvate.", "{n} de traduceri salvate."],
+  "{n} translation saved.": [
+    "{n} traducere salvată.",
+    "{n} traduceri salvate.",
+    "{n} de traduceri salvate."
+  ],
   "Not saved: {list}": "Nesalvate: {list}",
   "There is no text to translate yet: save the original first.": "Nu există încă text de tradus: salvați întâi originalul.",
   "{language}: the address part '{value}' cannot have spaces, / ? or #": "{language}: adresa „{value}” nu poate avea spații, / ? sau #",
   "{language}: '{value}' is already another one's {field}": "{language}: „{value}” este deja folosit ca {field} de altă înregistrare",
   "{language} is not one of the site's languages to translate into": "{language} nu este una dintre limbile în care se traduce site-ul",
-  "{subject} is not translated here": "{subject} nu se traduce aici"
+  "{subject} is not translated here": "{subject} nu se traduce aici",
+  "@title": "Traduceri",
+  "@description": "Înregistrările fiecărui modul în fiecare limbă a site-ului: câmpurile editorilor, ce lipsește, ciorne sau texte depășite, un editor lângă original, export și import.",
+  "@admin.title": "Traduceri",
+  "@admin.description": "Textul fiecărei pagini în fiecare limbă a site-ului și ce mai e de tradus."
 }

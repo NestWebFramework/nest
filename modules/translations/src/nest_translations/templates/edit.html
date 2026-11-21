@@ -1,5 +1,7 @@
 {% extends "admin/layout.html" %}
 {% block title %}{{ _("Translate") }} · {{ app.title }}{% endblock %}
+{#- the rich text editor for the text's body, when the application has it (content) -#}
+{% block head %}{% if rich_editor is defined %}{{ rich_editor().head }}{% endif %}{% endblock %}
 {% block admin_content %}
 <p><a href="{{ base }}/?subject={{ kind.subject | urlencode }}&amp;lang={{ lang }}">← {{ _("Translations") }}</a></p>
 <div class="row between">

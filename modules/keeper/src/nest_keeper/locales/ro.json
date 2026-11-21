@@ -150,5 +150,9 @@
  "What it is": "Ce este",
  "What running in production needs, as the site itself sees it (nest check).": "Ce cere rularea în producție, așa cum vede site-ul însuși (nest check).",
  "When": "Când",
- "Who": "Cine"
+ "Who": "Cine",
+ "@title": "Keeper",
+ "@description": "Site-urile publicate pe care Nest le urmărește prin agenții lor, și aplicațiile Nest, planurile și pachetele lor.",
+ "@admin.title": "Keeper",
+ "@admin.description": "Site-urile urmărite (funcționare, versiuni, evenimente, acțiuni) și fiecare aplicație pe care o cunoaște Nest."
 }

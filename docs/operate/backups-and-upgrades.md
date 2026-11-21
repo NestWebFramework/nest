@@ -126,6 +126,17 @@ sudo nest-site upgrade S
 6. **Roll back if needed.** If the site never answers, it prints the last 40 lines of the
    unit's log, runs `nest-site rollback S` and exits with status 1.
 
+### Versions chosen in the admin panel
+
+A site's administrator may update a module, take it to another version or add one from
+the registry, without a new image (Admin → Modules). Those versions are kept in the
+site's data folder, `packages/` (with `pins.json`), loaded ahead of the image's at start,
+and kept by backups like the rest of the folder. An upgrade with `nest-site upgrade`
+brings a new image, and each start fits the choices to it: the image's version wins when
+it is the same or newer than the one chosen; a choice newer than what the image brings is
+kept (its tables may already be past the image's); a choice that no longer fits the
+image's other packages is set aside, and the panel says why. See [Modules: versions and migrations](../modules.md#versions-and-migrations).
+
 ### What a rollback does
 
 ```sh

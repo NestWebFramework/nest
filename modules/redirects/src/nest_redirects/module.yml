@@ -13,12 +13,12 @@ module:
   id: nest.module.redirects
   type: module
   title: Redirects
-  category: seo
-  version: 0.1.0
+  version: 0.1.1
   description: Old addresses sent on to new ones, with hit counts, an editor and CSV imports.
   license: MIT
   created: "2026-11-13"
-
+  category: seo
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -48,7 +48,7 @@ docs:
   section: modules
 
 admin:
-  group: Site
+  group: site
   title: Redirects
   order: 80
   role: editor

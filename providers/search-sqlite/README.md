@@ -3,12 +3,13 @@
 
 Full-text search with SQLite FTS5, diacritics folded, ranked by BM25.
 
-**Version 0.1.0** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.1** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
 | package | `nest-search-sqlite` |
 | name in a manifest | `search-sqlite` |
+| category | infrastructure |
 | reference | https://nest-framework.org/docs/reference/providers/search-sqlite |
 
 ## Using it

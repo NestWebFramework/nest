@@ -503,7 +503,7 @@ def _public(raw: dict[str, Any]) -> dict[str, Any]:
     """What the catalog shows of a manifest: what it is and what it needs, not its settings'
     defaults or anything else a package keeps for itself."""
     keep = ("module", "nest", "deps", "uses", "requires", "implements", "interface", "part_of",
-            "extends", "facts", "provides", "admin", "docs", "preview")  # fmt: skip
+            "extends", "facts", "provides", "admin", "docs", "preview", "offers")  # fmt: skip
     return {k: raw[k] for k in keep if k in raw}
 
 
@@ -692,6 +692,13 @@ def _item(p: Package, r: Release, versions: list[str]) -> dict[str, Any]:
         "deps": sorted((m.get("deps") or {}).keys()) if isinstance(m.get("deps"), dict) else [],
         "uses": list(m.get("uses") or []),
         "part_of": m.get("part_of"),
+        # what it is about and what applications it is made for (module.category, .fits)
+        "category": (m.get("module") or {}).get("category")
+        if isinstance(m.get("module"), dict)
+        else None,
+        "fits": list((m.get("module") or {}).get("fits") or [])
+        if isinstance(m.get("module"), dict)
+        else [],
         "extends": m.get("extends"),
         "preview": m.get("preview") if isinstance(m.get("preview"), dict) else None,
         "owner_id": p.owner_id,

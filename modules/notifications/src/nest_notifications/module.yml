@@ -13,13 +13,14 @@ module:
   id: nest.module.notifications
   type: module
   title: Notifications
-  category: interface
-  version: 0.1.0
+  version: 0.1.1
   description: >
     Toast messages (saved, deleted, sent, failed) after redirects, htmx answers and from
     page scripts; signed, read once, accessible, restyled by the application.
   license: MIT
   created: "2026-11-19"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"

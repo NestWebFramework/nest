@@ -84,8 +84,11 @@ class Result:
 
 
 def _context(app_dir: Path, environ: Mapping[str, str]) -> tuple[Any, Path, Catalog]:
+    from nest import overlay  # noqa: PLC0415
+
     manifest = load_manifest(app_dir)
     workspace = resolve_workspace(manifest.name, dict(environ))
+    overlay.activate(workspace)
     return manifest, workspace, Catalog.discover(app_dir)
 
 

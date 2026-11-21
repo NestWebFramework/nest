@@ -13,6 +13,7 @@ module:
   created: "2026-11-13"
 
 application:
+  type: site  # what it is: the packages offered to it are those made for it
   title: Hello, Nest
   port: 8100
   theme: base

@@ -3,7 +3,7 @@
 
 Pages, posts and any declared content type with custom fields; categories and tags; menus; media in nest.storage; revisions; search; a WordPress importer that keeps the old addresses.
 
-**Version 0.1.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.0** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|

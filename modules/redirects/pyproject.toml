@@ -1,6 +1,6 @@
 [project]
 name = "nest-redirects"
-version = "0.1.0"
+version = "0.1.1"
 description = "Old addresses sent on to new ones: a table, a fallback, an editor."
 requires-python = ">=3.12"
 license = "MIT"

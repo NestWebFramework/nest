@@ -1,0 +1,28 @@
+{% extends "admin/layout.html" %}
+{#- The site's menus: which the theme shows, each one's items, and a menu made. -#}
+{% block title %}{{ _("Menus") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a></p>
+<h1>{{ _("Menus") }}</h1>
+<p class="hint">{{ _("A menu is a list of links: to pages and articles, categories, a module's pages or any address. The theme shows the menus it has a place for; others are kept for later.") }}</p>
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Menu") }}</th><th>{{ _("Links") }}</th><th>{{ _("Shown by the theme") }}</th></tr></thead>
+  <tbody>{% for m in rows %}<tr>
+    <td><a href="{{ here }}/{{ m.id }}"><strong>{{ m.title }}</strong></a> <code>{{ m.slug }}</code></td>
+    <td>{{ counts.get(m.id, 0) }}</td>
+    <td>{% if m.slug in shown %}✓ {{ about(shown[m.slug].theme, "menu." ~ m.slug, shown[m.slug].title) }}{% else %}<span class="muted">{{ _("not shown") }}</span>{% endif %}</td>
+  </tr>{% else %}<tr><td colspan="3" class="muted">{{ _("No menu yet.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+<h2>{{ _("Add a menu") }}</h2>
+{% if missing %}<p class="hint">{{ _("The theme has a place for: {names}. A menu with that address is shown there.", names=missing | map(attribute="name") | join(", ")) }}</p>{% endif %}
+<form class="stack card" method="post" action="{{ here }}">{{ csrf_field }}
+  <div class="field"><label for="m-title">{{ _("Name") }}</label><input id="m-title" name="title" required maxlength="200"></div>
+  <div class="field"><label for="m-slug">{{ _("Its address in the theme") }}</label>
+    <input id="m-slug" name="slug" maxlength="100" list="m-places" placeholder="main" autocomplete="off" spellcheck="false">
+    <datalist id="m-places">{% for p in locations %}<option value="{{ p.name }}">{{ p.title }}</option>{% endfor %}</datalist>
+    <small class="hint">{{ _("Left empty, it is made from the name.") }}</small></div>
+  <button>{{ _("Add the menu") }}</button>
+</form>
+{% endblock %}

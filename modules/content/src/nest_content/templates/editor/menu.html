@@ -1,0 +1,65 @@
+{% extends "admin/layout.html" %}
+{#- One menu: its links in order, nested, each renamed, moved or removed; a link added. -#}
+{% block title %}{{ menu.title }} · {{ _("Menus") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a> › <a href="{{ here }}">{{ _("Menus") }}</a></p>
+<h1>{{ menu.title }} <code>{{ menu.slug }}</code></h1>
+<p>{% if menu.slug in shown %}✓ {{ _("The theme shows it: {place}.", place=shown[menu.slug].title) }}{% else %}<span class="muted">{{ _("The theme does not show it.") }}</span>{% endif %}</p>
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+
+<h2>{{ _("Links") }}</h2>
+<div class="table-wrap"><table class="menu-items">
+  <thead><tr><th>{{ _("Label") }}</th><th>{{ _("Leads to") }}</th><th>{{ _("Order") }}</th><th></th></tr></thead>
+  <tbody>{% for depth, it, label in items %}<tr id="item-{{ it.id }}">
+    <td style="padding-left: {{ 0.6 + depth * 1.6 }}rem">{{ "↳ " if depth else "" }}<strong>{{ label }}</strong>{% if not it.title %} <small class="muted">({{ _("its page's title") }})</small>{% endif %}</td>
+    <td><a href="{{ it.target }}" target="_blank" rel="noopener"><code>{{ it.target }}</code></a>{% if it.new_window %} <small class="muted">{{ _("new window") }}</small>{% endif %}</td>
+    <td class="row nowrap">
+      {% for action, sign, what in [("up", "↑", _("Up")), ("down", "↓", _("Down")), ("in", "→", _("Under the one above")), ("out", "←", _("Out of its parent"))] %}
+      <form class="inline" method="post" action="{{ here }}/items/{{ it.id }}/move">{{ csrf_field }}<input type="hidden" name="action" value="{{ action }}"><button class="link" title="{{ what }}" aria-label="{{ what }}">{{ sign }}</button></form>
+      {% endfor %}
+    </td>
+    <td class="nowrap">
+      <details><summary>{{ _("Edit") }}</summary>
+        <form class="stack" method="post" action="{{ here }}/items/{{ it.id }}">{{ csrf_field }}
+          <div class="field"><label for="t-{{ it.id }}">{{ _("Label") }}</label><input id="t-{{ it.id }}" name="title" value="{{ it.title }}" maxlength="200" placeholder="{{ label }}"></div>
+          {% if not (it.entry_id or it.term_id) %}<div class="field"><label for="u-{{ it.id }}">{{ _("Address") }}</label><input id="u-{{ it.id }}" name="url" value="{{ it.url }}" maxlength="1000"></div>{% endif %}
+          <label class="check"><input type="checkbox" name="new_window" value="1"{% if it.new_window %} checked{% endif %}> {{ _("Open in a new window") }}</label>
+          <button>{{ _("Save") }}</button>
+        </form>
+        {% if translations %}<a href="{{ admin_root }}/translations/content.menu_item/{{ it.id }}">{{ _("In other languages…") }}</a>{% endif %}
+      </details>
+      <form class="inline" method="post" action="{{ here }}/items/{{ it.id }}/delete">{{ csrf_field }}<button class="link danger" title="{{ _('With the links under it') }}">{{ _("Remove") }}</button></form>
+    </td>
+  </tr>{% else %}<tr><td colspan="4" class="muted">{{ _("No link yet.") }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+<h2>{{ _("Add a link") }}</h2>
+<form class="stack card" method="post" action="{{ here }}/{{ menu.id }}/items">{{ csrf_field }}
+  <fieldset><legend>{{ _("It leads to") }}</legend>
+    <label class="check"><input type="radio" name="kind" value="entry" checked> {{ _("A page or an article") }}</label>
+    <select name="entry_id" aria-label="{{ _('A page or an article') }}"><option value="">—</option>
+      {% for e in pages %}<option value="{{ e.id }}">{{ types[e.type].title if e.type in types else e.type }}: {{ e.title }}</option>{% endfor %}</select>
+    <label class="check"><input type="radio" name="kind" value="term"> {{ _("A category or a tag") }}</label>
+    <select name="term_id" aria-label="{{ _('A category or a tag') }}"><option value="">—</option>
+      {% for t in terms %}<option value="{{ t.id }}">{{ t.taxonomy }}: {{ t.name }}</option>{% endfor %}</select>
+    {% if modules %}<label class="check"><input type="radio" name="kind" value="module"> {{ _("A module's pages") }}</label>
+    <select name="module_url" aria-label="{{ _('A module\'s pages') }}">{% for m in modules %}<option value="{{ m.url }}">{{ about(m.module, "title", m.title) }} ({{ m.url }})</option>{% endfor %}</select>{% endif %}
+    <label class="check"><input type="radio" name="kind" value="custom"> {{ _("An address") }}</label>
+    <input name="url" placeholder="https://… /galerii/" aria-label="{{ _('An address') }}" maxlength="1000">
+  </fieldset>
+  <div class="field"><label for="n-title">{{ _("Label") }}</label><input id="n-title" name="title" maxlength="200">
+    <small class="hint">{{ _("Left empty for a page, an article or a category: its own title, in every language.") }}</small></div>
+  <label class="check"><input type="checkbox" name="new_window" value="1"> {{ _("Open in a new window") }}</label>
+  <button>{{ _("Add the link") }}</button>
+</form>
+
+<h2>{{ _("This menu") }}</h2>
+<form class="row" method="post" action="{{ here }}/{{ menu.id }}">{{ csrf_field }}
+  <label for="r-title" class="visually-hidden">{{ _("Name") }}</label><input id="r-title" name="title" value="{{ menu.title }}" maxlength="200">
+  <button name="action" value="save">{{ _("Rename") }}</button>
+</form>
+<details class="danger-zone"><summary>{{ _("Delete the menu…") }}</summary>
+  <form method="post" action="{{ here }}/{{ menu.id }}">{{ csrf_field }}<p class="hint">{{ _("The menu and every link in it are deleted. Pages and articles stay.") }}</p>
+    <button name="action" value="delete" class="danger">{{ _("Delete the menu and its links") }}</button></form>
+</details>
+{% endblock %}

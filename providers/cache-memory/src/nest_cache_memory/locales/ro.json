@@ -1,0 +1,4 @@
+{
+ "@title": "Memorie temporară locală",
+ "@description": "Ține valorile în memoria aplicației: nimic de pornit, pierdute la repornire, un singur proces. Pentru dezvoltare și aplicații mici."
+}

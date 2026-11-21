@@ -117,6 +117,8 @@ def _editor(
     source = rows.get(default)
     if source is None:
         raise HTTPException(404)
+    # what the page shows of the original: its rich text is shown as HTML, so cleaned again
+    source = kind.cleaned({f: getattr(source, f, "") or "" for f in kind.fields})
     return render(
         request,
         "translations/edit.html",

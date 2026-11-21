@@ -1,10 +1,8 @@
 {% extends "admin/layout.html" %}
 {% block title %}{{ values.title or _("New") }} · {{ spec.title }}{% endblock %}
 {% block nav %}{% include "auth/status.html" %}{% endblock %}
-{% block head %}
-<link rel="stylesheet" href="{{ asset('content', 'editor/editor.css') }}">
-<script src="{{ asset('content', 'editor/editor.js') }}" defer></script>
-{% endblock %}
+{% set editor = rich_editor() %}
+{% block head %}{{ editor.head }}{% endblock %}
 {% block admin_content %}
 <p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a> › <a href="{{ admin_root }}/content/{{ type_name }}">{{ spec.title }}</a></p>
 <h1>{{ values.title or _("New") }}</h1>
@@ -47,28 +45,9 @@
   </fieldset>
   {% endfor %}
   <div class="field"><label for="excerpt">{{ _("Summary") }}</label><textarea id="excerpt" name="excerpt" rows="2">{{ values.excerpt }}</textarea></div>
-  {%- set media_list = admin_root ~ "/content/media.json" %}{% set media_upload = admin_root ~ "/content/media" %}
-  {%- set labels = {
-    "toolbar": _("Formatting"), "text": _("Text"), "placeholder": _("Write here…"), "block": _("Paragraph style"),
-    "paragraph": _("Paragraph"), "h2": _("Heading"), "h3": _("Subheading"), "h4": _("Small heading"),
-    "bold": _("Bold"), "italic": _("Italic"), "underline": _("Underline"), "strike": _("Strikethrough"),
-    "sub": _("Subscript"), "sup": _("Superscript"), "bullet": _("Bulleted list"), "ordered": _("Numbered list"),
-    "quote": _("Quote"), "rule": _("Dividing line"), "link": _("Link"), "unlink": _("Remove link"),
-    "linkAsk": _("The link's address"), "image": _("Picture"), "video": _("Video"),
-    "videoAsk": _("The video's YouTube address"), "table": _("Table"), "undo": _("Undo"), "redo": _("Redo"),
-    "clear": _("Clear formatting"), "source": _("HTML"), "full": _("Full screen"),
-    "alignLeft": _("Picture on the left"), "alignCenter": _("Picture centred"), "alignRight": _("Picture on the right"),
-    "alt": _("Description of the picture (for those who cannot see it)"),
-    "rowAdd": _("Add a row"), "colAdd": _("Add a column"), "rowDel": _("Delete the row"), "colDel": _("Delete the column"),
-    "headRow": _("Header row"), "tableDel": _("Delete the table"),
-    "media": _("Pictures"), "search": _("Search pictures"), "upload": _("Upload a picture"), "insert": _("Insert"),
-    "noMedia": _("No pictures yet."), "loading": _("Loading…"), "uploading": _("Uploading…"),
-    "failed": _("That did not work; try again."), "ok": _("OK"), "cancel": _("Cancel"),
-    "choose": _("Choose a picture"), "remove": _("Remove"),
-  } %}
+  {%- set media_list, media_upload, labels = editor.media_list, editor.media_upload, editor.labels %}
   <div class="field"><label for="body">{{ _("Text") }}</label>
-    <textarea id="body" name="body" rows="18" class="code" data-editor data-labels="{{ labels | tojson | forceescape }}"
-      data-media-list="{{ media_list }}" data-media-upload="{{ media_upload }}">{{ values.body }}</textarea>
+    <textarea id="body" name="body" rows="18" class="code" data-editor {{ editor.attrs }}>{{ values.body }}</textarea>
     <small class="hint">{{ _("Paragraphs, headings, lists, links, pictures, tables. A YouTube address alone on a line is shown as the video; shortcodes ([map], [album slug=\"…\"]) stay as written.") }}</small></div>
   {% for name, f in spec.fields.items() %}
   {% set kind = {"textarea": "textarea", "html": "textarea", "integer": "number", "decimal": "number", "date": "date", "datetime": "datetime-local", "url": "url"}.get(f.type, "text") %}

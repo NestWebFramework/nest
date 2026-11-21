@@ -11,17 +11,49 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
-- **feed** (new): a RoboHub feed received on a public site. robohub-feed's `http`
-  publisher puts the snapshot and `widget.js` with a token per feed; the module keeps the
-  latest snapshot and the last 48 values of each item, serves them same-origin, and
-  places the widget with `feed_widget("settlement")`.
-
-## Unreleased
-
-- **feed** (new): a RoboHub feed received on a public site. robohub-feed's `http`
-  publisher puts the snapshot and `widget.js` with a token per feed; the module keeps the
-  latest snapshot and the last 48 values of each item, serves them same-origin, and
-  places the widget with `feed_widget("settlement")`.
+- **What fits, and placing it without code** (Nest core, admin, content, forum, glossary,
+  feed, every theme): application types (`application.type`: site, game, registry,
+  keeper); each package's identity card says its `category` (a fixed list) and the types
+  it `fits` (tags: `[site, game]`). The admin panel's Registry shows only what fits the
+  site, by category. A module's `offers:` (a menu link, shortcodes, blocks) let an
+  administrator place it from its page: a link in a menu, a shortcode in a page, a block
+  in a theme's region. **Content → Menus**, a menu manager (links to pages, categories,
+  modules, addresses; ordered, nested, translated). **Themes → Regions**: themes declare
+  `regions:` (home, after_content, footer, sidebar) and `menus:`; blocks offered by
+  content (newest articles), forum (latest topics), feed (readings) and glossary (search).
+- **Packages named by their identifiers, never by their words** (Nest core, every
+  package): a package's title, description and admin page's words are in its own catalog
+  under `@` keys (`"@title"`, `"@admin.title"`…, kept as `forum@title`), shown with
+  `about(name, field, default)`; admin menu groups are identifiers (`admin: group:
+  economy`, `admin_menu: [{group: economy, …}]`, labels `group@economy`). Every package
+  has its Romanian words.
+- **Module versions on a running site** (Nest core, admin 0.2.0): Admin → Modules in four
+  tabs (Installed, Updates, Registry, History). Update a module, **Update all**, take one
+  to any version in the registry (up or down) or back to the image's, add a module or a
+  theme from the registry with the Nest packages it needs. The versions chosen are kept
+  in the workspace (`packages/`, `nest.overlay`), so they survive a container's restart;
+  a newer image wins over an older choice. Each change is checked (registry, sha256,
+  signature when pinned, what it needs), backed up, migrated (down first for an older
+  version, up after), proven to start in a new process, undone if it does not, and
+  logged. A module's page moves its migrations up or down to any revision.
+  `nest modules APP versions | version | migrations | migrate` do the same from a shell.
+- **feed**: the site serves its own copy of robohub-feed's widget (`static/widget.js`),
+  never the `widget.js` a publisher sends (taken and dropped), so a feed's token cannot
+  put code on the site.
+- **content 0.2.0** and **translations 0.2.0**: a translation's body is written in the same
+  rich text editor as the original (`rich_editor()`, which content gives any admin form),
+  not as HTML. Rich text is never kept as it was sent: a module that offers an html field
+  for translation names its cleaner (`translatable: clean:`, required), and the form and
+  imported files pass through it; content cleans a body again when it shows it, and before
+  taking its text for the page's description.
+- **feed 0.2.0** (new): RoboHub feeds received on a public site. **Admin → Feeds** adds
+  one: a name (settlement) and a token made with **Generate**; robohub-feed's `http`
+  publisher puts the snapshot and `widget.js` to the site's `/feed` with that token, and
+  the site learns the feed's id from the first snapshot. Several feeds, each with its own
+  token. The module keeps the latest snapshot and the last 48 values of each item and
+  serves them same-origin. A page places a feed with `[feed name="settlement"]` or
+  `[feed id="…"]` (`kind="number"`/`"chart"`, `item="i1"`), a template with
+  `feed_widget("settlement")`; a feed with no snapshot yet shows nothing.
 
 ## Since 0.3.0
 
@@ -38,7 +70,7 @@ Packages released after Nest 0.3.0, each with its own version:
   topic and post in it, after a page that counts them. Topics are archived or deleted too.
   A board's admin page renames it and sets its order.
 - **Nest core (next release)** and **admin 0.2.0**: the admin menu is grouped (a module's
-  `admin: group:`, an application's `admin_menu:`), each group opening to its pages; a
+  `admin: group:` identifiers, an application's `admin_menu:`), each group opening to its pages; a
   module's pages get a **Settings** tab; `admin: settings_role:` lets a role other than
   administrators change that module's settings; settings may have `min` and `max`.
   Nest's own modules are grouped in Content, Community and Site.

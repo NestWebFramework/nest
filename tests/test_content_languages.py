@@ -377,3 +377,39 @@ def test_a_joomla_sites_leftover_tags_are_taken_out():
     body = '<p>Text</p><p>{joomplu:962}{joomplu:963}</p><p>{gmapfp id="6" zmap="14"}</p><p>{edocs}judetul_alba.pdf,900,640{/edocs}</p><p>Mai mult{jcomments on}</p>'
     assert strip_joomla_tags(body) == "<p>Text</p><p>Mai mult</p>"
     assert strip_joomla_tags("<p>{not a tag of theirs}</p>") == "<p>{not a tag of theirs}</p>"
+
+
+def test_the_english_body_is_written_in_the_editor_and_never_holds_a_script(site):
+    """The translation page gives the body the same rich text editor as the original's; what
+    it saves is cleaned as an original's body is, and a body that reached the database
+    another way is cleaned again when shown."""
+    stiai = category(site, "Știai că", name="Did you know", slug="did-you-know")
+    church = post(site, "Biserica de lemn", stiai, "<p>Biserica satului.</p>")
+    page = site.get(f"/admin/translations/content.entry/{church.id}?lang=en").text
+    assert 'src="/assets/content/editor/editor.js' in page  # the editor is loaded
+    body_field = re.search(r'<textarea id="tr_en_body"[^>]*>', page).group(0)
+    assert "data-editor" in body_field and "data-labels=" in body_field
+    assert "data-media-upload=" in body_field  # pictures, as in the original's editor
+
+    translate(
+        site,
+        church.id,
+        "content.entry",
+        {
+            "title": "The wooden church",
+            "slug": "the-wooden-church",
+            "body": '<p onmouseover="steal()">The church.</p><script>steal()</script>'
+            '<a href="javascript:steal()">x</a><img src="x" onerror="steal()">',
+        },
+    )
+    en = site.get("/en/did-you-know/the-wooden-church/").text
+    assert "The church." in en
+    assert "steal()" not in en and "<script>steal" not in en
+
+    # a body put in the database some other way: cleaned when shown
+    from nest_content.models import Entry
+
+    with site.db.session() as s, s.begin():
+        s.get(Entry, church.id).body = "<p>Biserica.</p><script>steal()</script>"
+    ro = site.get("/stiai-ca/biserica-de-lemn/").text
+    assert "Biserica." in ro and "steal()" not in ro

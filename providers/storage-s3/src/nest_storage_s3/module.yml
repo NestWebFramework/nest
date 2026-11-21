@@ -11,10 +11,12 @@ module:
   id: nest.provider.storage-s3
   type: provider
   title: S3 storage
-  version: 0.1.0
+  version: 0.1.1
   description: Files in an S3-compatible object store (MinIO, Ceph, AWS S3), shared by every worker and machine.
   license: MIT
   created: "2026-11-20"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -56,3 +58,6 @@ settings:
     type: bool
     default: false
     description: Make the bucket at startup when it is not there.
+
+locales:
+  - {locale: ro, file: locales/ro.json}

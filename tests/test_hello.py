@@ -31,7 +31,12 @@ def test_home_page_renders_with_safe_headers(client):
     r = client.get("/")
     assert r.status_code == 200
     assert "Bună ziua" in r.text
-    assert "/assets/htmx/htmx.min.js?v=0.1.0" in r.text
+    import yaml
+
+    htmx = yaml.safe_load(
+        (Path(__file__).parents[1] / "modules/htmx/src/nest_htmx/module.yml").read_text()
+    )["module"]["version"]
+    assert f"/assets/htmx/htmx.min.js?v={htmx}" in r.text  # versioned, so caches keep it
     csp = r.headers["content-security-policy"]
     assert "script-src 'self'" in csp and "unsafe" not in csp
     assert r.headers["x-frame-options"] == "DENY"

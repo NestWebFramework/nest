@@ -16,6 +16,7 @@ module:
   created: "2026-11-20"
 
 application:
+  type: site  # what it is: the packages offered to it are those made for it
   title: Nest
   port: 8700
   theme: slate     # the registry's look: the two sites of nest-framework.org match

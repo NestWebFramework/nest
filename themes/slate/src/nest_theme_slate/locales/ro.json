@@ -1,0 +1,13 @@
+{
+ "@title": "Ardezie",
+ "@description": "Un aspect modern întunecat, cu antetul care rămâne sus, carduri rotunjite și accente turcoaz; luminos ziua.",
+ "@menu.main": "Meniul principal",
+ "@region.home": "Pagina principală",
+ "@region.after_content": "Sub fiecare pagină",
+ "@region.footer": "Subsol",
+ "@region.sidebar": "Coloana laterală",
+ "@region.home.description": "Sub conținutul paginii principale.",
+ "@region.after_content.description": "Sub conținutul fiecărei pagini.",
+ "@region.footer.description": "În subsol, pe fiecare pagină.",
+ "@region.sidebar.description": "Lângă fiecare pagină, sub căutare și categorii."
+}

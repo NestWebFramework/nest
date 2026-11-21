@@ -3,7 +3,7 @@
 
 Jobs at set times or intervals, declared in the packages' manifests, run once across the workers.
 
-**Version 0.1.0** · module · works with Nest `>=0.3,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.3,<1` · licence MIT
 
 | | |
 |---|---|

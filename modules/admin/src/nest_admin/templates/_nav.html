@@ -3,11 +3,11 @@
     <nav class="admin-nav" aria-label="{{ _('Admin panel') }}">
       <a href="{{ admin_root or '' }}/"{% if request.url.path.rstrip('/') == (admin_root or '') %} aria-current="page"{% endif %}>{{ _("Overview") }}</a>
       {% for g in admin_menu %}
-      {%- if g.title %}
+      {%- if g.id %}
       <details class="admin-group"{% if g.open %} open{% endif %}>
-        <summary>{{ _(g.title) }}</summary>
-        <div class="admin-group-links">{% for l in g.links %}<a href="{{ l.href }}"{% if l.here %} aria-current="page"{% endif %}>{{ _(l.title) }}</a>{% endfor %}</div>
+        <summary>{{ about("group", g.id, g.id | capitalize) }}</summary>
+        <div class="admin-group-links">{% for l in g.links %}<a href="{{ l.href }}"{% if l.here %} aria-current="page"{% endif %}>{{ about(l.module, "admin.title", l.title) if l.get("module") else _(l.title) }}</a>{% endfor %}</div>
       </details>
-      {%- else %}{% for l in g.links %}<a href="{{ l.href }}"{% if l.here %} aria-current="page"{% endif %}>{{ _(l.title) }}</a>{% endfor %}{% endif %}
+      {%- else %}{% for l in g.links %}<a href="{{ l.href }}"{% if l.here %} aria-current="page"{% endif %}>{{ about(l.module, "admin.title", l.title) if l.get("module") else _(l.title) }}</a>{% endfor %}{% endif %}
       {% endfor %}
     </nav>

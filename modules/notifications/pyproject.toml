@@ -1,6 +1,6 @@
 [project]
 name = "nest-notifications"
-version = "0.1.0"
+version = "0.1.1"
 description = "Toast messages for Nest: after redirects, in htmx answers, from page scripts."
 requires-python = ">=3.12"
 license = "MIT"

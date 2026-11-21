@@ -28,6 +28,20 @@ def setup(host: ModuleHost) -> None:
     host.state["url"] = "" if host.route in (None, "/") else host.route
     host.admin(admin)  # an overview in the admin panel
 
+    @host.context
+    def _forum_block(request: Any) -> dict[str, Any]:
+        from nest_forum import service  # noqa: PLC0415
+
+        def forum_latest(n: Any = 5) -> list[Any]:
+            """The newest public topics (the forum's block): [(topic, board)]."""
+            try:
+                count = int(n or 5)
+            except (TypeError, ValueError):
+                count = 5
+            return service.latest_topics(host.bound("nest.db"), count)
+
+        return {"forum_latest": forum_latest}
+
     def may_follow(request: Any, name: str) -> bool:
         """A topic's live replies, to those who may read its board."""
         from nest_forum import service  # noqa: PLC0415

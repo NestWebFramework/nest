@@ -31,5 +31,9 @@
  "timeout": "limită de timp",
  "waits for its next time": "așteaptă ora următoare",
  "When": "Când",
- "Why": "De ce"
+ "Why": "De ce",
+ "@title": "Planificator",
+ "@description": "Lucrări la ore fixe sau la intervale, declarate în manifestele pachetelor, rulate o singură dată între procese.",
+ "@admin.title": "Planificator",
+ "@admin.description": "Lucrările care rulează la ore fixe, când rulează data viitoare și cum au mers."
 }

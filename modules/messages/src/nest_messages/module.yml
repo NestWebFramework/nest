@@ -11,12 +11,12 @@ module:
   id: nest.module.messages
   type: module
   title: Messages
-  category: community
-  version: 0.1.0
+  version: 0.1.1
   description: Private conversations between members, with read state and live delivery.
   license: MIT
   created: "2026-11-13"
-
+  category: community
+  fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
 
@@ -51,3 +51,7 @@ locales:
 docs:
   title: Messages
   section: modules
+
+# how a site reaches it without code: a menu link, shortcodes, blocks for a theme's regions
+offers:
+  menu: {title: "Messages", path: "/"}

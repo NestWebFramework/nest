@@ -29,7 +29,7 @@ def visible_pages(request: Request, user: Any) -> list[AdminPage]:
     return sorted((p for p in pages if user.has(p.role)), key=lambda p: (p.order, p.title))
 
 
-SITE = "Site"  # the panel's own pages' group (settings, modules, languages, themes)
+SITE = "site"  # the panel's own pages' group (settings, modules, languages, themes)
 
 
 def settings_owners(request: Request) -> set[str]:
@@ -83,26 +83,35 @@ def menu(request: Request, user: Any) -> list[dict[str, Any]]:
     for p in visible_pages(request, user):
         here = path.startswith(p.base) or path.rstrip("/") == f"{root}/settings/{p.module}"
         links.append(
-            (p.group, {"href": p.base + "/", "title": p.title, "here": here, "own": False})
+            (
+                p.group,
+                {
+                    "href": p.base + "/",
+                    "title": p.title,
+                    "module": p.module,
+                    "here": here,
+                    "own": False,
+                },
+            )
         )
-    ordered = [title for title, _m in nest.admin_menu]
+    ordered = [group for group, _m in nest.admin_menu]
     out: list[dict[str, Any]] = []
     groups: dict[str, dict[str, Any]] = {}
     for group, link in links:
         if not group:
-            out.append({"title": "", "links": [link], "open": link["here"]})
+            out.append({"id": "", "links": [link], "open": link["here"]})
             continue
         if group not in groups:
-            groups[group] = {"title": group, "links": [], "open": False}
+            groups[group] = {"id": group, "links": [], "open": False}
             out.append(groups[group])
         groups[group]["links"].append(link)
         groups[group]["open"] = groups[group]["open"] or link["here"]
     first = {id(g): i for i, g in enumerate(out)}  # the order they came in: their pages'
-    site_last = lambda g: g["title"] == SITE  # noqa: E731 - the panel's own pages, at the end
+    site_last = lambda g: g["id"] == SITE  # noqa: E731 - the panel's own pages, at the end
     out.sort(
         key=lambda g: (
             site_last(g),
-            ordered.index(g["title"]) if g["title"] in ordered else len(ordered),
+            ordered.index(g["id"]) if g["id"] in ordered else len(ordered),
             first[id(g)],
         )
     )
@@ -125,7 +134,7 @@ def tabs(request: Request, user: Any) -> list[dict[str, Any]]:
         may = user.has("admin") or (role and user.has(role))
         if (on_page or on_settings) and p.module in owners and may:
             return [
-                {"href": p.base + "/", "title": p.title, "here": on_page},
+                {"href": p.base + "/", "title": p.title, "module": p.module, "here": on_page},
                 {"href": f"{root}/settings/{p.module}", "title": "Settings", "here": on_settings},
             ]
     return []
@@ -156,6 +165,7 @@ def setup(host: ModuleHost) -> None:
 
     from nest_admin.languages import router as languages
     from nest_admin.modules import router as modules
+    from nest_admin.regions import router as regions
     from nest_admin.settings import router as settings
     from nest_admin.themes import ThemePreview
     from nest_admin.themes import router as themes
@@ -169,6 +179,7 @@ def setup(host: ModuleHost) -> None:
 
     host.mount(settings)
     host.mount(modules)
+    host.mount(regions)  # before the themes' /themes/{name} routes
     host.mount(themes)
     host.mount(languages)
     host.mount(router)

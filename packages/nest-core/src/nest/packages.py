@@ -79,6 +79,15 @@ class Offer:
     implements: list[str] = field(default_factory=list)  # a provider's interfaces (nest.db)
     nest: str | None = None  # the nest-core versions it works with
     deps: list[str] = field(default_factory=list)
+    category: str | None = None  # what it is about (module.category)
+    fits: list[str] = field(default_factory=list)  # the application types it is made for
+
+    def fits_type(self, app_type: str) -> bool:
+        """Whether it is made for an application of this type (its fits says so); a
+        package that does not say fits any."""
+        if not self.fits or "any" in self.fits:
+            return True
+        return app_type in self.fits
 
 
 @dataclass
@@ -388,6 +397,8 @@ def remote_offers(environ: Mapping[str, str] | None = None) -> dict[str, Offer]:
             dep_dists=list(i.get("dep_dists") or []),
             interface=i.get("interface"),
             implements=list(i.get("implements") or []),
+            category=i.get("category"),
+            fits=list(i.get("fits") or []),
         )
         for i in items
     }

@@ -115,5 +115,9 @@
   "{n} pagină s-ar schimba. Bifează-le pe cele pe care vrei să le lași cum sunt; ce vezi este ce se salvează.",
   "{n} pagini s-ar schimba. Bifează-le pe cele pe care vrei să le lași cum sunt; ce vezi este ce se salvează.",
   "{n} de pagini s-ar schimba. Bifează-le pe cele pe care vrei să le lași cum sunt; ce vezi este ce se salvează."
- ]
+ ],
+ "@title": "SEO",
+ "@description": "Titluri, descrieri, cuvinte cheie, imagini de partajare și indexare pentru fiecare pagină a fiecărui modul; etichete meta, Open Graph și JSON-LD; hartă a site-ului cu fotografii; robots.txt.",
+ "@admin.title": "SEO",
+ "@admin.description": "Cum apare fiecare pagină în rezultatele căutării și ce lipsește."
 }

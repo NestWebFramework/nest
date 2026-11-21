@@ -13,13 +13,14 @@ module:
   id: nest.module.auth
   type: module
   title: Accounts
-  category: security
-  version: 0.4.0
+  version: 0.4.1
   description: >
     Accounts with roles, sign-in and sign-out, server-side sessions on the
     bound database, and the dependencies other modules protect routes with.
   license: MIT
   created: "2026-11-13"
+  category: admin
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -74,7 +75,7 @@ docs:
   section: modules
 
 admin:
-  group: Site
+  group: site
   title: Accounts
   order: 90
   role: admin

@@ -1,6 +1,6 @@
 [project]
 name = "nest-forms"
-version = "0.1.0"
+version = "0.1.1"
 description = "Forms for Nest: Pydantic validation, translated messages, accessible fields."
 requires-python = ">=3.12"
 license = "MIT"

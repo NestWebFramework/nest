@@ -120,15 +120,34 @@ latest changes: who switched, to what, and whether it worked. See
 
 ## Modules
 
-**Modules** (`/admin/modules`, administrators only) shows what the application is
-made of: core modules (locked), enabled, disabled, and installed but not used, each
-with what it needs and what needs it. From there a module is disabled, enabled, added
-at an address, or uninstalled (its name typed to confirm). The page shows each step
-of a change and a log of the latest ones (kept in `data/modules.log`).
+**Modules** (`/admin/modules`, administrators only) has four tabs:
 
-It can also search the Nest registry for packages that work with this Nest. Those
-are read-only here: the server's administrator installs packages, the panel only
-enables what is installed. See [Modules and applications](modules-and-applications.md).
+| Tab | What it does |
+|---|---|
+| **Installed** | Every module by state (core, locked; enabled; disabled; installed, not used), with the version it runs, the registry's newer one when there is, and where its database stands. Disable, enable, add at an address, uninstall (its name typed to confirm), **Update to …** |
+| **Updates** | What the registry has newer for this Nest, each with **Update**, and **Update all** when there are several |
+| **Registry** | The packages of the Nest registry (registry.nest-framework.org, or `NEST_REGISTRY_URL`) that work with this site's Nest, searched by word and kind. A module not installed is **added**: its newest version, with the Nest packages it needs, then enabled at an address. A theme is installed (then chosen in Themes) |
+| **History** | Every change, done or refused: who, what, when (`data/modules.log`) |
+
+A module's own page (its name in the list) shows its **versions**: every release in the
+registry, those that work with this Nest marked, **Use this version** on any (newer or
+older), and **Back to the image's version** when one was chosen here. It also shows its
+**migrations**: each revision, which are applied, the one its code expects, and **Up to
+here** / **Down to here** on any (or down to nothing, its tables removed).
+
+The Registry tab shows only what fits the site: packages made for its type
+(`application.type`: site, game, registry, keeper; each package's `fits`), not the parts
+an engine brings with it (a game's subsystems), nor interfaces and providers (the server's
+administrator sets those up). **Show everything** lists the others, without Add. A
+category filter narrows it (content, community, media, maps…).
+
+After a module is added, its page offers **Place it on the site**: a link to its pages in
+one of the site's menus, its shortcodes to paste in a page, and its blocks to place in
+one of the theme's regions (the home page among them). Nothing in the site's code
+changes; each placement is edited later in Content → Menus or Themes → Regions.
+
+How a version change is made, and why it survives restarts, is in
+[Modules: versions and migrations](../modules.md#versions-and-migrations).
 
 ## Languages
 
@@ -184,22 +203,24 @@ and gives its pages with `host.admin(router)` in its setup.
 
 ### The menu's groups
 
-The menu clusters the pages: each module's `admin: group:` names its group (Nest's own:
-**Content**, **Community**, **Site**), and a group opens to its pages; the one holding the
-page shown is open. A page without a group is a link of its own. The panel's own pages
-(Settings, Modules, Languages, Themes) are in **Site**, at the end. An application may
-regroup and order them:
+The menu clusters the pages: each module's `admin: group:` names its group by an
+identifier (Nest's own: `content`, `community`, `site`; the Saga engine's `world`,
+`people`, `economy`, `power`, `faith`), and a group opens to its pages; the one holding
+the page shown is open. A page without a group is a link of its own. The panel's own
+pages (Settings, Modules, Languages, Themes) are in `site`, at the end. An application
+may regroup and order them:
 
 ```yaml
 application:
   admin_menu:
-    - {title: Economy, modules: [farm, guild, property]}
-    - {title: Power, modules: [law, polity, justice]}
+    - {group: economy, modules: [farm, guild, property]}
+    - {group: power, modules: [law, polity, justice]}
 ```
 
-Group and page titles are translated as any text (an application's catalog may reword
-them). See
-[A module](../develop/a-module.md).
+Nothing is found by its words: a group's label is `group@<id>` in a catalog
+(`"group@economy": "Economia"`), a page's title is its module's `@admin.title` (see
+[catalogs](../develop/templates-and-assets.md)), and the manifest's English is what
+shows when no catalog says otherwise. See [A module](../develop/a-module.md).
 
 ## Its frame: standalone or site
 

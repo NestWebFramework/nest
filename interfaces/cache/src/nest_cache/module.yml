@@ -3,10 +3,12 @@ module:
   id: nest.interface.cache
   type: interface
   title: Cache
-  version: 0.2.0
+  version: 0.2.1
   description: A key-value cache with optional expiry. Code depends on this, never on a provider.
   license: MIT
   created: "2026-11-13"
+  category: infrastructure
+  fits: [any]
 
 # the nest-core versions it works with (a registry refuses a package without)
 nest: ">=0.2,<1"
@@ -18,3 +20,6 @@ interface:
 provides:
   import: nest_cache
   exports: [Cache]
+
+locales:
+  - {locale: ro, file: locales/ro.json}

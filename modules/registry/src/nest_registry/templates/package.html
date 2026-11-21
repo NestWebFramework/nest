@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 {#- One package: what it is, how to install it, its versions and files. -#}
-{% block title %}{{ _(item.title) }} · {{ app.title }}{% endblock %}
+{% block title %}{{ about(item.name, "title", item.title) }} · {{ app.title }}{% endblock %}
 {% block nav %}{% include "registry/nav.html" %}{% endblock %}
 {% block content %}
 <p><a href="{{ base }}/">← {{ _("Nest packages") }}</a></p>
-<h1>{{ _(item.title) }} <span class="muted">{{ item.version }}</span></h1>
-<p class="lead">{{ _(item.description) }}</p>
+<h1>{{ about(item.name, "title", item.title) }} <span class="muted">{{ item.version }}</span></h1>
+<p class="lead">{{ about(item.name, "description", item.description) }}</p>
 <p class="row">
   <code>{{ item.name }}</code> <span class="badge">{{ _(item.type) }}</span> <span class="badge">{{ item.ecosystem }}</span>
   <span class="badge">nest-core {{ item.nest }}</span>
@@ -14,9 +14,9 @@
   {% if item.visibility == "private" %}<span class="badge lock">{{ _("private") }}</span>{% endif %}
 </p>
 {% if item.screenshot %}
-<figure class="registry-shot"><img src="{{ base }}/p/{{ item.name }}/screenshot" alt="{{ _('{name}, as a site looks in it', name=_(item.title)) }}" loading="lazy"></figure>
+<figure class="registry-shot"><img src="{{ base }}/p/{{ item.name }}/screenshot" alt="{{ _('{name}, as a site looks in it', name=about(item.name, "title", item.title)) }}" loading="lazy"></figure>
 {% elif item.preview %}{% set c = item.preview %}
-<svg class="registry-swatch" viewBox="0 0 240 150" role="img" aria-label="{{ _('The colours of {name}', name=_(item.title)) }}">
+<svg class="registry-swatch" viewBox="0 0 240 150" role="img" aria-label="{{ _('The colours of {name}', name=about(item.name, "title", item.title)) }}">
   <rect width="240" height="150" fill="{{ c.get('bg', '#eeeeee') }}"/>
   <rect width="240" height="30" fill="{{ c.get('surface', '#ffffff') }}"/>
   <rect y="30" width="240" height="1" fill="{{ c.get('border', '#dddddd') }}"/>

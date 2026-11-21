@@ -116,7 +116,9 @@ def from_form(
     for lang in languages:
         if lang == default or not form.get(f"tr_{lang}_present"):
             continue
-        values = {f: str(form.get(f"tr_{lang}_{f}") or "").strip() for f in kind.fields}
+        values = kind.cleaned(
+            {f: str(form.get(f"tr_{lang}_{f}") or "").strip() for f in kind.fields}
+        )
         status = str(form.get(f"tr_{lang}_status") or "published")
         if status not in ("published", "draft"):
             status = "draft"
@@ -226,7 +228,7 @@ def import_(
             refused.append(f"#{n}: {item.get('subject')} is not translated here")
             continue
         text = item.get("text") or {}
-        values = {f: str(text.get(f) or "").strip() for f in kind.fields if f in text}
+        values = kind.cleaned({f: str(text.get(f) or "").strip() for f in kind.fields if f in text})
         if not any(values.values()):
             continue  # left untranslated
         owner_id = item.get("id")

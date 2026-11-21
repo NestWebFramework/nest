@@ -11,11 +11,12 @@ module:
   id: nest.module.geo
   type: module
   title: Near me
-  category: maps
-  version: 0.1.0
+  version: 0.1.1
   description: A near-me page every module with places contributes to; distances and a locate button.
   license: MIT
   created: "2026-11-20"
+  category: maps
+  fits: [site]
 
 nest: ">=0.2,<1"
 
@@ -43,3 +44,7 @@ locales:
 docs:
   title: Near me
   section: modules
+
+# how a site reaches it without code: a menu link, shortcodes, blocks for a theme's regions
+offers:
+  menu: {title: "Near me", path: "/"}

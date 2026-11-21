@@ -201,7 +201,15 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
     pid_file = write_pid(nest.workspace)  # a module change reloads this master
     try:
-        return run(the_plan, on_reload=engine.restart if engine is not None else None)
+        from nest import overlay  # noqa: PLC0415
+
+        def on_reload() -> None:
+            # versions chosen in the panel: the old code out of the master before it forks
+            overlay.activate(nest.workspace, purge=True)
+            if engine is not None:
+                engine.restart()
+
+        return run(the_plan, on_reload=on_reload)
     finally:
         pid_file.unlink(missing_ok=True)
         if engine is not None:
@@ -213,6 +221,8 @@ def cmd_modules(args: argparse.Namespace) -> int:
     from nest.modules import ChangeError, change, status  # noqa: PLC0415
 
     root = Path(args.app).resolve()
+    if args.action in ("versions", "version", "migrations", "migrate"):
+        return _cmd_versions(args, root)
     if args.action == "list":
         rows = status(root)
         width = max((len(r.name) for r in rows), default=4)
@@ -249,6 +259,76 @@ def cmd_modules(args: argparse.Namespace) -> int:
     print(f"✓ {args.name} {done}" + ("; the application is reloading" if result.reloaded else ""))
     for note in result.notes:
         print(f"! {note}")
+    return 0
+
+
+def _cmd_versions(args: argparse.Namespace, root: Path) -> int:
+    """Module versions and migrations: see nest.versions."""
+    from nest import versions  # noqa: PLC0415
+
+    try:
+        if args.action == "versions":
+            offers = {}
+            try:
+                from nest.packages import remote_offers  # noqa: PLC0415
+
+                offers = {o.name: {"version": o.version} for o in remote_offers().values()}
+            except Exception as e:  # noqa: BLE001 - the list still says what runs
+                print(f"! the registry: {e}")
+            rows = versions.installed(root, offers=offers)
+            width = max((len(r.name) for r in rows), default=4)
+            for r in rows:
+                note = []
+                if r.pinned:
+                    note.append(f"chosen (the image has {r.image or 'none'})")
+                if r.aside:
+                    note.append(f"{r.aside} set aside: the image changed")
+                if r.latest and r.latest != r.running:
+                    note.append(f"{r.latest} in the registry")
+                print(f"  {r.name:{width}}  {r.running:9} " + "; ".join(note))
+            return 0
+        if args.action == "version":
+            wanted = dict(
+                v.split("=", 1) for v in [*([args.name] if args.name else []), *args.values]
+            )
+            if not wanted or any(not v for v in wanted.values()):
+                print("✗ nest modules <app> version name=1.2.0 [other=image …]")
+                return 2
+            versions.change(root, wanted, say=print, who=args.who or "")
+        elif args.action == "migrations":
+            from nest.host import close_providers, create_app  # noqa: PLC0415
+
+            nest = create_app(root, environ={**os.environ, "NEST_MIGRATE": "off"}).state.nest
+            try:
+                info = versions.migrations(nest, args.name or "")
+            finally:
+                close_providers(nest)
+            if info is None:
+                print(f"✗ {args.name} keeps no tables")
+                return 1
+            for r in info["revisions"]:
+                mark = "●" if r["current"] else ("✓" if r["applied"] else " ")
+                print(f"  {mark} {r['id']:24} {r['message']}")
+            print(f"  its code expects {', '.join(info['head']) or 'none'}")
+            return 0
+        else:  # migrate
+            if not args.name or len(args.values) != 1:
+                print("✗ nest modules <app> migrate <module> <revision|head|base>")
+                return 2
+            versions.migrate_to(root, args.name, args.values[0], say=print, who=args.who or "")
+    except versions.VersionError as e:
+        for problem in e.problems:
+            print(f"✗ {problem}")
+        return 1
+    if not args.no_reload:
+        from nest.manifest import load_manifest  # noqa: PLC0415
+        from nest.modules import reload_running  # noqa: PLC0415
+        from nest.workspace import resolve_workspace  # noqa: PLC0415
+
+        if reload_running(resolve_workspace(load_manifest(root).name, dict(os.environ))):
+            print("✓ the application is reloading")
+        else:
+            print("! restart the application to apply it (it is not run by nest serve)")
     return 0
 
 
@@ -686,12 +766,29 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.set_defaults(func=cmd_publish)
 
-    p = sub.add_parser("modules", help="an application's modules: list, enable, disable, uninstall")
+    p = sub.add_parser(
+        "modules",
+        help="an application's modules: list, enable, disable, uninstall; versions, migrations",
+    )
     p.add_argument("app")
     p.add_argument(
-        "action", nargs="?", default="list", choices=["list", "enable", "disable", "uninstall"]
+        "action",
+        nargs="?",
+        default="list",
+        choices=[
+            "list",
+            "enable",
+            "disable",
+            "uninstall",
+            "versions",
+            "version",
+            "migrations",
+            "migrate",
+        ],
     )
     p.add_argument("name", nargs="?")
+    p.add_argument("values", nargs="*", help="version: more name=version; migrate: a revision")
+    p.add_argument("--who", help="who asked (the modules log)")
     p.add_argument("--route", help="where an added module serves its pages")
     p.add_argument("--yes", action="store_true", help="uninstall: yes, remove its data")
     p.add_argument("--no-reload", action="store_true", help="change it, reload nothing")
