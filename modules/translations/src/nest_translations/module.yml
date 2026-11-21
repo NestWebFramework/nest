@@ -23,7 +23,7 @@ module:
   id: nest.module.translations
   type: module
   title: Translations
-  version: 0.2.0
+  version: 0.2.1
   description: >
     Every module's records in every language of the site: the editors' fields, what is
     missing, a draft or outdated, an editor beside the original, export and import.
@@ -32,7 +32,7 @@ module:
   category: seo
   fits: [site, game]
 # the nest-core versions it works with (a registry refuses a package without)
-nest: ">=0.2,<1"
+nest: ">=0.4,<1"
 
 main: nest_translations
 admin_styles: [translations.css]

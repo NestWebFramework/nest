@@ -3,7 +3,7 @@
 
 A registry of Nest packages, a Python package index for uv and pip, and a catalog of what each package is.
 
-**Version 0.1.1** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.1.2** · module · works with Nest `>=0.4,<1` · licence MIT
 
 | | |
 |---|---|

@@ -3,7 +3,7 @@
 
 Every module's records in every language of the site: the editors' fields, what is missing, a draft or outdated, an editor beside the original, export and import.
 
-**Version 0.2.0** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.1** · module · works with Nest `>=0.4,<1` · licence MIT
 
 | | |
 |---|---|
