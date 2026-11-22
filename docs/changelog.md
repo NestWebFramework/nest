@@ -22,7 +22,13 @@ This documentation is for **Nest %NEST_VERSION%**.
     search words.
   - A JSON API by city pair.
   - Built again after a coach feed loads.
-- **transit**: a stop's departures over a chosen window (a coach station's whole day).
+  - **Journeys with changes** over up to three days: a county bus into a coach, a coach into
+    another, at least 20 minutes to change and half an hour between two stations of a town
+    (Chișinău's Rompetrol to Gara Nord). Several journeys a day, each time in its stop's own
+    clock, a link to buy each ride at its operator. A search with no direct coach leads to
+    them; a pair with few direct runs shows them too.
+- **transit**: a stop's departures over a chosen window (a coach station's whole day); the
+  planner's index over any feeds and several days (`planner.network`), with extra transfers.
 
 ## 0.4.2
 
