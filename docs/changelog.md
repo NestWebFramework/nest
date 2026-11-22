@@ -41,6 +41,10 @@ This documentation is for **Nest %NEST_VERSION%**.
   - **Learned speeds**: real speeds between stops, by part of the day, learned from
     consecutive positions and used by the arrival estimates instead of a city
     average.
+  - **Journeys** with changes for the cities with a timetable: RAPTOR on the city's
+    day, kept in memory (Bucharest: built in ~0.5 s, then 20–40 ms a journey), walks
+    between nearby stops and from "My location", the fastest journey and those with
+    fewer changes. A JSON API for journeys, and the API documented in the README.
   - **Admin**: the live state of each city (vehicles, interval, how often the data
     really changes, viewers, stale or failing) and the fleet's notes.
 - **transit-lines 0.1.0** (new theme): a transit map's look for a city transport site: a
