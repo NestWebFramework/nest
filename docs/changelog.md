@@ -11,6 +11,16 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **transit 0.1.0** (new): city and regional public transport. Cities, their lines
+  (metro, tram, trolleybus, bus), each line's directions with stops and path, stops with
+  the lines serving them and their next departures, stop search, near-me and sitemap
+  entries, a JSON list of cities.
+  - From GTFS files (fetched only when changed) and the Tranzy API (within its daily
+    quota, kept in a ledger).
+  - A catalogue of 28 Romanian GTFS feeds and the Tranzy agencies, added from the admin
+    panel or `nest transit add`.
+  - Stop times are stored as one row per trip: Bucharest's 1.45 million rows become
+    66,000.
 - **saga survival 0.1.0** (new), **saga player 0.3.0**, **saga npc 0.3.0**: what anyone
   may do to live off the land, with no trade nor guild. Around each settlement (its
   forest, meadow, river, mountain, from the map and the content) a character gathers

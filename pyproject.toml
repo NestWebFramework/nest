@@ -1,7 +1,7 @@
 [project]
 name = "nest-workspace"
-version = "0.4.0"
-description = "Nest 0.3.0, the workspace: the core, its modules, interfaces, providers, themes and applications."
+version = "0.4.1"
+description = "Nest 0.4.1, the workspace: the core, its modules, interfaces, providers, themes and applications."
 requires-python = ">=3.12"
 dependencies = [
     "nest-core",
@@ -50,6 +50,7 @@ dependencies = [
     "nest-forum",
     "nest-messages",
     "nest-trains",
+    "nest-transit",
     "nest-saga",
     "nest-saga-world",
     "nest-saga-item",
@@ -146,6 +147,7 @@ nest-registry = { workspace = true }
 nest-forum = { workspace = true }
 nest-messages = { workspace = true }
 nest-trains = { workspace = true }
+nest-transit = { workspace = true }
 nest-saga = { workspace = true }
 nest-saga-world = { workspace = true }
 nest-saga-item = { workspace = true }

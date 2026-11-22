@@ -34,13 +34,13 @@ modules:
 | `twitter` | str |  |
 | `google_verification` | str |  |
 | `bing_verification` | str |  |
-| `robots_closed` | str |  |
 | `google_analytics` | str |  |
-| `analytics_consent` | bool | `true` |
+| `analytics_consent` | bool | `True` |
+| `robots_closed` | str |  |
 
 What each does: the reference page, or the admin panel's Settings.
-
-### Google Analytics
+<!-- /nest:readme -->
+## Google Analytics
 
 Set `google_analytics` to the GA4 measurement ID (`G-XXXXXXXXXX`, from Analytics → Admin →
 Data streams → the web stream). Every public page then loads Google's tag (`gtag.js`),
@@ -48,4 +48,3 @@ never the admin panel. With `analytics_consent` on (the default), a visitor is a
 and nothing is sent to Google until they agree; IPs are anonymized. Google's tag server is
 the one outside script source Nest's core lets in (see Security), and only while an ID is
 set. `google_verification` is something else: Search Console's ownership meta tag.
-<!-- /nest:readme -->

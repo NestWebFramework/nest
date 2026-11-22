@@ -87,6 +87,7 @@ members = [
     "nest-theme-rail-signage",
     "nest-theme-slate",
     "nest-trains",
+    "nest-transit",
     "nest-translations",
     "nest-workspace",
 ]
@@ -1918,6 +1919,25 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-transit"
+version = "0.1.0"
+source = { editable = "modules/transit" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-core" },
+    { name = "nest-db" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "pyyaml" },
+]
+
+[[package]]
 name = "nest-translations"
 version = "0.2.1"
 source = { editable = "modules/translations" }
@@ -1936,7 +1956,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-workspace"
-version = "0.4.0"
+version = "0.4.1"
 source = { virtual = "." }
 dependencies = [
     { name = "nest-admin" },
@@ -2017,6 +2037,7 @@ dependencies = [
     { name = "nest-theme-rail-signage" },
     { name = "nest-theme-slate" },
     { name = "nest-trains" },
+    { name = "nest-transit" },
     { name = "nest-translations" },
 ]
 
@@ -2107,6 +2128,7 @@ requires-dist = [
     { name = "nest-theme-rail-signage", editable = "themes/rail-signage" },
     { name = "nest-theme-slate", editable = "themes/slate" },
     { name = "nest-trains", editable = "modules/trains" },
+    { name = "nest-transit", editable = "modules/transit" },
     { name = "nest-translations", editable = "modules/translations" },
 ]
 
