@@ -9,7 +9,7 @@ sections:
   - title: Developing modules
     pages: [develop/a-module, develop/manifest, develop/lookups, develop/database, develop/scheduling, develop/templates-and-assets, develop/security, develop/testing, registry]
   - title: Running sites
-    pages: [operate/overview, deploy, deploy-ispconfig, registry-deploy, operate/backups-and-upgrades, operate/keeper, operate/agent-status]
+    pages: [operate/overview, deploy, deploy-ispconfig, registry-deploy, operate/backups-and-upgrades, operate/keeper, operate/agent-status, operate/road-router]
   - title: Modules
     reference: modules
   - title: Themes

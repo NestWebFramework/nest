@@ -11,6 +11,23 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **planner 0.1.1: along the roads, and the right station.**
+  - Cars, taxis and walks follow the streets when a road router answers (Valhalla on
+    your own server, the new `road_router` setting): their lengths and minutes from the
+    roads, and the map draws them along the streets. None set, or it does not answer: a
+    straight line as before. See [Road router](operate/road-router.md).
+  - The first and last miles weigh a walk (up to 2.5 km) against the city's or county's
+    buses, the minutes waiting for a bus and a change between buses counting; a taxi
+    when nothing else gets there, or the buses would arrive 40 minutes later.
+- **trains 0.2.2: a town's own station first.** The stations tried at each end are the
+  town's own (within 3 km) first, then the nearest and the busiest within 12 km. A trip to
+  Dej now ends at Dej Călători, at the town's edge, then on to the centre, never at Gherla
+  and back.
+- **flights 0.1.3: adsb.lol's Retry-After.** On a 429 (or 503) adsb.lol is not asked
+  again, by any worker, for the seconds its Retry-After says (a minute when it says
+  none, an hour at most): the radar uses OpenSky meanwhile when it has a client, else
+  shows the last positions; route lookups wait too.
+
 - **flights 0.1.2: a page per aircraft and per flight.**
   - **An aircraft** (`/avion/<ICAO address>`): its registration, maker, model and
     operator (hexdb.io), a photo from planespotters.net (photographer credited, linked
