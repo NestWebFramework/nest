@@ -9,6 +9,22 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **flights 0.1.1: airport timetables and readable radar planes.**
+  - Each airport page has its usual departures and arrivals, today and tomorrow, from the
+    flights seen in the last three weeks on that weekday (OpenSky; the import now fetches
+    each airport's arrivals too, the flights from abroad). Shown as usual times,
+    estimated; "în aer acum" when the plane is on the radar.
+  - Flights to and from 3,949 airports with scheduled flights are named by their towns,
+    in Romanian where Romanians say them otherwise (Londra Luton, Paris Beauvais, Viena).
+  - A flight number as on a ticket only when its callsign says it (TAROM's ROT601: RO 601);
+    a callsign with letters (Wizz Air's WMT7R) stays as it is.
+  - Radar popups name the aircraft (Boeing 787-9, not B789) and more airlines. On a click
+    they show the flight's route: from the flights seen, else adsb.lol's route lookup
+    (counted in the day's budget, kept six hours).
+  - Airport pages' search words mention departures and arrivals.
+
 ## 0.4.4
 
 - **Caching, capped in size, for the transport sites' heavy work.**
