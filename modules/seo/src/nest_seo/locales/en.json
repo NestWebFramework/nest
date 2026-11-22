@@ -110,5 +110,10 @@
  "{n} page would change. Tick those you want to leave as they are; what you see is what is saved.": [
   "{n} page would change. Tick those you want to leave as they are; what you see is what is saved.",
   "{n} pages would change. Tick those you want to leave as they are; what you see is what is saved."
- ]
+ ],
+ "We would like to see which pages are useful, so we can make the site better. Is that OK?": "We would like to see which pages are useful, so we can make the site better. Is that OK?",
+ "OK": "OK",
+ "No, thanks": "No, thanks",
+ "Helps us see which pages are useful, so we can make the site better.": "Helps us see which pages are useful, so we can make the site better.",
+ "2 years": "2 years"
 }

@@ -1,6 +1,6 @@
 [project]
 name = "nest-seo"
-version = "0.2.0"
+version = "0.2.1"
 description = "SEO for every Nest module: titles, descriptions, keywords, sharing pictures, JSON-LD, a sitemap with photos, robots.txt."
 requires-python = ">=3.12"
 license = "MIT"

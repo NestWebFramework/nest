@@ -120,9 +120,11 @@
  "@description": "Titluri, descrieri, cuvinte cheie, imagini de partajare și indexare pentru fiecare pagină a fiecărui modul; etichete meta, Open Graph și JSON-LD; hartă a site-ului cu fotografii; robots.txt.",
  "@admin.title": "SEO",
  "@admin.description": "Cum apare fiecare pagină în rezultatele căutării și ce lipsește.",
- "This site counts its visits with Google Analytics, which sets cookies. Do you agree?": "Acest site își numără vizitele cu Google Analytics, care pune cookie-uri. Ești de acord?",
- "I agree": "Sunt de acord",
- "No, thank you": "Nu, mulțumesc",
  "Google Analytics measurement ID": "ID-ul de măsurare Google Analytics",
- "Ask visitors before analytics": "Întreabă vizitatorii înainte de analiză"
+ "Ask visitors before analytics": "Întreabă vizitatorii înainte de analiză",
+ "We would like to see which pages are useful, so we can make the site better. Is that OK?": "Am vrea să vedem ce pagini sunt utile, ca să facem site-ul mai bun. E în regulă?",
+ "OK": "De acord",
+ "No, thanks": "Nu, mulțumesc",
+ "Helps us see which pages are useful, so we can make the site better.": "Ne ajută să vedem ce pagini sunt utile, ca să facem site-ul mai bun.",
+ "2 years": "2 ani"
 }

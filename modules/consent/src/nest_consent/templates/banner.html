@@ -1,0 +1,33 @@
+{#- The notice: shown while the visitor has not chosen for the cookies that need consent
+    (the layouts include it at the end of the page). It works without a script: its
+    buttons send the choice; the script only spares the page's reload. -#}
+{% set cs = consent() if consent is defined else none %}
+{% if cs and not in_admin %}
+<script src="{{ asset('consent', 'consent.js') }}" defer></script>
+{% if cs.ask %}
+{% set names = {"preferences": _("to remember your choices"), "statistics": _("to see which pages are useful, so we can make the site better"), "marketing": _("to show you more relevant ads")} %}
+{% set notice = consent_notice() if consent_notice is defined else "" %}
+{% set ns = namespace(parts=[]) %}{% for p in cs.needed %}{% set ns.parts = ns.parts + [names.get(p, p)] %}{% endfor %}
+<aside class="nest-consent-bar" role="dialog" aria-labelledby="nest-consent-text" aria-live="polite">
+  <form method="post" action="{{ consent_url.rstrip('/') }}/alege" class="nest-consent-form">
+    {{ csrf_field }}
+    <input type="hidden" name="back" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+    <p id="nest-consent-text">{% if notice %}{{ _(notice) }}{% else %}{{ _("We use cookies so the site works well and, if you're happy with it, {purposes}.", purposes=(ns.parts | join(_(" and ")))) }}{% endif %}
+      <a href="{{ consent_url }}">{{ _("More about cookies") }}</a></p>
+    <div class="nest-consent-actions">
+      <button type="submit" name="action" value="all">{{ _("OK") }}</button>
+      <button type="submit" name="action" value="necessary" class="secondary">{{ _("Only the essential") }}</button>
+    </div>
+    {% set short = {"preferences": _("Remember my choices"), "statistics": _("Help improve the site (statistics)"), "marketing": _("Relevant ads")} %}
+    <details class="nest-consent-choose">
+      <summary>{{ _("Choose") }}</summary>
+      <ul>
+        <li><label class="check"><input type="checkbox" checked disabled> {{ _("Essential (always on)") }}</label></li>
+        {% for purpose in cs.needed %}<li><label class="check"><input type="checkbox" name="purpose" value="{{ purpose }}"> {{ short.get(purpose, purpose) }}</label></li>{% endfor %}
+      </ul>
+      <button type="submit" name="action" value="choose" class="secondary">{{ _("Save my choice") }}</button>
+    </details>
+  </form>
+</aside>
+{% endif %}
+{% endif %}

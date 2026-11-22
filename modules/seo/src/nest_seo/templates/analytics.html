@@ -1,11 +1,16 @@
 {#- Google Analytics on every page, when the seo module's ID is set: Nest's own script loads
-    Google's tag, after asking the visitor when consent is asked (the layouts include this
-    at the end of the page). Never in the admin panel. -#}
+    Google's tag. With the consent module, only when the visitor allowed statistics (that
+    module's notice asks); without it, after this module's own question when consent is
+    asked. Never in the admin panel (the layouts include this at the end of the page). -#}
 {% set ga = seo_analytics() if seo_analytics is defined else none %}
 {% if ga and not in_admin %}
-<link rel="stylesheet" href="{{ asset('seo', 'analytics.css') }}">
+{% set managed = consent is defined %}
+{% if managed %}{% set ok = consent().allowed("statistics", "google-analytics") %}{% endif %}
+{% if not managed or ok %}
+{% if not managed %}<link rel="stylesheet" href="{{ asset('seo', 'analytics.css') }}">{% endif %}
 <script src="{{ asset('seo', 'analytics.js') }}" defer
-  data-ga="{{ ga.id }}" data-consent="{{ 1 if ga.consent else 0 }}"
-  data-text="{{ _('This site counts its visits with Google Analytics, which sets cookies. Do you agree?') }}"
-  data-yes="{{ _('I agree') }}" data-no="{{ _('No, thank you') }}"></script>
+  data-ga="{{ ga.id }}" data-consent="{{ 'given' if managed else (1 if ga.consent else 0) }}"
+  data-text="{{ _('We would like to see which pages are useful, so we can make the site better. Is that OK?') }}"
+  data-yes="{{ _('OK') }}" data-no="{{ _('No, thanks') }}"></script>
+{% endif %}
 {% endif %}

@@ -8,7 +8,7 @@ module:
   id: nest.theme.paper
   type: theme
   title: Paper
-  version: 0.1.2
+  version: 0.1.3
   description: An editorial look, a masthead and a serif to read by, on warm paper; dark at night.
   license: MIT
   created: "2026-11-20"

@@ -119,5 +119,25 @@ def setup(host: ModuleHost) -> None:
             "seo_analytics": lambda: analytics(host),
         }
 
+    def cookies(_key: object = None) -> list[dict]:
+        """Google Analytics' cookies, for the consent module, while an ID is set."""
+        from nest_seo.analytics import measurement_id
+
+        found = measurement_id(host.settings.get("google_analytics"))
+        if not found:
+            return []
+        common = {
+            "purpose": "statistics",
+            "service": "google-analytics",
+            "provider": "Google Analytics",
+            "owner": "seo",
+            "description": "Helps us see which pages are useful, so we can make the site better.",
+        }
+        return [
+            {**common, "name": "_ga", "duration": "2 years"},
+            {**common, "name": f"_ga_{found[2:]}", "duration": "2 years"},
+        ]
+
+    host.answer("consent.cookies", cookies)
     host.serve_at_root(root)
     host.admin(admin)

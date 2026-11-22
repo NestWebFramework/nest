@@ -45,6 +45,7 @@
     document.body.appendChild(box);
   }
 
+  // "given": the consent module asked, and the visitor allowed statistics
   if (me.getAttribute("data-consent") !== "1" || remembered() === "yes") load();
   else if (remembered() !== "no") ask();
 })();

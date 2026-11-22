@@ -11,6 +11,20 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **consent 0.1.0** (new): cookies and consent for a whole site.
+  - Every module declares its cookies, as configured now (`consent.cookies`); Nest's own
+    are declared for it.
+  - One notice, in plain words, asks only for the purposes that need consent: OK, Only the
+    essential, or Choose (a switch per purpose).
+  - The cookies page lists every cookie by purpose, who sets it and for how long, with a
+    switch per service when a purpose has more than one.
+  - Every module asks the same choice: in templates, in Python, in page scripts. A new
+    cookie that needs consent asks again.
+- **seo 0.2.1**: Google Analytics declares its cookies and, with the consent module, loads
+  only once the visitor allowed statistics (its own question otherwise, now in plain
+  words).
+- **Themes** base 0.2.3, paper, rail-signage and morlaca-valley 0.1.3, and transit-lines
+  include the consent notice.
 - **transit 0.1.0** (new): city and regional public transport. Cities, their lines
   (metro, tram, trolleybus, bus), each line's directions with stops and path, stops with
   the lines serving them and their next departures, stop search, near-me and sitemap

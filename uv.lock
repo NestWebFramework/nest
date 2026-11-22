@@ -15,6 +15,7 @@ members = [
     "nest-cache",
     "nest-cache-memory",
     "nest-comments",
+    "nest-consent",
     "nest-content",
     "nest-core",
     "nest-db",
@@ -682,6 +683,17 @@ requires-dist = [
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
 ]
+
+[[package]]
+name = "nest-consent"
+version = "0.1.0"
+source = { editable = "modules/consent" }
+dependencies = [
+    { name = "nest-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-content"
@@ -1779,7 +1791,7 @@ requires-dist = [{ name = "nest-search", editable = "interfaces/search" }]
 
 [[package]]
 name = "nest-seo"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "modules/seo" }
 dependencies = [
     { name = "nest-auth" },
@@ -1827,7 +1839,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-theme-base"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "themes/base" }
 dependencies = [
     { name = "nest-htmx" },
@@ -1860,7 +1872,7 @@ requires-dist = [{ name = "nest-theme-morlaca-valley", editable = "themes/morlac
 
 [[package]]
 name = "nest-theme-morlaca-valley"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "themes/morlaca-valley" }
 dependencies = [
     { name = "nest-theme-base" },
@@ -1871,7 +1883,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-theme-paper"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "themes/paper" }
 dependencies = [
     { name = "nest-theme-base" },
@@ -1882,7 +1894,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-theme-rail-signage"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "themes/rail-signage" }
 dependencies = [
     { name = "nest-theme-base" },
@@ -1977,6 +1989,7 @@ dependencies = [
     { name = "nest-cache" },
     { name = "nest-cache-memory" },
     { name = "nest-comments" },
+    { name = "nest-consent" },
     { name = "nest-content" },
     { name = "nest-core" },
     { name = "nest-db" },
@@ -2069,6 +2082,7 @@ requires-dist = [
     { name = "nest-cache", editable = "interfaces/cache" },
     { name = "nest-cache-memory", editable = "providers/cache-memory" },
     { name = "nest-comments", editable = "modules/comments" },
+    { name = "nest-consent", editable = "modules/consent" },
     { name = "nest-content", editable = "modules/content" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },

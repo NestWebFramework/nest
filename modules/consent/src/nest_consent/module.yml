@@ -1,0 +1,57 @@
+#
+# consent — cookies and consent for a whole site: every cookie the application's modules
+# set is declared (by name, purpose, how long it lasts, who sets it), one notice asks the
+# visitor only for the purposes that need consent (preferences, statistics, marketing), a
+# cookies page lists them all and lets the visitor change their mind, and every module asks
+# the same choice before it sets a cookie that needs it.
+#
+# A module declares its cookies by answering "consent.cookies" with a list of dicts
+# {name, purpose, duration, description, provider}: what it sets as it is configured now
+# (the seo module declares Google Analytics' cookies only while an ID is set). Nest's own
+# cookies (the CSRF token, the language, the session...) are declared here.
+#
+module:
+  name: consent
+  id: nest.module.consent
+  type: module
+  title: Cookies and consent
+  version: 0.1.0
+  description: Every module's cookies declared, one notice asking only for what needs consent, a cookies page.
+  license: MIT
+  created: "2026-11-22"
+  category: admin
+  fits: [site, game, registry, keeper]
+
+nest: ">=0.4,<1"
+
+main: nest_consent
+styles: [consent.css]
+
+provides:
+  import: nest_consent
+  exports: []
+
+settings:
+  days:
+    type: int
+    default: 180
+    description: How long a visitor's choice is kept, in days; asked again after, or as soon as a module adds a cookie that needs consent.
+  notice:
+    type: str
+    default: ""
+    description: The notice's sentence, in English (the language packs translate it). Empty, Nest's own, naming what the cookies are for.
+  policy:
+    type: str
+    default: ""
+    description: A page of the site with the privacy policy (a path), linked from the notice and the cookies page. Empty, none.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+  - {locale: en, file: locales/en.json}
+
+docs:
+  title: Cookies and consent
+  section: modules
+
+offers:
+  menu: {title: "Cookies", path: "/"}

@@ -1,0 +1,11 @@
+/* consent.css: the notice, at the bottom of the page, in the theme's colours. */
+.nest-consent-bar { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 2000; max-width: 46rem; margin: 0 auto;
+  background: var(--surface, #fff); color: var(--text, #222); border: 1px solid var(--border, #ccc);
+  border-radius: var(--radius, 10px); box-shadow: 0 8px 28px rgba(0, 0, 0, .18); padding: .9rem 1.1rem; }
+.nest-consent-form { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 0; }
+.nest-consent-form p { flex: 1 1 20rem; margin: 0; }
+.nest-consent-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.nest-consent-choose { flex-basis: 100%; }
+.nest-consent-choose summary { cursor: pointer; color: var(--link, var(--accent, #0b5cad)); }
+.nest-consent-choose ul { list-style: none; padding: 0; margin: .5rem 0; display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }
+.nest-consent-services { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .3rem; }

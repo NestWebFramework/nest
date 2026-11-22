@@ -463,7 +463,7 @@ def test_google_analytics_loads_on_every_page_only_when_set(site):
     page = site.get("/harta/")
     tag = page.text.split("analytics.js")[1].split("</script>")[0]
     assert 'data-ga="G-1HP4JWJHPV"' in tag and 'data-consent="1"' in tag
-    assert "cookie" in tag.lower()  # the visitor is asked, in the site's language
+    assert "pagini sunt utile" in tag  # the visitor is asked, plainly, in the site's language
     assert "<script>" not in page.text  # nothing inline: the policy stays strict
     policy = page.headers["content-security-policy"]
     assert "https://www.googletagmanager.com" in policy.split("script-src")[1].split(";")[0]

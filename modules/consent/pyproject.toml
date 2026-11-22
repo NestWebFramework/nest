@@ -1,0 +1,14 @@
+[project]
+name = "nest-consent"
+version = "0.1.0"
+description = "Cookies and consent: every module's cookies declared, one notice asking only for what needs it, a cookies page, the visitor's choice for every module."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core"]
+
+[project.entry-points."nest.modules"]
+consent = "nest_consent"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

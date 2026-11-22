@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Cookies") }} · {{ app.title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% set titles = {"necessary": _("Essential"), "preferences": _("Preferences"), "statistics": _("Statistics"), "marketing": _("Marketing")} %}
+{% set about = {"necessary": _("Needed for the site to work: keeping forms safe, remembering your language."), "preferences": _("They remember your choices, such as a game's progress."), "statistics": _("They help us see which pages are useful, so we can make the site better. They are used only if you allow them."), "marketing": _("They help show ads that interest you. They are used only if you allow them.")} %}
+{% block content %}
+<h1>{{ _("Cookies") }}</h1>
+<p class="lead">{{ _("Here are the cookies this site uses and what each one is for. The essential ones are always on; you choose the others, and you can change your mind here at any time.") }}{% if policy %} <a href="{{ policy }}">{{ _("Privacy policy") }}</a>{% endif %}</p>
+<form method="post" action="{{ (base or '').rstrip('/') }}/alege" class="stack">
+  {{ csrf_field }}
+  <input type="hidden" name="back" value="{{ base or '/' }}">
+  {% for purpose, rows in state.by_purpose().items() %}
+  <section class="card stack nest-consent-purpose" aria-labelledby="p-{{ purpose }}">
+    <div class="row between">
+      <h2 id="p-{{ purpose }}">{{ titles.get(purpose, purpose) }}</h2>
+      {% if purpose == "necessary" %}<span class="badge">{{ _("always on") }}</span>
+      {% else %}<label class="check"><input type="checkbox" name="purpose" value="{{ purpose }}"{% if state.allowed(purpose) %} checked{% endif %}> {{ _("allow") }}</label>{% endif %}
+    </div>
+    <p class="muted">{{ about.get(purpose, "") }}</p>
+    {% set services = state.services(purpose) %}
+    {% if purpose != "necessary" and services | length > 1 %}
+    <ul class="nest-consent-services">
+      {% for key, rows in services %}
+      <li><label class="check"><input type="hidden" name="service_shown" value="{{ key }}"><input type="checkbox" name="service" value="{{ key }}"{% if state.allowed(purpose, key) %} checked{% endif %}> {{ rows[0].provider or key }} <span class="muted small">({{ rows | map(attribute="name") | join(", ") }})</span></label></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>{{ _("Cookie") }}</th><th>{{ _("Set by") }}</th><th>{{ _("Lasts") }}</th><th>{{ _("What for") }}</th></tr></thead>
+      <tbody>{% for c in rows %}<tr><td><code>{{ c.name }}</code></td><td>{{ c.provider or c.owner }}</td><td>{{ _(c.duration) if c.duration else "" }}</td><td>{{ _(c.description) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+  {% endfor %}
+  {% if state.needed %}
+  <div class="row">
+    <button type="submit" name="action" value="choose">{{ _("Save my choice") }}</button>
+    <button type="submit" name="action" value="all" class="secondary">{{ _("Accept all") }}</button>
+    <button type="submit" name="action" value="necessary" class="secondary">{{ _("Only the essential") }}</button>
+  </div>
+  {% else %}
+  <p class="muted">{{ _("This site uses only the cookies it needs to work, so there is nothing to choose.") }}</p>
+  {% endif %}
+</form>
+{% endblock %}
