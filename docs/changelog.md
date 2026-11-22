@@ -21,6 +21,19 @@ This documentation is for **Nest %NEST_VERSION%**.
     panel or `nest transit add`.
   - Stop times are stored as one row per trip: Bucharest's 1.45 million rows become
     66,000.
+  - **Live**: where the vehicles are now, and live times on stop boards.
+    - GTFS-realtime is read without the protobuf library: vehicles, trip updates,
+      alerts (Bucharest, Cluj, Iași, Buzău).
+    - Tranzy gives vehicles for Constanța (matched to its GTFS lines by name),
+      Botoșani and Chișinău.
+    - Fetched only while someone watches a city's live map or a stop's board, by one
+      worker for the whole site. Tranzy's interval is worked out from the day's quota
+      left, the cities watched and how often their data really changes; stale cities
+      are asked less.
+    - Live map with gliding vehicles and a line filter; boards with live times,
+      delays and cancellations, or arrivals estimated from positions.
+- **maps 0.2.2**: a map tells the page it is ready (`nest-map:ready`, with the map and
+  Leaflet), so another module can draw on it.
 - **saga survival 0.1.0** (new), **saga player 0.3.0**, **saga npc 0.3.0**: what anyone
   may do to live off the land, with no trade nor guild. Around each settlement (its
   forest, meadow, river, mountain, from the map and the content) a character gathers

@@ -86,6 +86,9 @@
       });
     }
     load();
+    // another module may draw on the map (the transit module's live vehicles): it hears
+    // this, with the map and Leaflet
+    el.dispatchEvent(new CustomEvent("nest-map:ready", { bubbles: true, detail: { map: map, L: window.L } }));
     // a map of what moves (trains running now) asks again every so many seconds
     var every = parseInt(d.refresh, 10);
     if (every >= 10) setInterval(function () { if (!document.hidden) load(); }, every * 1000);

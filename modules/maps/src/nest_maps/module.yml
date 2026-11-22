@@ -14,7 +14,7 @@ module:
   id: nest.module.maps
   type: module
   title: Maps
-  version: 0.2.1
+  version: 0.2.2
   description: >
     Maps with markers (Leaflet, OpenStreetMap tiles), a page with every place the
     site's modules know, [map] and WordPress's [wpgmza] shortcodes, GeoJSON, an
