@@ -32,7 +32,6 @@ modules:
 
 What each does: the reference page, or the admin panel's Settings.
 <!-- /nest:readme -->
-
 ## How a module uses it
 
 **Declare** the cookies it sets as it is configured now, by answering `consent.cookies`:
