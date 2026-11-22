@@ -27,6 +27,9 @@ This documentation is for **Nest %NEST_VERSION%**.
     (Chișinău's Rompetrol to Gara Nord). Several journeys a day, each time in its stop's own
     clock, a link to buy each ride at its operator. A search with no direct coach leads to
     them; a pair with few direct runs shows them too.
+- **transit-lines 0.1.1**: a `variant` setting. `lines` (a city's transit map) or `road`
+  (coaches between towns: a road with its centre line, a warm accent), for transportul.ro.
+- **nest-images** and **nest-agent-tokens** know transportul (port 8620).
 - **transit**: a stop's departures over a chosen window (a coach station's whole day); the
   planner's index over any feeds and several days (`planner.network`), with extra transfers.
 
