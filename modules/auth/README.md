@@ -3,7 +3,7 @@
 
 Accounts with roles, sign-in and sign-out, server-side sessions on the bound database, and the dependencies other modules protect routes with.
 
-**Version 0.4.1** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.4.2** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
@@ -31,6 +31,9 @@ modules:
 | `min_password_length` | int | `10` |
 | `login_attempts` | int | `5` |
 | `lockout_minutes` | int | `15` |
+| `account_attempts` | int | `3` |
+| `address_attempts` | int | `20` |
+| `registrations_per_hour` | int | `5` |
 
 What each does: the reference page, or the admin panel's Settings.
 <!-- /nest:readme -->

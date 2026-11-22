@@ -62,6 +62,26 @@ def setup(host: ModuleHost) -> None:
             int(settings.get("login_attempts")),
             60 * int(settings.get("lockout_minutes")),
         ),
+        # an account (whatever the address: a guesser changing addresses) and an address
+        # (whatever the account: one trying many) are each paused on their own
+        account_throttle=make_throttle(
+            host.bound("nest.db"),
+            host.bound_if("nest.cache", shared=True),
+            int(settings.get("account_attempts")),
+            60 * int(settings.get("lockout_minutes")),
+        ),
+        address_throttle=make_throttle(
+            host.bound("nest.db"),
+            host.bound_if("nest.cache", shared=True),
+            int(settings.get("address_attempts")),
+            60 * int(settings.get("lockout_minutes")),
+        ),
+        register_throttle=make_throttle(
+            host.bound("nest.db"),
+            host.bound_if("nest.cache", shared=True),
+            int(settings.get("registrations_per_hour")),
+            3600,
+        ),
         login_url=host.url("login"),
     )
     urls = {

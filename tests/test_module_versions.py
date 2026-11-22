@@ -363,3 +363,67 @@ def test_each_start_fits_the_choices_to_the_image_it_runs(tmp_path, monkeypatch)
         "nest-demo" in aside
         and "the image's nest-uses needs nest-demo>=1.5" in aside["nest-demo"][1]
     )
+
+
+def test_a_forked_worker_takes_the_versions_chosen_since_its_master_loaded(tmp_path, monkeypatch):
+    """nest serve's workers are forked from the master: one renewed after max_requests, or
+    made when the master missed its reload, still imports what pins.json says now, never
+    the code the master had (a site answering one version, then the other)."""
+    import importlib
+    import os
+
+    from nest import overlay
+
+    ws = tmp_path / "ws"
+    image = tmp_path / "image"
+    (image / "nest_forktest").mkdir(parents=True)
+    (image / "nest_forktest" / "__init__.py").write_text('VERSION = "1"\n')
+    pinned = ws / "packages" / "nest-forktest-2.0.0"
+    (pinned / "nest_forktest").mkdir(parents=True)
+    (pinned / "nest_forktest" / "__init__.py").write_text('VERSION = "2"\n')
+    info = pinned / "nest_forktest-2.0.0.dist-info"
+    info.mkdir()
+    (info / "METADATA").write_text("Metadata-Version: 2.1\nName: nest-forktest\nVersion: 2.0.0\n")
+    (info / "RECORD").write_text("nest_forktest/__init__.py,,\n")
+    monkeypatch.syspath_prepend(str(image))
+    monkeypatch.setattr(overlay, "_loaded", {})
+    monkeypatch.setattr(overlay, "_owner", {})
+    chosen: dict = {}
+    monkeypatch.setattr(overlay, "check", lambda workspace: (dict(chosen), {}, {}))
+    try:
+        overlay.activate(ws)  # the master, nothing chosen yet
+        assert importlib.import_module("nest_forktest").VERSION == "1"
+        chosen["nest-forktest"] = overlay.Pin("nest-forktest", "2.0.0", "forktest")
+        assert overlay.activate(ws) == []  # the same process: never mixes versions
+        assert importlib.import_module("nest_forktest").VERSION == "1"
+        key = str(ws.resolve())
+        overlay._owner[key] = os.getpid() + 1  # as a fork sees it: loaded by its parent
+        assert overlay.activate(ws) == ["nest-forktest==2.0.0"]
+        assert importlib.import_module("nest_forktest").VERSION == "2"
+    finally:
+        sys.modules.pop("nest_forktest", None)
+        for p in list(sys.path):
+            if str(ws) in p:
+                sys.path.remove(p)
+
+
+def test_a_worker_reloads_through_its_master_never_alone(tmp_path, monkeypatch):
+    """A change asked of a nest serve worker signals its parent, the master (a pid file
+    may be stale or of another namespace); without it, no worker is made again alone."""
+    import signal
+
+    from nest import modules
+
+    sent = []
+    monkeypatch.setenv(modules.SERVE_MASTER, "4242")
+    monkeypatch.setattr(modules.os, "getppid", lambda: 4242)
+    monkeypatch.setattr(modules.os, "kill", lambda pid, sig: sent.append((pid, sig)))
+    assert modules.reload_running(tmp_path) is True
+    assert sent == [(4242, signal.SIGHUP)]
+
+    class Nest:
+        workspace = tmp_path
+        reloader = object()  # would make only this worker's application again
+
+    monkeypatch.setattr(modules.os, "getppid", lambda: 1)  # its master is gone
+    assert modules.reload_app(Nest()) == ""

@@ -42,6 +42,7 @@ log = logging.getLogger("nest.modules")
 
 MANAGED_TYPES = ("module", "subsystem", "content")
 PID_FILE = Path("run") / "serve.pid"
+SERVE_MASTER = "NEST_SERVE_MASTER"  # nest serve's master pid, in its workers' environment
 LOG_FILE = Path("data") / "modules.log"
 
 
@@ -396,6 +397,11 @@ def reload_app(nest: Any) -> str:
     returns, so the request asking finishes first); "" when neither can be done."""
     if reload_running(nest.workspace):
         return "serve"
+    if os.environ.get(SERVE_MASTER):
+        # a worker of nest serve: making only this worker's application again would leave
+        # the others on the old code (a site answering one way, then the other). Without
+        # its master, the change waits for a restart.
+        return ""
     reloader = getattr(nest, "reloader", None)
     if reloader is None:
         return ""
@@ -412,6 +418,16 @@ def reload_app(nest: Any) -> str:
 def reload_running(workspace: Path) -> bool:
     """HUP to the nest serve master of this workspace, if one runs: its workers are made
     again one by one, with the engine process. False when none runs."""
+    master = os.environ.get(SERVE_MASTER, "")
+    if master.isdigit() and int(master) == os.getppid():
+        # a worker asking: its parent is the master (in a container too, where a pid file
+        # may name a process of another namespace or be left from a start before)
+        try:
+            os.kill(int(master), signal.SIGHUP)
+        except OSError:
+            pass
+        else:
+            return True
     path = workspace / PID_FILE
     try:
         pid = int(path.read_text(encoding="utf-8").strip())

@@ -200,6 +200,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
     from nest.modules import write_pid  # noqa: PLC0415
 
     pid_file = write_pid(nest.workspace)  # a module change reloads this master
+    from nest.modules import SERVE_MASTER  # noqa: PLC0415
+
+    os.environ[SERVE_MASTER] = str(os.getpid())  # its workers signal it as their parent
     try:
         from nest import overlay  # noqa: PLC0415
 

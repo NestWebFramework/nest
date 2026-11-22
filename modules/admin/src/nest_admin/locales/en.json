@@ -304,5 +304,12 @@
  "The theme in use has no regions.": "The theme in use has no regions.",
  "Ways to reach it without touching the site's code; each can be changed or undone later.": "Ways to reach it without touching the site's code; each can be changed or undone later.",
  "not offered any more": "not offered any more",
- "Up": "Up"
+ "Up": "Up",
+ "Another change is under way: wait until it is done.": "Another change is under way: wait until it is done.",
+ "Applying {what}: download, checks, backup, migrations… {s} s so far. You can leave this page; the change goes on.": "Applying {what}: download, checks, backup, migrations… {s} s so far. You can leave this page; the change goes on.",
+ "Done. The site is reloading with {what}…": "Done. The site is reloading with {what}…",
+ "Applied: {what}.": "Applied: {what}.",
+ "The site runs it now.": "The site runs it now.",
+ "{what} could not be applied; the site runs as before.": "{what} could not be applied; the site runs as before.",
+ "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.": "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again."
 }

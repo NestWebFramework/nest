@@ -18,7 +18,7 @@ module:
   id: nest.module.seo
   type: module
   title: SEO
-  version: 0.2.1
+  version: 0.2.2
   description: >
     Search titles, descriptions, keywords, sharing pictures and indexing for every page of
     every module; meta tags, Open Graph and JSON-LD; a sitemap with photos; robots.txt.

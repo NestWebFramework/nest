@@ -1,0 +1,22 @@
+{#- A version change under way, or the last one: polled while it runs (changes.py). -#}
+{% if change and change.recent %}
+{% set what = change.args[1:] | join(", ") | replace("=", " → ") %}
+{% set polling = change.state == "running" or (change.state == "done" and not change.settled) %}
+<div id="module-change"{% if polling %} hx-get="{{ admin_root }}/modules/_change" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  {% if change.state == "running" %}
+  <p class="notice busy busy-on" role="status"><span class="spinner" aria-hidden="true"></span> {{ _("Applying {what}: download, checks, backup, migrations… {s} s so far. You can leave this page; the change goes on.", what=what, s=change.elapsed) }}</p>
+  {% elif change.state == "done" and not change.settled %}
+  <p class="notice busy busy-on" role="status"><span class="spinner" aria-hidden="true"></span> {{ _("Done. The site is reloading with {what}…", what=what) }}</p>
+  {% elif change.state == "done" %}
+  <div class="notice ok" role="status">
+    <p><strong>{{ _("Applied: {what}.", what=what) }}</strong> {% if change.reload %}{{ _("The site runs it now.") }}{% else %}{{ _("It applies when the site is restarted.") }}{% endif %}</p>
+    {% if change.steps %}<ul class="steps">{% for s in change.steps %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% elif change.state == "failed" %}
+  <div class="notice danger" role="alert"><p><strong>{{ _("{what} could not be applied; the site runs as before.", what=what) }}</strong></p>
+    <ul class="steps">{% for p in change.problems %}<li>{{ p }}</li>{% endfor %}</ul></div>
+  {% else %}
+  <p class="notice danger" role="alert">{{ _("The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.", what=what) }}</p>
+  {% endif %}
+</div>
+{% endif %}

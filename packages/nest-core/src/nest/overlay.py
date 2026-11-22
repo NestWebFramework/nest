@@ -28,6 +28,7 @@ from __future__ import annotations
 import importlib
 import json
 import logging
+import os
 import sys
 from dataclasses import asdict, dataclass
 from importlib import metadata
@@ -40,6 +41,7 @@ FOLDER = "packages"
 PINS = "pins.json"
 
 _loaded: dict[str, set[str]] = {}  # by workspace: the folders this process put on sys.path
+_owner: dict[str, int] = {}  # by workspace: the process that put them (a fork inherits both)
 
 
 @dataclass
@@ -239,8 +241,15 @@ def activate(workspace: Path, *, purge: bool = False) -> list[str]:
     made next (nest serve's master before it forks, nest run before it remakes the
     application). The pins in use, as dist==version."""
     key = str(Path(workspace).resolve())
-    if key in _loaded and not purge:
+    inherited = key in _loaded and _owner.get(key) != os.getpid()
+    if key in _loaded and not purge and not inherited:
         return []
+    if inherited:
+        # a process forked from one that loaded the overlay (nest serve's worker, from its
+        # master): the versions chosen since the master loaded it are taken here, the code
+        # imported from what changed taken out, so every worker runs what pins.json says
+        # (the master may not have been reloaded: a worker renewed after max_requests)
+        purge = True
     used, aside_why, _rebased = check(workspace)
     for dist, (pin, why) in aside_why.items():
         log.warning("the version chosen of %s (%s) is set aside: %s", dist, pin.version, why)
@@ -263,6 +272,7 @@ def activate(workspace: Path, *, purge: bool = False) -> list[str]:
         log.info("code of %s taken out, for the processes made next", ", ".join(sorted(names)))
     importlib.invalidate_caches()
     _loaded[key] = set(wanted)
+    _owner[key] = os.getpid()
     return [f"{p.dist}=={p.version}" for p in used.values()]
 
 

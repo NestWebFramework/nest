@@ -136,17 +136,63 @@ def test_anonymous_visitors_are_sent_to_sign_in_and_back(site, tmp_path):
         assert c.get("/private/").status_code == 200
 
 
+@pytest.fixture(autouse=True)
+def no_fail_delay(monkeypatch):
+    import nest_auth.web
+
+    monkeypatch.setattr(nest_auth.web, "FAIL_DELAY", 0.0)
+
+
 def test_a_wrong_password_is_refused_and_repeated_failures_pause(site, tmp_path):
     with client_for(site, tmp_path / "ws") as c:
         register(c)
     with client_for(site, tmp_path / "ws") as c:
-        for _ in range(5):
+        for _ in range(3):  # an account: three wrong passwords, from any address
             r = post(c, "/auth/login", email="ana@example.ro", password="wrong password!")
             assert r.status_code == 401 and "Wrong email or password" in r.text
         r = post(c, "/auth/login", email="ana@example.ro", password=PASSWORD)
         assert r.status_code == 429 and "Too many attempts" in r.text
+        assert r.headers["retry-after"] == str(15 * 60)
         r = post(c, "/auth/login", email="nobody@example.ro", password=PASSWORD)
         assert r.status_code == 401  # an unknown email reads like a wrong password
+        for _ in range(3):  # and is paused the same: a pause tells nothing of who has an account
+            post(c, "/auth/login", email="ghost@example.ro", password="wrong password!")
+        r = post(c, "/auth/login", email="ghost@example.ro", password=PASSWORD)
+        assert r.status_code == 429
+
+
+def test_one_address_trying_many_accounts_is_paused(site, tmp_path):
+    with client_for(site, tmp_path / "ws") as c:
+        register(c)
+        post(c, "/auth/logout")
+        for i in range(20):  # twenty failures, each on another account
+            r = post(c, "/auth/login", email=f"user{i}@example.ro", password="wrong password!")
+            assert r.status_code == 401
+        r = post(c, "/auth/login", email="ana@example.ro", password=PASSWORD)
+        assert r.status_code == 429  # the address, whatever the account
+
+
+def test_passwords_easy_to_guess_are_refused(site, tmp_path):
+    from nest_auth.passwords import weak
+
+    assert weak("parola2024!") and weak("Password123") and weak("qwertyuiop")
+    assert weak("aaaaaaaaaaaa") and weak("1111122222") and weak("0987654321")
+    assert weak("ana.popescu99", "ana.popescu@example.ro")
+    assert weak(PASSWORD) is None and weak("Vlădeasa e sus 1836") is None
+    with client_for(site, tmp_path / "ws") as c:
+        r = register(c, password="iloveyou123")
+        assert r.status_code == 400 and "among the first a guesser tries" in r.text
+
+
+def test_an_address_makes_only_so_many_accounts_an_hour(site, tmp_path):
+    with client_for(site, tmp_path / "ws", NEST_SITE__AUTH__ALLOW_REGISTRATION="true") as c:
+        register(c)  # the administrator: the first account is never counted out
+        post(c, "/auth/logout")
+        codes = []
+        for i in range(7):
+            codes.append(register(c, email=f"x{i}@example.ro").status_code)
+            post(c, "/auth/logout")
+        assert codes[:5] == [303] * 5 and codes[5:] == [429, 429]
 
 
 def test_htmx_sign_in_answers_a_fragment_or_a_redirect(site, tmp_path):

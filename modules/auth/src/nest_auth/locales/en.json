@@ -48,5 +48,8 @@
  "Your name": "Your name",
  "Your name is saved.": "Your name is saved.",
  "Your password": "Your password",
- "Your password is changed; you are signed out everywhere else.": "Your password is changed; you are signed out everywhere else."
+ "Your password is changed; you are signed out everywhere else.": "Your password is changed; you are signed out everywhere else.",
+ "That password is among the first a guesser tries: choose another.": "That password is among the first a guesser tries: choose another.",
+ "That password is too simple: a mix of words, numbers or signs is harder to guess.": "That password is too simple: a mix of words, numbers or signs is harder to guess.",
+ "Do not build your password from your email.": "Do not build your password from your email."
 }

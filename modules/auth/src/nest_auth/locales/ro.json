@@ -52,5 +52,8 @@
  "@title": "Conturi",
  "@description": "Conturi cu roluri, intrare și ieșire, sesiuni pe server în baza de date, și protecția rutelor pentru celelalte module.",
  "@admin.title": "Conturi",
- "@admin.description": "Cine are cont, ce roluri are și dacă e activ."
+ "@admin.description": "Cine are cont, ce roluri are și dacă e activ.",
+ "That password is among the first a guesser tries: choose another.": "Parola aceasta e printre primele încercate de cine ghicește parole: alege alta.",
+ "That password is too simple: a mix of words, numbers or signs is harder to guess.": "Parola e prea simplă: un amestec de cuvinte, cifre sau semne e mai greu de ghicit.",
+ "Do not build your password from your email.": "Nu-ți face parola din adresa de email."
 }

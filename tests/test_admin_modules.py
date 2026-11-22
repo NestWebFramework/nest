@@ -118,7 +118,10 @@ def test_the_registry_tab_searches_and_offers_what_is_not_installed(site, tmp_pa
             nest=">=0.2,<1", deps=list(deps),
         )  # fmt: skip
 
-    found = {"widgets": offer("widgets", "Widgets", deps=["auth"]), "forum": offer("forum", "Forum")}
+    found = {
+        "widgets": offer("widgets", "Widgets", deps=["auth"]),
+        "forum": offer("forum", "Forum"),
+    }
     found["sharp"] = offer("sharp", "Sharp", kind="theme")
     monkeypatch.setattr(nest.packages, "remote_offers", lambda environ=None: found)
     c = admin_client(site, tmp_path)
@@ -146,7 +149,9 @@ def test_the_tabs_say_what_has_updates_and_offer_update_all(site, tmp_path, monk
         )  # fmt: skip
 
     monkeypatch.setattr(
-        nest.packages, "remote_offers", lambda environ=None: {n: newer(n) for n in ("forum", "auth")}
+        nest.packages,
+        "remote_offers",
+        lambda environ=None: {n: newer(n) for n in ("forum", "auth")},
     )
     c = admin_client(site, tmp_path)
     page = c.get("/admin/modules").text
@@ -157,3 +162,52 @@ def test_the_tabs_say_what_has_updates_and_offer_update_all(site, tmp_path, monk
     assert "Versions" in forum and "Migrations" in forum
     history = c.get("/admin/modules?tab=history").text
     assert "No change yet." in history or "<table" in history
+
+
+def test_a_version_change_runs_in_the_background_and_says_when_done(site, tmp_path, monkeypatch):
+    """The page answers at once (a proxy would time out on download, backup, migrations);
+    it polls the change, and reloads saying what was done, or why not."""
+    from nest_admin import changes, modules
+
+    import threading
+
+    monkeypatch.setattr(changes, "SETTLE", 0.0)
+    done, go = [], threading.Event()
+
+    def run_nest(request, args, who):
+        go.wait(10)  # under way until the test lets it finish
+        done.append(args)
+        return True, ["forum 0.1.0 → 9.9.9", "backup: x.tar.gz", "something else"]
+
+    monkeypatch.setattr(modules, "_run_nest", run_nest)
+    c = admin_client(site, tmp_path)
+    r = post(c, "/admin/modules/forum/version", version="9.9.9")
+    assert r.status_code == 200 and "Applying forum → 9.9.9" in r.text
+    assert 'hx-get="/admin/modules/_change"' in r.text
+    again = post(c, "/admin/modules/forum/version", version="9.9.9")
+    assert "Another change is under way" in again.text
+    go.set()
+    for _ in range(50):
+        r = c.get("/admin/modules/_change", headers={"HX-Request": "true"})
+        if r.headers.get("HX-Refresh") == "true":
+            break
+        time.sleep(0.1)
+    assert r.headers.get("HX-Refresh") == "true"
+    assert done == [["version", "forum=9.9.9"]]
+    page = c.get("/admin/modules/forum").text
+    assert "Applied: forum → 9.9.9." in page and "backup: x.tar.gz" in page
+    assert "something else" not in page
+
+    def refused(request, args, who):
+        return False, ["forum 9.9.9 needs nest >=9"]
+
+    monkeypatch.setattr(modules, "_run_nest", refused)
+    post(c, "/admin/modules/forum/version", version="9.9.9")
+    for _ in range(50):
+        if c.get("/admin/modules/_change", headers={"HX-Request": "true"}).headers.get(
+            "HX-Refresh"
+        ):
+            break
+        time.sleep(0.1)
+    page = c.get("/admin/modules/forum").text
+    assert "could not be applied" in page and "needs nest &gt;=9" in page

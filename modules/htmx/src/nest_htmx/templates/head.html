@@ -1,3 +1,7 @@
-{# htmx with a strict CSP: no eval (hx-on, js: values) and no injected styles. #}
-<meta name="htmx-config" content='{"allowEval": false, "includeIndicatorStyles": false, "selfRequestsOnly": true, "historyCacheSize": 0}'>
+{# htmx with a strict CSP: no eval (hx-on, js: values) and no injected styles. An answer
+   that says why a form was refused (400, 409, 422) is shown like any other; a failure
+   (a server error, a proxy's timeout, no network) is told by nest-htmx.js, never silent. #}
+<meta name="htmx-config" content='{"allowEval": false, "includeIndicatorStyles": false, "selfRequestsOnly": true, "historyCacheSize": 0, "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "(400|409|422)", "swap": true, "error": false}, {"code": "...", "swap": false, "error": true}]}'>
+<meta name="nest-htmx-said" data-failed="{{ _('The server could not answer (error {code}). What was asked may still be under way: reload the page in a minute.') }}" data-unreachable="{{ _('The server did not answer: no network, or it took too long. What was asked may still be under way: reload the page in a minute.') }}">
 <script src="{{ asset('htmx', 'htmx.min.js') }}" defer></script>
+<script src="{{ asset('htmx', 'nest-htmx.js') }}" defer></script>

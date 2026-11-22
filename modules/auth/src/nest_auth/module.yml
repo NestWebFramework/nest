@@ -13,7 +13,7 @@ module:
   id: nest.module.auth
   type: module
   title: Accounts
-  version: 0.4.1
+  version: 0.4.2
   description: >
     Accounts with roles, sign-in and sign-out, server-side sessions on the
     bound database, and the dependencies other modules protect routes with.
@@ -65,6 +65,22 @@ settings:
     restart: true
     type: int
     default: 15
+    description: How long a pause lasts (an account, an address, an email from one address).
+  account_attempts:
+    restart: true
+    type: int
+    default: 3
+    description: Wrong passwords allowed for one account, from any address, before it is paused (an unknown email is counted the same, so a pause says nothing of which accounts exist).
+  address_attempts:
+    restart: true
+    type: int
+    default: 20
+    description: Failed sign-ins allowed from one address, to any accounts, before it is paused.
+  registrations_per_hour:
+    restart: true
+    type: int
+    default: 5
+    description: Accounts one address may try to create in an hour.
 
 locales:
   - {locale: ro, file: locales/ro.json}

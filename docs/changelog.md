@@ -9,8 +9,41 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
-## Unreleased
+## 0.4.3
 
+- **Module versions apply everywhere at once (nest-core 0.4.3, admin 0.2.2).** Choosing a
+  version in the panel could leave the site running both: one worker on the new version,
+  the others on the old. Refreshes then flipped between them.
+  - A worker now signals its parent, the nest serve master, to reload every worker. A pid
+    file may be stale or name a process in another namespace.
+  - A worker never reloads alone: without its master, the change applies at the next
+    restart.
+  - A worker forked from the master (renewed after max_requests, or made when the master
+    missed a reload) takes the versions chosen since, and drops the old code.
+  - The change runs in the background. The page answers at once, shows it under way
+    (download, checks, backup, migrations, reload), then reloads and says what was done or
+    why not. Before, a change longer than the proxy's timeout (nginx, Cloudflare) showed
+    nothing. One change at a time.
+- **htmx 0.1.2: no request fails silently.** An answer that says why a form was refused
+  (400, 409, 422) is shown. A server error, a proxy timeout or no network is told
+  (a toast, or a notice).
+- **auth 0.4.2: brute-force protection.**
+  - An account is paused after 3 wrong passwords, from any address (`account_attempts`).
+    Unknown emails are counted the same, so a pause tells nothing of who has an account.
+  - An address is paused after 20 failures, on any accounts (`address_attempts`).
+  - Pauses last `lockout_minutes` (15) and answer with `Retry-After`.
+  - A wrong password waits about half a second before answering.
+  - Guessing the current password on the account page counts against the account.
+  - An address may create at most `registrations_per_hour` (5) accounts an hour.
+  - Passwords easy to guess are refused: the most common ones, also with digits or signs
+    after them; runs of one or two characters; keyboard and alphabet rows; ones built
+    from the email.
+
+- **transit 0.1.1:** exports what other modules build on (its tables, `running`,
+  `line_key`, `directions`, the planner as `plan_network`, `plan_journeys`, `forget_plans`,
+  `walk_seconds`, and `CommandHost`). coaches uses only these, so it passes the publish
+  boundary check.
+- **seo 0.2.2:** the batch and the editor's suggestion take a module's own words (below).
 - **coaches: stations and towns.**
   - Coach stations (autogări): `/autogari` lists those of Romania and Moldova by county,
     on a map, the busiest first. Each station's page shows its towns reached directly,

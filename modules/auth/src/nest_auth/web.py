@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+import random
+import time
 from http.cookies import SimpleCookie
 from typing import Any
 from urllib.parse import quote
@@ -15,7 +18,10 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from nest import bound, is_htmx, local_path, render, toast, translator
 from nest.host import module_state
 from nest_auth import sessions
-from nest_auth.sessions import AccountError, CurrentUser
+from nest_auth.sessions import WRONG_CURRENT, AccountError, CurrentUser
+
+log = logging.getLogger("nest.auth")
+FAIL_DELAY = 0.5  # seconds a wrong password waits, and up to as much again: guessing slows
 
 COOKIE = "nest_session"
 # no session looked up for these: static files, health probes, the language switch, the docs
@@ -169,23 +175,13 @@ def login(
 ):
     state = _state(request)
     target = safe_next(next)
-    client = request.client.host if request.client else "-"
-    key = f"{sessions.normalize_email(email)}|{client}"
     values = {"next": target, "email": email, "can_register": _can_register(request, db)}
-    if state["throttle"].blocked(key):
-        minutes = state["throttle"].window // 60
-        return _form_page(
-            request,
-            "auth/login.html",
-            429,
-            error=translator(request)(
-                "Too many attempts. Try again in {minutes} minutes.", minutes=minutes
-            ),
-            **values,
-        )
+    counted = _counters(request, email)
+    if paused := _paused(counted):
+        return _too_many(request, "auth/login.html", paused, **values)
     user = sessions.authenticate(db, email, password)
     if user is None:
-        state["throttle"].fail(key)
+        _failed(counted)
         return _form_page(
             request,
             "auth/login.html",
@@ -193,11 +189,53 @@ def login(
             error=translator(request)("Wrong email or password."),
             **values,
         )
-    state["throttle"].clear(key)
+    for throttle, key in counted[:2]:  # the email's counts; the address keeps its own
+        throttle.clear(key)
     token = sessions.open_session(
         db, user, days=state["session_days"], user_agent=request.headers.get("user-agent", "")
     )
     return _signed_in(request, token, target)
+
+
+def _counters(request: Request, email: str) -> list[tuple[Any, str]]:
+    """The counts a sign-in is weighed against: the email from this address, the account
+    from any address, the address for any account (in that order)."""
+    state = _state(request)
+    client = request.client.host if request.client else "-"
+    who = sessions.normalize_email(email)
+    return [
+        (state["throttle"], f"{who}|{client}"),
+        (state["account_throttle"], f"account|{who}"),
+        (state["address_throttle"], f"address|{client}"),
+    ]
+
+
+def _paused(counted: list[tuple[Any, str]]) -> int:
+    """The pause's length in seconds, if one of the counts is past its limit; else 0."""
+    return max((t.window for t, key in counted if t.blocked(key)), default=0)
+
+
+def _failed(counted: list[tuple[Any, str]]) -> None:
+    for throttle, key in counted:
+        throttle.fail(key)
+        if key.startswith("account|") and throttle.blocked(key):
+            log.warning("sign-in: an account is paused after %d wrong passwords", throttle.limit)
+    time.sleep(FAIL_DELAY * (1 + random.random()))  # noqa: S311 - a delay, not a secret
+
+
+def _too_many(request: Request, template: str, seconds: int, **values: Any) -> Response:
+    minutes = max(1, seconds // 60)
+    response = _form_page(
+        request,
+        template,
+        429,
+        error=translator(request)(
+            "Too many attempts. Try again in {minutes} minutes.", minutes=minutes
+        ),
+        **values,
+    )
+    response.headers["Retry-After"] = str(seconds)
+    return response
 
 
 @router.post("/logout")
@@ -248,11 +286,20 @@ def account_password(
     t = translator(request)
     if new != again:
         return _account_again(request, user, t("The two new passwords differ."))
+    counted = _counters(request, user.email)[1:2]  # guessing the current password: the account's
+    if paused := _paused(counted):
+        return _account_again(
+            request,
+            user,
+            t("Too many attempts. Try again in {minutes} minutes.", minutes=max(1, paused // 60)),
+        )
     try:
         sessions.change_password(
             db, user.id, current, new, min_length=_state(request)["min_password_length"]
         )
     except AccountError as e:
+        if e.message == WRONG_CURRENT:
+            _failed(counted)
         return _account_again(request, user, t(e.message, **e.params))
     sessions.close_other_sessions(db, user.id, request.cookies.get(COOKIE, ""))  # here stays in
     toast(
@@ -299,6 +346,14 @@ def register(
         raise HTTPException(404)
     state = _state(request)
     first = sessions.count_users(db) == 0
+    client = request.client.host if request.client else "-"
+    tries = (state["register_throttle"], f"register|{client}")
+    if not first and tries[0].blocked(tries[1]):
+        return _too_many(
+            request, "auth/register.html", tries[0].window, email=email, name=name, first=first
+        )
+    if not first:  # every try counts: an address makes only so many accounts an hour
+        tries[0].fail(tries[1])
     try:
         user = sessions.create_user(
             db,

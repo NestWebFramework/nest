@@ -607,7 +607,7 @@ wheels = [
 
 [[package]]
 name = "nest-admin"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "modules/admin" }
 dependencies = [
     { name = "nest-auth" },
@@ -637,7 +637,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-auth"
-version = "0.4.1"
+version = "0.4.2"
 source = { editable = "modules/auth" }
 dependencies = [
     { name = "nest-core" },
@@ -742,7 +742,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-core"
-version = "0.4.2"
+version = "0.4.3"
 source = { editable = "packages/nest-core" }
 dependencies = [
     { name = "cryptography" },
@@ -957,7 +957,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-htmx"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "modules/htmx" }
 dependencies = [
     { name = "nest-core" },
@@ -1811,7 +1811,7 @@ requires-dist = [{ name = "nest-search", editable = "interfaces/search" }]
 
 [[package]]
 name = "nest-seo"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "modules/seo" }
 dependencies = [
     { name = "nest-auth" },
@@ -1964,7 +1964,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-transit"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/transit" }
 dependencies = [
     { name = "nest-auth" },
@@ -2000,7 +2000,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-workspace"
-version = "0.4.2"
+version = "0.4.3"
 source = { virtual = "." }
 dependencies = [
     { name = "nest-admin" },

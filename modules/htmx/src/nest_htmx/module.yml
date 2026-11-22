@@ -9,7 +9,7 @@ module:
   id: nest.module.htmx
   type: module
   title: htmx
-  version: 0.1.1
+  version: 0.1.2
   description: >
     A pinned copy of htmx 2.0.4 and htmx-ext-sse 2.2.2, served from the host,
     configured for a strict Content-Security-Policy (no eval, no inline styles).

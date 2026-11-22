@@ -117,3 +117,7 @@
 .admin-main form.inline select, .admin-main form.inline input:not([type=hidden]) { width: auto; margin: 0; }
 .region-blocks { padding-left: 1.2rem; }
 .region-blocks > li { margin: .4rem 0; }
+.notice.busy.busy-on { display: block; opacity: 1; }
+.spinner { display: inline-block; width: .9em; height: .9em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -.1em; animation: nest-spin .8s linear infinite; }
+@keyframes nest-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }

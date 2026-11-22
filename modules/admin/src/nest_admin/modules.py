@@ -36,6 +36,7 @@ from starlette.concurrency import run_in_threadpool
 
 from nest import is_htmx, render, toast, translator
 from nest.modules import ChangeError, change, history, reload_app, status
+from nest_admin import changes
 
 router = APIRouter()
 admin_only = require_role("admin")
@@ -181,6 +182,8 @@ def _page(
         place=place,
         steps=steps or [],
         problems=problems or [],
+        change=changes.read(nest),
+        back=str(request.url.path) + (f"?tab={tab}" if tab != "installed" else ""),
         log=history(nest.workspace, 40),
         status_code=status_code,
     )
@@ -259,10 +262,49 @@ async def _versions_change(
     request: Request, wanted: dict[str, str], user: CurrentUser, tab: str
 ) -> Any:
     args = ["version", *[f"{n}={v}" for n, v in wanted.items()]]
-    ok, said = await run_in_threadpool(_run_nest, request, args, user.email)
-    if not ok:
-        return _page(request, tab=tab, problems=said, status_code=400)
-    return _after(request, [s for s in said if "→" in s or s.startswith("backup")], tab)
+    if not _start(request, args, user, tab=tab):
+        return _page(request, tab=tab, problems=[_busy(request)], status_code=409)
+    return _page(request, tab=tab)
+
+
+def _start(request: Request, args: list[str], user: CurrentUser, **where: str) -> bool:
+    """A version change begun in the background (see changes.py); False when another runs."""
+    import asyncio  # noqa: PLC0415
+
+    nest = request.app.state.nest
+    nest.module_state.setdefault("admin", {}).pop("registry", None)
+    return (
+        changes.start(
+            nest,
+            lambda a, who: _run_nest(request, a, who),
+            args,
+            user.email,
+            loop=asyncio.get_running_loop(),
+            **where,
+        )
+        is not None
+    )
+
+
+def _busy(request: Request) -> str:
+    return translator(request)("Another change is under way: wait until it is done.")
+
+
+@router.get("/modules/_change")
+def change_state(request: Request, user: CurrentUser = Depends(admin_only)):
+    """The change under way, polled by the page: still running, done (the page then reloads
+    once the workers are made again), or what went wrong."""
+    from fastapi.responses import HTMLResponse  # noqa: PLC0415
+
+    nest = request.app.state.nest
+    job = changes.read(nest)
+    if (
+        job
+        and job["state"] in ("done", "failed", "interrupted")
+        and (job["settled"] or job["state"] != "done")
+    ):
+        return HTMLResponse("", headers={"HX-Refresh": "true"})  # the whole page, anew
+    return render(request, "admin/_change.html", change=job)
 
 
 @router.post("/modules/update-all")
@@ -376,6 +418,8 @@ def _module(request: Request, name: str, *, steps=None, problems=None, status_co
         **_placing(request, name),
         steps=steps or [],
         problems=problems or [],
+        change=changes.read(nest),
+        back=f"{nest.admin_root}/modules/{name}",
     )
 
 
@@ -442,21 +486,9 @@ async def module_version(request: Request, name: str, user: CurrentUser = Depend
     version = str(form.get("version", "")).strip()
     if not version:
         raise HTTPException(400)
-    ok, said = await run_in_threadpool(
-        _run_nest, request, ["version", f"{name}={version}"], user.email
-    )
-    if not ok:
-        return _module(request, name, problems=said, status_code=400)
-    how = reload_app(request.app.state.nest)
-    t = translator(request)
-    steps = [s for s in said if "→" in s or s.startswith(("backup", "migrations"))]
-    steps.append(
-        t("The site is reloading to apply it.")
-        if how
-        else t("It applies when the site is restarted.")
-    )
-    request.app.state.nest.module_state.setdefault("admin", {}).pop("registry", None)
-    return _module(request, name, steps=steps)
+    if not _start(request, ["version", f"{name}={version}"], user, name=name):
+        return _module(request, name, problems=[_busy(request)], status_code=409)
+    return _module(request, name)
 
 
 @router.post("/modules/{name}/migrate")

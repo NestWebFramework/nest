@@ -10,6 +10,7 @@
 {% if row and row.description %}<p class="muted">{{ about(name, "description", row.description) }}</p>{% endif %}
 {% for p in problems %}<p class="notice danger" role="alert">{{ p }}</p>{% endfor %}
 {% if steps %}<div class="notice ok" role="status"><ul class="steps">{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ul></div>{% endif %}
+{% include "admin/_change.html" %}
 <p id="modules-busy" class="notice busy htmx-indicator" role="status">{{ _("Applying: download, checks, backup, migrations, reload… this can take a minute.") }}</p>
 
 <dl class="module-facts">

@@ -23,8 +23,10 @@ from nest_auth.passwords import (
     hash_password,
     needs_rehash,
     verify_password,
+    weak,
 )
 
+WRONG_CURRENT = "The current password is not right."
 _EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]+$")
 SLIDE_AFTER = timedelta(hours=1)
 
@@ -89,6 +91,8 @@ def create_user(
         raise AccountError("A password has at least {n} characters.", n=min_length)
     if len(password) > MAX_PASSWORD:
         raise AccountError("That password is too long.")
+    if why := weak(password, email):
+        raise AccountError(why)
     with db.session() as s, s.begin():
         if s.scalar(select(User.id).where(User.email == email)) is not None:
             raise AccountError("An account with this email already exists.")
@@ -194,7 +198,9 @@ def change_password(db: Any, user_id: int, current: str, new: str, *, min_length
     with db.session() as s, s.begin():
         user = s.get(User, user_id)
         if user is None or not verify_password(current, user.password_hash):
-            raise AccountError("The current password is not right.")
+            raise AccountError(WRONG_CURRENT)
+        if why := weak(new, user.email):
+            raise AccountError(why)
         user.password_hash = hash_password(new)
 
 

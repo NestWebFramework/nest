@@ -1,4 +1,6 @@
 {
  "@title": "htmx",
- "@description": "O copie fixă a htmx 2.0.4 și htmx-ext-sse 2.2.2, servită de site, configurată pentru o politică strictă de securitate a conținutului."
+ "@description": "O copie fixă a htmx 2.0.4 și htmx-ext-sse 2.2.2, servită de site, configurată pentru o politică strictă de securitate a conținutului.",
+ "The server could not answer (error {code}). What was asked may still be under way: reload the page in a minute.": "Serverul nu a putut răspunde (eroare {code}). Ce ai cerut poate fi încă în lucru: reîncarcă pagina peste un minut.",
+ "The server did not answer: no network, or it took too long. What was asked may still be under way: reload the page in a minute.": "Serverul nu a răspuns: fără rețea, sau a durat prea mult. Ce ai cerut poate fi încă în lucru: reîncarcă pagina peste un minut."
 }

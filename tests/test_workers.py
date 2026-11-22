@@ -25,6 +25,13 @@ from nest.serve import plan
 site = test_auth.site  # the same small application, as a fixture
 
 
+@pytest.fixture(autouse=True)
+def no_fail_delay(monkeypatch):
+    import nest_auth.web
+
+    monkeypatch.setattr(nest_auth.web, "FAIL_DELAY", 0.0)
+
+
 def wrong(c, email="ana@example.ro"):
     return post(c, "/auth/login", email=email, password="wrong password!")
 
@@ -40,17 +47,17 @@ def test_failures_in_one_worker_count_in_the_others(site, tmp_path):
     # two workers of one application: two applications on one workspace and database
     with client_for(site, ws) as one, client_for(site, ws) as two:
         assert isinstance(throttle_of(one), DbThrottle)
-        for _ in range(3):
-            assert wrong(one).status_code == 401
         for _ in range(2):
-            assert wrong(two).status_code == 401
-        for c in (one, two):  # five in all: both refuse, even the right password
+            assert wrong(one).status_code == 401
+        assert wrong(two).status_code == 401
+        for c in (one, two):  # three in all (an account's): both refuse, even the right password
             r = post(c, "/auth/login", email="ana@example.ro", password=PASSWORD)
             assert r.status_code == 429
         db = one.app.state.nest.bindings.get("nest.db")
         with db.session() as s:
             keys = s.scalars(select(Failure.key)).all()
-        assert len(keys) == 5 and all(len(k) == 64 and "@" not in k for k in keys)
+        # each failure counted three ways (email and address, account, address), all hashed
+        assert len(keys) == 9 and all(len(k) == 64 and "@" not in k for k in keys)
 
 
 def test_a_cache_in_each_process_is_not_trusted_with_the_limit(site, tmp_path):
@@ -163,7 +170,7 @@ def test_with_redis_bound_the_workers_count_in_the_cache(site, tmp_path, redis_u
         register(c)
     with client_for(site, ws, **env) as one, client_for(site, ws, **env) as two:
         assert isinstance(throttle_of(one), CacheThrottle)
-        for c in (one, two, one, two, one):
+        for c in (one, two, one):
             assert wrong(c).status_code == 401
         assert (
             post(two, "/auth/login", email="ana@example.ro", password=PASSWORD).status_code == 429

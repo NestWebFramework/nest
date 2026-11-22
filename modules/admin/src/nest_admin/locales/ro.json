@@ -306,5 +306,12 @@
  "The theme in use has no regions.": "Tema folosită nu are regiuni.",
  "Ways to reach it without touching the site's code; each can be changed or undone later.": "Moduri de a ajunge la el fără a atinge codul site-ului; fiecare poate fi schimbat sau anulat mai târziu.",
  "not offered any more": "nu mai e oferit",
- "Up": "Sus"
+ "Up": "Sus",
+ "Another change is under way: wait until it is done.": "O altă schimbare e în lucru: așteaptă să se termine.",
+ "Applying {what}: download, checks, backup, migrations… {s} s so far. You can leave this page; the change goes on.": "Se aplică {what}: descărcare, verificări, copie de siguranță, migrări… de {s} s. Poți părăsi pagina; schimbarea continuă.",
+ "Done. The site is reloading with {what}…": "Gata. Site-ul se reîncarcă cu {what}…",
+ "Applied: {what}.": "Aplicat: {what}.",
+ "The site runs it now.": "Site-ul o folosește acum.",
+ "{what} could not be applied; the site runs as before.": "{what} nu a putut fi aplicat; site-ul merge ca înainte.",
+ "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.": "Schimbarea {what} a fost întreruptă (procesul ei s-a oprit). Verifică versiunile de mai jos și istoricul, apoi încearcă din nou."
 }
