@@ -1,6 +1,6 @@
 # Nest
 
-**Version 0.4.1** · [changelog](CHANGELOG.md) · documentation at [nest-framework.org](https://nest-framework.org/docs/)
+**Version 0.4.2** · [changelog](CHANGELOG.md) · documentation at [nest-framework.org](https://nest-framework.org/docs/)
 
 A lightweight, manifest-driven host for web applications in Python: FastAPI,
 server-rendered pages, htmx and Server-Sent Events, Vue only where a page

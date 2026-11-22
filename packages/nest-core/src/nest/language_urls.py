@@ -84,12 +84,12 @@ class LanguageURLs:
             scope = dict(scope)
             scope["path"] = rest
             scope["raw_path"] = rest.encode()
-            scope.setdefault("state", {})
-            scope["state"] = {**scope["state"], "url_locale": first, "url_prefix": f"/{first}"}
+            # the request's state is shared with the middleware around (the CSRF cookie is set
+            # when a page wrote the form token): updated in place, never replaced
+            scope.setdefault("state", {}).update(url_locale=first, url_prefix=f"/{first}")
             locale = first
         else:
-            scope.setdefault("state", {})
-            scope["state"] = {**scope["state"], "url_locale": self.default, "url_prefix": ""}
+            scope.setdefault("state", {}).update(url_locale=self.default, url_prefix="")
             locale = self.default
         if self._kept(scope["path"]):
             await self.app(scope, receive, send)

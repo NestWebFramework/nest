@@ -9,8 +9,12 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
-## Unreleased
+## 0.4.2
 
+- **core 0.4.2**: on a site with an address per language (`language_urls: prefix`), a first
+  visit's form was refused ("CSRF cookie missing"). The middleware that reads the language
+  from the address replaced the request's state, so the page's use of the form token was
+  lost and the form's cookie was never set. The state is now updated in place.
 - **consent 0.1.0** (new): cookies and consent for a whole site.
   - Every module declares its cookies, as configured now (`consent.cookies`); Nest's own
     are declared for it.

@@ -113,3 +113,16 @@ def test_the_site_languages_are_chosen_in_the_admin_panel(site, tmp_path):
         assert '<html lang="hu"' in fresh.get("/hu/forum/").text  # no table changed
     post(c, "/admin/languages", action="remove", code="hu")
     assert load_languages(tmp_path / "ws") == (["ro", "en"], "ro")
+
+
+def test_a_page_with_a_form_gives_its_cookie_under_every_language_address(site, tmp_path):
+    """The form token's cookie is set when a page writes the token: with an address per
+    language too (the middleware that reads the prefix once replaced the request's state, so
+    the token's use was lost and a first visit's form was refused)."""
+    with client(site, tmp_path) as c:
+        for path in ("/cont/login", "/en/cont/login"):
+            c.cookies.clear()
+            page = c.get(path)
+            assert 'name="csrf_token"' in page.text
+            assert "nest_csrf=" in page.headers.get("set-cookie", ""), path
+            assert "public" not in page.headers.get("cache-control", "")  # a page with a form is no reader's page
