@@ -43,6 +43,11 @@ This documentation is for **Nest %NEST_VERSION%**.
     average.
   - **Admin**: the live state of each city (vehicles, interval, how often the data
     really changes, viewers, stale or failing) and the fleet's notes.
+- **transit-lines 0.1.0** (new theme): a transit map's look for a city transport site: a
+  white header with a stop's mark, the lines' colours as thin stripes, rounded menu
+  pills, clear boards, a dark footer. Made for transport-comun.ro.
+- **nest-images** builds and pushes transport-comun too
+  (`miraur/nest-sites:transport-comun-…`).
 - **maps 0.2.2**: a map tells the page it is ready (`nest-map:ready`, with the map and
   Leaflet), so another module can draw on it.
 - **saga survival 0.1.0** (new), **saga player 0.3.0**, **saga npc 0.3.0**: what anyone

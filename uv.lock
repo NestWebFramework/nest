@@ -86,6 +86,7 @@ members = [
     "nest-theme-paper",
     "nest-theme-rail-signage",
     "nest-theme-slate",
+    "nest-theme-transit-lines",
     "nest-trains",
     "nest-transit",
     "nest-translations",
@@ -1902,6 +1903,17 @@ dependencies = [
 requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
+name = "nest-theme-transit-lines"
+version = "0.1.0"
+source = { editable = "themes/transit-lines" }
+dependencies = [
+    { name = "nest-theme-base" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
+
+[[package]]
 name = "nest-trains"
 version = "0.2.0"
 source = { editable = "modules/trains" }
@@ -2036,6 +2048,7 @@ dependencies = [
     { name = "nest-theme-paper" },
     { name = "nest-theme-rail-signage" },
     { name = "nest-theme-slate" },
+    { name = "nest-theme-transit-lines" },
     { name = "nest-trains" },
     { name = "nest-transit" },
     { name = "nest-translations" },
@@ -2127,6 +2140,7 @@ requires-dist = [
     { name = "nest-theme-paper", editable = "themes/paper" },
     { name = "nest-theme-rail-signage", editable = "themes/rail-signage" },
     { name = "nest-theme-slate", editable = "themes/slate" },
+    { name = "nest-theme-transit-lines", editable = "themes/transit-lines" },
     { name = "nest-trains", editable = "modules/trains" },
     { name = "nest-transit", editable = "modules/transit" },
     { name = "nest-translations", editable = "modules/translations" },

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # nest-images: build the applications' images and push them to Docker Hub.
 #
-#   nest-images build [APP...]     build (all six when none is named)
+#   nest-images build [APP...]     build (all seven when none is named)
 #   nest-images push  [APP...]     push what was built: its version, its commits, latest
 #   nest-images list               the applications, their versions and image names
 #
-# APP: gari morlaca transilpedia regionalisme docsite keeper. A site is built from its own
+# APP: gari morlaca transilpedia regionalisme transport-comun docsite keeper. A site is built from its own
 # repository beside Nest (SRC/<site>) with Nest as a second build context; docsite and keeper
 # from Nest's repository with their own Dockerfile. Each image holds code only: the data
 # (databases, uploads, settings, backups) are a folder on the server, mounted at /data.
@@ -23,7 +23,7 @@ NAMESPACE=${NAMESPACE:-miraur}
 SITES_REPO=${SITES_REPO:-$NAMESPACE/nest-sites}
 SRC=${SRC:-$HOME/projects}
 NEST=$SRC/nest
-ALL=(gari morlaca transilpedia regionalisme docsite keeper)
+ALL=(gari morlaca transilpedia regionalisme transport-comun docsite keeper)
 
 die() { echo "nest-images: $*" >&2; exit 1; }
 say() { echo "· $*"; }
