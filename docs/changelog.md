@@ -9,6 +9,27 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **flights 0.1.0** (new): the airports of Romania and the Republic of Moldova, for
+  aeroportul.ro.
+  - 21 airports from OurAirports (public domain, refreshed weekly), with their Romanian
+    names.
+  - A page each:
+    - where it is (km and direction from the town's centre), elevation, codes, runways;
+    - what editors add (address, telephone, terminals, parking, taxi, trains and
+      shuttles, services, a few words);
+    - how to get there: city lines with their next departures and coach stations, asked
+      from transport-comun.ro and transportul.ro.
+  - A live radar of the aircraft over both countries from adsb.lol (ODbL). It is asked
+    only while someone watches, within a daily budget counted for every worker, and
+    spaced out as the budget runs low.
+  - Search words for every page.
+- **transit 0.1.2, coaches 0.1.1:** `/api/v1/aproape?lat=&lon=&km=`, the stops (or coach
+  stations) near a point, for other sites.
+- **transit-lines 0.1.2:** the `air` variant (a runway with its lights, deep blue and
+  amber).
+
 ## 0.4.3
 
 - **Module versions apply everywhere at once (nest-core 0.4.3, admin 0.2.2).** Choosing a
