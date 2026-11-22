@@ -81,6 +81,7 @@ dependencies = [
     "nest-saga-culture",
     "nest-saga-property",
     "nest-saga-monastery",
+    "nest-saga-survival",
     "nest-saga-history",
 ]
 
@@ -176,6 +177,7 @@ nest-saga-overlord = { workspace = true }
 nest-saga-culture = { workspace = true }
 nest-saga-property = { workspace = true }
 nest-saga-monastery = { workspace = true }
+nest-saga-survival = { workspace = true }
 nest-saga-history = { workspace = true }
 
 [dependency-groups]

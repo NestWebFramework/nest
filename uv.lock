@@ -68,6 +68,7 @@ members = [
     "nest-saga-religion",
     "nest-saga-settlement",
     "nest-saga-society",
+    "nest-saga-survival",
     "nest-saga-travel",
     "nest-saga-war",
     "nest-saga-world",
@@ -1428,7 +1429,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-npc"
-version = "0.2.1"
+version = "0.3.0"
 source = { editable = "engines/saga/subsystems/npc" }
 dependencies = [
     { name = "nest-db" },
@@ -1470,7 +1471,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-player"
-version = "0.2.1"
+version = "0.3.0"
 source = { editable = "engines/saga/subsystems/player" }
 dependencies = [
     { name = "nest-auth" },
@@ -1654,6 +1655,31 @@ requires-dist = [
     { name = "nest-db" },
     { name = "nest-saga" },
     { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[[package]]
+name = "nest-saga-survival"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/survival" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-inventory" },
+    { name = "nest-saga-item" },
     { name = "nest-saga-settlement" },
 ]
 
@@ -1972,6 +1998,7 @@ dependencies = [
     { name = "nest-saga-religion" },
     { name = "nest-saga-settlement" },
     { name = "nest-saga-society" },
+    { name = "nest-saga-survival" },
     { name = "nest-saga-travel" },
     { name = "nest-saga-war" },
     { name = "nest-saga-world" },
@@ -2061,6 +2088,7 @@ requires-dist = [
     { name = "nest-saga-religion", editable = "engines/saga/subsystems/religion" },
     { name = "nest-saga-settlement", editable = "engines/saga/subsystems/settlement" },
     { name = "nest-saga-society", editable = "engines/saga/subsystems/society" },
+    { name = "nest-saga-survival", editable = "engines/saga/subsystems/survival" },
     { name = "nest-saga-travel", editable = "engines/saga/subsystems/travel" },
     { name = "nest-saga-war", editable = "engines/saga/subsystems/war" },
     { name = "nest-saga-world", editable = "engines/saga/subsystems/world" },

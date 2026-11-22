@@ -9,6 +9,22 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **saga survival 0.1.0** (new), **saga player 0.3.0**, **saga npc 0.3.0**: what anyone
+  may do to live off the land, with no trade nor guild. Around each settlement (its
+  forest, meadow, river, mountain, from the map and the content) a character gathers
+  sticks and wood, berries, mushrooms, hazelnuts, herbs, worms, fish, game in snares,
+  wild honey, clay, reeds, stones and water, and makes a snare or a rough rod at home:
+  a timed act (`do: gather, item: <activity>, hours`), checked first (place, season,
+  hour, tools, stamina) and paid for in stamina, hunger and thirst, with risks and
+  survival experience. What the land holds is a pool per settlement and resource,
+  shared by all who gather there and growing back daily by season. Every home burns
+  firewood each day (more in winter); a cold home hurts health in winter. NPCs gather
+  too: a home short of firewood sends its people to the forest, those with no trade
+  gather what the season gives (npc rules may test a planner `fact` and the `season`;
+  actions may `gather`; other subsystems add facts with `npc.facts`).
+
 ## 0.4.1
 
 - **core 0.4.1**: `script-src` may be extended with the script sources core reviewed
