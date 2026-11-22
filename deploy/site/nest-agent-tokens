@@ -17,7 +17,7 @@ port_of() {
   case $1 in
     gari) echo 8400 ;; morlaca) echo 8300 ;; transilpedia) echo 8310 ;;
     regionalisme) echo 8200 ;; docsite) echo 8700 ;; keeper) echo 8800 ;;
-    transport-comun) echo 8900 ;;
+    transport-comun) echo 8610 ;;
     *) echo "" ;;
   esac
 }
