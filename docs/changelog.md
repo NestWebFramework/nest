@@ -32,6 +32,17 @@ This documentation is for **Nest %NEST_VERSION%**.
       are asked less.
     - Live map with gliding vehicles and a line filter; boards with live times,
       delays and cancellations, or arrivals estimated from positions.
+  - **Home page**: one search for cities and stops everywhere, and a map of Romania
+    and Moldova with every city offered and what it has (lines, stops, timetable,
+    live).
+  - **Fleet**: every vehicle the live data shows is recorded (at most every ten
+    minutes each), with a page per vehicle (fleet number, kind, wheelchair access,
+    the lines it ran lately, where it is now) and notes an editor writes.
+  - **Learned speeds**: real speeds between stops, by part of the day, learned from
+    consecutive positions and used by the arrival estimates instead of a city
+    average.
+  - **Admin**: the live state of each city (vehicles, interval, how often the data
+    really changes, viewers, stale or failing) and the fleet's notes.
 - **maps 0.2.2**: a map tells the page it is ready (`nest-map:ready`, with the map and
   Leaflet), so another module can draw on it.
 - **saga survival 0.1.0** (new), **saga player 0.3.0**, **saga npc 0.3.0**: what anyone
