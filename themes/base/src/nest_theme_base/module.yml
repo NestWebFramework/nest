@@ -10,7 +10,7 @@ module:
   id: nest.theme.base
   type: theme
   title: Base theme
-  version: 0.2.3
+  version: 0.2.4
   description: A responsive, dependency-free layout and stylesheet for Nest applications.
   license: MIT
   created: "2026-11-13"

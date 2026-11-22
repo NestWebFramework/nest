@@ -1,6 +1,6 @@
 [project]
 name = "nest-consent"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cookies and consent: every module's cookies declared, one notice asking only for what needs it, a cookies page, the visitor's choice for every module."
 requires-python = ">=3.12"
 license = "MIT"

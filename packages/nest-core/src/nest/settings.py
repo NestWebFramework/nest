@@ -11,6 +11,8 @@ each typed by its spec. A value set in the environment wins and is read-only.
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import os
 import threading
 import time
@@ -52,10 +54,13 @@ def _coerce(spec: SettingSpec, value: Any, key: str) -> Any:
 
 
 class SettingsStore:
-    def __init__(self, path: Path, app: str, environ: Mapping[str, str]):
+    def __init__(self, path: Path, app: str, environ: Mapping[str, str], secret: str = ""):
         self._path = path
         self._app = app
         self._environ = environ
+        # secrets set in the admin panel are kept encrypted (AES-GCM, under a key derived from
+        # the application's secret key, which stays in the environment): never in clear on disk
+        self._box = hashlib.sha256(f"nest-settings:{secret}".encode()).digest() if secret else b""
         self._specs: dict[str, tuple[str, str, SettingSpec]] = {}
         self._instance: dict[str, Any] = {}
         self._lock = threading.Lock()
@@ -120,6 +125,8 @@ class SettingsStore:
         if var in self._environ:
             return _coerce(spec, self._environ[var], key)
         if key in self._values:
+            if spec.secret:
+                return self._open(key, self._values[key])
             return _coerce(spec, self._values[key], key)
         if key in self._instance:
             return self._instance[key]
@@ -130,7 +137,8 @@ class SettingsStore:
     def set(self, key: str, value: Any) -> None:
         owner, name, spec = self._spec(key)
         if spec.secret:
-            raise SettingsError(f"{key} is secret; it is set in the environment only")
+            self._set_secret(key, owner, name, value)
+            return
         if env_name(self._app, owner, name) in self._environ:
             raise SettingsError(f"{key} is set by the environment and cannot be changed here")
         text = "" if value is None else str(_coerce(spec, value, key))
@@ -148,6 +156,41 @@ class SettingsStore:
         with self._lock:
             self._values[key] = text
             self._write()
+
+    def _set_secret(self, key: str, owner: str, name: str, value: Any) -> None:
+        """A secret from the admin panel: kept encrypted; an empty value removes it."""
+        if env_name(self._app, owner, name) in self._environ:
+            raise SettingsError(f"{key} is set by the environment and cannot be changed here")
+        text = "" if value is None else str(value).strip()
+        if "\n" in text:
+            raise SettingsError(f"{key}: a value is one line")
+        if text and not self._box:
+            raise SettingsError(f"{key}: no secret key to keep it with; set it in the environment")
+        with self._lock:
+            if text:
+                self._values[key] = self._seal(key, text)
+            else:
+                self._values.pop(key, None)
+            self._write()
+
+    def _seal(self, key: str, text: str) -> str:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM  # noqa: PLC0415
+
+        nonce = os.urandom(12)
+        box = AESGCM(self._box).encrypt(nonce, text.encode(), key.encode())
+        return "enc:" + base64.urlsafe_b64encode(nonce + box).decode().rstrip("=")
+
+    def _open(self, key: str, stored: str) -> Any:
+        """A stored secret in clear; None when it is not ours (another secret key)."""
+        if not stored.startswith("enc:") or not self._box:
+            return None
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM  # noqa: PLC0415
+
+        try:
+            raw = base64.urlsafe_b64decode(stored[4:] + "=" * (-len(stored[4:]) % 4))
+            return AESGCM(self._box).decrypt(raw[:12], raw[12:], key.encode()).decode()
+        except Exception:  # noqa: BLE001 - changed, or sealed under another key
+            return None
 
     def specs(self) -> list[tuple[str, str, str, SettingSpec]]:
         """Every declared setting: (key, owner, name, spec), by owner then name."""

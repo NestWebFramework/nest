@@ -9,7 +9,99 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
-## Unreleased
+## 0.4.4
+
+- **Caching, capped in size, for the transport sites' heavy work.**
+  - **Încotro** keeps a search's options for 10 minutes (the same places within about
+    100 m, day, quarter of an hour and modes), each site's answers by mode (city 2 min,
+    trains and coaches 15, flights 60), and map paths for a day. All are settings.
+  - Kept in the application's cache: Redis, shared and capped by its `maxmemory`; or the
+    in-memory cache, per worker, now also capped in size (cache-memory 0.2.2: `max_mb`,
+    default 8). Without one, in a cache of its own of at most 4 MB per worker. Compressed
+    JSON, expiring by itself.
+  - Admin → Încotro shows the cache and empties it: a new generation, so every worker
+    stops seeing the old entries at once.
+  - At most 20 searches a minute per address (a setting).
+  - The search runs in a worker thread, the event loop free for the other visitors.
+  - Day indexes: each worker builds today's ahead of time, every 15 minutes, so the
+    first search of the day does not wait: transit's busiest cities (`warm_cities`, 2),
+    trains, coaches. Days already past are dropped from memory at once.
+  - The transport sites run 2 workers of 16 threads (was 3): fewer copies of the indexes
+    in memory.
+
+- **Secrets set in the admin panel (nest-core 0.4.4, admin 0.2.3).**
+  - Any secret setting can be set in its module's settings in the admin panel: an API
+    key, an API client's id and secret (adsb.lol, OpenSky, Tranzy, the planner's shared
+    key).
+  - Kept encrypted in the workspace's settings file (AES-GCM, under a key from the
+    application's secret key, which stays in the environment).
+  - Never shown again: the page says only whether one is set. Left empty it stays; "back
+    to the default" removes it. A value the environment sets still wins.
+- **Încotro: real ways on the map.** Trains follow their track (every point they pass, the
+  stations they do not stop at too, from gari.ro); buses, trams and coaches follow their
+  line's published path (GTFS shapes, from transport-comun.ro and transportul.ro, else stop
+  by stop); planes are an arc; walks, cars and taxis stay straight. A trip keeps only a
+  short reference per segment (its site, its trip): the map asks for the ways when it
+  opens, so a shared link stays short. New: `/api/v1/traseu` on trains, transit and coaches,
+  and the lookups `path.train`, `path.city`, `path.coach`; transit exports `ride_path`.
+- **Încotro: a trip on the map, and shared.** Each option has "Pe hartă": its page draws every
+  segment from where it starts to where it ends in its mode's colour, the places as dots.
+  A trip's page sends its link through the phone's share menu (WhatsApp, Messenger, SMS,
+  email), or a WhatsApp or email link; on a computer it copies the link. The link holds
+  the whole trip, encrypted; nothing is stored.
+- **Încotro:** the trips to and from a station or an airport 3 km away or more also take
+  the county's buses (transportul.ro), beside the city's and a taxi. An address in a town
+  whose streets are not indexed yet starts at the town's centre, said so.
+- **flights:** the OpenSky import runs every 6 hours, asks only the days not yet asked,
+  and stops politely at OpenSky's daily limit (429), going on at the next run. Usual
+  timetables are gate to gate (15 minutes before the receivers see the flight airborne,
+  10 after it lands), for the passenger airlines only.
+
+- **Încotro: planes and street addresses.**
+  - **Planes:** from the flights seen (OpenSky; the flights module imports the day before's
+    departures from the airports each night, the last two weeks the first time) come the
+    routes' usual timetables. The planner shows them as flights with estimated times,
+    allowing 75 minutes at the airport before and 25 after.
+  - **Addresses:** typed as people write them ("Erich Bergel 20 Cluj-Napoca", "Bd. 21
+    Decembrie 1989 nr. 104, Cluj-Napoca"). The bigger towns' streets and house numbers
+    come from OpenStreetMap (the streets job, monthly per town, gently) and are searched
+    on the site; the house when OSM knows its number, else the street's middle.
+  - The "only one means of transport" filter is gone: those options show anyway.
+
+- **base 0.2.4: checkboxes and radio buttons one size everywhere.** The form fields'
+  style (full width, padding, a minimum height) is for text fields, lists and text areas
+  only. Checkboxes and radios are 1.1rem in the site's accent colour, beside their words,
+  on the sites and in the admin panel. Before, those outside a few wrapper classes came
+  out bigger.
+
+- **Favicons for the transport sites:** transit-lines (a city bus for `lines`, a coach for
+  `road`, a plane for `air`, each with its theme colour) and rail-signage 0.1.4 (a train in
+  its signage blue and amber), as SVG; a theme built on them may replace the `icon` block.
+
+- **planner 0.1.0** (new): **Încotro?**, the door-to-door journey planner of the four
+  transport sites, the same on each (`/incotro`).
+  - From a place to a place: a locality's centre (20,061 in Romania and Moldova, from
+    GeoNames, searched offline), or the browser's position.
+  - By every mode the sites know, each option's segments with their modes: trains
+    (gari.ro), coaches (transportul.ro), city transport (transport-comun.ro), on foot, car,
+    taxi.
+  - Between towns, each train or coach journey gets a first and a last mile: a walk, the
+    city's journey to the station, or a taxi.
+  - Ranked by a score: time, waiting, price, changes and walking. Options another beats
+    on every count are left out. Badges mark the best, the fastest, the cheapest and the
+    direct ones. A "single means of transport" filter.
+  - Nothing about a search is kept on the server: no rows, and searches are sent by POST.
+  - A trip is kept only on the visitor's side:
+    - in an AES-GCM encrypted cookie, when they allowed "preferences" (consent);
+    - as a calendar file (an event per segment, with a reminder);
+    - as text, a printable page, or an encrypted share link that any of the four sites
+      opens (with the shared `vault_key`).
+- **trains 0.2.1, coaches, transit:** `/api/v1/calatorie?de=lat,lon&la=lat,lon&data=&ora=`,
+  journeys between two points in one shape (legs with mode, line, places, times, price),
+  and the same as lookups (`journeys.train`, `journeys.coach`, `journeys.city`) for the
+  planner on the same site.
+- **consent 0.1.1:** the lookup `consent.allowed`, so other modules can check a purpose
+  without importing consent.
 
 - **flights 0.1.0** (new): the airports of Romania and the Republic of Moldova, for
   aeroportul.ro.

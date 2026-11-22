@@ -31,7 +31,9 @@
       {% else %}
       <label for="{{ fid }}">{{ _(spec.label or i.name) }}</label>
       {% if spec.secret %}
-      <input id="{{ fid }}" value="{{ _('set in the environment') if i.source == 'environment' else _('not set') }}" disabled>
+      {% if i.source == "environment" %}<input id="{{ fid }}" value="{{ _('set in the environment') }}" disabled>
+      {% else %}<input id="{{ fid }}" name="{{ i.key }}" type="password" autocomplete="new-password" spellcheck="false"
+        placeholder="{{ _('set (kept encrypted): type to replace it') if i.is_set else _('not set') }}">{% endif %}
       {% elif spec.choices %}
       <select id="{{ fid }}" name="{{ i.key }}"{% if i.locked %} disabled{% endif %}>
         {% for c in spec.choices %}<option value="{{ c }}"{% if c == i.value %} selected{% endif %}>{{ _(c | string) }}</option>{% endfor %}

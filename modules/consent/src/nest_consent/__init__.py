@@ -53,6 +53,17 @@ def allowed(request: Request, purpose: str, service: str = "") -> bool:
 def setup(host: ModuleHost) -> None:
     host.state.update(host=host, base="" if host.route in (None, "/") else host.route)
 
+    # other modules ask whether the visitor allowed a purpose (the planner, before it saves a
+    # trip in a cookie): {"request": ..., "purpose": "preferences", "service": "..."}
+    host.answer(
+        "consent.allowed",
+        lambda q: (
+            allowed(q["request"], q["purpose"], q.get("service", ""))
+            if isinstance(q, dict)
+            else None
+        ),
+    )
+
     @host.context
     def _consent(request: Any) -> dict[str, Any]:
         return {

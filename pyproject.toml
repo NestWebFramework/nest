@@ -1,6 +1,6 @@
 [project]
 name = "nest-workspace"
-version = "0.4.3"
+version = "0.4.4"
 description = "Nest 0.4.2, the workspace: the core, its modules, interfaces, providers, themes and applications."
 requires-python = ">=3.12"
 dependencies = [
@@ -53,6 +53,7 @@ dependencies = [
     "nest-transit",
     "nest-coaches",
     "nest-flights",
+    "nest-planner",
     "nest-consent",
     "nest-theme-transit-lines",
     "nest-saga",
@@ -154,6 +155,7 @@ nest-trains = { workspace = true }
 nest-transit = { workspace = true }
 nest-coaches = { workspace = true }
 nest-flights = { workspace = true }
+nest-planner = { workspace = true }
 nest-consent = { workspace = true }
 nest-theme-transit-lines = { workspace = true }
 nest-saga = { workspace = true }

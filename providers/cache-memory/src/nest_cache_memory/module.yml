@@ -3,7 +3,7 @@ module:
   id: nest.provider.cache-memory
   type: provider
   title: Memory cache
-  version: 0.2.1
+  version: 0.2.2
   description: >
     Keeps values in the application's own memory: nothing to run, gone on
     restart, one process only. For development and small applications.
@@ -29,6 +29,10 @@ settings:
     type: int
     default: 10000
     description: The oldest entries are evicted beyond this many.
+  max_mb:
+    type: float
+    default: 8
+    description: Megabytes the cache may hold in each worker; the least recently used go first beyond it.
 
 locales:
   - {locale: ro, file: locales/ro.json}

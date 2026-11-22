@@ -311,5 +311,6 @@
  "Applied: {what}.": "Applied: {what}.",
  "The site runs it now.": "The site runs it now.",
  "{what} could not be applied; the site runs as before.": "{what} could not be applied; the site runs as before.",
- "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.": "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again."
+ "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.": "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.",
+ "set (kept encrypted): type to replace it": "set (kept encrypted): type to replace it"
 }

@@ -3,7 +3,7 @@
 
 Keeps values in the application's own memory: nothing to run, gone on restart, one process only. For development and small applications.
 
-**Version 0.2.1** · provider · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.2.2** · provider · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
@@ -27,6 +27,7 @@ bind:
 | setting | kind | default |
 |---|---|---|
 | `max_items` | int | `10000` |
+| `max_mb` | float | `8` |
 
 What each does: the reference page, or the admin panel's Settings.
 <!-- /nest:readme -->

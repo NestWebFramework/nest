@@ -3,7 +3,7 @@
 
 Every module's cookies declared, one notice asking only for what needs consent, a cookies page.
 
-**Version 0.1.0** · module · works with Nest `>=0.4,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.4,<1` · licence MIT
 
 | | |
 |---|---|
@@ -37,10 +37,19 @@ What each does: the reference page, or the admin panel's Settings.
 **Declare** the cookies it sets as it is configured now, by answering `consent.cookies`:
 
 ```python
-host.answer("consent.cookies", lambda _key: [
-    {"name": "_ga", "purpose": "statistics", "duration": "2 years", "provider": "Google Analytics",
-     "service": "google-analytics", "description": "Helps us see which pages are useful, so we can make the site better."},
-])
+host.answer(
+    "consent.cookies",
+    lambda _key: [
+        {
+            "name": "_ga",
+            "purpose": "statistics",
+            "duration": "2 years",
+            "provider": "Google Analytics",
+            "service": "google-analytics",
+            "description": "Helps us see which pages are useful, so we can make the site better.",
+        },
+    ],
+)
 ```
 
 - `purpose` is one of `necessary` (set without asking), `preferences`, `statistics` or

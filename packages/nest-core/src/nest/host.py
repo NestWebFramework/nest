@@ -202,7 +202,9 @@ class Nest:
         )
         self.broker = Broker()
         self.shortcodes = Shortcodes()
-        self.settings = SettingsStore(workspace / "data" / "settings.conf", self.name, environ)
+        self.settings = SettingsStore(
+            workspace / "data" / "settings.conf", self.name, environ, secret=self.secret
+        )
         self.states: dict[str, ModuleState] = {}
         # Per-application, per-module state. A module keeps what it needs at run
         # time here, never in module-level globals, so two applications in one

@@ -1,7 +1,6 @@
 """The admin panel's modules page: core modules locked, the others disabled, enabled,
 uninstalled or added from it; each change logged, and applied to the running site."""
 
-import re
 import textwrap
 import time
 
@@ -167,9 +166,9 @@ def test_the_tabs_say_what_has_updates_and_offer_update_all(site, tmp_path, monk
 def test_a_version_change_runs_in_the_background_and_says_when_done(site, tmp_path, monkeypatch):
     """The page answers at once (a proxy would time out on download, backup, migrations);
     it polls the change, and reloads saying what was done, or why not."""
-    from nest_admin import changes, modules
-
     import threading
+
+    from nest_admin import changes, modules
 
     monkeypatch.setattr(changes, "SETTLE", 0.0)
     done, go = [], threading.Event()

@@ -15,7 +15,7 @@ module:
   id: nest.module.admin
   type: module
   title: Admin panel
-  version: 0.2.2
+  version: 0.2.3
   description: One admin shell gathering the admin pages of every module an application includes.
   license: MIT
   created: "2026-11-14"

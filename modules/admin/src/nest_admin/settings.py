@@ -4,7 +4,7 @@ Each module declares its settings in its manifest (typed, with a label and a
 description); this page shows the ones marked editable, a section per module, and
 saves them in the application's settings store (its workspace), where they win over
 the manifest's values. A value the environment sets is shown and cannot be changed
-here; a secret is never shown. A module may judge its values before they are saved
+here; a secret is set here (kept encrypted), never shown again: left empty it stays. A module may judge its values before they are saved
 (``host.check_settings``). Administrators reach every section; a module may let another
 role change its own (admin: settings_role:, a game's masters its rules).
 """
@@ -82,7 +82,8 @@ def _sections(request: Request, user: Any = None) -> list[dict[str, Any]]:
                 "spec": spec,
                 "value": None if spec.secret else nest.settings.get(key),
                 "source": source,
-                "locked": spec.secret or source == "environment",
+                "locked": source == "environment",
+                "is_set": bool(nest.settings.get(key)) if spec.secret else None,
             }
         )
     return sorted(sections.values(), key=lambda s: order.index(s["owner"]))
@@ -156,6 +157,10 @@ async def save_settings(request: Request, owner: str, user: CurrentUser = Depend
             continue
         if spec.type == "bool":
             wanted[key] = bool(form.get(key))
+        elif spec.secret:  # never shown: left empty keeps it, typed replaces it
+            typed = str(form.get(key, "")).strip()
+            if typed:
+                wanted[key] = typed
         else:
             wanted[key] = str(form.get(key, "")).strip()
     problems: list[str] = []

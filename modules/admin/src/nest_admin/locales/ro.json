@@ -313,5 +313,6 @@
  "Applied: {what}.": "Aplicat: {what}.",
  "The site runs it now.": "Site-ul o folosește acum.",
  "{what} could not be applied; the site runs as before.": "{what} nu a putut fi aplicat; site-ul merge ca înainte.",
- "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.": "Schimbarea {what} a fost întreruptă (procesul ei s-a oprit). Verifică versiunile de mai jos și istoricul, apoi încearcă din nou."
+ "The change of {what} was interrupted (its process stopped). Look at the versions below and at the history, then try again.": "Schimbarea {what} a fost întreruptă (procesul ei s-a oprit). Verifică versiunile de mai jos și istoricul, apoi încearcă din nou.",
+ "set (kept encrypted): type to replace it": "setat (păstrat criptat): scrie ca să-l înlocuiești"
 }

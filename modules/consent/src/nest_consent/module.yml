@@ -15,7 +15,7 @@ module:
   id: nest.module.consent
   type: module
   title: Cookies and consent
-  version: 0.1.0
+  version: 0.1.1
   description: Every module's cookies declared, one notice asking only for what needs consent, a cookies page.
   license: MIT
   created: "2026-11-22"
