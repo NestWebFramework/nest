@@ -11,6 +11,23 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **coaches: stations and towns.**
+  - Coach stations (autogări): `/autogari` lists those of Romania and Moldova by county,
+    on a map, the busiest first. Each station's page shows its towns reached directly,
+    lines, operators, the countries it reaches, the day's departures and arrivals, and
+    the town's other stations.
+  - What editors add per station (Admin → Coach stations): address, opening hours,
+    telephone, website, a few words, and its services (ticket office, waiting room,
+    toilets, left luggage, Wi-Fi, step-free access...). Kept by the station's address,
+    so it stays when the tables are built again.
+  - `/orase`: every town with coaches (Romania's by county, Moldova's, abroad by country),
+    with how many towns it reaches and how many reach it. A town page shows the next
+    departures and arrivals of its big stations, and the coaches coming to it.
+  - Search words for the new pages. Counts use the plural forms ("22 de orașe"). Subjects
+    are by address (slug) instead of id, so saved SEO words survive a rebuild.
+- **seo:** a module answering `seo.text` with `words` (title, description, keywords)
+  gives the batch and the editor's suggestion those words as they are. transit and
+  coaches do.
 - **coaches 0.1.0** (new): coaches between towns and countries, for transportul.ro, over the
   transit module's intercity and county feeds.
   - Towns: Romania's matched to SIRUTA (2026: names, counties, ranks); abroad from the

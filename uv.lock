@@ -673,6 +673,7 @@ name = "nest-coaches"
 version = "0.1.0"
 source = { editable = "modules/coaches" }
 dependencies = [
+    { name = "nest-auth" },
     { name = "nest-core" },
     { name = "nest-db" },
     { name = "nest-transit" },
@@ -680,6 +681,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-core", editable = "packages/nest-core" },
     { name = "nest-db", editable = "interfaces/db" },
     { name = "nest-transit", editable = "modules/transit" },

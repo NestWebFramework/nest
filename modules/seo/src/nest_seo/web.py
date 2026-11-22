@@ -110,6 +110,11 @@ async def suggest(request: Request, user: CurrentUser = Depends(editor)) -> JSON
     subject = str(form.get("subject", ""))[:200]
     if subject:  # what the page holds besides its form: a category's entries, say
         found = request.app.state.nest.lookup("seo.text", subject) or {}
+        words = found.get("words") or {}
+        if words.get("description"):  # the module writes the page's words itself
+            return JSONResponse(
+                {f: str(words.get(f) or "") for f in ("title", "description", "keywords")}
+            )
         texts = [*texts, *found.get("lead", [])]
         extra = found.get("text", [])
         context += found.get("context", [])

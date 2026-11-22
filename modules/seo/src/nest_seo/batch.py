@@ -27,6 +27,9 @@ def proposal(nest: Any, item: dict[str, Any]) -> dict[str, str]:
     subject = item.get("subject") or ""
     if subject:
         found = nest.lookup("seo.text", subject) or {}
+        words = found.get("words") or {}
+        if words.get("description"):  # the module writes the page's words itself: as they are
+            return {f: str(words.get(f) or "") for f in FIELDS}
         texts += found.get("lead", [])
         more = found.get("text", [])
         context += found.get("context", [])
