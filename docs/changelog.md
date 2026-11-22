@@ -11,6 +11,18 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **flights 0.1.2: a page per aircraft and per flight.**
+  - **An aircraft** (`/avion/<ICAO address>`): its registration, maker, model and
+    operator (hexdb.io), a photo from planespotters.net (photographer credited, linked
+    as their terms ask), where it is now when the radar sees it, and its flights from and
+    to our airports lately. Asked once, kept 45 days. The registered owner is never kept:
+    for a private aircraft it may be a person.
+  - **A flight** (`/zbor/<callsign>`): its routes with usual departure, arrival and
+    weekdays, the aircraft seen on it, whether it is in the air now. Flights of the
+    passenger airlines are in the sitemap.
+  - Timetables link each flight; radar popups link the flight and the aircraft. The
+    page policy allows planespotters' images (t.plnspttrs.net).
+
 - **flights 0.1.1: airport timetables and readable radar planes.**
   - Each airport page has its usual departures and arrivals, today and tomorrow, from the
     flights seen in the last three weeks on that weekday (OpenSky; the import now fetches
