@@ -59,6 +59,15 @@ This documentation is for **Nest %NEST_VERSION%**.
     city's lines and kinds, a line's ends, stops and timetable, a stop's lines. Titles,
     descriptions, keywords and breadcrumbs go through the seo module; what an editor
     writes there comes first. The seo module's proposals use the same words.
+  - **Coaches between towns and countries** (for transportul.ro):
+    - Times written in another zone (FlixBus writes UTC) become local time, split where
+      summer time begins or ends or the local date moves past midnight.
+    - A feed can keep only the trips touching an area, whole: by its stops' own time zones
+      (`tz:Europe/Bucharest,Europe/Chisinau`) or a box. FlixBus's European file becomes its
+      37 lines touching Romania and Moldova.
+    - Stops keep their own zone (a foreign stop shows its local time).
+    - A new `intercity` scope in the catalogue (FlixBus Europe), beside `city` and `county`;
+      the cities' pages list only city networks.
   - **Journeys** with changes for the cities with a timetable: RAPTOR on the city's
     day, kept in memory (Bucharest: built in ~0.5 s, then 20–40 ms a journey), walks
     between nearby stops and from "My location", the fastest journey and those with
