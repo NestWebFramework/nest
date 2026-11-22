@@ -55,6 +55,10 @@ This documentation is for **Nest %NEST_VERSION%**.
   - **Learned speeds**: real speeds between stops, by part of the day, learned from
     consecutive positions and used by the arrival estimates instead of a city
     average.
+  - **Search words for every page**, written from the data in the page's language: a
+    city's lines and kinds, a line's ends, stops and timetable, a stop's lines. Titles,
+    descriptions, keywords and breadcrumbs go through the seo module; what an editor
+    writes there comes first. The seo module's proposals use the same words.
   - **Journeys** with changes for the cities with a timetable: RAPTOR on the city's
     day, kept in memory (Bucharest: built in ~0.5 s, then 20–40 ms a journey), walks
     between nearby stops and from "My location", the fastest journey and those with
