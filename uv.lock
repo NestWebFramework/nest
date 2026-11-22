@@ -14,6 +14,7 @@ members = [
     "nest-auth",
     "nest-cache",
     "nest-cache-memory",
+    "nest-coaches",
     "nest-comments",
     "nest-consent",
     "nest-content",
@@ -666,6 +667,23 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
+
+[[package]]
+name = "nest-coaches"
+version = "0.1.0"
+source = { editable = "modules/coaches" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-db" },
+    { name = "nest-transit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-transit", editable = "modules/transit" },
+]
 
 [[package]]
 name = "nest-comments"
@@ -1988,6 +2006,7 @@ dependencies = [
     { name = "nest-auth" },
     { name = "nest-cache" },
     { name = "nest-cache-memory" },
+    { name = "nest-coaches" },
     { name = "nest-comments" },
     { name = "nest-consent" },
     { name = "nest-content" },
@@ -2081,6 +2100,7 @@ requires-dist = [
     { name = "nest-auth", editable = "modules/auth" },
     { name = "nest-cache", editable = "interfaces/cache" },
     { name = "nest-cache-memory", editable = "providers/cache-memory" },
+    { name = "nest-coaches", editable = "modules/coaches" },
     { name = "nest-comments", editable = "modules/comments" },
     { name = "nest-consent", editable = "modules/consent" },
     { name = "nest-content", editable = "modules/content" },

@@ -51,6 +51,7 @@ dependencies = [
     "nest-messages",
     "nest-trains",
     "nest-transit",
+    "nest-coaches",
     "nest-consent",
     "nest-theme-transit-lines",
     "nest-saga",
@@ -150,6 +151,7 @@ nest-forum = { workspace = true }
 nest-messages = { workspace = true }
 nest-trains = { workspace = true }
 nest-transit = { workspace = true }
+nest-coaches = { workspace = true }
 nest-consent = { workspace = true }
 nest-theme-transit-lines = { workspace = true }
 nest-saga = { workspace = true }

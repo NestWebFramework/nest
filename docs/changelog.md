@@ -9,6 +9,21 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **coaches 0.1.0** (new): coaches between towns and countries, for transportul.ro, over the
+  transit module's intercity and county feeds.
+  - Towns: Romania's matched to SIRUTA (2026: names, counties, ranks); abroad from the
+    stops, with their Romanian names (Viena, Budapesta).
+  - Stations, and the city pairs a coach runs between directly, with their runs a week,
+    the quickest time, first and last, operators.
+  - Pages: the search, towns, station boards by day, a page per city pair with the day's
+    runs (foreign stops in their own time), lines, operators, Europe by country; their
+    search words.
+  - A JSON API by city pair.
+  - Built again after a coach feed loads.
+- **transit**: a stop's departures over a chosen window (a coach station's whole day).
+
 ## 0.4.2
 
 - **core 0.4.2**: on a site with an address per language (`language_urls: prefix`), a first
