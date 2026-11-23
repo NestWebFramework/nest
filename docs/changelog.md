@@ -11,6 +11,9 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **trains 0.2.4, hub 0.1.2: their home pages print the seo module's head** (description,
+  Open Graph, and on the site's home the Google and Bing verification codes). gari.ro's home
+  is the trains module's: without it, Bing could not verify gari.ro.
 - **push 0.1.0: notifications on a visitor's device (Web Push), for any module.** Any
   module schedules what to say and when (`push.schedule`); every 30 seconds what is due is
   sent, after the module looks again (its `recheck` lookup: move it, change it, drop it).
