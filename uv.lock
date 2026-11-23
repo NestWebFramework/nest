@@ -33,6 +33,7 @@ members = [
     "nest-glossary",
     "nest-hangman",
     "nest-htmx",
+    "nest-hub",
     "nest-keeper",
     "nest-maps",
     "nest-media",
@@ -673,7 +674,7 @@ requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
 
 [[package]]
 name = "nest-coaches"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "modules/coaches" }
 dependencies = [
     { name = "nest-auth" },
@@ -868,7 +869,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-flights"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "modules/flights" }
 dependencies = [
     { name = "nest-auth" },
@@ -981,6 +982,17 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 name = "nest-htmx"
 version = "0.1.2"
 source = { editable = "modules/htmx" }
+dependencies = [
+    { name = "nest-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
+
+[[package]]
+name = "nest-hub"
+version = "0.1.0"
+source = { editable = "modules/hub" }
 dependencies = [
     { name = "nest-core" },
 ]
@@ -1997,7 +2009,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-trains"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "modules/trains" }
 dependencies = [
     { name = "nest-auth" },
@@ -2014,7 +2026,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-transit"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "modules/transit" }
 dependencies = [
     { name = "nest-auth" },
@@ -2077,6 +2089,7 @@ dependencies = [
     { name = "nest-glossary" },
     { name = "nest-hangman" },
     { name = "nest-htmx" },
+    { name = "nest-hub" },
     { name = "nest-keeper" },
     { name = "nest-maps" },
     { name = "nest-media" },
@@ -2174,6 +2187,7 @@ requires-dist = [
     { name = "nest-glossary", editable = "modules/glossary" },
     { name = "nest-hangman", editable = "modules/hangman" },
     { name = "nest-htmx", editable = "modules/htmx" },
+    { name = "nest-hub", editable = "modules/hub" },
     { name = "nest-keeper", editable = "modules/keeper" },
     { name = "nest-maps", editable = "modules/maps" },
     { name = "nest-media", editable = "modules/media" },

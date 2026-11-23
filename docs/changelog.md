@@ -9,6 +9,22 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **hub 0.1.0: one transport app over the four sites** (Încotro?, app.transportul.ro):
+  near me (city stops, train stations, coach stations, airports, each with its next
+  departures), a place's board refreshed by itself (live times where the city publishes
+  them), your places kept on the device (never on the server), the planner. The position
+  is sent by POST and rounded to about 100 m before it reaches the sites; a board's address
+  is built from a kind and a slug only. Its own API: `/api/v1/aproape`,
+  `/api/v1/plecari/<kind>/<id>`.
+- **The same "near me" and board API on every site:** `/api/v1/aproape` (now with `kind`,
+  `id`, `board` on each place) and a board each - trains 0.2.3
+  (`/api/v1/gara/<slug>/plecari`), transit 0.1.3 (`/api/v1/oras/<city>/statia/<stop>/plecari`,
+  with live times and the vehicles coming), coaches 0.1.2 (`/api/v1/autogara/<slug>/plecari`),
+  flights 0.1.4 (`/api/v1/aproape`, `/api/v1/aeroport/<slug>/plecari`, usual times, in the air
+  now). Departures or arrivals (`sosiri=1`), from an hour (`ora`) for some hours (`ore`).
+
 ## 0.4.5
 
 - **pwa 0.1.0: every site can be an installable web app** (and the base of an Android app).
