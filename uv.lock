@@ -40,6 +40,7 @@ members = [
     "nest-notifications",
     "nest-planner",
     "nest-pubsub",
+    "nest-pwa",
     "nest-redirects",
     "nest-redis",
     "nest-registry",
@@ -744,7 +745,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-core"
-version = "0.4.4"
+version = "0.4.5"
 source = { editable = "packages/nest-core" }
 dependencies = [
     { name = "cryptography" },
@@ -1089,6 +1090,17 @@ requires-dist = [
 name = "nest-pubsub"
 version = "0.1.1"
 source = { editable = "interfaces/pubsub" }
+
+[[package]]
+name = "nest-pwa"
+version = "0.1.0"
+source = { editable = "modules/pwa" }
+dependencies = [
+    { name = "nest-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-redirects"
@@ -1897,7 +1909,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-theme-base"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "themes/base" }
 dependencies = [
     { name = "nest-htmx" },
@@ -1941,7 +1953,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-theme-paper"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "themes/paper" }
 dependencies = [
     { name = "nest-theme-base" },
@@ -1952,7 +1964,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-theme-rail-signage"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "themes/rail-signage" }
 dependencies = [
     { name = "nest-theme-base" },
@@ -1974,7 +1986,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-theme-transit-lines"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "themes/transit-lines" }
 dependencies = [
     { name = "nest-theme-base" },
@@ -2038,7 +2050,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-workspace"
-version = "0.4.4"
+version = "0.4.5"
 source = { virtual = "." }
 dependencies = [
     { name = "nest-admin" },
@@ -2072,6 +2084,7 @@ dependencies = [
     { name = "nest-notifications" },
     { name = "nest-planner" },
     { name = "nest-pubsub" },
+    { name = "nest-pwa" },
     { name = "nest-redirects" },
     { name = "nest-redis" },
     { name = "nest-registry" },
@@ -2168,6 +2181,7 @@ requires-dist = [
     { name = "nest-notifications", editable = "modules/notifications" },
     { name = "nest-planner", editable = "modules/planner" },
     { name = "nest-pubsub", editable = "interfaces/pubsub" },
+    { name = "nest-pwa", editable = "modules/pwa" },
     { name = "nest-redirects", editable = "modules/redirects" },
     { name = "nest-redis", editable = "providers/redis" },
     { name = "nest-registry", editable = "modules/registry" },

@@ -1,0 +1,11 @@
+{#- In every page's head (the layouts include it): the manifest, the colour of the bar above
+    the app, the icon iPhones use. Not in the admin panel. -#}
+{% set p = pwa() if pwa is defined else none %}
+{% if p and not in_admin %}
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="{{ p.theme_color }}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="{{ p.title }}">
+<link rel="apple-touch-icon" href="{{ p.icon }}">
+{% endif %}

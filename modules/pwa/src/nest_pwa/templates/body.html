@@ -1,0 +1,27 @@
+{#- At the end of every page (the layouts include it): the script that starts the service
+    worker, and the few things it may show - install button, iPhone hint, a new version,
+    offline. All hidden until needed. -#}
+{% set p = pwa() if pwa is defined else none %}
+{% if p and not in_admin %}
+<div id="nest-pwa" class="nest-pwa" data-install="{{ 1 if p.install else 0 }}"
+     data-offline="{{ _('You are offline.') }}"
+     data-copy="{{ _('You are offline: this page as it was on {time}.') }}">
+  <div class="nest-pwa-install" hidden>
+    <img src="{{ p.icon }}" alt="" width="28" height="28">
+    <button type="button" data-pwa="install">{{ _("Install the app") }}</button>
+    <button type="button" data-pwa="dismiss" class="nest-pwa-x" aria-label="{{ _('Not now') }}">×</button>
+  </div>
+  <div class="nest-pwa-ios" hidden>
+    <p>{{ _("To install the app: tap Share, then “Add to Home Screen”.") }}</p>
+    <button type="button" data-pwa="dismiss" class="nest-pwa-x" aria-label="{{ _('Not now') }}">×</button>
+  </div>
+  <div class="nest-pwa-update" role="status" hidden>
+    <span>{{ _("A new version of the site is ready.") }}</span>
+    <button type="button" data-pwa="reload">{{ _("Reload") }}</button>
+  </div>
+  <div class="nest-pwa-offline" role="status" hidden>
+    <span></span> <a href="/offline">{{ _("Pages you can read offline") }}</a>
+  </div>
+</div>
+<script src="{{ asset('pwa', 'pwa.js') }}" defer></script>
+{% endif %}

@@ -26,7 +26,20 @@ from typing import Any
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-KEEP = ("/assets/", "/media/", "/_nest/", "/favicon", "/robots.txt", "/sitemap.xml", "/healthz")
+KEEP = (
+    "/assets/",
+    "/media/",
+    "/_nest/",
+    "/favicon",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/healthz",
+    # the web app's (the pwa module): one address each, whatever the visitor's language
+    "/manifest.webmanifest",
+    "/sw.js",
+    "/offline",
+    "/.well-known/",
+)
 _ATTR = re.compile(
     rb'(\s(?:href|action|src|hx-get|hx-post|hx-put|hx-patch|hx-delete|hx-push-url|data-href)=")(/[^"]*)"'
 )

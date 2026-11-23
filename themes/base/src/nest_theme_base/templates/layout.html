@@ -10,6 +10,7 @@
   {% endfor %}
   {% include "htmx/head.html" %}
   {% block head %}{% endblock %}
+  {% include "pwa/head.html" ignore missing %}
 </head>
 <body{% if (user is defined and user) or in_admin %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
   <a class="skip" href="#main">{{ _("Skip to content") }}</a>
@@ -31,6 +32,7 @@
   {% include "admin/preview_bar.html" ignore missing %}
   {% include "notifications/region.html" ignore missing %}
   {% include "consent/banner.html" ignore missing %}
+  {% include "pwa/body.html" ignore missing %}
   {% include "seo/analytics.html" ignore missing %}
 </body>
 </html>

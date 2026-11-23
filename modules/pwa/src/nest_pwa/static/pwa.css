@@ -1,0 +1,73 @@
+/* pwa.css: the install button, the iPhone hint, "a new version", "offline": small bars at
+   the bottom, above the phone's own controls (safe-area insets). */
+.nest-pwa > div {
+  position: fixed;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: max-content;
+  box-sizing: border-box;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 2100; /* above sticky headers (1100) and the cookie notice (2000) */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(560px, calc(100vw - 24px));
+  padding: 8px 10px 8px 14px;
+  border-radius: 12px;
+  background: #1b1f27;
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+.nest-pwa > div[hidden] {
+  display: none;
+}
+.nest-pwa p {
+  margin: 0;
+}
+.nest-pwa a {
+  color: #fff;
+  text-decoration: underline;
+}
+.nest-pwa img {
+  border-radius: 6px;
+  flex: none;
+}
+.nest-pwa button {
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: #fff;
+  color: #1b1f27;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nest-pwa button.nest-pwa-x {
+  background: transparent;
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 4px 8px;
+  font-weight: 400;
+}
+.nest-pwa .nest-pwa-offline {
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  background: #8a4b00;
+}
+.nest-pwa-offline-page ul {
+  padding-left: 1.2em;
+  line-height: 1.8;
+}
+.nest-pwa-offline-page small {
+  opacity: 0.7;
+}
+@media print {
+  .nest-pwa {
+    display: none;
+  }
+}

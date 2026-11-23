@@ -1,0 +1,14 @@
+[project]
+name = "nest-pwa"
+version = "0.1.0"
+description = "Installable web app: manifest, offline pages, install button, updates, Android app links."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core>=0.4.5"]
+
+[project.entry-points."nest.modules"]
+pwa = "nest_pwa"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

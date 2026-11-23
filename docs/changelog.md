@@ -9,7 +9,28 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
-## Unreleased
+## 0.4.5
+
+- **pwa 0.1.0: every site can be an installable web app** (and the base of an Android app).
+  - `/manifest.webmanifest` with the theme's icons (192, 512, maskable) and colour, up to
+    four shortcuts (the theme's menu by default); Chrome finds it installable.
+  - `/sw.js`, the service worker: the offline page and the site's look kept at once;
+    pages from the network, the copy kept when it fails (the newest 40), else the offline
+    page listing what was kept. Never a signed-in visitor's page, the admin panel, the
+    account pages or a POST. Files under /assets/ from the cache; maps (.geojson) their
+    last copy; live data always from the network.
+  - An install button (after the cookie choice; a hint on iPhone), "A new version is ready"
+    with a Reload button, "You are offline: this page as it was on …".
+  - `/.well-known/assetlinks.json` for the Android app (Bubblewrap) once its package and
+    signing fingerprints are set.
+  - On gari.ro, transport-comun.ro, transportul.ro and aeroportul.ro.
+- **nest-core 0.4.5:** a signed-in visitor's pages are sent `Cache-Control: private,
+  no-cache` (no cache keeps them, nor the service worker); the web app's addresses
+  (/sw.js, /manifest.webmanifest, /offline, /.well-known/) are one each, whatever the
+  visitor's language.
+- **Themes base 0.2.5, paper 0.1.4, rail-signage 0.1.5, transit-lines 0.1.3:** their
+  layouts include the web app's head and notices; rail-signage and transit-lines give
+  their icons (PNG and maskable, per variant).
 
 - **planner 0.1.1: along the roads, and the right station.**
   - Cars, taxis and walks follow the streets when a road router answers (Valhalla on

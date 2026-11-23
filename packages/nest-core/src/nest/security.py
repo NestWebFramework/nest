@@ -211,6 +211,10 @@ class SecurityMiddleware:
                 ):
                     headers["cache-control"] = "public, max-age=60, stale-while-revalidate=300"
                     headers.append("vary", "Cookie")  # the reader's language is a cookie
+                elif page and state.get("user") and "cache-control" not in headers:
+                    # a page made for a signed-in visitor: never kept by a shared cache, nor
+                    # by the site's service worker (the pwa module) for reading offline
+                    headers["cache-control"] = "private, no-cache"
             await send(message)
 
         await self.app(scope, receive, send_with_headers)

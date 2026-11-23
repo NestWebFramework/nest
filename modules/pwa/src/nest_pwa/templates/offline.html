@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("You are offline") }} · {{ app.title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<section class="nest-pwa-offline-page">
+  <h1>{{ _("You are offline") }}</h1>
+  <p>{{ _("This page needs the internet. The pages below were kept on this device when you read them, and open without it.") }}</p>
+  <p id="nest-pwa-none">{{ _("No page kept yet: the pages you read while online are kept for later.") }}</p>
+  <ul id="nest-pwa-saved" data-cache="{{ pages_cache }}" hidden></ul>
+  <p><button type="button" data-pwa-page="retry">{{ _("Try again") }}</button>
+     <button type="button" data-pwa-page="forget" class="secondary">{{ _("Forget the kept pages") }}</button></p>
+</section>
+{% endblock %}

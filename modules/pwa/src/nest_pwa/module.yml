@@ -1,0 +1,94 @@
+#
+# pwa — makes a site an installable web app: a manifest (name, colours, icons, shortcuts),
+# a service worker that keeps the site's look and the pages a visitor read for when the
+# network is gone, an offline page listing them, an install button, a notice when a new
+# version is ready, and the Digital Asset Links file an Android app (a Trusted Web
+# Activity, built with Bubblewrap) needs to open the site full screen.
+#
+# Icons come from the theme in use: a theme's module.yml may carry a `pwa:` section with
+# its colour and icons (per variant); without one, this module's own.
+#
+# Kept offline: pages for anyone, never one marked Cache-Control private (Nest marks a
+# signed-in visitor's pages so), the admin panel, the account pages or a POST. Nothing
+# about the visitor is sent anywhere.
+#
+module:
+  name: pwa
+  id: nest.module.pwa
+  type: module
+  title: Web app (PWA)
+  version: 0.1.0
+  description: Installable web app - manifest, offline pages, install button, updates, Android app links.
+  license: MIT
+  created: "2026-11-23"
+  category: platform
+  fits: [site, game, registry, keeper]
+
+nest: ">=0.4.5,<1"
+
+main: nest_pwa
+styles: [pwa.css]
+# its addresses are fixed, at the site's root (/sw.js must be there): no route of its own
+pages: false
+
+provides:
+  import: nest_pwa
+  exports: []
+
+settings:
+  name:
+    type: str
+    default: ""
+    description: The app's name (on the install screen, the app list). Empty, the site's title.
+  short_name:
+    type: str
+    default: ""
+    description: The name under the icon (12 letters or fewer show whole). Empty, the name without its domain ending.
+  description:
+    type: str
+    default: ""
+    description: What the app is, one sentence. Empty, the application's description.
+  theme_color:
+    type: str
+    default: ""
+    description: The colour of the bar above the app (#rrggbb). Empty, the theme's.
+  background_color:
+    type: str
+    default: "#ffffff"
+    description: The colour shown while the app starts (#rrggbb).
+  start_url:
+    type: str
+    default: "/"
+    description: The page the app opens on.
+  shortcuts:
+    type: str
+    default: ""
+    description: "Shortcuts on a long press of the icon, up to 4: \"Title = /path; Title = /path\". Empty, the first four of the theme's menu."
+  categories:
+    type: str
+    default: ""
+    description: The app's categories for stores, comma separated (travel, navigation, news...).
+  offline_pages:
+    type: int
+    default: 40
+    description: How many pages read lately are kept for reading offline.
+  install_button:
+    type: bool
+    default: true
+    description: Offer an "Install the app" button when the browser allows it (and a hint on iPhone).
+  android_package:
+    type: str
+    default: ""
+    description: The Android app's package name (ro.transportul.app), for /.well-known/assetlinks.json. Empty, the file is not served.
+  android_fingerprints:
+    type: str
+    default: ""
+    description: The SHA-256 fingerprints of the Android app's signing keys (from Google Play's App signing page), separated by spaces or commas.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+  - {locale: en, file: locales/en.json}
+
+docs:
+  title: Web app (PWA)
+  section: modules
