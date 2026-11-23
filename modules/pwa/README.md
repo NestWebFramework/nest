@@ -3,7 +3,7 @@
 
 Installable web app - manifest, offline pages, install button, updates, Android app links.
 
-**Version 0.1.0** · module · works with Nest `>=0.4.5,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.4.5,<1` · licence MIT
 
 | | |
 |---|---|
@@ -36,6 +36,9 @@ modules:
 | `categories` | str |  |
 | `offline_pages` | int | `40` |
 | `install_button` | bool | `True` |
+| `app_url` | str |  |
+| `app_name` | str |  |
+| `app_text` | str |  |
 | `android_package` | str |  |
 | `android_fingerprints` | str |  |
 

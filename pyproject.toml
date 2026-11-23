@@ -57,6 +57,7 @@ dependencies = [
     "nest-consent",
     "nest-pwa",
     "nest-hub",
+    "nest-push",
     "nest-theme-transit-lines",
     "nest-saga",
     "nest-saga-world",
@@ -161,6 +162,7 @@ nest-planner = { workspace = true }
 nest-consent = { workspace = true }
 nest-pwa = { workspace = true }
 nest-hub = { workspace = true }
+nest-push = { workspace = true }
 nest-theme-transit-lines = { workspace = true }
 nest-saga = { workspace = true }
 nest-saga-world = { workspace = true }

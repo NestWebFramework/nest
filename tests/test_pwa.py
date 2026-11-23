@@ -166,3 +166,14 @@ def test_shortcuts_are_local_paths_only():
         ("D", "/d"),
     ]
     assert core.shortcuts("", "M = /m") == [("M", "/m")]
+
+
+def test_a_site_may_recommend_another_app_instead_of_itself(tmp_path):
+    config = "{app_url: 'https://app.example.ro', app_name: 'Încotro?', app_text: 'Trains in one app'}"
+    with make(tmp_path, config=config) as c:
+        page = c.get("/cookies/").text
+        assert 'data-app hidden' in page and 'href="https://app.example.ro"' in page and "Încotro?" in page
+        assert 'data-install="0"' in page  # this site's own install button gives way
+    with make(tmp_path / "b", config="{app_url: 'javascript:alert(1)'}") as c:
+        page = c.get("/cookies/").text
+        assert "data-app" not in page and 'data-install="1"' in page  # only an https address

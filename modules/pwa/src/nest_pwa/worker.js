@@ -10,6 +10,8 @@
  *   always from the network.
  * - Never touched: other sites, anything but GET, the admin panel, the account pages.
  * - A new version waits until the page says to take over (its "Reload" button).
+ * - Notifications (the push module): shown as they come; a tap opens their page, or the
+ *   app's window already open on it.
  */
 "use strict";
 
@@ -176,4 +178,42 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(data(request));
   }
   // anything else (live data, forms' answers, htmx fragments): the network, as without us
+});
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || self.registration.scope;
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: data.icon || CONFIG.icon,
+      badge: data.badge || CONFIG.icon,
+      tag: data.tag || undefined,
+      renotify: !!data.tag,
+      timestamp: Date.now(),
+      data: { url: data.url || "/" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data || {}).url || "/", self.location.origin);
+  if (target.origin !== self.location.origin) return; // only this site's pages
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (c.url.split("#")[0] === target.href && "focus" in c) return c.focus();
+      }
+      for (const c of list) {
+        if ("navigate" in c) return c.navigate(target.href).then((w) => w && w.focus());
+      }
+      return self.clients.openWindow(target.href);
+    })
+  );
 });

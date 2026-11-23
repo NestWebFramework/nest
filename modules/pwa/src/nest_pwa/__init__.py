@@ -30,6 +30,17 @@ def setup(host: ModuleHost) -> None:
                 ),
                 "icon": pic["png192"],
                 "install": bool(host.settings.get("install_button")),
+                "app": _app(),
+            }
+
+        def _app() -> dict | None:
+            url = str(host.settings.get("app_url") or "").strip()
+            if not url.startswith("https://"):
+                return None
+            return {
+                "url": url,
+                "name": str(host.settings.get("app_name") or "").strip() or url,
+                "text": str(host.settings.get("app_text") or "").strip(),
             }
 
         return {"pwa": info}

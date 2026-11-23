@@ -17,7 +17,7 @@ module:
   id: nest.module.pwa
   type: module
   title: Web app (PWA)
-  version: 0.1.0
+  version: 0.1.1
   description: Installable web app - manifest, offline pages, install button, updates, Android app links.
   license: MIT
   created: "2026-11-23"
@@ -76,6 +76,18 @@ settings:
     type: bool
     default: true
     description: Offer an "Install the app" button when the browser allows it (and a hint on iPhone).
+  app_url:
+    type: str
+    default: ""
+    description: "Another app to recommend instead of installing this site (https address): on a phone, the install bar offers it (dismissed for 60 days with its ×). Empty, this site's own install button."
+  app_name:
+    type: str
+    default: ""
+    description: The recommended app's name.
+  app_text:
+    type: str
+    default: ""
+    description: A few words on what it does (in English; the language packs translate it).
   android_package:
     type: str
     default: ""

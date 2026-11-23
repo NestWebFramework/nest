@@ -3,9 +3,16 @@
     offline. All hidden until needed. -#}
 {% set p = pwa() if pwa is defined else none %}
 {% if p and not in_admin %}
-<div id="nest-pwa" class="nest-pwa" data-install="{{ 1 if p.install else 0 }}"
+<div id="nest-pwa" class="nest-pwa" data-install="{{ 1 if p.install and not p.app else 0 }}"
      data-offline="{{ _('You are offline.') }}"
      data-copy="{{ _('You are offline: this page as it was on {time}.') }}">
+  {% if p.app %}
+  <div class="nest-pwa-app" data-app hidden>
+    <a href="{{ p.app.url }}" class="nest-pwa-app-link"><b>{{ p.app.name }}</b>{% if p.app.text %} <span>{{ _(p.app.text) }}</span>{% endif %}</a>
+    <a href="{{ p.app.url }}" class="nest-pwa-open">{{ _("Open") }}</a>
+    <button type="button" data-pwa="dismiss-app" class="nest-pwa-x" aria-label="{{ _('Not now') }}">×</button>
+  </div>
+  {% endif %}
   <div class="nest-pwa-install" hidden>
     <img src="{{ p.icon }}" alt="" width="28" height="28">
     <button type="button" data-pwa="install">{{ _("Install the app") }}</button>

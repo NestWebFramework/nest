@@ -41,6 +41,7 @@ members = [
     "nest-notifications",
     "nest-planner",
     "nest-pubsub",
+    "nest-push",
     "nest-pwa",
     "nest-redirects",
     "nest-redis",
@@ -991,7 +992,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-hub"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/hub" }
 dependencies = [
     { name = "nest-core" },
@@ -1104,8 +1105,25 @@ version = "0.1.1"
 source = { editable = "interfaces/pubsub" }
 
 [[package]]
-name = "nest-pwa"
+name = "nest-push"
 version = "0.1.0"
+source = { editable = "modules/push" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cryptography", specifier = ">=42" },
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
+
+[[package]]
+name = "nest-pwa"
+version = "0.1.1"
 source = { editable = "modules/pwa" }
 dependencies = [
     { name = "nest-core" },
@@ -2097,6 +2115,7 @@ dependencies = [
     { name = "nest-notifications" },
     { name = "nest-planner" },
     { name = "nest-pubsub" },
+    { name = "nest-push" },
     { name = "nest-pwa" },
     { name = "nest-redirects" },
     { name = "nest-redis" },
@@ -2195,6 +2214,7 @@ requires-dist = [
     { name = "nest-notifications", editable = "modules/notifications" },
     { name = "nest-planner", editable = "modules/planner" },
     { name = "nest-pubsub", editable = "interfaces/pubsub" },
+    { name = "nest-push", editable = "modules/push" },
     { name = "nest-pwa", editable = "modules/pwa" },
     { name = "nest-redirects", editable = "modules/redirects" },
     { name = "nest-redis", editable = "providers/redis" },

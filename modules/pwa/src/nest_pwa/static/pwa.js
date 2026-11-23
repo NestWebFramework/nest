@@ -130,6 +130,13 @@
       show(".nest-pwa-ios", true);
     }
   }
+  // another app recommended instead (the app_url setting): on a phone, once the cookie
+  // question is answered, not inside an installed app, not for 60 days after its ×
+  var app = part("[data-app]");
+  if (app && !standalone && Number(store("nest-pwa-app-dismissed") || 0) < Date.now()) {
+    var phone = window.matchMedia("(max-width: 820px)").matches;
+    if (phone && !document.querySelector(".nest-consent-bar")) app.hidden = false;
+  }
   window.addEventListener("appinstalled", function () {
     show(".nest-pwa-install", false);
   });
@@ -143,6 +150,9 @@
         deferred = null;
         show(".nest-pwa-install", false);
       });
+    } else if (action === "dismiss-app") {
+      store("nest-pwa-app-dismissed", String(Date.now() + 60 * 864e5));
+      show("[data-app]", false);
     } else if (action === "dismiss") {
       store("nest-pwa-dismissed", String(Date.now() + 30 * 864e5));
       show(".nest-pwa-install", false);

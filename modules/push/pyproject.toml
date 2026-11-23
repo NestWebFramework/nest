@@ -1,0 +1,14 @@
+[project]
+name = "nest-push"
+version = "0.1.0"
+description = "Notifications on a visitor's device (Web Push): scheduled by any module, rechecked before sending, nothing kept after."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["nest-core>=0.4.5", "nest-db>=0.2", "cryptography>=42"]
+
+[project.entry-points."nest.modules"]
+push = "nest_push"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"

@@ -11,6 +11,22 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **push 0.1.0: notifications on a visitor's device (Web Push), for any module.** Any
+  module schedules what to say and when (`push.schedule`); every 30 seconds what is due is
+  sent, after the module looks again (its `recheck` lookup: move it, change it, drop it).
+  VAPID and RFC 8291 encryption with the `cryptography` package only (checked against the
+  RFC's own example). Kept: the browser's push address, sealed under the site's key, and
+  what waits for it; deleted once sent, or when the push service says the address is gone.
+  Only the browsers' own push services are posted to.
+- **hub 0.1.1: reminders.** A bell on each departure of a place's board: a notification
+  some minutes before it leaves (5 for a city stop, 15 for a train or coach, 3 hours for a
+  flight; the visitor chooses), moved when the bus runs late, "cancelled" when the run is,
+  and for a flight "in the air" once the radar sees it. Your reminders on the favourites
+  page, each cancellable.
+- **pwa 0.1.1:** the service worker shows notifications and opens their page on a tap; a
+  site may recommend another app instead of installing itself (`app_url`, `app_name`,
+  `app_text`): gari.ro, transport-comun.ro, transportul.ro and aeroportul.ro recommend
+  Încotro? on phones, and link it in their footers.
 - **hub 0.1.0: one transport app over the four sites** (Încotro?, app.transportul.ro):
   near me (city stops, train stations, coach stations, airports, each with its next
   departures), a place's board refreshed by itself (live times where the city publishes

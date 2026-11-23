@@ -156,6 +156,7 @@ def worker(nest: Any, settings: Any) -> str:
         "offline": OFFLINE,
         "pages": max(5, min(200, int(settings.get("offline_pages") or 40))),
         "pagesCache": PAGES_CACHE,
+        "icon": pic["png192"],
     }
     raw = json.dumps(config, separators=(",", ":"), sort_keys=True)
     version = hashlib.sha256(raw.encode()).hexdigest()[:12]

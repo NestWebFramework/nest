@@ -1,0 +1,79 @@
+#
+# push — notifications on a visitor's phone or computer (Web Push), for any module: a
+# visitor allows them in the browser, the page gives the browser's push address to the
+# site, and a module schedules what to say and when ("push.schedule"). Every 30 seconds
+# what is due is sent; a module may look again just before (its "recheck" lookup: a bus
+# running late moves its reminder).
+#
+# The only thing kept about a visitor: the push address the browser gave (no name, no
+# account), sealed under the site's key, and what is scheduled for it. A notification is
+# deleted once sent; an address with nothing scheduled for 30 days, or that the browser's
+# push service says is gone, is deleted.
+#
+# The site's own key pair (VAPID) is made at the first start, in the workspace
+# (data/push/vapid.pem): keep it with the backups, a new one means every visitor must allow
+# notifications again.
+#
+module:
+  name: push
+  id: nest.module.push
+  type: module
+  title: Push notifications
+  version: 0.1.0
+  description: Notifications on a visitor's device (Web Push) - scheduled by any module, rechecked before sending, nothing kept after.
+  license: MIT
+  created: "2026-11-23"
+  category: platform
+  fits: [site, game, registry, keeper]
+
+nest: ">=0.4.5,<1"
+
+main: nest_push
+
+requires:
+  interfaces: [nest.db]
+  host: [workspace]   # the site's key pair: data/push/vapid.pem
+
+deps:
+  db: ">=0.2,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_push.models:Base"
+
+provides:
+  import: nest_push
+  exports: []
+
+settings:
+  contact:
+    type: str
+    default: ""
+    description: "How the browsers' push services may reach the site's owner (a mailto or https address, sent with every notification). Empty, the site's address."
+  per_address:
+    type: int
+    default: 20
+    description: How many notifications may wait for one browser at once.
+  forget_days:
+    type: int
+    default: 30
+    description: Days after which a browser's address with nothing scheduled is deleted.
+
+schedule:
+  - name: send
+    run: nest_push.jobs:send
+    every: 30s
+    description: Sends the notifications that are due (each module may look again just before), deletes them once sent.
+  - name: tidy
+    run: nest_push.jobs:tidy
+    every: 1d
+    catch_up: once
+    description: Deletes the browsers' addresses with nothing scheduled for a while, and notifications long overdue.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+  - {locale: en, file: locales/en.json}
+
+docs:
+  title: Push notifications
+  section: modules
