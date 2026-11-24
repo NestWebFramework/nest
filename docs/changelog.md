@@ -9,6 +9,12 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **hub 0.1.4:** favourites move with ▲ and ▼ at their right (only where they can go),
+  their names whole on one or two lines; the page's end (the footer, with the version) stays
+  above the tabs.
+
 ## 0.4.6
 
 - **What runs, in every footer:** after the Nest credit, the application and its version,
