@@ -136,7 +136,8 @@ def map_view(request: Request, m: Any, *, with_places: bool = False) -> View:
 
 
 def shortcode_map(attrs: dict[str, str], ctx: Any) -> str:
-    """[map slug="sat"], [map] (the main map), or [map lat=46.85 lng=22.91 zoom=14 title=".."]."""
+    """[map slug="sat"], [map] (the main map), or [map lat=46.85 lng=22.91 zoom=14 title=".."];
+    places="1" adds every place the site's modules know (as the module's own page)."""
     request = getattr(ctx, "request", ctx)
     if request is None:
         return ""
@@ -154,8 +155,14 @@ def shortcode_map(attrs: dict[str, str], ctx: Any) -> str:
         return element(request, View(lat, lng, zoom, data, title or "Map"))
     slug = attrs.get("slug") or _state(request)["settings"].get("main") or None
     m = service.map_by(db, slug=slug)
+    with_places = attrs.get("places", "") in ("1", "true", "yes")
     return (
-        element(request, map_view(request, service.shown_map(db, m, _locale(request)))) if m else ""
+        element(
+            request,
+            map_view(request, service.shown_map(db, m, _locale(request)), with_places=with_places),
+        )
+        if m
+        else ""
     )
 
 

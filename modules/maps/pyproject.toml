@@ -1,6 +1,6 @@
 [project]
 name = "nest-maps"
-version = "0.2.2"
+version = "0.2.3"
 description = "Maps with markers on OpenStreetMap: a page of places, shortcodes, GeoJSON, an editor, a WP Google Maps importer."
 requires-python = ">=3.12"
 license = "MIT"

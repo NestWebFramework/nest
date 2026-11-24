@@ -1,6 +1,7 @@
 """``nest gallery``: galleries from the command line.
 
 nest gallery import-wordpress APP DUMP.sql --uploads WP-CONTENT/uploads [--all]
+nest gallery import-joomgallery APP DUMP.sql --root PUBLIC_HTML
 nest gallery list APP
 """
 
@@ -54,6 +55,23 @@ def _geticus(args: argparse.Namespace) -> int:
         nest.bindings.get("nest.storage"),
         Path(args.dump),
         root=Path(args.root),
+    )
+    print(f"✓ {report.galleries} galleries, {report.photos} photos")
+    for path in report.missing[:10]:
+        print(f"  ! missing {path}")
+    return 0
+
+
+def _joomgallery(args: argparse.Namespace) -> int:
+    from nest_gallery.joomgallery import import_dump
+
+    nest = _app(args.app)
+    report = import_dump(
+        nest.bindings.get("nest.db"),
+        nest.bindings.get("nest.storage"),
+        Path(args.dump),
+        root=Path(args.root),
+        prefix=args.prefix,
     )
     print(f"✓ {report.galleries} galleries, {report.photos} photos")
     for path in report.missing[:10]:
@@ -121,6 +139,12 @@ def register(sub: Any) -> None:
     p.add_argument("dump")
     p.add_argument("--root", required=True, help="the site's folder (where assets/ is)")
     p.set_defaults(func=_geticus)
+    p = actions.add_parser("import-joomgallery", help="move a Joomla site's JoomGallery in")
+    p.add_argument("app")
+    p.add_argument("dump")
+    p.add_argument("--root", required=True, help="the site's folder (where images/joomgallery is)")
+    p.add_argument("--prefix", default="jos_")
+    p.set_defaults(func=_joomgallery)
     p = actions.add_parser(
         "tidy",
         help="clear photo descriptions that are file names, and captions that are camera data",

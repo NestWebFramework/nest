@@ -14,7 +14,7 @@ module:
   id: nest.module.content
   type: module
   title: Content
-  version: 0.2.4
+  version: 0.2.5
   description: >
     Pages, posts and any declared content type with custom fields; categories
     and tags; menus; media in nest.storage; revisions; search; a WordPress

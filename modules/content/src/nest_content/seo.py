@@ -85,21 +85,75 @@ def _rfc822(when: datetime | None) -> str:
 
 
 @router.get("/feed/", include_in_schema=False)
-def feed(request: Request, db: Database = bound(Database)) -> Response:
-    return feed_of(request, db)
+def feed(
+    request: Request, q: str = "", titlu: int = 0, cai: str = "", db: Database = bound(Database)
+) -> Response:
+    paths = [p.strip() for p in cai.split(",") if p.strip().startswith("/")][:FEED_SIZE]
+    return feed_of(request, db, q=q, in_title=bool(titlu), paths=paths)
 
 
-def feed_of(request: Request, db: Any, term: Any = None) -> Response:
-    """The newest entries as RSS: the site's (/feed/), or one category's or tag's
-    (/category/stiai-ca/feed/, the address WordPress gave it)."""
+def _found(request: Request, db: Any, q: str) -> list[Any]:
+    """The published entries the search finds for ``q``, best first (a feed of a subject:
+    /feed/?q=Cluj-Napoca, what another site shows of this one)."""
+    nest = request.app.state.nest
+    index = nest.bindings.get("nest.search")
+    hits = index.query(q, kind="content.entry", limit=100) if index is not None else []
+    out = []
+    for hit in hits:
+        entry = service.entry(db, int(hit.id)) if str(hit.id).isdigit() else None
+        if entry is not None and entry.status == "published" and not entry.language:
+            out.append(entry)
+    return out
+
+
+def _picture(request: Request, e: Any) -> str:
+    """An entry's picture, 640 wide, as an absolute address: its featured one, or the first
+    stored picture of its text; '' without one."""
+    base = request.app.state.nest.lookup("media.base", None) or "/media"
+    key = (e.featured or "").lstrip("/")
+    if not key:
+        found = re.search(rf'<img[^>]+src="{re.escape(base)}/([^"?]+)', e.body or "")
+        key = found.group(1) if found else ""
+    return absolute(request, f"{base}/{key}?w=640") if key else ""
+
+
+def _plain(text: str) -> str:
+    import unicodedata  # noqa: PLC0415
+
+    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+
+
+def feed_of(
+    request: Request,
+    db: Any,
+    term: Any = None,
+    q: str = "",
+    in_title: bool = False,
+    paths: list[str] | None = None,
+) -> Response:
+    """The newest entries as RSS: the site's (/feed/), one category's or tag's
+    (/category/stiai-ca/feed/, the address WordPress gave it), or those of a subject
+    (/feed/?q=Cluj-Napoca: the search's, best first; &titlu=1: only those whose title
+    names it), or chosen ones (/feed/?cai=/a/,/b/: those entries, in that order: what
+    another site recommends of this one). Each with its picture."""
     state = module_state(request, "content")
     nest = request.app.state.nest
     from nest_content import translated  # noqa: PLC0415
 
     types = [t for t, s in state["types"].types.items() if not s.hierarchical]
-    entries, _ = service.listing(
-        db, types=types, term_id=term.id if term is not None else None, per_page=FEED_SIZE
-    )
+    q = q.strip()[:100]
+    if paths:
+        chosen = (service.entry_by_path(db, p) for p in paths)
+        entries = [e for e in chosen if e is not None and e.status == "published"]
+    elif q:
+        entries = [e for e in _found(request, db, q) if e.type in types]
+        if in_title:
+            entries = [e for e in entries if _plain(q) in _plain(e.title)]
+        entries = entries[:FEED_SIZE]
+    else:
+        entries, _ = service.listing(
+            db, types=types, term_id=term.id if term is not None else None, per_page=FEED_SIZE
+        )
     # /en/feed/: the entries in English (the original's where there is none yet), linked
     # at their English addresses
     locale = str(getattr(request.state, "locale", "") or "")
@@ -116,7 +170,12 @@ def feed_of(request: Request, db: Any, term: Any = None) -> Response:
         f'<guid isPermaLink="true">{escape(absolute(request, prefix + e.path))}</guid>'
         f"<pubDate>{_rfc822(e.published_at)}</pubDate>"
         f"<description>{escape(summary(e))}</description>"
-        "</item>"
+        + (
+            f'<enclosure url="{escape(_picture(request, e))}" type="image/webp" length="0"/>'
+            if _picture(request, e)
+            else ""
+        )
+        + "</item>"
         for e in entries
     )
     language = locale or nest.catalogs.default

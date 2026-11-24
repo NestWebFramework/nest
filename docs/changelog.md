@@ -11,6 +11,35 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **clujul-online.ro brought back** (a Joomla 1.5 city portal of 2012–2013), and what it
+  needed, for any site:
+  - **content 0.2.5**: `nest content import-joomla` (articles, GMapFP map places as
+    entries with coordinates, address, phones, hours and categories, efemerides as dated
+    entries; contact persons left out); the RSS feed of a subject (`/feed/?q=Cluj`,
+    `&titlu=1` for titles naming it) or of chosen entries (`/feed/?cai=/a/,/b/`, in that
+    order), each item with its picture; `latest()` of any taxonomy's term; the
+    `content.entries` lookup.
+  - **gallery 0.3.3**: `nest gallery import-joomgallery` (categories as galleries with
+    their tree, photos from originals with JoomGallery's thumbnails).
+  - **maps 0.2.3**: `[map places="1"]`, every place the site's modules know.
+  - New **almanac** module: each day's fixed feasts of the orthodox and catholic
+    calendars (366 days, from the 2012 calendars; the movable feasts left out), the
+    site's on-this-day entries, a page per day (`/astazi/11-24/`), a block, `[astazi]`.
+  - New **nearby** module: beside a place, its nearest stops with their next departures,
+    and the station, coach station or airport when near (transport-comun.ro, gari.ro,
+    transportul.ro, aeroportul.ro); `[aproape lat lng tip]` in a page's text.
+  - New **headlines** module: the day's news from the feeds a site sets (RSS, Atom):
+    titles and links only, nofollow, its page noindex; featured feeds as cards with
+    their pictures kept locally (`[recomandate]`, `features()`).
+  - New theme **clujul-gazeta**: a nineteenth-century city gazette (Playfair Display,
+    EB Garamond, Cormorant SC served locally), the day's date and saints, news column,
+    featured cards, places with their facts and "how to get there".
+- **Voievodate playable** (auth 0.4.3; Saga player 0.4.0, guild 0.3.0, quest 0.3.0):
+  auth's `after_register` (where a new account lands); absent players looked after by kin
+  and neighbours (`away_hours`, `away_floor`); day labour with no trade (`day_wage`);
+  apprenticeship with any grown village master (`village_fee`, `village_master_age`);
+  start quests given at birth (`start: true`).
+
 - **coaches 0.1.4, flights 0.1.7: stars on coach stations and airports** (the rating module;
   transportul.ro and aeroportul.ro), under their titles.
 - **Pictures in articles shown as the gallery shows its photos** (content 0.2.4, gallery

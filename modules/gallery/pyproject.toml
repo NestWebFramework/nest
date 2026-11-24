@@ -1,6 +1,6 @@
 [project]
 name = "nest-gallery"
-version = "0.3.2"
+version = "0.3.3"
 description = "Photo galleries and albums: pages, embeds, a lightbox, and WordPress gallery imports."
 requires-python = ">=3.12"
 license = "MIT"

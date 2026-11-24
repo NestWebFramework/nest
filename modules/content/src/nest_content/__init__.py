@@ -169,9 +169,10 @@ def setup(host: ModuleHost) -> None:
 
     listed = [t for t, s in registry.types.items() if not s.hierarchical]
 
-    def latest(n: int, category: str | None, locale: str = "") -> list:
-        """The newest published entries, for a template (of a category, by its slug)."""
-        term = service_mod.term_by(db, "category", slug=category) if category else None
+    def latest(n: int, category: str | None, locale: str = "", taxonomy: str = "category") -> list:
+        """The newest published entries, for a template (of a category, or of another
+        taxonomy's term, by its slug)."""
+        term = service_mod.term_by(db, taxonomy, slug=category) if category else None
         if category and term is None:
             return []
         entries, _ = service_mod.listing(
@@ -227,7 +228,9 @@ def setup(host: ModuleHost) -> None:
             "menu": lambda slug: service.cached_menu(db, slug, locale, registry),
             "content_types": registry.types,
             "absolute_url": lambda path: absolute(request, path),
-            "latest": lambda n=3, category=None: latest(n, category, locale),
+            "latest": lambda n=3, category=None, taxonomy="category": latest(
+                n, category, locale, taxonomy
+            ),
             "term_url": lambda slug, taxonomy="category": term_url(slug, taxonomy, locale),
             "categories": lambda taxonomy="category": categories(taxonomy, locale),
             "category": lambda slug, taxonomy="category": category(slug, taxonomy, locale),
@@ -324,6 +327,27 @@ def setup(host: ModuleHost) -> None:
         return out
 
     host.answer("map.points", map_points)
+
+    def entries_of(key: object = None) -> list[dict] | None:
+        """``host.lookup("content.entries", {"type": "efemeride"})``: a type's published
+        entries (title, path, fields, a line about each), for a module that shows them its
+        way (the almanac's on-this-day)."""
+        kind = str(key.get("type") or "") if isinstance(key, dict) else ""
+        if not kind or kind not in registry.types:
+            return None
+        from nest_content.seo import summary
+
+        return [
+            {
+                "title": e.title,
+                "path": e.path,
+                "fields": dict(e.fields or {}),
+                "summary": summary(e, 160),
+            }
+            for e in _service.published_of_types(db, [kind])
+        ]
+
+    host.answer("content.entries", entries_of)
     from nest_content.seo import summary
 
     host.template_filter("summary", summary)  # {{ entry | summary(130) }}: a line about it

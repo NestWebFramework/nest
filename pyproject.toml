@@ -59,6 +59,10 @@ dependencies = [
     "nest-hub",
     "nest-push",
     "nest-rating",
+    "nest-almanac",
+    "nest-theme-clujul-gazeta",
+    "nest-nearby",
+    "nest-headlines",
     "nest-theme-transit-lines",
     "nest-saga",
     "nest-saga-world",
@@ -165,6 +169,10 @@ nest-pwa = { workspace = true }
 nest-hub = { workspace = true }
 nest-push = { workspace = true }
 nest-rating = { workspace = true }
+nest-almanac = { workspace = true }
+nest-theme-clujul-gazeta = { workspace = true }
+nest-nearby = { workspace = true }
+nest-headlines = { workspace = true }
 nest-theme-transit-lines = { workspace = true }
 nest-saga = { workspace = true }
 nest-saga-world = { workspace = true }
