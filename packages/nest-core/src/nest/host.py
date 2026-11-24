@@ -112,14 +112,27 @@ def _nest_version() -> str:
     return __version__
 
 
-def nest_credit(t: Any) -> Markup:
-    """The line every site's footer carries: built with Nest, linked, in its language."""
+def release(app: str = "", version: str = "") -> str:
+    """What runs: "gari 0.1.1 · Nest 0.4.6 · c81f0c3-2db07e4" (the application and its
+    version, Nest's, and the commits its image was built from: NEST_REVISION, set by
+    nest-images; none when run from a checkout)."""
+    parts = [f"{app} {version}".strip(), f"Nest {_nest_version()}"]
+    revision = os.environ.get("NEST_REVISION", "").strip()
+    if revision:
+        parts.append(revision)
+    return " · ".join(p for p in parts if p)
+
+
+def nest_credit(t: Any, running: str = "") -> Markup:
+    """The line every site's footer carries: built with Nest, linked, in its language;
+    then what runs (``release``), small, for knowing which version a page came from."""
     key = "Built with the {nest} platform"
     said = t.gettext(key)
     words = said if said != key else _CREDIT.get(str(t.locale or "en")[:2], _CREDIT["en"])
     link = f'<a href="{NEST_URL}" rel="noopener" target="_blank">Nest</a>'
     head, _, tail = words.partition("{nest}")
-    return Markup(f'<p class="nest-credit">{escape(head)}{link}{escape(tail)}</p>')
+    version = f' <small class="nest-release">{escape(running)}</small>' if running else ""
+    return Markup(f'<p class="nest-credit">{escape(head)}{link}{escape(tail)}{version}</p>')
 
 
 class HostError(Exception):
@@ -449,7 +462,9 @@ class Nest:
             locale=t.locale,
             # every theme's footer says what the site is built with (the theme contract
             # asks it): in the page's language, an application may say it its own way
-            nest_credit=nest_credit(t),
+            nest_credit=nest_credit(
+                t, release(self.manifest.module.name, self.manifest.module.version)
+            ),
             nest_version=_nest_version(),
         )
         return context

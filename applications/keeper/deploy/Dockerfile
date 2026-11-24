@@ -23,6 +23,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
 FROM python:${PYTHON}-slim
+# the commits this image is built from (nest-images gives them): shown in every footer
+ARG NEST_REVISION=""
+ENV NEST_REVISION=${NEST_REVISION}
 RUN groupadd --system --gid 10001 nest \
  && useradd --system --uid 10001 --gid nest --home-dir /data --no-create-home nest \
  && mkdir -p /data && chown nest:nest /data

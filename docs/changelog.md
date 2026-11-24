@@ -9,8 +9,19 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
-## Unreleased
+## 0.4.6
 
+- **What runs, in every footer:** after the Nest credit, the application and its version,
+  Nest's, and the commits its image was built from ("gari 0.1.1 · Nest 0.4.6 ·
+  c81f0c3-2db07e4"). nest-images bakes the commits into the image (`NEST_REVISION`); an
+  application's image tag is its own version, raised with every change to it.
+- **nest-core: calls between sites that run side by side** (`NEST_LOCAL_ROUTES`,
+  `public-host=http://container:port`, comma separated): a module asking another of our
+  sites goes straight to its container, saying the public host, so the answer and its links
+  are the public ones; the public address only when that container is not there. The
+  planner, the hub and the flights module's ground transport use it. The transport sites'
+  services share one Docker network (`nest-transport`) and the list: faster (no trip out
+  through Cloudflare and back), and Cloudflare's bot checks never see our own calls.
 - **nest-core: the machine's own health checks** (Docker's, every 30 seconds, from
   127.0.0.1) are left out of the access log, in production (gunicorn) and with `nest run`;
   visitors' lines, and health checks from outside, stay.

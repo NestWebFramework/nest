@@ -150,3 +150,22 @@ def test_the_machines_own_health_checks_stay_out_of_the_access_log():
     assert not quiet.filter(line("127.0.0.1:47248", "/healthz"))  # Docker's, every 30 s
     assert quiet.filter(line("5.13.247.38:0", "/healthz"))  # from outside: kept
     assert quiet.filter(line("43.173.1.1:0", "/cfr/"))  # a visitor: kept
+
+
+def test_every_footer_says_what_runs(monkeypatch):
+    from nest.host import nest_credit, release
+
+    monkeypatch.delenv("NEST_REVISION", raising=False)
+    assert release("gari", "0.1.1").startswith("gari 0.1.1 · Nest ")
+    monkeypatch.setenv("NEST_REVISION", "c81f0c3-2db07e4")
+    running = release("gari", "0.1.1")
+    assert running.endswith(" · c81f0c3-2db07e4")
+
+    class T:
+        locale = "ro"
+
+        def gettext(self, key):
+            return key
+
+    html = str(nest_credit(T(), running))
+    assert 'class="nest-release">gari 0.1.1 · Nest ' in html and "c81f0c3-2db07e4" in html

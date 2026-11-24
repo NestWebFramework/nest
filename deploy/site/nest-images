@@ -72,12 +72,12 @@ build() {
     docsite|keeper)
       DOCKER_BUILDKIT=1 docker build -q -f "$NEST/applications/$app/deploy/Dockerfile" \
         --label "org.opencontainers.image.version=$version" \
-        --label "org.opencontainers.image.revision=$revision" \
+        --label "org.opencontainers.image.revision=$revision" --build-arg "NEST_REVISION=$revision" \
         -t "$image:$pre$version" -t "$image:$pre$revision" -t "$image:${pre}latest" "$NEST" >/dev/null ;;
     *)
       DOCKER_BUILDKIT=1 docker build -q -f "$NEST/deploy/Dockerfile" --build-context "nest=$NEST" \
         --label "org.opencontainers.image.version=$version" \
-        --label "org.opencontainers.image.revision=$revision" \
+        --label "org.opencontainers.image.revision=$revision" --build-arg "NEST_REVISION=$revision" \
         -t "$image:$pre$version" -t "$image:$pre$revision" -t "$image:${pre}latest" "$root" >/dev/null ;;
   esac
 }
