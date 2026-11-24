@@ -11,6 +11,8 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **coaches 0.1.4, flights 0.1.7: stars on coach stations and airports** (the rating module;
+  transportul.ro and aeroportul.ro), under their titles.
 - **Pictures in articles shown as the gallery shows its photos** (content 0.2.4, gallery
   0.3.2):
   - The editor's new **Emphasize** button on a picture (it toggles, like bold; the class

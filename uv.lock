@@ -676,7 +676,7 @@ requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
 
 [[package]]
 name = "nest-coaches"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "modules/coaches" }
 dependencies = [
     { name = "nest-auth" },
@@ -871,7 +871,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-flights"
-version = "0.1.6"
+version = "0.1.7"
 source = { editable = "modules/flights" }
 dependencies = [
     { name = "nest-auth" },
