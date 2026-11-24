@@ -11,6 +11,18 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **transit 0.1.4: live delays carried on, live maps that follow the vehicles.**
+  - The cities' live data (Bucharest, Cluj, Iași, Buzău) predicts a vehicle's next stops
+    only (7 to 20). A stop further on now takes the delay of the last one predicted, as
+    GTFS-realtime says; before, a late bus far away showed on time and vanished from the
+    board at its timetable time though it had not come. A stop the bus has passed (every
+    prediction further on) leaves the board.
+  - On the live map each vehicle is shown where it should be now: its last heard place
+    (30 s to 2 min old, as the city sends it) carried along its own route at the speed
+    learned for that stretch, asked again every 8 seconds; before, it stood still until
+    the source's next position, then jumped.
+- **flights 0.1.6:** the radar's planes fly on from when their positions were taken, not
+  from when the page got them (a snapshot 20 s old had them kilometres behind).
 - **hub 0.1.4:** favourites move with ▲ and ▼ at their right (only where they can go),
   their names whole on one or two lines; the page's end (the footer, with the version) stays
   above the tabs.
