@@ -723,7 +723,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-content"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "modules/content" }
 dependencies = [
     { name = "nest-auth" },
@@ -1988,7 +1988,7 @@ requires-dist = [{ name = "nest-theme-morlaca-valley", editable = "themes/morlac
 
 [[package]]
 name = "nest-theme-morlaca-valley"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "themes/morlaca-valley" }
 dependencies = [
     { name = "nest-theme-base" },

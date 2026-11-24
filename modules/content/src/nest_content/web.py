@@ -10,6 +10,7 @@ modules. Media is served from nest.storage. Editors work in the admin panel
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -254,6 +255,24 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
         env.get_template(template)
     except Exception:  # noqa: BLE001
         template = "content/entry.html"
+
+    def path_of(legacy: int) -> str | None:
+        found = service.entry_by_legacy(db, legacy)
+        return found.path if found is not None and found.status == "published" else None
+
+    body = old_links(
+        responsive_images(
+            request.app.state.nest.shortcodes.expand(
+                # cleaned when saved, and again here: a body that came in another way
+                # (an import, a script, an old row) is never shown as it was sent
+                embed_videos(sanitize(e.body or ""), translator(request)("Play the video")),
+                Context(db, e, request),
+            ),
+            media_base(request),
+        ),
+        path_of,
+        e.path,
+    )
     return render(
         request,
         template,
@@ -263,20 +282,68 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
         children=translated.show_entries(db, registry, service.children(db, e.id), locale)
         if spec.hierarchical
         else [],
-        body=Markup(
-            responsive_images(
-                request.app.state.nest.shortcodes.expand(
-                    # cleaned when saved, and again here: a body that came in another way
-                    # (an import, a script, an old row) is never shown as it was sent
-                    embed_videos(sanitize(e.body or ""), translator(request)("Play the video")),
-                    Context(db, e, request),
-                ),
-                media_base(request),
-            )
-        ),
+        body=Markup(body),
+        # the featured image above the text, unless the text itself starts with it (as
+        # imported WordPress posts often do: the same picture twice)
+        show_featured=not _opens_with(body, e.featured),
         description=seo.summary(e),
         canonical="/" if home else e.path,
     )
+
+
+_LINKED_IMAGE = re.compile(
+    r'(<a\b[^>]*?\bhref=")([^"]*)("[^>]*>\s*<img\b[^>]*?(?:src|srcset)="\s*(/media/[^"?\s,]+))',
+    re.I,
+)
+_OLD_PAGE = re.compile(r"[?&](?:p|attachment_id)=\d+|/attachment/", re.I)
+_IP_HOST = re.compile(
+    r'(\bhref=")https?://\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?(?:/[a-z0-9_-]+)?(?=[/"])', re.I
+)
+
+
+def old_links(html: str, path_of: Any = None, here: str = "") -> str:
+    """What imported posts still link to on the old site (a bare IP, often with a folder:
+    http://79.118.74.35/morlaca/?p=27, or this site's own ?p= addresses): an old post's
+    number (``path_of``: the entry's address now) goes to that entry; a picture linked to
+    its own post, or to an attachment page no longer there, opens the picture itself.
+    Another site's ?p= pages are left as they are."""
+
+    def target(href: str) -> str | None:
+        m = re.search(r"[?&](?:p|page_id)=(\d+)", href)
+        if m and path_of is not None:
+            return path_of(int(m.group(1)))
+        return None
+
+    def own(href: str) -> bool:
+        return href.startswith("/") or _IP_HOST.match(f'href="{href}"') is not None
+
+    def picture(m: re.Match) -> str:
+        href, file = m.group(2), m.group(4)
+        if not own(href) or not _OLD_PAGE.search(href):
+            return m.group(0)
+        path = target(href)
+        return m.group(1) + (path if path and path != here else file) + m.group(3)
+
+    html = _LINKED_IMAGE.sub(picture, html)
+
+    def link(m: re.Match) -> str:
+        href = m.group(2)
+        if own(href) and _OLD_PAGE.search(href):
+            path = target(href)
+            if path:
+                return m.group(1) + path + '"'
+        return m.group(0)
+
+    html = re.sub(r'(<a\b[^>]*?\bhref=")([^"]*)"', link, html)
+    return _IP_HOST.sub(r"\1", html)
+
+
+def _opens_with(html: str, featured: str | None) -> bool:
+    """Whether the text's first picture is the featured one."""
+    if not featured:
+        return False
+    first = re.search(r"<img\b[^>]*>", html, re.I)
+    return bool(first and featured.lstrip("/").split("?")[0] in first.group(0))
 
 
 def _listing_page(request: Request, db: Any, state: dict[str, Any], term: Any) -> Response:

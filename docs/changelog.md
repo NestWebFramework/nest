@@ -11,6 +11,15 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **content 0.2.3: imported posts' old links fixed where they are shown** (no re-import):
+  a link to the old server (a bare IP, often with a folder: http://79.118.74.35/morlaca/)
+  becomes this site's; an old post number (?p=27) goes to that entry's address now; a
+  picture linked to its own post, or to an attachment page no longer there, opens the
+  picture itself; another site's ?p= pages are left alone. The featured image is not shown
+  above the text when the text starts with the same picture (the picture twice, as
+  imported WordPress posts often had it). morlaca-valley 0.1.5 does the same on its own
+  article page.
+
 - **rating 0.1.0: visitors' votes on any module's records**, three kinds: stars (1–5:
   places and services), helpful (yes / no: articles, documentation) and up/down (entries,
   posts). A page embeds `{{ rating(subject, kind) }}`; the subject is signed in the form.

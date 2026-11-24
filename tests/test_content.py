@@ -272,8 +272,10 @@ def test_wordpress_comes_in_with_its_addresses(wordpress):
     assert 'srcset="/media/uploads/2012/12/biserica.jpg?w=320 320w,' in img
     assert 'loading="lazy"' in img and "sizes=" in img
     assert "onerror" not in page.text and "alert('x')" not in page.text
-    # the featured image, sized
-    assert 'src="/media/uploads/2012/12/biserica.jpg?w=1280" srcset=' in page.text
+    # the featured image is the text's own first picture: shown once, in the text (not
+    # again above it, as imported WordPress posts often had it)
+    assert 'class="featured"' not in page.text
+    assert page.text.count("<img") - page.text.count('<img src="/media/uploads/2012/12/biserica.jpg?w=1280"') >= 1
     assert ">Biserici<" in page.text and ">istorie<" in page.text
     assert c.get("/media/uploads/2012/12/biserica.jpg").content == b"\xff\xd8 big"
     assert c.get("/media/uploads/2012/12/biserica-300x200.jpg").status_code == 200  # resized copy
