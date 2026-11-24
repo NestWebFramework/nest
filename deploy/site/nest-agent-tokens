@@ -1,7 +1,7 @@
 #!/bin/sh
 # nest-agent-tokens: give sites' agents a token for the keeper, on the server.
 #
-#   sudo sh nest-agent-tokens gari morlaca transilpedia regionalisme transport-comun transportul aeroportul incotro docsite
+#   sudo sh nest-agent-tokens gari morlaca transilpedia clujul-online regionalisme transport-comun transportul aeroportul incotro docsite
 #
 # For each site (a service nest-<site>, its data in DATA_ROOT/<site>): its own container makes
 # a new control token; the token's SHA-256 replaces the agent line in the data folder's .env
@@ -15,7 +15,7 @@ DOCKER=${DOCKER:-/snap/bin/docker}
 
 port_of() {
   case $1 in
-    gari) echo 8400 ;; morlaca) echo 8300 ;; transilpedia) echo 8310 ;;
+    gari) echo 8400 ;; morlaca) echo 8300 ;; transilpedia) echo 8310 ;; clujul-online) echo 8320 ;;
     regionalisme) echo 8200 ;; docsite) echo 8700 ;; keeper) echo 8800 ;;
     transport-comun) echo 8610 ;; transportul) echo 8620 ;; aeroportul) echo 8630 ;; incotro) echo 8640 ;;
     *) echo "" ;;
