@@ -1404,7 +1404,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-farm"
-version = "0.2.1"
+version = "0.3.0"
 source = { editable = "engines/saga/subsystems/farm" }
 dependencies = [
     { name = "nest-auth" },
@@ -1642,7 +1642,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-player"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "engines/saga/subsystems/player" }
 dependencies = [
     { name = "nest-auth" },
@@ -1709,7 +1709,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-property"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "engines/saga/subsystems/property" }
 dependencies = [
     { name = "nest-auth" },

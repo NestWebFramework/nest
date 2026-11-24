@@ -11,6 +11,14 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Saga farm 0.3.0: a player's own fields and garden** (player 0.4.1, property 0.2.2): its
+  share of the household's land (or a strip worked "în parte") and a garden; the content's
+  works by each crop's calendar (plough, sow, dig, weed, water, reap: `works:`; crops'
+  `seed`, `produce`, `place`), done a few hours at a time and counted in pogoane; oxen
+  plough faster (`property.owned`); the harvest by how the land's crop fared and the care
+  given, less the tithe (settings `garden`, `strip`, `share`, `tithe`, `tend_most`); the
+  player's `farm` act; `farm.reaped`.
+
 - **clujul-online.ro brought back** (a Joomla 1.5 city portal of 2012–2013), and what it
   needed, for any site:
   - **content 0.2.5**: `nest content import-joomla` (articles, GMapFP map places as
