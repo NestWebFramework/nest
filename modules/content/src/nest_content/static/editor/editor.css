@@ -86,3 +86,6 @@ img.ProseMirror-separator { display: inline !important; border: none !important;
 .ed-bar[hidden] { display: none; }
 .ed-surface li > p, .ed-surface td > p, .ed-surface th > p { margin: 0; }
 .ed-surface li + li { margin-top: .2rem; }
+
+/* an emphasized picture (the gallery module frames it, opens it large): marked while editing */
+.ed-surface img.evidentiat { outline: 3px solid #e0a100; outline-offset: 3px; }

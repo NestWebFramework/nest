@@ -11,6 +11,18 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Pictures in articles shown as the gallery shows its photos** (content 0.2.4, gallery
+  0.3.2):
+  - The editor's new **Emphasize** button on a picture (it toggles, like bold; the class
+    `evidentiat`): framed, full width, its description under it, a magnifier; a tap opens
+    it large in the gallery's viewer. Emphasized pictures side by side are a
+    **mini-gallery**, a row of tiles.
+  - The content setting **pictures_open_large**: every picture in an entry opens large in
+    the viewer; all of an article's pictures are one series (the viewer's arrows).
+  - A picture that links to another page keeps its link; another site's pictures are left
+    alone; without JavaScript each is a link to its large picture. morlaca.ro and
+    transilpedia.ro open every picture large.
+
 - **content 0.2.3: imported posts' old links fixed where they are shown** (no re-import):
   a link to the old server (a bare IP, often with a folder: http://79.118.74.35/morlaca/)
   becomes this site's; an old post number (?p=27) goes to that entry's address now; a

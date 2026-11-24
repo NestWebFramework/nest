@@ -22,3 +22,23 @@ dialog.lightbox .lightbox-count { align-self: center; opacity: .8; }
 .gallery-photo-row img { width: 10rem; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 6px; }
 .gallery-photo-row label { font-weight: 500; }
 @media (max-width: 40rem) { .gallery-photo-row { grid-template-columns: 1fr; } }
+
+/* pictures in an article shown as the gallery shows its photos (spotlight.py) */
+.nest-spot { margin: 1.6em 0; }
+.nest-spot img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18); }
+.nest-spot.alignleft, .nest-spot.alignright { max-width: 48%; margin-top: 0.3em; }
+.nest-spot.alignleft { float: left; margin-right: 1.2em; }
+.nest-spot.alignright { float: right; margin-left: 1.2em; }
+.nest-spot figcaption { margin-top: 0.55em; text-align: center; font-size: 0.92rem; color: var(--muted, #5b6472); font-style: italic; }
+.nest-spot-link { position: relative; display: block; cursor: zoom-in; }
+.nest-spot-link::after {
+  content: "⤢"; position: absolute; right: 10px; bottom: 10px; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 18px; line-height: 1;
+}
+.nest-spot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 1.6em 0; }
+.nest-spot-grid .nest-spot { margin: 0; }
+.nest-spot-grid img { aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15); }
+.nest-spot-grid .nest-spot-link::after { width: 26px; height: 26px; font-size: 15px; right: 6px; bottom: 6px; }
+.nest-spot-grid figcaption { font-size: 0.8rem; margin-top: 0.35em; }
+a.nest-zoom { cursor: zoom-in; }

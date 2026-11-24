@@ -273,6 +273,20 @@ def _entry_page(request: Request, db: Any, state: dict[str, Any], e: Entry) -> R
         path_of,
         e.path,
     )
+    nest = request.app.state.nest
+    if nest.answered("gallery.spotlight"):
+        # emphasized pictures framed and opening large, side by side a mini-gallery; with the
+        # setting, every picture opens large (the gallery module's viewer)
+        shown = nest.lookup(
+            "gallery.spotlight",
+            {
+                "html": body,
+                "all": bool(state["settings"].get("pictures_open_large")),
+                "viewer": nest.asset("gallery", "lightbox.js"),
+            },
+        )
+        if shown:
+            body = shown["html"]
     return render(
         request,
         template,

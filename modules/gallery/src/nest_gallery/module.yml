@@ -16,7 +16,7 @@ module:
   id: nest.module.gallery
   type: module
   title: Galleries
-  version: 0.3.1
+  version: 0.3.2
   description: Photo galleries and albums with pages, embeds, a lightbox, uploads in the admin panel and WordPress imports.
   license: MIT
   created: "2026-11-13"

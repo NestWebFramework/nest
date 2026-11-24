@@ -28,6 +28,7 @@ def labels(_: Any) -> dict[str, str]:
         "clear": _("Clear formatting"), "source": _("HTML"), "full": _("Full screen"),
         "alignLeft": _("Picture on the left"), "alignCenter": _("Picture centred"),
         "alignRight": _("Picture on the right"),
+        "spotlight": _("Emphasize: framed, opens large; side by side, a mini-gallery"),
         "alt": _("Description of the picture (for those who cannot see it)"),
         "rowAdd": _("Add a row"), "colAdd": _("Add a column"), "rowDel": _("Delete the row"),
         "colDel": _("Delete the column"), "headRow": _("Header row"),

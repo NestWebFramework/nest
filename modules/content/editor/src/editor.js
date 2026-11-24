@@ -106,6 +106,7 @@ const ICONS = {
   table: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>'),
   left: svg('<rect x="3" y="5" width="8" height="8" rx="1"/><line x1="14" y1="6" x2="21" y2="6"/><line x1="14" y1="11" x2="21" y2="11"/><line x1="3" y1="17" x2="21" y2="17"/>'),
   center: svg('<rect x="8" y="4" width="8" height="8" rx="1"/><line x1="4" y1="16" x2="20" y2="16"/><line x1="6" y1="20" x2="18" y2="20"/>'),
+  spot: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 15l3-4 2 3 2-2 3 3"/><path d="M17 3l.6 1.4L19 5l-1.4.6L17 7l-.6-1.4L15 5l1.4-.6z"/>'),
   right: svg('<rect x="13" y="5" width="8" height="8" rx="1"/><line x1="3" y1="6" x2="10" y2="6"/><line x1="3" y1="11" x2="10" y2="11"/><line x1="3" y1="17" x2="21" y2="17"/>'),
   alt: text("Alt"),
   caption: text("Aa"),
@@ -417,12 +418,21 @@ function mount(textarea) {
     c().updateAttributes("image", { class: cls.join(" ") || null }).run();
   };
   const imageAligned = (a) => (editor.getAttributes("image").class || "").split(/\s+/).includes(a);
+  // "emphasized": the gallery module shows it framed, large, in its viewer; side by side
+  // emphasized pictures become a mini-gallery (a class apart from the alignment)
+  const SPOT = "evidentiat";
+  const toggleSpot = () => {
+    const cls = (editor.getAttributes("image").class || "").split(/\s+/).filter((x) => x && x !== SPOT);
+    if (!imageAligned(SPOT)) cls.push(SPOT);
+    c().updateAttributes("image", { class: cls.join(" ") || null }).run();
+  };
   const imageOnly = [];
   const tableOnly = [];
   const ig = [
     button(L.alignLeft, ICONS.left, () => setImageClass(imageAligned("alignleft") ? null : "alignleft"), () => imageAligned("alignleft")),
     button(L.alignCenter, ICONS.center, () => setImageClass(imageAligned("aligncenter") ? null : "aligncenter"), () => imageAligned("aligncenter")),
     button(L.alignRight, ICONS.right, () => setImageClass(imageAligned("alignright") ? null : "alignright"), () => imageAligned("alignright")),
+    button(L.spotlight || "Emphasize", ICONS.spot, toggleSpot, () => imageAligned(SPOT)),
     button(L.alt, ICONS.alt, async () => {
       const alt = await ask(L, L.alt, editor.getAttributes("image").alt || "");
       if (alt !== null) c().updateAttributes("image", { alt }).run();

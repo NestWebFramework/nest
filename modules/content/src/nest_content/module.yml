@@ -14,7 +14,7 @@ module:
   id: nest.module.content
   type: module
   title: Content
-  version: 0.2.3
+  version: 0.2.4
   description: >
     Pages, posts and any declared content type with custom fields; categories
     and tags; menus; media in nest.storage; revisions; search; a WordPress
@@ -90,6 +90,10 @@ taxonomies:
     path: "/tag/{slug}/"
 
 settings:
+  pictures_open_large:
+    type: bool
+    default: false
+    description: "Every picture in an entry opens large in the gallery's viewer (with the gallery module); emphasized ones (the editor's Emphasize button) always do, framed."
   rating:
     type: str
     default: ""

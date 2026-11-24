@@ -41,6 +41,20 @@ def setup(host: ModuleHost) -> None:
     host.template_filter("photo_describes", texts.describes)
     shortcodes(host)
 
+    def spotlight(q: object) -> dict | None:
+        """An article's pictures shown as the gallery shows its photos (spotlight.py):
+        {"html": ..., "all": every picture opens large, "viewer": the lightbox's address}
+        -> {"html": ..., "used": ...}."""
+        from nest_gallery import spotlight as spot
+
+        if not isinstance(q, dict):
+            return None
+        return spot.transform(
+            str(q.get("html") or ""), bool(q.get("all")), str(q.get("viewer") or "")
+        )
+
+    host.answer("gallery.spotlight", spotlight)
+
     def seo_pages(_key: object = None) -> list[dict]:
         """The galleries (and their page of albums), each with its photos, for the sitemap."""
         from nest_gallery import service
