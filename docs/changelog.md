@@ -11,6 +11,9 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **nest-core: the machine's own health checks** (Docker's, every 30 seconds, from
+  127.0.0.1) are left out of the access log, in production (gunicorn) and with `nest run`;
+  visitors' lines, and health checks from outside, stay.
 - **trains 0.2.4, hub 0.1.2: their home pages print the seo module's head** (description,
   Open Graph, and on the site's home the Google and Bing verification codes). gari.ro's home
   is the trains module's: without it, Bing could not verify gari.ro.

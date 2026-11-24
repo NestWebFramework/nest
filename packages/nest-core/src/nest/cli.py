@@ -105,6 +105,15 @@ def cmd_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _log_config() -> dict:
+    from uvicorn.config import LOGGING_CONFIG  # noqa: PLC0415
+
+    config = __import__("copy").deepcopy(LOGGING_CONFIG)
+    config.setdefault("filters", {})["quiet_checks"] = {"()": "nest.serve.QuietChecks"}
+    config["handlers"]["access"].setdefault("filters", []).append("quiet_checks")
+    return config
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -127,6 +136,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         forwarded_allow_ips=proxies or None,
         server_header=False,
         log_level=args.log_level,
+        log_config=_log_config(),
     )
     return 0
 

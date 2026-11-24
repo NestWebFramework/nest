@@ -127,3 +127,26 @@ def test_a_backup_comes_back_whole(tmp_path):
     root = tmp_path / "site"
     with TestClient(create_app(root, environ={"NEST_APP_WORKSPACE": str(fresh)})) as c:
         assert c.get("/istoria/").status_code == 200
+
+
+def test_the_machines_own_health_checks_stay_out_of_the_access_log():
+    import logging
+
+    from nest.serve import QuietChecks
+
+    quiet = QuietChecks()
+
+    def line(ip, path):
+        return logging.LogRecord(
+            "uvicorn.access",
+            20,
+            "",
+            0,
+            '%s - "%s %s HTTP/%s" %d',
+            (ip, "GET", path, "1.1", 200),
+            None,
+        )
+
+    assert not quiet.filter(line("127.0.0.1:47248", "/healthz"))  # Docker's, every 30 s
+    assert quiet.filter(line("5.13.247.38:0", "/healthz"))  # from outside: kept
+    assert quiet.filter(line("43.173.1.1:0", "/cfr/"))  # a visitor: kept

@@ -196,6 +196,17 @@ def one_process_modules(nest: Any) -> list[str]:
     return [u.name for u in nest.plan.units if getattr(u.entry.manifest, "one_process", False)]
 
 
+class QuietChecks:
+    """Leaves out of the access log the health checks from the machine itself (Docker's,
+    every 30 seconds): the visitors' lines stay readable."""
+
+    def filter(self, record: Any) -> bool:
+        args = record.args if isinstance(record.args, tuple) else ()
+        if len(args) >= 3 and str(args[2]).split("?")[0] == "/healthz":
+            return not str(args[0]).startswith(("127.0.0.1", "::1"))
+        return True
+
+
 try:  # the worker class needs uvicorn-worker; the planning above does not
     from uvicorn_worker import UvicornWorker
 
@@ -211,6 +222,12 @@ try:  # the worker class needs uvicorn-worker; the planning above does not
             "server_header": False,
             "proxy_headers": True,
         }
+
+        def init_process(self) -> None:
+            import logging  # noqa: PLC0415
+
+            logging.getLogger("uvicorn.access").addFilter(QuietChecks())
+            super().init_process()
 
 except ImportError:  # pragma: no cover - nest-core depends on it
     NestWorker = None  # type: ignore[assignment,misc]
