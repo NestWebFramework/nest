@@ -54,6 +54,7 @@ def setup(host: ModuleHost) -> None:
     host.state.update(
         session_days=days,
         allow_registration=host.live("allow_registration", bool),
+        after_register=host.live("after_register", str),
         min_password_length=host.live("min_password_length", int),
         # counted where every worker sees it: a shared cache, else the database
         throttle=make_throttle(

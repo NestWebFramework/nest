@@ -13,7 +13,7 @@ module:
   id: nest.module.auth
   type: module
   title: Accounts
-  version: 0.4.2
+  version: 0.4.3
   description: >
     Accounts with roles, sign-in and sign-out, server-side sessions on the
     bound database, and the dependencies other modules protect routes with.
@@ -43,6 +43,10 @@ db:
   metadata: "nest_auth.models:Base"
 
 settings:
+  after_register:
+    type: str
+    default: "/"
+    description: Where a new account goes once made (a page of the site, a path); a game sends it to its play page.
   allow_registration:
     label: Allow registration
     type: bool

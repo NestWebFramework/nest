@@ -376,4 +376,6 @@ def register(
     token = sessions.open_session(
         db, user, days=state["session_days"], user_agent=request.headers.get("user-agent", "")
     )
-    return _signed_in(request, token, "/")
+    # where a new account goes: the application's choice (a game: its play page), else home
+    target = safe_next(str(state["after_register"] or "/"))
+    return _signed_in(request, token, target)

@@ -3,7 +3,7 @@
 
 Accounts with roles, sign-in and sign-out, server-side sessions on the bound database, and the dependencies other modules protect routes with.
 
-**Version 0.4.2** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.4.3** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|
@@ -26,6 +26,7 @@ modules:
 
 | setting | kind | default |
 |---|---|---|
+| `after_register` | str | `/` |
 | `allow_registration` | bool | `False` |
 | `session_days` | int | `14` |
 | `min_password_length` | int | `10` |
