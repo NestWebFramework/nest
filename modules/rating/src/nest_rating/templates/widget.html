@@ -1,0 +1,42 @@
+{#- A subject's rating and its buttons (the rating module): stars, helpful, or up/down.
+    Works with htmx (the widget redraws itself) or without (the form posts, the page
+    comes back). -#}
+<div class="nest-rating nest-rating-{{ kind }}" id="r-{{ sig }}">
+  <form method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#r-{{ sig }}" hx-swap="outerHTML">
+    {{ csrf_field }}
+    <input type="hidden" name="subject" value="{{ subject }}">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <input type="hidden" name="sig" value="{{ sig }}">
+    <input type="hidden" name="name" value="{{ name }}">
+    <input type="hidden" name="back" value="{{ request.url.path }}">
+    {% if kind == "stars" %}
+      <div class="nest-rating-row">
+        <span class="nest-rating-ask">{% if mine %}{{ _("Your rating") }}{% else %}{{ _("Rate it") }}{% endif %}</span>
+        <span class="nest-rating-stars" role="group" aria-label="{{ _('Rate it') }}">
+          {%- for n in range(1, 6) %}<button type="submit" name="value" value="{{ n }}" class="nest-star{{ ' on' if mine and n <= mine }}" aria-label="{{ ngettext('{n} star', '{n} stars', n) }}"{% if s.closed %} disabled{% endif %}>★</button>{% endfor -%}
+        </span>
+      </div>
+      <p class="nest-rating-summary">
+        {% if s.count and enough %}<b>{{ "%.1f" | format(s.average) }}</b> <span class="nest-star on" aria-hidden="true">★</span> · {{ ngettext("{n} vote", "{n} votes", s.count) }}
+        {% elif s.count %}{{ ngettext("{n} vote so far", "{n} votes so far", s.count) }}
+        {% else %}{{ _("No votes yet: be the first.") }}{% endif %}
+      </p>
+    {% elif kind == "helpful" %}
+      <div class="nest-rating-row">
+        <span class="nest-rating-ask">{{ _("Was this useful?") }}</span>
+        <button type="submit" name="value" value="1" class="nest-pill{{ ' on' if mine == 1 }}"{% if s.closed %} disabled{% endif %}>{{ _("Yes") }}</button>
+        <button type="submit" name="value" value="-1" class="nest-pill{{ ' on' if mine == -1 }}"{% if s.closed %} disabled{% endif %}>{{ _("No") }}</button>
+        {% if s.count and enough %}<span class="nest-rating-summary">{{ _("{share}% said yes", share=s.share) }} · {{ ngettext("{n} vote", "{n} votes", s.count) }}</span>{% endif %}
+      </div>
+    {% else %}
+      <div class="nest-rating-row nest-updown">
+        <button type="submit" name="value" value="1" class="nest-arrow{{ ' on' if mine == 1 }}" aria-label="{{ _('Up') }}"{% if s.closed %} disabled{% endif %}>▲</button>
+        <b class="nest-score">{{ s.score }}</b>
+        <button type="submit" name="value" value="-1" class="nest-arrow{{ ' on' if mine == -1 }}" aria-label="{{ _('Down') }}"{% if s.closed %} disabled{% endif %}>▼</button>
+      </div>
+    {% endif %}
+    {% if s.closed %}<p class="nest-rating-note">{{ _("Voting is closed here.") }}</p>{% endif %}
+    <!--note-->
+  </form>
+  {% if ld %}<script type="application/ld+json">{{ ld | safe }}</script>{% endif %}
+</div>

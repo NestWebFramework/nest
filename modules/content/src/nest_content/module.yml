@@ -14,7 +14,7 @@ module:
   id: nest.module.content
   type: module
   title: Content
-  version: 0.2.1
+  version: 0.2.2
   description: >
     Pages, posts and any declared content type with custom fields; categories
     and tags; menus; media in nest.storage; revisions; search; a WordPress
@@ -90,6 +90,10 @@ taxonomies:
     path: "/tag/{slug}/"
 
 settings:
+  rating:
+    type: str
+    default: ""
+    description: "How visitors judge an entry (article, page), with the rating module: stars, helpful (useful or not), updown; empty, no rating."
   home:
     label: Home page
     type: str

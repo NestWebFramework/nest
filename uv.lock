@@ -43,6 +43,7 @@ members = [
     "nest-pubsub",
     "nest-push",
     "nest-pwa",
+    "nest-rating",
     "nest-redirects",
     "nest-redis",
     "nest-registry",
@@ -675,7 +676,7 @@ requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
 
 [[package]]
 name = "nest-coaches"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "modules/coaches" }
 dependencies = [
     { name = "nest-auth" },
@@ -722,7 +723,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-content"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "modules/content" }
 dependencies = [
     { name = "nest-auth" },
@@ -949,7 +950,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-glossary"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "modules/glossary" }
 dependencies = [
     { name = "nest-auth" },
@@ -1131,6 +1132,21 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
+
+[[package]]
+name = "nest-rating"
+version = "0.1.0"
+source = { editable = "modules/rating" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-db" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
 
 [[package]]
 name = "nest-redirects"
@@ -1972,7 +1988,7 @@ requires-dist = [{ name = "nest-theme-morlaca-valley", editable = "themes/morlac
 
 [[package]]
 name = "nest-theme-morlaca-valley"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "themes/morlaca-valley" }
 dependencies = [
     { name = "nest-theme-base" },
@@ -2117,6 +2133,7 @@ dependencies = [
     { name = "nest-pubsub" },
     { name = "nest-push" },
     { name = "nest-pwa" },
+    { name = "nest-rating" },
     { name = "nest-redirects" },
     { name = "nest-redis" },
     { name = "nest-registry" },
@@ -2216,6 +2233,7 @@ requires-dist = [
     { name = "nest-pubsub", editable = "interfaces/pubsub" },
     { name = "nest-push", editable = "modules/push" },
     { name = "nest-pwa", editable = "modules/pwa" },
+    { name = "nest-rating", editable = "modules/rating" },
     { name = "nest-redirects", editable = "modules/redirects" },
     { name = "nest-redis", editable = "providers/redis" },
     { name = "nest-registry", editable = "modules/registry" },

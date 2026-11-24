@@ -1,0 +1,43 @@
+{
+ "Close voting": "Close voting",
+ "Down": "Down",
+ "Forget its votes": "Forget its votes",
+ "Kind": "Kind",
+ "Lately rated": "Lately rated",
+ "Many votes from one visitor in a day": "Many votes from one visitor in a day",
+ "More likely a script than a person. Forgetting deletes all its votes and recounts.": "More likely a script than a person. Forgetting deletes all its votes and recounts.",
+ "No": "No",
+ "No votes yet.": "No votes yet.",
+ "No votes yet: be the first.": "No votes yet: be the first.",
+ "Open voting": "Open voting",
+ "Rate it": "Rate it",
+ "Ratings": "Ratings",
+ "Reset": "Reset",
+ "Result": "Result",
+ "Set when you vote (stars, useful or not): counts your vote once, and lets you change it.": "Set when you vote (stars, useful or not): counts your vote once, and lets you change it.",
+ "Subject": "Subject",
+ "Thank you for your vote.": "Thank you for your vote.",
+ "Too many votes in a minute from here: try again in a minute.": "Too many votes in a minute from here: try again in a minute.",
+ "Up": "Up",
+ "Votes": "Votes",
+ "Voting is closed here.": "Voting is closed here.",
+ "Was this useful?": "Was this useful?",
+ "Yes": "Yes",
+ "Your rating": "Your rating",
+ "Your vote was taken back.": "Your vote was taken back.",
+ "closed": "closed",
+ "yes": "yes",
+ "{n} star": [
+  "{n} star",
+  "{n} stars"
+ ],
+ "{n} vote": [
+  "{n} vote",
+  "{n} votes"
+ ],
+ "{n} vote so far": [
+  "{n} vote so far",
+  "{n} votes so far"
+ ],
+ "{share}% said yes": "{share}% said yes"
+}

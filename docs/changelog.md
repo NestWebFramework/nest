@@ -11,6 +11,19 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **rating 0.1.0: visitors' votes on any module's records**, three kinds: stars (1–5:
+  places and services), helpful (yes / no: articles, documentation) and up/down (entries,
+  posts). A page embeds `{{ rating(subject, kind) }}`; the subject is signed in the form.
+  One vote per visitor and subject, changeable (a necessary `nest_voter` cookie, set when
+  voting, and a day's hash of the address and browser against cleared cookies; neither is
+  kept raw); an average only from `min_votes` votes; schema.org AggregateRating where the
+  page names what it rates. Admin: subjects lately rated (close, reset), visitors with many
+  votes in a day (forget their votes).
+- **coaches 0.1.3:** stars on each operator's page (transportul.ro).
+- **content, glossary: a `rating` setting** (stars, helpful, updown, or none): every entry or
+  term gets the rating module's widget above its comments. morlaca.ro and transilpedia.ro
+  rate their articles and pages with stars, regionalisme.ro its terms (the morlaca-valley
+  theme's own article page too).
 - **transit 0.1.4: live delays carried on, live maps that follow the vehicles.**
   - The cities' live data (Bucharest, Cluj, Iași, Buzău) predicts a vehicle's next stops
     only (7 to 20). A stop further on now takes the delay of the last one predicted, as

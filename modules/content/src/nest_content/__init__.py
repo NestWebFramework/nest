@@ -113,6 +113,11 @@ def seo_pages(host: ModuleHost, db: object, registry: Registry) -> list[dict]:
     return out
 
 
+def _kind(value: object) -> str:
+    kind = str(value or "").strip()
+    return kind if kind in ("stars", "helpful", "updown") else ""
+
+
 def setup(host: ModuleHost) -> None:
     if host.route != "/":
         raise HostError("content serves whole-site paths; include it with route: /")
@@ -227,6 +232,8 @@ def setup(host: ModuleHost) -> None:
             "categories": lambda taxonomy="category": categories(taxonomy, locale),
             "category": lambda slug, taxonomy="category": category(slug, taxonomy, locale),
             "related": lambda entry, n=3: related(entry, n, locale),
+            # how visitors judge an entry (the rating module): stars, helpful, updown, or none
+            "content_rating": _kind(host.settings.get("rating")),
             # the rich text editor for any admin form (see nest_content.rich_editor)
             "rich_editor": lambda: rich_editor(
                 translator(request), request.app.state.nest.asset, request.app.state.nest.admin_root

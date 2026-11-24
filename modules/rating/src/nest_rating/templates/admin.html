@@ -1,0 +1,35 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Ratings") }}{% endblock %}
+{% block content %}
+<h1>{{ _("Ratings") }}</h1>
+{% if bursts %}
+<section>
+  <h2>{{ _("Many votes from one visitor in a day") }}</h2>
+  <p class="muted">{{ _("More likely a script than a person. Forgetting deletes all its votes and recounts.") }}</p>
+  <table><tbody>{% for p, n in bursts %}<tr><td><code>{{ p[:12] }}…</code></td><td>{{ n }}</td>
+    <td><form method="post" action="{{ base }}/uita">{{ csrf_field }}<input type="hidden" name="print" value="{{ p }}"><button type="submit" class="secondary small">{{ _("Forget its votes") }}</button></form></td></tr>{% endfor %}</tbody></table>
+</section>
+{% endif %}
+<section>
+  <h2>{{ _("Lately rated") }}</h2>
+  {% if rows %}
+  <table>
+    <thead><tr><th>{{ _("Subject") }}</th><th>{{ _("Kind") }}</th><th>{{ _("Votes") }}</th><th>{{ _("Result") }}</th><th></th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><code>{{ r.subject }}</code>{% if r.closed %} <small class="muted">({{ _("closed") }})</small>{% endif %}</td>
+        <td>{{ r.kind }}</td>
+        <td>{{ r.count }}</td>
+        <td>{% if r.kind == "stars" and r.count %}{{ "%.1f" | format(r.average) }} ★ <small class="muted">{{ r.stars | join(" / ") }}</small>{% elif r.kind == "helpful" and r.count %}{{ r.share }}% {{ _("yes") }}{% elif r.kind == "updown" %}{{ r.score }} (▲{{ r.up }} ▼{{ r.down }}){% endif %}</td>
+        <td>
+          <form method="post" action="{{ base }}/inchide" class="inline">{{ csrf_field }}<input type="hidden" name="subject" value="{{ r.subject }}"><input type="hidden" name="closed" value="{{ 0 if r.closed else 1 }}"><button type="submit" class="secondary small">{{ _("Open voting") if r.closed else _("Close voting") }}</button></form>
+          <form method="post" action="{{ base }}/sterge" class="inline">{{ csrf_field }}<input type="hidden" name="subject" value="{{ r.subject }}"><button type="submit" class="secondary small">{{ _("Reset") }}</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ _("No votes yet.") }}</p>{% endif %}
+</section>
+{% endblock %}

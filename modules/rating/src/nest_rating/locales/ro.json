@@ -1,0 +1,46 @@
+{
+ "Close voting": "Închide votul",
+ "Down": "Jos",
+ "Forget its votes": "Uită-i voturile",
+ "Kind": "Fel",
+ "Lately rated": "Notate recent",
+ "Many votes from one visitor in a day": "Multe voturi de la un singur vizitator într-o zi",
+ "More likely a script than a person. Forgetting deletes all its votes and recounts.": "Mai degrabă un program decât un om. „Uită-i voturile” le șterge pe toate și renumără.",
+ "No": "Nu",
+ "No votes yet.": "Niciun vot încă.",
+ "No votes yet: be the first.": "Niciun vot încă: fii primul.",
+ "Open voting": "Redeschide votul",
+ "Rate it": "Dă o notă",
+ "Ratings": "Note și voturi",
+ "Reset": "Resetează",
+ "Result": "Rezultat",
+ "Set when you vote (stars, useful or not): counts your vote once, and lets you change it.": "Se pune când votezi (stele, util sau nu): îți numără votul o singură dată și te lasă să-l schimbi.",
+ "Subject": "Subiect",
+ "Thank you for your vote.": "Mulțumim pentru vot.",
+ "Too many votes in a minute from here: try again in a minute.": "Prea multe voturi într-un minut de aici: încearcă din nou peste un minut.",
+ "Up": "Sus",
+ "Votes": "Voturi",
+ "Voting is closed here.": "Votul s-a încheiat aici.",
+ "Was this useful?": "A fost util?",
+ "Yes": "Da",
+ "Your rating": "Nota ta",
+ "Your vote was taken back.": "Votul tău a fost retras.",
+ "closed": "închis",
+ "yes": "da",
+ "{n} star": [
+  "{n} stea",
+  "{n} stele",
+  "{n} de stele"
+ ],
+ "{n} vote": [
+  "{n} vot",
+  "{n} voturi",
+  "{n} de voturi"
+ ],
+ "{n} vote so far": [
+  "{n} vot până acum",
+  "{n} voturi până acum",
+  "{n} de voturi până acum"
+ ],
+ "{share}% said yes": "{share}% au spus da"
+}
