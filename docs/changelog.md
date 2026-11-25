@@ -9,7 +9,39 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
-## Unreleased
+## 0.4.7
+
+- **Nest is MIT-licensed, said once at its root**: a `LICENSE` file, the README and the
+  workspace's `pyproject.toml` (every package and module already said MIT).
+
+- **Route pages on the timetable** (trains 0.2.6): `/ruta/<a>/<b>`, the direct trains
+  between two stations (departure, arrival, duration, operator, fare; the ones not running
+  today or not daily marked), what sums them up (how many, the first and last, the fastest,
+  from how many lei), the way back and the journeys with changes. The routes between the
+  stations of at least `route_rank` go to the sitemap. A station's page says where its
+  direct trains go (the larger stations, how many trains, the fastest, each linking its
+  route page) and, with the nearby module, its connections (city stops, coach station,
+  airport). The credit line names every operator loaded.
+
+- **Destinations and routes of an airport** (flights 0.1.9): the airport page lists where
+  one flies from it (the airlines, flights a week); `/<airport>/destinatii` lists them all
+  by country; `/<airport>/spre/<code>` is a route, "Zboruri Cluj-Napoca – Londra Luton":
+  the usual flights there and back (times, days, duration, airline). Estimated from the
+  scheduled airlines' flights seen in the last three weeks; in the sitemap.
+
+- **The weather at each airport** (flights 0.1.9): its METAR and TAF from the Aviation
+  Weather Center (aviationweather.gov, setting `weather_api`), in plain words (temperature,
+  wind, visibility, what falls, clouds, pressure; the forecast still to come) with the raw
+  reports beside; one request for all the airports, kept 15 minutes, asked after the page.
+
+- **Public bikes** (transit 0.1.6): a city's docking stations with their bikes and free
+  docks now, from GBFS (Sibiu, Buzău, Dej) or Cluj-Napoca city hall's open data: a page
+  `/oras/<city>/biciclete` with a map asking again every minute, a button on the city's
+  page, the stations near a stop on its page. Asked only while seen, kept as long as the
+  feed says it holds. The catalogue's `words` give feed names their diacritics.
+
+- **Ungheni** (transit 0.1.6): the official GTFS of Transport Public Ungheni (39 lines,
+  CC BY 4.0, credit "UngheniTransport.md") in the catalogue.
 
 - **"Waiting for you" in the keeper** (agent 0.1.2, keeper 0.2.3; comments 0.1.3, glossary
   0.1.4, rating 0.1.1): a module tells what waits for an admin by answering
