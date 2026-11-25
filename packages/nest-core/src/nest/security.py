@@ -176,6 +176,9 @@ class SecurityMiddleware:
         state["csrf_token"] = token
         state["csrf_cookie_valid"] = fresh is None
         reading = scope.get("method") in ("GET", "HEAD")
+        # an htmx request: the same address answers a fragment instead of the page, so no
+        # cache (a browser's, a shared one) may keep it in the page's place, nor serve it old
+        htmx = any(name == b"hx-request" for name, _ in scope.get("headers", []))
 
         async def send_with_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
@@ -196,6 +199,9 @@ class SecurityMiddleware:
                         policy = policy.replace("frame-ancestors 'none'", "frame-ancestors *")
                     headers["content-security-policy"] = policy
                 page = headers.get("content-type", "").startswith("text/html")
+                if page and "cache-control" not in headers and (htmx or state.get("live")):
+                    # live data (departures, positions) or a fragment: always asked anew
+                    headers["cache-control"] = "no-store"
                 # A page that holds no form (it never wrote the token) gives no cookie: a
                 # reader's page is the same for every reader, and a cache may keep it.
                 quiet = reading and page and not state.get("csrf_used")
@@ -218,6 +224,13 @@ class SecurityMiddleware:
             await send(message)
 
         await self.app(scope, receive, send_with_headers)
+
+
+def live(request: Request) -> None:
+    """A dependency marking a route's pages live (departure boards, positions on a map):
+    no browser or shared cache keeps them, so a visitor never sees them old.
+    ``APIRouter(dependencies=[Depends(live)])`` for a module whose pages all are."""
+    request.state.live = True
 
 
 def _same_site(request: Request, origin: str) -> bool:

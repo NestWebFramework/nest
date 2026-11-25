@@ -3,7 +3,7 @@
 from nest.bind import bound
 from nest.host import AdminPage, ModuleHost, admin_url, create_app
 from nest.i18n import language_name, translator
-from nest.security import local_path
+from nest.security import live, local_path
 from nest.templating import is_htmx, render
 from nest.toasts import toast
 
@@ -27,6 +27,7 @@ __all__ = [
     "bound",
     "create_app",
     "is_htmx",
+    "live",
     "local_path",
     "render",
     "toast",

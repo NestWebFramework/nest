@@ -106,6 +106,8 @@ def test_a_readers_page_gives_no_cookie_and_may_be_cached(tmp_path):
         assert "set-cookie" not in home.headers  # no form on it: no token, no cookie
         assert home.headers["cache-control"] == "public, max-age=60, stale-while-revalidate=300"
         assert "Cookie" in home.headers["vary"] and "X-CSRF-Token" not in home.text
+        fragment = reader.get("/", headers={"HX-Request": "true"})  # htmx: the page's part
+        assert fragment.headers["cache-control"] == "no-store"  # never kept in the page's place
         login = reader.get("/cont/login")  # a form: its token, its cookie, not cached
         assert "nest_csrf=" in login.headers["set-cookie"] and "public" not in login.headers.get(
             "cache-control", ""
@@ -126,3 +128,29 @@ def test_a_readers_page_gives_no_cookie_and_may_be_cached(tmp_path):
             "public" not in signed.headers.get("cache-control", "")
             and "X-CSRF-Token" in signed.text
         )  # a member's page is theirs
+
+
+def test_a_live_page_is_never_kept(tmp_path):
+    """A route marked live (departure boards, positions): no cache keeps it."""
+    from fastapi import APIRouter, Depends, FastAPI
+    from fastapi.responses import HTMLResponse
+
+    from nest import live
+    from nest.security import SecurityMiddleware
+
+    app = FastAPI()
+    board = APIRouter(dependencies=[Depends(live)])
+
+    @board.get("/board", response_class=HTMLResponse)
+    def show_board():
+        return "<p>10:05 Cluj</p>"
+
+    @app.get("/about", response_class=HTMLResponse)
+    def about():
+        return "<p>about</p>"
+
+    app.include_router(board)
+    app.add_middleware(SecurityMiddleware, secret="s" * 32, secure_cookies=False)
+    with TestClient(app) as c:
+        assert c.get("/board").headers["cache-control"] == "no-store"
+        assert c.get("/about").headers["cache-control"].startswith("public, max-age=60")

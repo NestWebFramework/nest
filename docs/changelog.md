@@ -11,6 +11,13 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Live pages are never cached** (nest-core 0.4.7; trains 0.2.5, transit 0.1.5, flights
+  0.1.8, coaches 0.1.5, hub 0.1.5, nearby 0.1.1): an htmx answer (a page's part, at the
+  page's own address) is `no-store`, so no cache serves it in the page's place nor old; a
+  route marks its pages live with the `live` dependency (departure boards, positions on a
+  map), and the live modules do, so a browser no longer shows a departure board up to six
+  minutes old.
+
 - **Saga farm 0.3.0: a player's own fields and garden** (player 0.4.1, property 0.2.2): its
   share of the household's land (or a strip worked "în parte") and a garden; the content's
   works by each crop's calendar (plough, sow, dig, weed, water, reap: `works:`; crops'

@@ -695,7 +695,7 @@ requires-dist = [{ name = "nest-cache", editable = "interfaces/cache" }]
 
 [[package]]
 name = "nest-coaches"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "modules/coaches" }
 dependencies = [
     { name = "nest-auth" },
@@ -767,7 +767,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-core"
-version = "0.4.6"
+version = "0.4.7"
 source = { editable = "packages/nest-core" }
 dependencies = [
     { name = "cryptography" },
@@ -890,7 +890,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-flights"
-version = "0.1.7"
+version = "0.1.8"
 source = { editable = "modules/flights" }
 dependencies = [
     { name = "nest-auth" },
@@ -1023,7 +1023,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-hub"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "modules/hub" }
 dependencies = [
     { name = "nest-core" },
@@ -1104,7 +1104,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-nearby"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "modules/nearby" }
 dependencies = [
     { name = "nest-core" },
@@ -2095,7 +2095,7 @@ requires-dist = [{ name = "nest-theme-base", editable = "themes/base" }]
 
 [[package]]
 name = "nest-trains"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "modules/trains" }
 dependencies = [
     { name = "nest-auth" },
@@ -2112,7 +2112,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-transit"
-version = "0.1.4"
+version = "0.1.5"
 source = { editable = "modules/transit" }
 dependencies = [
     { name = "nest-auth" },
