@@ -9,7 +9,7 @@ module:
   id: nest.app.keeper
   type: application
   title: Nest keeper
-  version: 0.2.1
+  version: 0.2.2
   description: Watches the deployed sites, restarts and upgrades them, and shows Nest's applications.
   license: MIT
   created: "2026-11-14"
