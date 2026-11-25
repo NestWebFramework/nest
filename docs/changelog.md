@@ -11,6 +11,17 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Errands through people** (Saga quest 0.4.0, economy 0.2.2): a quest may cast people of
+  the player's town at its start (`cast: {target: [conditions]}`), pick what is asked
+  (`pick: {need: [{item, qty}]}`, only what the town's market has now) and give coins by
+  the market's price (`coins: {price_of: need, times: [1.2, 1.5]}`: a little over). A stage
+  may be done by speaking with a cast person (`meet`), told to a cast person instead of the
+  giver (`to`), and need the picked thing held (`bring`); texts name them (`{target.name}`,
+  `{target.trade}`, `{need.item}`, `{need.qty}`, `{coins}`) in each language. In
+  conversation the facts say `errand_meet` and `errand_give`, and `quest.met` gives what
+  the one met says (with the coins). The economy answers `market.price` and `market.stock`.
+  Errands taken up before their pack cast them are cast when the world loads.
+
 - **Keys, simpler** (keys 0.2.0, auth 0.5.1, Saga player 0.5.1): an account is kept by a
   passkey (fingerprint, face, the device's PIN) or by its key, now downloaded as a small file
   when the player asks (`/cheie/noua.json`: a new key, the older one stops working); the
