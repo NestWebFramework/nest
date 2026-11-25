@@ -56,5 +56,21 @@ def setup(host: ModuleHost) -> None:
         ]
 
     host.answer("consent.cookies", cookies)
+
+    def waiting(_key: object = None) -> list[dict]:
+        """For the keeper (agent.attention): visitors who voted on many subjects in a day."""
+        found = service.bursts(db())
+        root = host.admin_root or "/admin"
+        return [
+            {
+                "key": "rating.bursts",
+                "label": "Visitors with suspiciously many votes",
+                "count": len(found),
+                "oldest": None,
+                "path": f"{root}/rating/",
+            }
+        ]
+
+    host.answer("agent.attention", waiting)
     host.mount(router)
     host.admin(admin)

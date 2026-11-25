@@ -1,12 +1,22 @@
 {% extends "admin/layout.html" %}
 {% from "keeper/_site_macros.html" import state_label, bars, pct, ago with context %}
 {% block title %}{{ _("Sites") }} · {{ app.title }}{% endblock %}
+{% macro waiting_label(w) %}{{ w.labels.get(locale) or w.labels.get("en") or w.key }}{% endmacro %}
 {% block admin_content %}
 <div class="row between"><h1>{{ _("Sites") }}</h1><span class="row"><a href="{{ base }}/apps">{{ _("Applications") }}</a> <a href="{{ base }}/packages">{{ _("Packages") }}</a> <a href="{{ base }}/tokens">{{ _("API tokens") }}</a> <a class="button" href="{{ base }}/sites/new">{{ _("Watch a site") }}</a></span></div>
 <p class="muted">{{ _("The deployed sites the keeper watches, each through its agent: whether it answers and is well, since when, how often these last days.") }}</p>
 {% block sites %}
 <div id="sites" hx-get="{{ base }}/" hx-trigger="every 15s" hx-select="#sites" hx-swap="outerHTML">
 {% if sites %}
+{% set waiting = [] %}{% for s in sites %}{% for w in (s.status or {}).get("attention") or [] %}{% set _ = waiting.append((s, w)) %}{% endfor %}{% endfor %}
+{% if waiting %}
+<section class="keeper-waiting" aria-labelledby="waiting-title">
+  <h2 id="waiting-title">{{ _("Waiting for you") }}</h2>
+  <ul>{% for s, w in waiting %}
+    <li><a href="{{ s.url.rstrip('/') }}{{ w.path }}" rel="noopener" target="_blank"><strong>{{ s.name }}</strong>: {{ w.count }} · {{ waiting_label(w) }}</a>{% if w.age_hours is not none %} <span class="muted">({{ _("the oldest") }} {{ ago(w.age_hours) }})</span>{% endif %}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
 <p class="keeper-summary"><span><strong>{{ counts.up }}</strong> {{ _("up") }}</span>{% if counts.warn %}<span><strong>{{ counts.warn }}</strong> {{ _("need care") }}</span>{% endif %}<span><strong>{{ counts.down }}</strong> {{ _("down") }}</span>{% if counts.paused %}<span><strong>{{ counts.paused }}</strong> {{ _("paused") }}</span>{% endif %}</p>
 <div class="keeper-sites">{% for s in sites %}{% set st = s.status %}
   <article class="keeper-site {{ s.state }}">
@@ -20,6 +30,7 @@
       {% if s.since %}<dt>{% if s.up %}{{ _("Up since") }}{% else %}{{ _("Down since") }}{% endif %}</dt><dd>{{ s.since.strftime("%d.%m.%Y %H:%M") }} UTC</dd>{% endif %}
       {% if st.get("backups") %}<dt>{{ _("Backup") }}</dt><dd>{{ ago(st.backups.get("age_hours")) }}</dd>{% endif %}
     </dl>
+    {% if st.get("attention") %}<ul class="keeper-attention">{% for w in st.attention %}<li><a href="{{ s.url.rstrip('/') }}{{ w.path }}" rel="noopener" target="_blank">{{ w.count }} · {{ waiting_label(w) }}</a></li>{% endfor %}</ul>{% endif %}
     {% if s.token_lost %}<p class="keeper-problem">{{ _("Its token cannot be read (the keeper's key changed): give it again.") }}</p>
     {% elif s.problem %}<p class="keeper-problem">{{ s.problem }}</p>{% endif %}
   </article>{% endfor %}

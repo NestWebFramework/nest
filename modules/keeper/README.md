@@ -3,7 +3,7 @@
 
 The deployed sites Nest watches through their agents, and Nest's applications, their plans and packages.
 
-**Version 0.2.2** · module · works with Nest `>=0.4,<1` · licence MIT
+**Version 0.2.3** · module · works with Nest `>=0.4,<1` · licence MIT
 
 | | |
 |---|---|

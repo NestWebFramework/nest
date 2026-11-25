@@ -53,3 +53,28 @@ def setup(host: ModuleHost) -> None:
 
     host.mount(router)
     host.admin(admin)  # moderation, in the admin panel
+
+    def waiting(_key: object = None) -> list[dict]:
+        """For the keeper (agent.attention): how many comments wait for a moderator."""
+        from sqlalchemy import func, select  # noqa: PLC0415
+
+        from nest_comments.models import Comment  # noqa: PLC0415
+
+        with host.bound("nest.db").session() as s:
+            count, oldest = s.execute(
+                select(func.count(Comment.id), func.min(Comment.created_at)).where(
+                    Comment.status == "pending"
+                )
+            ).one()
+        root = host.admin_root or "/admin"
+        return [
+            {
+                "key": "comments.pending",
+                "label": "Comments awaiting approval",
+                "count": count,
+                "oldest": oldest,
+                "path": f"{root}/comments/",
+            }
+        ]
+
+    host.answer("agent.attention", waiting)

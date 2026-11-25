@@ -11,6 +11,14 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **"Waiting for you" in the keeper** (agent 0.1.2, keeper 0.2.3; comments 0.1.3, glossary
+  0.1.4, rating 0.1.1): a module tells what waits for an admin by answering
+  `agent.attention` (a count, the oldest, the path of its admin page); the agent's status
+  gives them, with their labels in the site's languages; the keeper shows them above the
+  sites and on each, linked to the right admin page. Comments awaiting approval, proposed
+  words awaiting review, visitors with suspiciously many votes. Counts and links only, never
+  what was written.
+
 - **The same input is kept once** (comments 0.1.2, glossary 0.1.3): a comment with the same
   text, on the same page, from the same member or address within a day is not kept again
   (a double click, a resent form: "We already have this comment"); a proposed word with

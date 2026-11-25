@@ -3,7 +3,7 @@
 
 Stars, useful-or-not and up/down votes on any module's records, anonymous and one per visitor.
 
-**Version 0.1.0** · module · works with Nest `>=0.4.6,<1` · licence MIT
+**Version 0.1.1** · module · works with Nest `>=0.4.6,<1` · licence MIT
 
 | | |
 |---|---|

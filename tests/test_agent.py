@@ -82,6 +82,28 @@ def test_the_status_needs_a_token(site):
     assert st["backups"]["count"] == 0
 
 
+def test_the_status_tells_what_waits_for_an_admin(site):
+    from datetime import UTC, datetime, timedelta
+
+    n = site.app.state.nest
+    told = [
+        {
+            "key": "comments.pending",
+            "label": "Comments awaiting approval",
+            "count": 3,
+            "oldest": datetime.now(UTC) - timedelta(hours=5),
+            "path": "/admin/comments/",
+        },
+        {"key": "rating.bursts", "label": "Visitors with suspiciously many votes", "count": 0},
+    ]
+    n._lookups.setdefault("agent.attention", []).append(("test", lambda _key: told))
+    st = site.get("/_agent/v1/status", headers=bearer(site.read)).json()
+    (waiting,) = st["attention"]  # nothing waiting: not told
+    assert waiting["key"] == "comments.pending" and waiting["count"] == 3
+    assert waiting["path"] == "/admin/comments/" and 4.9 < waiting["age_hours"] < 5.1
+    assert waiting["labels"]["en"] == "Comments awaiting approval"
+
+
 def test_events_and_checks(site):
     import logging
 
@@ -201,6 +223,7 @@ def test_the_keeper_watches_a_site(keeper, site):
         assert json.loads(row.status)["app"]["version"] == "1.2.3"
     page = keeper.get("/admin/keeper/").text
     assert "Satul" in page and "100.00%" in page and "1.2.3" in page
+    assert "Waiting for you" not in page and "Te așteaptă" not in page  # nothing waits
     detail = keeper.get("/admin/keeper/sites/1").text
     assert "Back up now" in detail and "reads only" in detail and "started" in detail
     assert (
@@ -293,3 +316,36 @@ def test_a_minimal_status_is_enough(keeper, monkeypatch):
     assert "2.4.0" in keeper.get("/admin/keeper/").text
     detail = keeper.get("/admin/keeper/sites/1")
     assert detail.status_code == 200 and "robohub 2.4.0" in detail.text
+
+
+def test_the_keeper_shows_what_waits_on_the_sites(keeper, monkeypatch):
+    status = {
+        "app": {"name": "satul", "version": "1.2.3"},
+        "ok": True,
+        "scope": "read",
+        "attention": [
+            {
+                "key": "comments.pending",
+                "count": 3,
+                "age_hours": 26.0,
+                "path": "/admin/comments/",
+                "labels": {
+                    "en": "Comments awaiting approval",
+                    "ro": "Comentarii care așteaptă aprobarea",
+                },
+            }
+        ],
+    }
+    monkeypatch.setattr(sites, "call", lambda *a, **k: sites.Answer(True, 200, status, 5))
+    keeper.post(
+        "/admin/keeper/sites/new",
+        data={"name": "Satul", "url": "https://satul.example", "token": "na_x"},
+        headers=keeper.h,
+    )
+    page = keeper.get("/admin/keeper/").text
+    assert "keeper-waiting" in page and 'href="https://satul.example/admin/comments/"' in page
+    assert "Satul</strong>: 3" in page and (
+        "Comments awaiting approval" in page or "Comentarii care" in page
+    )
+    detail = keeper.get("/admin/keeper/sites/1").text
+    assert "https://satul.example/admin/comments/" in detail

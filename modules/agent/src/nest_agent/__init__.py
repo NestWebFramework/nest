@@ -7,6 +7,12 @@ memory, since the process started: the keeper keeps the history.
 
 A module offers the keeper an action by answering ``agent.actions`` with a list of
 :class:`Action`: the trains module offers "trains.sync" (fetch the timetable now).
+
+A module tells what waits for an admin by answering ``agent.attention`` with a list of
+plain dicts: ``{"key": "comments.pending", "label": "Comments awaiting approval",
+"count": 3, "oldest": datetime, "path": "/admin/comments/"}``. The status gives each
+with its label in the site's languages and the age of the oldest, in hours: counts and
+links only, never what was written.
 """
 
 from __future__ import annotations
@@ -229,6 +235,41 @@ async def _checks(the_nest: Any) -> dict[str, bool]:
     return checks
 
 
+def attention(the_nest: Any) -> list[dict[str, Any]]:
+    """What waits for an admin, from every module that tells (agent.attention): those with
+    something waiting, the label in each of the site's languages, the oldest's age."""
+    out: list[dict[str, Any]] = []
+    now = datetime.now(UTC)
+    languages = list(dict.fromkeys([*the_nest.admin_languages, *the_nest.site_languages])) or ["en"]
+    for told in the_nest.gather("agent.attention"):
+        for item in told or []:
+            try:
+                count = int(item.get("count") or 0)
+            except (AttributeError, TypeError, ValueError):
+                continue
+            if count <= 0 or not item.get("key"):
+                continue
+            oldest = item.get("oldest")
+            if isinstance(oldest, datetime):
+                when = oldest if oldest.tzinfo else oldest.replace(tzinfo=UTC)
+                age = round((now - when).total_seconds() / 3600, 1)
+            else:
+                age = None
+            label = str(item.get("label") or item["key"])
+            out.append(
+                {
+                    "key": str(item["key"])[:80],
+                    "count": count,
+                    "age_hours": age,
+                    "path": str(item.get("path") or "")[:300],
+                    "labels": {
+                        lang: the_nest.catalogs.translator(lang)(label) for lang in languages
+                    },
+                }
+            )
+    return out
+
+
 def actions(the_nest: Any) -> dict[str, Action]:
     state = the_nest.module_state["agent"]
     found = {a.name: a for a in state["builtin"]}
@@ -292,6 +333,7 @@ async def status(request: Request, scope: str = Depends(reader)):
                 "total_gb": round(disk.total / 2**30, 1),
             },
             "scope": scope,
+            "attention": await run_in_threadpool(attention, the_nest),
         }
     )
 

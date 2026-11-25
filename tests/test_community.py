@@ -307,3 +307,11 @@ def test_editors_manage_redirects(site, tmp_path):
         redirects.find(site.db, "/one/").target == "/biserica/"
         and redirects.find(site.db, "/two/").status == 410
     )
+
+
+def test_the_comments_waiting_are_told_to_the_keeper(site):
+    fields = {**form_of(site.get("/biserica/").text), "author_name": "Ana", "body": "Frumos."}
+    send(site, fields)
+    told = [x for found in site.nest.gather("agent.attention") for x in found or []]
+    waiting = next(x for x in told if x["key"] == "comments.pending")
+    assert waiting["count"] == 1 and waiting["path"].endswith("/comments/") and waiting["oldest"]

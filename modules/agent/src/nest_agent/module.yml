@@ -19,7 +19,7 @@ module:
   id: nest.module.agent
   type: module
   title: Agent
-  version: 0.1.1
+  version: 0.1.2
   description: The site's status, events and checks, and the actions it allows, for the keeper, to a token.
   license: MIT
   created: "2026-11-20"

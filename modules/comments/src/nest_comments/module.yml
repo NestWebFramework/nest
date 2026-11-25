@@ -13,7 +13,7 @@ module:
   id: nest.module.comments
   type: module
   title: Comments
-  version: 0.1.2
+  version: 0.1.3
   description: Threaded comments on any module's records, with moderation and spam defences.
   license: MIT
   created: "2026-11-13"

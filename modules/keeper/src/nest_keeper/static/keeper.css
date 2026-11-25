@@ -42,3 +42,12 @@
 .keeper-confirm summary { cursor: pointer; font-weight: 600; }
 .keeper-confirm form { border: 0; padding: 0; }
 .keeper-actions > form:not(:has(strong)) { border: 0; padding: 0; align-self: center; }
+/* what waits for an admin on the sites (their agents' "attention"): a panel above the cards,
+   and each card's own list */
+.keeper-waiting { border: 1px solid var(--accent); border-left-width: 4px; border-radius: var(--radius); padding: .6rem 1rem; margin: 0 0 1rem; background: var(--surface); }
+.keeper-waiting h2 { font-size: 1rem; margin: 0 0 .35rem; }
+.keeper-waiting ul, .keeper-attention { list-style: none; margin: 0; padding: 0; }
+.keeper-waiting li { padding: .15rem 0; }
+.keeper-attention { margin: .35rem 0 0; font-size: .9rem; }
+.keeper-attention a, .keeper-waiting a { text-decoration: none; }
+.keeper-attention a::before { content: "● "; color: var(--accent); }
