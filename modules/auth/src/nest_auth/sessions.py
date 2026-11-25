@@ -59,7 +59,7 @@ class CurrentUser:
 
 def _current(user: User) -> CurrentUser:
     roles = frozenset(r for r in (user.roles or "").split(",") if r)
-    return CurrentUser(id=user.id, email=user.email, name=user.name or "", roles=roles)
+    return CurrentUser(id=user.id, email=user.email or "", name=user.name or "", roles=roles)
 
 
 def normalize_email(email: str) -> str:
@@ -109,12 +109,30 @@ def create_user(
         return _current(user)
 
 
+def create_keyless(db: Any, name: str = "") -> CurrentUser:
+    """An account with no email and no password: kept by its devices' sessions and its
+    passkeys (the keys module). It cannot sign in with the email form."""
+    with db.session() as s, s.begin():
+        user = User(
+            email=None,
+            name=name.strip()[:120],
+            password_hash=None,
+            roles="",
+            active=True,
+            created_at=utcnow(),
+        )
+        s.add(user)
+        s.flush()
+        return _current(user)
+
+
 def authenticate(db: Any, email: str, password: str) -> CurrentUser | None:
     """The account, if the password is right and the account active; None otherwise."""
     email = normalize_email(email)
     with db.session() as s, s.begin():
         user = s.scalar(select(User).where(User.email == email))
-        ok = verify_password(password, user.password_hash if user else dummy_hash())
+        stored = user.password_hash if user and user.password_hash else dummy_hash()
+        ok = verify_password(password, stored) and bool(user and user.password_hash)
         if not (ok and user and user.active):
             return None
         user.last_login_at = utcnow()
@@ -123,7 +141,11 @@ def authenticate(db: Any, email: str, password: str) -> CurrentUser | None:
         return _current(user)
 
 
-def open_session(db: Any, user: CurrentUser, *, days: int, user_agent: str = "") -> str:
+def open_session(
+    db: Any, user: CurrentUser, *, days: int, user_agent: str = "", slide_days: int | None = None
+) -> str:
+    """A new session for the account; the browser's token (the database keeps its SHA-256).
+    ``slide_days``: the session slides by these days, not the site's (a device's: a year)."""
     token = secrets.token_urlsafe(32)
     now = utcnow()
     with db.session() as s, s.begin():
@@ -136,6 +158,7 @@ def open_session(db: Any, user: CurrentUser, *, days: int, user_agent: str = "")
                 expires_at=now + timedelta(days=days),
                 last_seen_at=now,
                 user_agent=user_agent[:200],
+                slide_days=slide_days,
             )
         )
     return token
@@ -158,7 +181,7 @@ def user_for(db: Any, token: str, *, days: int) -> CurrentUser | None:
             return None
         if now - session.last_seen_at > SLIDE_AFTER:
             session.last_seen_at = now
-            session.expires_at = now + timedelta(days=days)
+            session.expires_at = now + timedelta(days=session.slide_days or days)
         return _current(user)
 
 
@@ -180,6 +203,54 @@ def close_other_sessions(db: Any, user_id: int, keep_token: str) -> None:
         )
 
 
+@dataclass(frozen=True)
+class SessionInfo:
+    """A signed-in browser of an account, as its owner sees it (its id: a SHA-256)."""
+
+    id: str
+    user_agent: str
+    created_at: datetime
+    last_seen_at: datetime
+
+
+def sessions_of(db: Any, user_id: int) -> list[SessionInfo]:
+    """An account's live sessions, the last used first."""
+    now = utcnow()
+    with db.session() as s:
+        rows = s.scalars(
+            select(Session)
+            .where(Session.user_id == user_id, Session.expires_at > now)
+            .order_by(Session.last_seen_at.desc())
+        ).all()
+        return [SessionInfo(r.id, r.user_agent, r.created_at, r.last_seen_at) for r in rows]
+
+
+def close_session_id(db: Any, user_id: int, session_id: str) -> None:
+    """Sign one of an account's browsers out, by its session's id."""
+    with db.session() as s, s.begin():
+        s.execute(delete(Session).where(Session.user_id == user_id, Session.id == session_id))
+
+
+def keyless_accounts(db: Any) -> list[tuple[int, datetime, datetime | None]]:
+    """The accounts with no email: (id, made, last seen by any of their sessions)."""
+    with db.session() as s:
+        last = dict(
+            s.execute(
+                select(Session.user_id, func.max(Session.last_seen_at)).group_by(Session.user_id)
+            ).all()
+        )
+        rows = s.execute(select(User.id, User.created_at).where(User.email.is_(None))).all()
+    return [(uid, made, last.get(uid)) for uid, made in rows]
+
+
+def remove_account(db: Any, user_id: int) -> None:
+    """An account and its sessions, gone (the modules holding its data are told first by
+    whoever removes it: account.forget)."""
+    with db.session() as s, s.begin():
+        s.execute(delete(Session).where(Session.user_id == user_id))
+        s.execute(delete(User).where(User.id == user_id))
+
+
 def rename(db: Any, user_id: int, name: str) -> None:
     """A member's own name, as an account shows it (an application may name it otherwise)."""
     with db.session() as s, s.begin():
@@ -197,9 +268,13 @@ def change_password(db: Any, user_id: int, current: str, new: str, *, min_length
         raise AccountError("That password is too long.")
     with db.session() as s, s.begin():
         user = s.get(User, user_id)
-        if user is None or not verify_password(current, user.password_hash):
+        if (
+            user is None
+            or not user.password_hash
+            or not verify_password(current, user.password_hash)
+        ):
             raise AccountError(WRONG_CURRENT)
-        if why := weak(new, user.email):
+        if why := weak(new, user.email or ""):
             raise AccountError(why)
         user.password_hash = hash_password(new)
 

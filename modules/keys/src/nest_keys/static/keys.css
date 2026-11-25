@@ -1,0 +1,12 @@
+.keys-code code { font-size: 1.3rem; letter-spacing: .05em; word-break: break-all; }
+.keys-link a { word-break: break-all; }
+.keys-actions { flex-wrap: wrap; gap: .5rem; }
+.keys-ways { list-style: none; padding: 0; }
+.keys-ways li { padding: .3rem 0; }
+.keys-qr svg { width: 220px; height: auto; background: #fff; padding: 8px; }
+.keys-digits strong { font-size: 2rem; letter-spacing: .15em; }
+.keys-devices { list-style: none; padding: 0; }
+.keys-devices li { padding: .35rem 0; border-bottom: 1px solid var(--border, #ddd); }
+form.inline { display: inline; }
+button.link { background: none; border: 0; padding: 0; color: var(--link, inherit); text-decoration: underline; cursor: pointer; }
+.keys-who { max-width: 28rem; }

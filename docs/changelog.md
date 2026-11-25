@@ -11,6 +11,38 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Accounts without email or password** (keys 0.1.0, new; auth 0.5.0): a site's first
+  step (a game naming a character) makes an account with no email and no password, signed
+  in on that device for a year (sliding), and its key: a link (`/cheie#<code>`, the code
+  after `#` never sent to the server) and its code, shown once with copy, save as a file
+  and share, kept as a SHA-256. The key brings the account back on any device until a new
+  one is made. A signed-in device adds another by a link, a QR code or 6 digits (10
+  minutes, once). Passkeys (WebAuthn, py_webauthn): fingerprint, face or the device's PIN
+  or password protect the account and sign it in on any device (synced by Apple, Google,
+  Microsoft; another ecosystem by the phone's QR), user verification required, the origin
+  and the site's host checked, each challenge used once within five minutes; the start
+  page lets the browser offer a saved passkey by itself, so a returning player in another
+  browser taps once. A device PIN (4-8 digits, not the easy ones; scrypt) for a computer
+  without Windows Hello or Touch ID: after `pin_idle_hours` (12) without use that device's
+  pages go to the unlock page and its API calls get 401; it unlocks only that device's
+  session, never an account from elsewhere; five wrong tries pause it 15 minutes, ten sign
+  the device out; a forgotten PIN signs the device out, the key or a passkey brings it
+  back. The account page lists the devices (sign one out), the passkeys and this device's
+  PIN.
+
+- **A game's characters without email or password** (Saga player 0.5.0): with the keys
+  module, a visitor sees the worlds and the places, and naming a character makes the
+  account (`keys.starter`) and answers its key once; a character refused leaves no
+  account (`keys.discard`). The worlds' answer says the account (a guest, whether it is
+  protected, where the keys pages are). `account.forget`: an account removed makes its
+  characters leave the village at the next tick (a death, "left": their goods to their
+  heirs) and unlinks them; accounts removed while a world was down are found as it loads. Codes tried and new
+  accounts are limited per address; accounts whose key was never saved go after 14 days
+  without use, all after a year, the modules holding their data told first
+  (`account.forget`). Auth: accounts may have no email or password, a session may slide by
+  its own days, and it exports what another module needs to sign a browser in. The
+  throttles' cleanup no longer wipes a longer window's counts.
+
 - **Arrivals from abroad on the airport boards** (flights 0.1.10): OpenSky names a flight's
   departure (or arrival) airport only when its receivers saw it near the ground, and over
   Romania they are few: arrivals from abroad came with no departure airport and fell off

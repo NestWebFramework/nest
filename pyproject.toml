@@ -60,6 +60,7 @@ dependencies = [
     "nest-hub",
     "nest-push",
     "nest-rating",
+    "nest-keys",
     "nest-almanac",
     "nest-theme-clujul-gazeta",
     "nest-nearby",
@@ -170,6 +171,7 @@ nest-pwa = { workspace = true }
 nest-hub = { workspace = true }
 nest-push = { workspace = true }
 nest-rating = { workspace = true }
+nest-keys = { workspace = true }
 nest-almanac = { workspace = true }
 nest-theme-clujul-gazeta = { workspace = true }
 nest-nearby = { workspace = true }

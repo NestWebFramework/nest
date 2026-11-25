@@ -17,10 +17,19 @@ from nest import ModuleHost
 from nest_auth.passwords import hash_password, verify_password
 from nest_auth.sessions import (
     CurrentUser,
+    SessionInfo,
     active_user,
+    close_all_sessions,
+    close_session,
+    close_session_id,
+    create_keyless,
     find_person,
     find_user,
+    keyless_accounts,
     known_as,
+    remove_account,
+    sessions_of,
+    token_id,
     users_by_ids,
 )
 from nest_auth.throttle import make_throttle
@@ -31,11 +40,25 @@ from nest_auth.web import (
     require_role,
     require_user,
     router,
+    session_token,
+    sign_in,
 )
 
 __all__ = [
     "CurrentUser",
+    "SessionInfo",
+    "close_session_id",
+    "keyless_accounts",
+    "make_throttle",
+    "remove_account",
+    "sessions_of",
     "active_user",
+    "close_all_sessions",
+    "close_session",
+    "create_keyless",
+    "session_token",
+    "sign_in",
+    "token_id",
     "current_user",
     "find_person",
     "find_user",

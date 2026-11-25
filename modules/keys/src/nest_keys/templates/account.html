@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Your account") }} · {{ app.title }}{% endblock %}
+{% block head %}<script src="{{ asset('keys', 'keys.js') }}" defer></script>{% endblock %}
+{% block content %}
+<section class="stack">
+  <h1>{{ _("Your account") }}</h1>
+  <section class="card stack" aria-labelledby="key-h">
+    <h2 id="key-h">{{ _("Your character's key") }}</h2>
+    {% if key and key.saved %}<p>{{ _("Saved (made on {date}).", date=key.created_at.strftime("%d.%m.%Y")) }}</p>
+    {% else %}<p class="notice danger">{{ _("Not saved yet: if this browser forgets you, your character is lost. Make a new key and keep it.") }}</p>{% endif %}
+    <form method="post" action="{{ base }}/cheie/noua">{{ csrf_field }}<button type="submit" class="secondary">{{ _("Make a new key") }}</button></form>
+    <p class="muted small">{{ _("The old key stops working.") }}</p>
+  </section>
+  <section class="card stack" aria-labelledby="pk-h">
+    <h2 id="pk-h">{{ _("Fingerprint, face or the device's PIN") }}</h2>
+    <p class="muted small">{{ _("A passkey: your device (or your Apple, Google or Microsoft account) keeps it; the site keeps nothing that could open your character.") }}</p>
+    {% if passkeys %}<ul class="keys-devices">{% for p in passkeys %}<li><strong>{{ p.name or "?" }}</strong> <span class="muted small">{{ _("synced to your account") if p.synced else _("on this device only") }} · {{ _("added {date}", date=p.created_at.strftime("%d.%m.%Y")) }}{% if p.last_used_at %} · {{ _("last used {date}", date=p.last_used_at.strftime("%d.%m.%Y")) }}{% endif %}</span>
+      <form method="post" action="{{ base }}/acces/{{ p.id }}/sterge" class="inline">{{ csrf_field }}<button type="submit" class="link">{{ _("Remove") }}</button></form></li>{% endfor %}</ul>{% endif %}
+    {% include "keys/_passkeys_open.html" %}
+      <button type="button" data-passkey-register hidden>{{ _("Protect with this device") }}</button>
+      <p class="muted small" data-passkey-none hidden>{{ _("This browser cannot keep passkeys: keep your key, or add a PIN.") }}</p>
+      <p class="notice danger" data-passkey-say hidden role="alert"></p>
+    </div>
+  </section>
+  <section class="card stack" aria-labelledby="pin-h">
+    <h2 id="pin-h">{{ _("A PIN for this device") }}</h2>
+    <p class="muted small">{{ _("For a computer without fingerprint or face (or a shared one): after {n} hours without play this device asks for the PIN. It works only here; on another device you come back with your key or a passkey.", n=pin_hours) }}</p>
+    {% if pin_said == "ok" %}<p class="notice" role="status">{{ _("The PIN is set.") }}</p>
+    {% elif pin_said == "diferit" %}<p class="notice danger" role="alert">{{ _("The two PINs differ.") }}</p>
+    {% elif pin_said == "digits" %}<p class="notice danger" role="alert">{{ _("A PIN has 4 to 8 digits.") }}</p>
+    {% elif pin_said == "easy" %}<p class="notice danger" role="alert">{{ _("Too easy to guess (1111, 1234...). Choose another.") }}</p>{% endif %}
+    <form method="post" action="{{ base }}/dispozitiv/pin" class="row keys-pin-form">
+      {{ csrf_field }}
+      <label class="visually-hidden" for="pin-new">{{ _("PIN") }}</label>
+      <input id="pin-new" name="pin" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{4,8}" maxlength="8" required placeholder="{{ _('PIN (4-8 digits)') }}">
+      <label class="visually-hidden" for="pin-again">{{ _("Again") }}</label>
+      <input id="pin-again" name="din_nou" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{4,8}" maxlength="8" required placeholder="{{ _('again') }}">
+      <button type="submit" class="secondary">{{ _("Change the PIN") if pin else _("Set a PIN") }}</button>
+    </form>
+    {% if pin %}<form method="post" action="{{ base }}/dispozitiv/pin/sterge">{{ csrf_field }}<button type="submit" class="link">{{ _("Remove the PIN") }}</button></form>{% endif %}
+  </section>
+  <section class="card stack" aria-labelledby="dev-h">
+    <h2 id="dev-h">{{ _("Your devices") }}</h2>
+    <ul class="keys-devices">{% for d in devices %}<li><strong>{{ d.name }}</strong>{% if d.this %} <span class="badge">{{ _("this one") }}</span>{% endif %} <span class="muted small">{{ _("last used {date}", date=d.last_seen_at.strftime("%d.%m.%Y")) }}</span>
+      <form method="post" action="{{ base }}/dispozitiv/{{ d.id }}/iesire" class="inline">{{ csrf_field }}<button type="submit" class="link">{{ _("Sign out") }}</button></form></li>{% endfor %}</ul>
+    <form method="post" action="{{ base }}/dispozitiv/nou">{{ csrf_field }}<button type="submit">{{ _("Add a device") }}</button></form>
+  </section>
+</section>
+{% endblock %}

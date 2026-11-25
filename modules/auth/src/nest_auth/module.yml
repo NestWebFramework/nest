@@ -13,7 +13,7 @@ module:
   id: nest.module.auth
   type: module
   title: Accounts
-  version: 0.4.3
+  version: 0.5.0
   description: >
     Accounts with roles, sign-in and sign-out, server-side sessions on the
     bound database, and the dependencies other modules protect routes with.
@@ -29,7 +29,7 @@ main: nest_auth
 
 provides:
   import: nest_auth
-  exports: [CurrentUser, current_user, require_user, require_role, hash_password, verify_password, find_user, find_person, known_as, users_by_ids, active_user]
+  exports: [CurrentUser, current_user, require_user, require_role, hash_password, verify_password, find_user, find_person, known_as, users_by_ids, active_user, create_keyless, sign_in, session_token, token_id, close_session, close_all_sessions, close_session_id, sessions_of, SessionInfo, keyless_accounts, remove_account, make_throttle]
 
 requires:
   interfaces: [nest.db]

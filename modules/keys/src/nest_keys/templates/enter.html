@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Your character's key") }} · {{ app.title }}{% endblock %}
+{% block head %}<script src="{{ asset('keys', 'keys.js') }}" defer></script>{% endblock %}
+{% block content %}
+<section class="card narrow stack">
+  <h1>{{ _("Come back with your key") }}</h1>
+  {% if error == "wrong" %}<p class="notice danger" role="alert">{{ _("This key does not open any character. Check it, or use the newest one.") }}</p>
+  {% elif error.startswith("wait:") %}<p class="notice danger" role="alert">{{ _("Too many tries. Wait {n} minutes.", n=error[5:]) }}</p>{% endif %}
+  <form method="post" action="{{ base }}/cheie" class="stack" data-key-form>
+    {{ csrf_field }}
+    <label for="cod">{{ _("The code (or paste the whole link)") }}</label>
+    <input id="cod" name="cod" autocomplete="off" autocapitalize="none" spellcheck="false" required placeholder="abcd-efgh-jkmn-pqrs-tuvw">
+    <button type="submit">{{ _("Come back") }}</button>
+  </form>
+</section>
+{% endblock %}

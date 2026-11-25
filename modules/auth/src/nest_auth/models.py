@@ -20,9 +20,10 @@ class User(Base):
     __tablename__ = "auth_user"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String(254), unique=True)
+    # none for an account kept by its devices and passkeys alone (the keys module)
+    email: Mapped[str | None] = mapped_column(String(254), unique=True, nullable=True)
     name: Mapped[str] = mapped_column(String(120), default="")
-    password_hash: Mapped[str] = mapped_column(String(255))
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     roles: Mapped[str] = mapped_column(String(255), default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -40,6 +41,8 @@ class Session(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     user_agent: Mapped[str] = mapped_column(String(200), default="")
+    # a device's session slides by its own days (a year), others by the site's setting
+    slide_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class Failure(Base):

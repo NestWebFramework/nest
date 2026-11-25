@@ -26,6 +26,9 @@ from nest_auth.models import Failure, utcnow
 log = logging.getLogger("nest.auth")
 
 
+KEEP_S = 2 * 86400  # failures older than this go (longer than any throttle's window)
+
+
 def _digest(key: str) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
 
@@ -51,8 +54,11 @@ class DbThrottle:
     def fail(self, key: str) -> None:
         with self.db.session() as s, s.begin():
             s.add(Failure(key=_digest(key), at=utcnow()))
-            if random.random() < 0.05:  # now and then, forget the failures past the window  # noqa: S311
-                s.execute(delete(Failure).where(Failure.at <= self._since()))
+            if random.random() < 0.05:  # now and then, forget the old failures  # noqa: S311
+                # every throttle shares the table: past the longest window any keeps (a day's
+                # new accounts), not this one's, or a short one would wipe a long one's counts
+                keep = max(self.window, KEEP_S)
+                s.execute(delete(Failure).where(Failure.at <= utcnow() - timedelta(seconds=keep)))
 
     def clear(self, key: str) -> None:
         with self.db.session() as s, s.begin():

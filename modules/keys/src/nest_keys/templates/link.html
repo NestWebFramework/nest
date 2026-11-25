@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Sign in this device") }} · {{ app.title }}{% endblock %}
+{% block content %}
+<section class="card narrow stack">
+  <h1>{{ _("Sign in this device") }}</h1>
+  {% if error == "wrong" %}<p class="notice danger" role="alert">{{ _("This code is wrong or no longer valid. Make a new one on your other device.") }}</p>
+  {% elif error.startswith("wait:") %}<p class="notice danger" role="alert">{{ _("Too many tries. Wait {n} minutes.", n=error[5:]) }}</p>{% endif %}
+  <form method="post" action="{{ base }}/leaga" class="stack">
+    {{ csrf_field }}
+    {% if token %}<input type="hidden" name="token" value="{{ token }}">
+    <p>{{ _("Your character is waiting. Sign in on this device?") }}</p>
+    {% else %}<label for="cod">{{ _("The 6 digits from your other device") }}</label>
+    <input id="cod" name="cod" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9 ]{6,7}">{% endif %}
+    <button type="submit">{{ _("Sign in") }}</button>
+  </form>
+</section>
+{% endblock %}

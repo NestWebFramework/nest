@@ -1,0 +1,91 @@
+#
+# keys — accounts without email or password (GDPR: no credential kept that could be used).
+#
+# A site's own first step makes the account (a game, as the character is named:
+# nest_keys.start_account), signed in on that browser for a year (sliding), with its key: a
+# link (and its code) that signs in any device, shown once, kept as its SHA-256. From a
+# signed-in device another is added by a link, a QR code or 6 digits (10 minutes, once).
+# Accounts never protected (key not saved) go after unprotected_days without play, all after
+# inactive_days; the modules holding their data hear account.forget first. Passkeys
+# (WebAuthn: fingerprint, face, the device's PIN or password; synced by Apple, Google,
+# Microsoft) protect an account and sign it in on any device, offered by the browser itself
+# on the start page; the site keeps their public keys only. A device PIN (4-8 digits, for a
+# computer without Windows Hello or Touch ID) locks that device after pin_idle_hours idle;
+# it unlocks only that device's session, never an account from elsewhere.
+#
+module:
+  name: keys
+  id: nest.module.keys
+  type: module
+  title: Keys and devices
+  version: 0.1.0
+  description: Accounts without email or password - a device's session, the account's key (a link), passkeys, a device PIN, adding devices.
+  license: MIT
+  created: "2026-11-25"
+  category: admin
+  fits: [site, game]
+
+nest: ">=0.4.7,<1"
+
+main: nest_keys
+styles: [keys.css]
+
+requires:
+  interfaces: [nest.db]
+
+deps:
+  auth: ">=0.5,<1"
+  db: ">=0.2,<1"
+
+db:
+  migrations: migrations
+  metadata: "nest_keys.models:Base"
+
+provides:
+  import: nest_keys
+  exports: [start_account, key_link, TooMany]
+
+settings:
+  play:
+    type: str
+    default: "/"
+    description: Where "Start playing" goes (the site's first step, where the account is made; a game's character page).
+  after:
+    type: str
+    default: "/"
+    description: Where a device goes once signed in by its key or a code from another device.
+  device_days:
+    type: int
+    default: 365
+    description: A device stays signed in this many days without use (sliding).
+  pin_idle_hours:
+    type: float
+    default: 12
+    description: A device with a PIN locks after this many hours without use, until its PIN is typed.
+  new_accounts_per_day:
+    type: int
+    default: 3
+    description: New accounts one address may make in a day (no email makes them free; this keeps scripts out).
+  unprotected_days:
+    type: int
+    default: 14
+    description: An account whose key was never saved goes after this many days without use (with its data in the other modules).
+  inactive_days:
+    type: int
+    default: 365
+    description: Any account without email goes after this many days without use (GDPR, storage limitation).
+
+schedule:
+  - name: cleanup
+    run: nest_keys.jobs:cleanup
+    every: 24h
+    catch_up: once
+    description: Remove the accounts unused too long (never protected after unprotected_days, any after inactive_days), telling the modules holding their data.
+
+locales:
+  - {locale: ro, file: locales/ro.json}
+  - {locale: en, file: locales/en.json}
+
+docs:
+  title: Keys and devices
+  section: modules

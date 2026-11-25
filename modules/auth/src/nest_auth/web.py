@@ -138,6 +138,35 @@ def _signed_in(request: Request, token: str, target: str) -> Response:
     return response
 
 
+def sign_in(
+    request: Request, response: Response, user: CurrentUser, *, days: int | None = None
+) -> str:
+    """Sign this browser in as ``user`` (another module's way in: a passkey, a device):
+    a new session, its cookie on ``response``; ``days``: the session slides by these (a
+    device's year) instead of the site's. The token, whose SHA-256 is the session's id."""
+    state = _state(request)
+    db = request.app.state.nest.bindings.get("nest.db")
+    span = days or state["session_days"]
+    token = sessions.open_session(
+        db, user, days=span, user_agent=request.headers.get("user-agent", ""), slide_days=days
+    )
+    response.set_cookie(
+        COOKIE,
+        token,
+        max_age=span * 86400,
+        httponly=True,
+        samesite="lax",
+        secure=request.app.state.nest.production,
+        path="/",
+    )
+    return token
+
+
+def session_token(request: Request) -> str:
+    """This browser's session token ("" when it has none)."""
+    return request.cookies.get(COOKIE, "") or ""
+
+
 def _form_page(request: Request, template: str, status: int, **values: Any) -> Response:
     # htmx swaps only 2xx answers, so a refused form is answered 200 to htmx.
     return render(

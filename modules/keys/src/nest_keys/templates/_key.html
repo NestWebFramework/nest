@@ -1,0 +1,9 @@
+<div class="keys-key" data-key>
+  <p class="keys-code"><code data-key-code>{{ code }}</code></p>
+  <p class="keys-link small"><a href="{{ link }}" data-key-link rel="nofollow">{{ link }}</a></p>
+  <p class="row keys-actions">
+    <button type="button" class="secondary" data-key-copy>{{ _("Copy the link") }}</button>
+    <button type="button" class="secondary" data-key-download data-file="{{ _('character-key') }}.txt" data-text="{{ _('Your character\'s key on {site}', site=app.title) }}">{{ _("Save as a file") }}</button>
+    <button type="button" class="secondary" data-key-share hidden>{{ _("Share / send to myself") }}</button>
+  </p>
+</div>

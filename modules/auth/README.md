@@ -3,7 +3,7 @@
 
 Accounts with roles, sign-in and sign-out, server-side sessions on the bound database, and the dependencies other modules protect routes with.
 
-**Version 0.4.3** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.5.0** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|

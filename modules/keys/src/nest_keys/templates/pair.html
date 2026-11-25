@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Add a device") }} · {{ app.title }}{% endblock %}
+{% block head %}<script src="{{ asset('keys', 'keys.js') }}" defer></script>{% endblock %}
+{% block content %}
+<section class="card narrow stack keys-pair">
+  <h1>{{ _("Add a device") }}</h1>
+  <p>{{ _("On the other device, scan the code, open the link, or go to {address} and type the digits. Valid {n} minutes, once.", address=(base ~ "/leaga"), n=minutes) }}</p>
+  <div class="keys-qr" aria-hidden="true">{{ qr }}</div>
+  <p class="keys-digits"><strong>{{ digits }}</strong></p>
+  <p class="small"><a href="{{ link }}" data-key-link rel="nofollow">{{ link }}</a></p>
+  <p><button type="button" class="secondary" data-key-copy>{{ _("Copy the link") }}</button></p>
+  <p><a href="{{ base }}/cont">← {{ _("Your account") }}</a></p>
+</section>
+{% endblock %}

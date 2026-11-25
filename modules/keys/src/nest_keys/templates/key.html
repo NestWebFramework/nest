@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block title %}{{ _("Your character's key") }} · {{ app.title }}{% endblock %}
+{% block head %}<script src="{{ asset('keys', 'keys.js') }}" defer></script>{% endblock %}
+{% block content %}
+<section class="card narrow stack">
+  <h1>{{ _("Your character's key") }}</h1>
+  <p>{{ _("This link brings your character back on any device: if this browser forgets you, on a new phone, on a computer. Keep it where you keep important things (notes, a password manager, an email to yourself).") }}</p>
+  {% include "keys/_key.html" %}
+  <p class="notice">{{ _("Whoever has it can play your character: do not share it with anyone. It is shown only now; you can make a new one any time from your account (the old one then stops working).") }}</p>
+  <p class="muted small">{{ _("A character whose key is not saved, unplayed for 14 days, is removed.") }}</p>
+  {% include "keys/_passkeys_open.html" %}
+    <p>{{ _("Easier still: protect it with this device, and on your other devices that share your Apple, Google or Microsoft account.") }}</p>
+    <p><button type="button" class="secondary" data-passkey-register hidden>{{ _("Fingerprint, face or the device's PIN") }}</button></p>
+    <p class="notice danger" data-passkey-say hidden role="alert"></p>
+  </div>
+  <form method="post" action="{{ base }}/cheie/salvata">{{ csrf_field }}<button type="submit">{{ _("I saved it") }}</button></form>
+</section>
+{% endblock %}
