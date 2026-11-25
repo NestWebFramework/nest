@@ -11,6 +11,16 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The market as stands, with keepers who bargain** (Saga economy 0.3.0, player 0.5.3): a
+  pack's `stands` (an item goes to the first naming it, then its category, its type) each
+  kept by one of the town's people of a trade, chosen each day; `player.here` gives the
+  stands (goods with material and durability, the keeper, open by the market's hours and the
+  keeper being up). A keeper deals in their stand's goods only, and bargains: `trade.ask`
+  (their price), `trade.offer {pct}` (taken if not below what they would come to, by their
+  opinion, the hour, a surplus; else halfway; firm after three), `trade.bid` and
+  `trade.counter` when selling, `trade.qty`, `trade.deal` at the price reached (buy and sell
+  take an agreed price). A conversation may open at a stand (`entry: stand_*`, nowhere else).
+
 - **The village board, and errands one can speak** (Saga quest 0.4.1): `player.here` gives
   the board (one's tasks, the stage with names filled in, and up to six errands posted by the
   town's people who would give them, a poster chosen anew each day) and the act
