@@ -11,6 +11,16 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Keys, simpler** (keys 0.2.0, auth 0.5.1, Saga player 0.5.1): an account is kept by a
+  passkey (fingerprint, face, the device's PIN) or by its key, now downloaded as a small file
+  when the player asks (`/cheie/noua.json`: a new key, the older one stops working); the
+  start page has the passkey button and the key's field (the code, or the whole link
+  pasted); the account page says how one comes back and has the two buttons and "sign out
+  every other device". Removed as too much for a player: the device PIN and its lock, adding
+  a device by 6 digits or QR (and segno), the device cap, the new-device notices, the device
+  list (migration keys_0004 drops their tables). Fixed: a WebAuthn challenge (any ticket)
+  could be used twice (expunging the deleted row undid its deletion).
+
 - **Accounts without email or password** (keys 0.1.0, new; auth 0.5.0): a site's first
   step (a game naming a character) makes an account with no email and no password, signed
   in on that device for a year (sliding), and its key: a link (`/cheie#<code>`, the code

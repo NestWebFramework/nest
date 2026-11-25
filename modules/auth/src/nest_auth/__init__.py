@@ -20,6 +20,7 @@ from nest_auth.sessions import (
     SessionInfo,
     active_user,
     close_all_sessions,
+    close_other_sessions,
     close_session,
     close_session_id,
     create_keyless,
@@ -47,6 +48,7 @@ from nest_auth.web import (
 __all__ = [
     "CurrentUser",
     "SessionInfo",
+    "close_other_sessions",
     "close_session_id",
     "keyless_accounts",
     "make_throttle",

@@ -57,11 +57,18 @@ def _take(db: Any, ticket: str, purpose: str) -> Challenge:
         row = s.get(Challenge, digest(ticket or ""))
         if row is None:
             raise PasskeyError("expired")
+        # a copy: the row itself is deleted (used once), and expunging it would undo that
+        kept = Challenge(
+            id=row.id,
+            challenge=row.challenge,
+            purpose=row.purpose,
+            user_id=row.user_id,
+            expires_at=row.expires_at,
+        )
         s.delete(row)
-        if row.purpose != purpose or row.expires_at < utcnow():
-            raise PasskeyError("expired")
-        s.expunge(row)
-        return row
+    if kept.purpose != purpose or kept.expires_at < utcnow():
+        raise PasskeyError("expired")
+    return kept
 
 
 def register_options(db: Any, user: CurrentUser, rp_id: str, rp_name: str, label: str) -> dict:
@@ -176,11 +183,6 @@ def of(db: Any, user_id: int) -> list[Passkey]:
         for r in rows:
             s.expunge(r)
         return rows
-
-
-def remove(db: Any, user_id: int, key_id: str) -> None:
-    with db.session() as s, s.begin():
-        s.execute(delete(Passkey).where(Passkey.user_id == user_id, Passkey.id == key_id))
 
 
 def users_with(db: Any) -> set[int]:

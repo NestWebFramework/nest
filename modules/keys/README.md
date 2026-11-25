@@ -1,9 +1,9 @@
 <!-- nest:readme -->
 # Keys and devices
 
-Accounts without email or password - a device's session, the account's key (a link), passkeys, a device PIN, adding devices.
+Accounts without email or password - kept by a passkey or a downloaded key, on any device.
 
-**Version 0.1.0** · module · works with Nest `>=0.4.7,<1` · licence MIT
+**Version 0.2.0** · module · works with Nest `>=0.4.7,<1` · licence MIT
 
 | | |
 |---|---|
@@ -29,7 +29,6 @@ modules:
 | `play` | str | `/` |
 | `after` | str | `/` |
 | `device_days` | int | `365` |
-| `pin_idle_hours` | float | `12` |
 | `new_accounts_per_day` | int | `3` |
 | `unprotected_days` | int | `14` |
 | `inactive_days` | int | `365` |

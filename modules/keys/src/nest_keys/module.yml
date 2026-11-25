@@ -2,24 +2,20 @@
 # keys — accounts without email or password (GDPR: no credential kept that could be used).
 #
 # A site's own first step makes the account (a game, as the character is named:
-# nest_keys.start_account), signed in on that browser for a year (sliding), with its key: a
-# link (and its code) that signs in any device, shown once, kept as its SHA-256. From a
-# signed-in device another is added by a link, a QR code or 6 digits (10 minutes, once).
-# Accounts never protected (key not saved) go after unprotected_days without play, all after
-# inactive_days; the modules holding their data hear account.forget first. Passkeys
-# (WebAuthn: fingerprint, face, the device's PIN or password; synced by Apple, Google,
-# Microsoft) protect an account and sign it in on any device, offered by the browser itself
-# on the start page; the site keeps their public keys only. A device PIN (4-8 digits, for a
-# computer without Windows Hello or Touch ID) locks that device after pin_idle_hours idle;
-# it unlocks only that device's session, never an account from elsewhere.
+# keys.starter), signed in on that browser for a year (sliding). The player keeps it with a
+# passkey (fingerprint, face, the device's PIN or password; synced by Apple, Google,
+# Microsoft) or with its key, downloaded as a small file (a link and its code; kept as its
+# SHA-256), and comes back on any device with either. Accounts never kept go after
+# unprotected_days without play, all after inactive_days; the modules holding their data
+# hear account.forget first.
 #
 module:
   name: keys
   id: nest.module.keys
   type: module
   title: Keys and devices
-  version: 0.1.0
-  description: Accounts without email or password - a device's session, the account's key (a link), passkeys, a device PIN, adding devices.
+  version: 0.2.0
+  description: Accounts without email or password - kept by a passkey or a downloaded key, on any device.
   license: MIT
   created: "2026-11-25"
   category: admin
@@ -53,15 +49,11 @@ settings:
   after:
     type: str
     default: "/"
-    description: Where a device goes once signed in by its key or a code from another device.
+    description: Where a device goes once signed in by its key or a passkey.
   device_days:
     type: int
     default: 365
     description: A device stays signed in this many days without use (sliding).
-  pin_idle_hours:
-    type: float
-    default: 12
-    description: A device with a PIN locks after this many hours without use, until its PIN is typed.
   new_accounts_per_day:
     type: int
     default: 3
@@ -69,7 +61,7 @@ settings:
   unprotected_days:
     type: int
     default: 14
-    description: An account whose key was never saved goes after this many days without use (with its data in the other modules).
+    description: An account kept by neither a passkey nor a downloaded key goes after this many days without use (with its data in the other modules).
   inactive_days:
     type: int
     default: 365

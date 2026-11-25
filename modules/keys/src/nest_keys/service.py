@@ -1,38 +1,26 @@
-"""Accounts kept by their devices, their key and (later) their passkeys and PIN.
+"""Accounts kept by their devices, their key and their passkeys.
 
-The account's key is a 20-character code (about 98 bits) shown once, as a link and as text;
-the database keeps its SHA-256. Using it signs a browser in, on any device, until the player
-makes a new one. Adding a device from a signed-in one gives a link and 6 digits for ten
-minutes, single use. Accounts never protected (no key saved, no passkey, no PIN) go after
-`unprotected_days` without play, every account after `inactive_days`; the modules holding
-their data hear `account.forget` first.
+The account's key is a 20-character code (about 98 bits), downloaded by the player as a
+small file (a link and the code); the database keeps its SHA-256. Using it signs a browser
+in, on any device, until the player makes a new one. Accounts never protected (no key
+downloaded, no passkey) go after `unprotected_days` without play, every account after
+`inactive_days`; the modules holding their data hear `account.forget` first.
 """
 
 from __future__ import annotations
 
 import hashlib
 import secrets
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-from nest_auth import (
-    CurrentUser,
-    active_user,
-    close_session_id,
-    create_keyless,
-    keyless_accounts,
-    remove_account,
-    sessions_of,
-)
+from nest_auth import CurrentUser, active_user, create_keyless, keyless_accounts, remove_account
 from sqlalchemy import delete, select
 
-from nest_keys.models import AccountKey, Pairing, utcnow
+from nest_keys.models import AccountKey, utcnow
 
 ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"  # no 0/o, 1/l/i: read aloud, typed from paper
 CODE_LENGTH = 20
-PAIRING_MINUTES = 10
-PAIRING_TRIES = 5
 
 
 def digest(text: str) -> str:
@@ -96,57 +84,7 @@ def by_key(db: Any, code: str) -> CurrentUser | None:
         return user
 
 
-# --- adding a device -----------------------------------------------------------------
-
-
-def pair_start(db: Any, user_id: int) -> tuple[str, str]:
-    """A link's token and 6 digits that sign in another device, for ten minutes, once."""
-    now = utcnow()
-    token = secrets.token_urlsafe(24)
-    with db.session() as s, s.begin():
-        s.execute(delete(Pairing).where((Pairing.user_id == user_id) | (Pairing.expires_at < now)))
-        busy = set(s.scalars(select(Pairing.code)))
-        digits = f"{secrets.randbelow(10**6):06d}"
-        while digest(digits) in busy:  # unique among the codes alive now
-            digits = f"{secrets.randbelow(10**6):06d}"
-        s.add(
-            Pairing(
-                user_id=user_id,
-                link=digest(token),
-                code=digest(digits),
-                expires_at=now + timedelta(minutes=PAIRING_MINUTES),
-                tries=0,
-            )
-        )
-    return token, digits
-
-
-def pair_use(db: Any, *, token: str = "", digits: str = "") -> CurrentUser | None:
-    """The account a pairing's link or digits belong to (and the pairing is spent)."""
-    now = utcnow()
-    digits = "".join(c for c in digits if c.isdigit())
-    if not token and len(digits) != 6:
-        return None
-    with db.session() as s, s.begin():
-        column, value = (Pairing.link, digest(token)) if token else (Pairing.code, digest(digits))
-        pairing = s.scalar(select(Pairing).where(column == value, Pairing.expires_at > now))
-        if pairing is None or pairing.tries >= PAIRING_TRIES:
-            return None
-        user_id = pairing.user_id
-        s.delete(pairing)
-    return active_user(db, user_id)
-
-
 # --- devices -------------------------------------------------------------------------
-
-
-@dataclass
-class Device:
-    id: str  # the session's id (a SHA-256)
-    name: str
-    created_at: datetime
-    last_seen_at: datetime
-    this: bool
 
 
 def device_name(user_agent: str) -> str:
@@ -183,18 +121,7 @@ def device_name(user_agent: str) -> str:
         ),
         "",
     )
-    return " · ".join(x for x in (browser, system) if x) or "?"
-
-
-def devices(db: Any, user_id: int, this_session: str = "") -> list[Device]:
-    return [
-        Device(r.id, device_name(r.user_agent), r.created_at, r.last_seen_at, r.id == this_session)
-        for r in sessions_of(db, user_id)
-    ]
-
-
-def sign_out_device(db: Any, user_id: int, session_id: str) -> None:
-    close_session_id(db, user_id, session_id)
+    return " · ".join(x for x in (browser, system) if x)  # "" when unknown: the page says so
 
 
 # --- accounts that go ----------------------------------------------------------------
@@ -219,7 +146,7 @@ def cleanup(
     """Remove the keyless accounts unused too long: (unprotected removed, inactive removed).
     ``forget(user_id)`` tells the modules holding their data first."""
     now = now or utcnow()
-    from nest_keys.models import Challenge, DevicePin, Passkey
+    from nest_keys.models import Challenge, Passkey
     from nest_keys.passkeys import users_with
 
     with db.session() as s:
@@ -239,9 +166,7 @@ def cleanup(
         forget(uid)
         with db.session() as s, s.begin():
             s.execute(delete(AccountKey).where(AccountKey.user_id == uid))
-            s.execute(delete(Pairing).where(Pairing.user_id == uid))
             s.execute(delete(Passkey).where(Passkey.user_id == uid))
-            s.execute(delete(DevicePin).where(DevicePin.user_id == uid))
             s.execute(delete(Challenge).where(Challenge.user_id == uid))
         remove_account(db, uid)
     return gone_unprotected, gone_inactive
@@ -250,9 +175,19 @@ def cleanup(
 def discard(db: Any, user_id: int) -> None:
     """An account just made and not wanted after all (its character refused): gone, with
     everything of it here."""
-    from nest_keys.models import Challenge, DevicePin, Passkey
+    from nest_keys.models import Challenge, Passkey
 
     with db.session() as s, s.begin():
-        for model in (AccountKey, Pairing, Passkey, DevicePin, Challenge):
+        for model in (AccountKey, Passkey, Challenge):
             s.execute(delete(model).where(model.user_id == user_id))
     remove_account(db, user_id)
+
+
+# --- signing the other devices out ---------------------------------------------------
+
+
+def sign_out_others(db: Any, user_id: int, keep_token: str) -> None:
+    """Every other browser of the account signed out (a key someone else may have)."""
+    from nest_auth import close_other_sessions
+
+    close_other_sessions(db, user_id, keep_token)

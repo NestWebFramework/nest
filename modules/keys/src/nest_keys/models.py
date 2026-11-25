@@ -1,6 +1,5 @@
-"""The keys module's tables. Nothing here can be used if it leaks: the account's key and a
-pairing's link are kept as their SHA-256 (random, long), a pairing's 6 digits too (short,
-but valid 10 minutes, five tries)."""
+"""The keys module's tables. Nothing here can be used if it leaks: the account's key is kept
+as its SHA-256 (random, long), a passkey as its public key."""
 
 from __future__ import annotations
 
@@ -27,19 +26,6 @@ class AccountKey(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     saved: Mapped[int] = mapped_column(Integer, default=0)  # the player said it is saved
-
-
-class Pairing(Base):
-    """A device being added: from a signed-in one, a link and a 6-digit code, 10 minutes."""
-
-    __tablename__ = "keys_pairing"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, index=True)
-    link: Mapped[str] = mapped_column(String(64), unique=True)  # SHA-256 of the link's token
-    code: Mapped[str] = mapped_column(String(64), index=True)  # SHA-256 of the 6 digits
-    expires_at: Mapped[datetime] = mapped_column(DateTime)
-    tries: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Passkey(Base):
@@ -71,19 +57,3 @@ class Challenge(Base):
     purpose: Mapped[str] = mapped_column(String(10))  # register, enter
     user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime)
-
-
-class DevicePin(Base):
-    """A device's PIN: it locks this device's session after some idle hours, and unlocks only
-    that session (never a way in from elsewhere). Hashed (scrypt); five wrong tries lock it
-    a while, ten sign the device out."""
-
-    __tablename__ = "keys_device_pin"
-
-    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # the session's id
-    user_id: Mapped[int] = mapped_column(Integer, index=True)
-    pin_hash: Mapped[str] = mapped_column(String(255))
-    tries: Mapped[int] = mapped_column(Integer, default=0)
-    locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    last_active_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

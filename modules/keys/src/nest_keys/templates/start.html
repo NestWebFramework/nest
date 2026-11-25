@@ -3,20 +3,18 @@
 {% block head %}<script src="{{ asset('keys', 'keys.js') }}" defer></script>{% endblock %}
 {% block content %}
 <section class="card narrow stack keys-start">
-  <h1>{{ _("Welcome") }}</h1>
-  {% if error is defined and error == "many" %}<p class="notice danger" role="alert">{{ _("Too many new characters from this network today. Try again tomorrow, or come back with your key.") }}</p>{% endif %}
+  {% if error == "many" %}<p class="notice danger" role="alert">{{ _("Too many new characters from this network today. Try again tomorrow, or come back with your key.") }}</p>{% endif %}
   <p><a class="button" href="{{ play }}">{{ _("Start playing") }}</a></p>
-  <p class="muted small">{{ _("No email, no password: your character is kept on this device, and by its key.") }}</p>
   <h2>{{ _("I already have a character") }}</h2>
   {% include "keys/_passkeys_open.html" %}
     <p><button type="button" data-passkey-enter hidden>{{ _("Fingerprint, face or the device's PIN") }}</button></p>
-    <label class="visually-hidden" for="keys-who">{{ _("Your character") }}</label>
-    <input id="keys-who" class="keys-who" autocomplete="username webauthn" placeholder="{{ _('or tap here: the device offers your saved characters') }}">
     <p class="notice danger" data-passkey-say hidden role="alert"></p>
   </div>
-  <ul class="keys-ways">
-    <li><a href="{{ base }}/cheie">{{ _("With my character's key") }}</a> <span class="muted small">{{ _("the link or the code you saved") }}</span></li>
-    <li><a href="{{ base }}/leaga">{{ _("With a code from my other device") }}</a> <span class="muted small">{{ _("on it: Account → Add a device") }}</span></li>
-  </ul>
+  <form method="post" action="{{ base }}/cheie" class="stack" data-key-form>
+    {{ csrf_field }}
+    <label for="cod">{{ _("or your character's key") }}</label>
+    <input id="cod" name="cod" autocomplete="off" autocapitalize="none" spellcheck="false" required placeholder="abcd-efgh-jkmn-pqrs-tuvw">
+    <button type="submit" class="secondary">{{ _("Come back") }}</button>
+  </form>
 </section>
 {% endblock %}

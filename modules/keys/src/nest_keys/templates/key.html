@@ -1,18 +1,17 @@
 {% extends "layout.html" %}
-{% block title %}{{ _("Your character's key") }} · {{ app.title }}{% endblock %}
+{% block title %}{{ _("Keep your character's key") }} · {{ app.title }}{% endblock %}
 {% block head %}<script src="{{ asset('keys', 'keys.js') }}" defer></script>{% endblock %}
 {% block content %}
-<section class="card narrow stack">
-  <h1>{{ _("Your character's key") }}</h1>
-  <p>{{ _("This link brings your character back on any device: if this browser forgets you, on a new phone, on a computer. Keep it where you keep important things (notes, a password manager, an email to yourself).") }}</p>
-  {% include "keys/_key.html" %}
-  <p class="notice">{{ _("Whoever has it can play your character: do not share it with anyone. It is shown only now; you can make a new one any time from your account (the old one then stops working).") }}</p>
-  <p class="muted small">{{ _("A character whose key is not saved, unplayed for 14 days, is removed.") }}</p>
-  {% include "keys/_passkeys_open.html" %}
-    <p>{{ _("Easier still: protect it with this device, and on your other devices that share your Apple, Google or Microsoft account.") }}</p>
-    <p><button type="button" class="secondary" data-passkey-register hidden>{{ _("Fingerprint, face or the device's PIN") }}</button></p>
-    <p class="notice danger" data-passkey-say hidden role="alert"></p>
+<section class="card narrow stack keys-keep">
+  <h1>{{ _("Keep your character's key") }}</h1>
+  <p>{{ _("With this key you reach your character from any phone or computer. Without it, if this browser forgets you, the character is lost.") }}</p>
+  <div data-key>
+    <p><button type="button" data-key-download data-file="{{ _('character-key') }}.txt" data-text="{{ _('Your character\'s key on {site}. Open the link to come back to your character:', site=app.title) }}">{{ _("Download the key") }}</button></p>
+    <p><button type="button" class="link" data-key-copy>{{ _("or copy the link") }}</button></p>
+    <p class="keys-code muted"><code data-key-code>{{ code }}</code></p>
+    <a href="{{ link }}" data-key-link rel="nofollow" hidden>{{ link }}</a>
   </div>
-  <form method="post" action="{{ base }}/cheie/salvata">{{ csrf_field }}<button type="submit">{{ _("I saved it") }}</button></form>
+  <p class="muted small">{{ _("Do not give it to anyone: whoever has it can play your character.") }}</p>
+  <form method="post" action="{{ base }}/cheie/salvata">{{ csrf_field }}<button type="submit">{{ _("I kept it") }}</button></form>
 </section>
 {% endblock %}
