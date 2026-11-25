@@ -21,6 +21,11 @@ This documentation is for **Nest %NEST_VERSION%**.
   08:00 UTC, once its night batch has made it. The radar's popup takes its routes from
   adsbdb too (adsb.lol's route lookup answers nothing any more).
 
+- **A guessed airport counts as unknown** (flights 0.1.11): where OpenSky could not place a
+  flight it often names the field nearest to where the plane was first or last seen, not
+  an airport with scheduled flights; the boards dropped those, and now they are filled
+  like the empty ones. The job's result says how many it saw and filled.
+
 ## 0.4.7
 
 - **Nest is MIT-licensed, said once at its root**: a `LICENSE` file, the README and the
