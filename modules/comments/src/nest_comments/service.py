@@ -7,6 +7,7 @@ import hmac
 import re
 import time
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import func, select
@@ -54,6 +55,30 @@ def stamp_age(secret: str, value: str, now: float | None = None) -> float | None
 def address_hash(secret: str, address: str) -> str:
     """An address kept only as a keyed hash: enough to throttle, not to identify."""
     return hmac.new(secret.encode(), f"ip:{address}".encode(), hashlib.sha256).hexdigest()
+
+
+def same_text(text: str) -> str:
+    """A comment as it reads, whatever its case and spacing."""
+    return " ".join((text or "").casefold().split())
+
+
+def repeated(
+    db: Any, subject: str, body: str, *, user_id: int | None, address: str, hours: float = 24
+) -> Comment | None:
+    """The same comment on the same subject from the same member (or, for a guest, the same
+    address) within ``hours``: a double click, a resent form, a robot repeating itself."""
+    want = same_text(body)
+    if not want:
+        return None
+    since = utcnow() - timedelta(hours=hours)
+    with db.session() as s:
+        q = select(Comment).where(
+            Comment.subject == subject,
+            Comment.created_at > since,
+            Comment.status != "deleted",
+            Comment.user_id == user_id if user_id is not None else Comment.address == address,
+        )
+        return next((c for c in s.scalars(q) if same_text(c.body) == want), None)
 
 
 def add(

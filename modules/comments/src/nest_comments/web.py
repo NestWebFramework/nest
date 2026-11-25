@@ -121,6 +121,13 @@ async def post(request: Request, db: Database = bound(Database)):
     # Members are accountable for what they write; the limit is for guests.
     if user is None and await run_in_threadpool(recent) >= state["per_hour"]:
         return again(t("Too many comments from here; try again later."))
+    twice = await run_in_threadpool(
+        lambda: service.repeated(
+            db, subject, values["body"], user_id=user.id if user else None, address=address
+        )
+    )
+    if twice is not None:  # sent already (a double click, a resent form): not kept twice
+        return again(notice=t("We already have this comment. Thank you."), keep=False)
     parent = values["parent_id"]
     status = _status_for(state, user)
     try:

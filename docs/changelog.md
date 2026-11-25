@@ -11,6 +11,12 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The same input is kept once** (comments 0.1.2, glossary 0.1.3): a comment with the same
+  text, on the same page, from the same member or address within a day is not kept again
+  (a double click, a resent form: "We already have this comment"); a proposed word with
+  the same meaning as one already proposed, or already in the dictionary, is refused.
+  Case, diacritics, punctuation and spacing do not make it new.
+
 - **Live pages are never cached** (nest-core 0.4.7; trains 0.2.5, transit 0.1.5, flights
   0.1.8, coaches 0.1.5, hub 0.1.5, nearby 0.1.1): an htmx answer (a page's part, at the
   page's own address) is `no-store`, so no cache serves it in the page's place nor old; a

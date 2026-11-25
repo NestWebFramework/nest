@@ -110,6 +110,19 @@ def test_a_page_embeds_its_thread_and_a_guest_waits_for_a_moderator(site):
     assert '<a href="https://ex.ro" rel="nofollow ugc noopener">' in shown
 
 
+def test_the_same_comment_is_kept_once(site):
+    fields = {
+        **form_of(site.get("/biserica/").text),
+        "author_name": "Ana",
+        "body": "Ce biserică frumoasă!",
+    }
+    assert "așteaptă aprobarea" in send(site, fields).text
+    twice = send(site, {**fields, "body": "  ce biserică   FRUMOASĂ! "})  # a double click, resent
+    assert "Avem deja acest comentariu" in twice.text and len(comments.queue(site.db)) == 1
+    send(site, {**fields, "body": "Și clopotnița e veche."})  # another comment: welcome
+    assert len(comments.queue(site.db)) == 2
+
+
 def test_a_member_is_published_at_once_and_replies_nest(site):
     sign_in(site, "ion@example.ro")
     page = site.get("/biserica/").text
@@ -146,9 +159,9 @@ def test_robots_and_forgers_are_turned_away(site):
     assert send(site, {**fields, "sig": "0" * 32}).status_code == 400
     assert send(site, {**fields, "subject": "content.entry:999"}).status_code == 400
     assert "trimiți din nou" in send(site, {**fields, "stamp": "123.abc"}).text
-    for _ in range(3):
-        send(site, fields)
-    assert "Prea multe comentarii" in send(site, fields).text  # per_hour: 3
+    for n in range(3):
+        send(site, {**fields, "body": f"spam {n}"})
+    assert "Prea multe comentarii" in send(site, {**fields, "body": "spam 3"}).text  # per_hour: 3
 
 
 @pytest.mark.parametrize("site", [{"allow_guests: true, ": ""}], indirect=True)
