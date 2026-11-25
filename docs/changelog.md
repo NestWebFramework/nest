@@ -11,6 +11,15 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The village board, and errands one can speak** (Saga quest 0.4.1): `player.here` gives
+  the board (one's tasks, the stage with names filled in, and up to six errands posted by the
+  town's people who would give them, a poster chosen anew each day) and the act
+  `board.take {item, to}` takes one up from its poster. A cast's conditions see what a
+  conversation between the player and the candidate would know (`tongue.apart`), so an
+  errand never sends one to someone one cannot speak with; errands whose people no longer
+  fit (gone, dead, no tongue shared) are recast on the world's first tick. Trades are named
+  in lower case within sentences.
+
 - **Errands through people** (Saga quest 0.4.0, economy 0.2.2): a quest may cast people of
   the player's town at its start (`cast: {target: [conditions]}`), pick what is asked
   (`pick: {need: [{item, qty}]}`, only what the town's market has now) and give coins by
