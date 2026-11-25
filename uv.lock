@@ -890,7 +890,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-flights"
-version = "0.1.9"
+version = "0.1.10"
 source = { editable = "modules/flights" }
 dependencies = [
     { name = "nest-auth" },

@@ -9,6 +9,18 @@ Nest's version is nest-core's (written once, in `packages/nest-core/pyproject.to
 a version of its own, in its `module.yml` and its README; the reference pages show them.
 This documentation is for **Nest %NEST_VERSION%**.
 
+## Unreleased
+
+- **Arrivals from abroad on the airport boards** (flights 0.1.10): OpenSky names a flight's
+  departure (or arrival) airport only when its receivers saw it near the ground, and over
+  Romania they are few: arrivals from abroad came with no departure airport and fell off
+  the boards (Cluj showed only those from Otopeni), as did about half the departures. The
+  observed job now fills the missing end, from the same flight on other days, else from
+  the route published for its callsign (adsbdb.com, free; at most 150 a run, gently; one
+  it does not know is asked again after a week). Yesterday is asked of OpenSky only from
+  08:00 UTC, once its night batch has made it. The radar's popup takes its routes from
+  adsbdb too (adsb.lol's route lookup answers nothing any more).
+
 ## 0.4.7
 
 - **Nest is MIT-licensed, said once at its root**: a `LICENSE` file, the README and the
