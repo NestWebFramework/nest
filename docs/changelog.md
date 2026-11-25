@@ -26,6 +26,14 @@ This documentation is for **Nest %NEST_VERSION%**.
   an airport with scheduled flights; the boards dropped those, and now they are filled
   like the empty ones. The job's result says how many it saw and filled.
 
+- **Following the aircraft** (flights 0.1.12): over Romania OpenSky rarely sees a plane low
+  enough to count a landing at a smaller airport, so arrivals from abroad were not in its
+  data at all (Cluj: 94 arrivals in 17 days, 82 of them Otopeni's departures). The observed
+  job now asks, for each flight seen at our airports, the plane's flight just before it
+  left (its arrival) or just after it landed (its departure), whose other end is well seen
+  (Luton, Munich...); the time at our airport is estimated from the distance. One OpenSky
+  call a flight, once each, after the days' own records; it stops at the day's limit.
+
 ## 0.4.7
 
 - **Nest is MIT-licensed, said once at its root**: a `LICENSE` file, the README and the
