@@ -11,6 +11,15 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Jobs from real employers, sleeping, a shelter** (Saga work 0.2.0, player 0.8.1): each day
+  the households of a place post the pack's `jobs` that fit them (`employer`: professions,
+  owns, age; seasons; rounds a day, wage, meal, makes) and can pay a day of; works list
+  them as `job:<slug>:<employer>` with `employer`, `left` and `meal`; a round is paid from
+  the employer's purse and its rounds are shared by everyone. New needs: `home`,
+  `building`, `holding`, `money`, hours across midnight; new gains: `holding` (a shelter,
+  worn daily by `holdings.decay`), `paid_to` (a cost paid to one of a trade), `by_season`.
+  Works of kind `rest` are slept: the character's activity is sleeping while they last.
+
 - **Works: one catalog of what a character can spend its time on** (new Saga subsystem work
   0.1.0, survival, player 0.8.0): a pack's works (where, kind, a round's hours, needs:
   attributes at least or at most, skills, technology, a tool, inputs, property, a trade or
