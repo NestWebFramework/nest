@@ -11,6 +11,13 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Learning and technology as works** (Saga work 0.5.0, culture, building): works of study
+  want a teacher living in the place (`teacher`), are done so many rounds a day (`daily`),
+  ask effects of the others each round (`effects`: culture's `letters`, so the priest's
+  lessons raise reading and the literacy skill together) and pay the teacher
+  (`paid_to: teacher`). The building offers the next level of one's house as a work
+  (`upgrade:<slug>`, wanting building technology by level) and begins it.
+
 - **The trades as works** (Saga work 0.4.0, production, guild): production offers the
   recipes of one's trade (`craft:<recipe>`, a round one making, its time the recipe's minutes
   by the `craft_scale` rule, quicker with skill) with what one lacks (skill, tools,
