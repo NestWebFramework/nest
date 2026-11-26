@@ -11,6 +11,14 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Guilds keep their stands, and every item has a card** (Saga economy 0.3.1, guild, item,
+  production, player 0.5.4): a stand may name guilds (`guilds: [fierari]`); its keeper is a
+  member of that guild's branch in the town first (a master before a journeyman before an
+  apprentice), else anyone of its trades, and the stand says the guild and the keeper's rank.
+  The guild answers `guild.of` (someone's guild and rank). `item.card` (the item: kind,
+  material, durability, wear, weight, effects, made of; production: who makes it of what with
+  which tools, what it serves for, a tool by its kind) and the player's `GET /item/<slug>`.
+
 - **The market as stands, with keepers who bargain** (Saga economy 0.3.0, player 0.5.3): a
   pack's `stands` (an item goes to the first naming it, then its category, its type) each
   kept by one of the town's people of a trade, chosen each day; `player.here` gives the
