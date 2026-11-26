@@ -11,6 +11,10 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Selling at a stand by cards** (Saga economy 0.4.1): each stand in `/here` gives `wares`,
+  what of the player's own its keeper would buy (how many they have, the keeper's offer);
+  a card clicked opens the talk at `stand_wares` with it picked.
+
 - **Words over people, sliders in a conversation, a stand's goods as cards** (Saga dialogue
   0.5.0, player 0.7.0, economy 0.4.0): a node may carry an `input` (a slider: name, min, max,
   step, value, label; its numbers may name facts), whose value comes back with the reply
