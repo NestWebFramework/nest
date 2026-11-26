@@ -11,6 +11,38 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **A settlement's plan** (Saga settlement 0.4.0, building 0.12.0, household 0.3.1): a
+  settlement type may give a `plan` (its side in lots: 3 is 3×3); a building's `lot` says
+  where it stands on it: `centre` (the commons), `public` (a lot each, the inner first),
+  `workshop`, `home` (four houses to a residential lot, from the outer ring inwards; the
+  outskirts when full), `yard` (on its house's lot), `fields` (the lands outside). A new
+  building is placed on its lot; an old world's buildings are put on the plan once
+  (`relayout`), what stands well staying. A lot is read from a building's position (`LOT`
+  world tiles a side). `player.here` gives the `plan`; `building.home_room` the places for
+  houses left, and the judge grants no plot when there are none.
+
+- **A settlement's plan** (Saga settlement 0.4.0, building 0.12.0, household 0.3.1): a
+  settlement type may give a `plan` (its side in lots: 3 is 3×3); a building's `lot` says
+  where it stands on it: `centre` (the commons), `public` (a lot each, the inner first),
+  `workshop`, `home` (four houses to a residential lot, from the outer ring inwards; the
+  outskirts when full), `yard` (on its house's lot), `fields` (the lands outside). A new
+  building is placed on its lot; an old world's buildings are put on the plan once
+  (`relayout`), what stands well staying. A lot is read from a building's position (`LOT`
+  world tiles a side). `player.here` gives the `plan`; `building.home_room` the places for
+  houses left, and the judge grants no plot when there are none.
+
+- **A plot lost on moving away** (Saga building 0.11.0, player 0.12.0): a player who arrives
+  to live in another settlement is signalled `player.moved` (`left`, `to`); its household's
+  plot (or the house rising on it) elsewhere goes back to the village with all on its pile
+  (signal `building.plot_lost`). Buildings may be removed (`Buildings.remove`, deleted at the
+  checkpoint). A household's plot is found wherever its people got it.
+
+- **A plot lost on moving away** (Saga building 0.11.0, player 0.12.0): a player who arrives
+  to live in another settlement is signalled `player.moved` (`left`, `to`); its household's
+  plot (or the house rising on it) elsewhere goes back to the village with all on its pile
+  (signal `building.plot_lost`). Buildings may be removed (`Buildings.remove`, deleted at the
+  checkpoint). A household's plot is found wherever its people got it.
+
 - **Building in winter, slower** (Saga building 0.10.0): a building round takes `WINTER_SLOW`
   times longer in winter, and below `FROST_BELOW` degrees a stage's own `frost` slows it more
   (frozen ground, clay that will not set; timber and reeds need none); the household's
