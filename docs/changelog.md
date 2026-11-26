@@ -11,6 +11,28 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Food that spoils, the barn and the cellar** (Saga item 0.2.0, inventory 0.7.0, building
+  0.8.0, dialogue 0.6.0, player 0.11.3): an item may say how many days it `keeps` and what it
+  `spoils_to`; once a day such food spoils in the players' bags and their households' chests,
+  twice slower in the cold (`WINTER_COOL` below `COOL_BELOW` degrees) and slower still where
+  `inventory.cool` says (a sound cellar), signal `inventory.spoiled`. A chest holds
+  `CHEST_HOLDS` and what `inventory.chest_room` adds (a barn). A building's `stores`
+  ({holds, cool}) give both, all when sound, half when poor; `player.sheet` gives `stores`,
+  and the shelters' mending mends them too. A raising in the yard is found with the beasts
+  (a shelter) or at the house (the rest). The journal names a thing (`item`) in each
+  language (`dialogue.say`).
+
+- **Food that spoils, the barn and the cellar** (Saga item 0.2.0, inventory 0.7.0, building
+  0.8.0, dialogue 0.6.0, player 0.11.3): an item may say how many days it `keeps` and what it
+  `spoils_to`; once a day such food spoils in the players' bags and their households' chests,
+  twice slower in the cold (`WINTER_COOL` below `COOL_BELOW` degrees) and slower still where
+  `inventory.cool` says (a sound cellar), signal `inventory.spoiled`. A chest holds
+  `CHEST_HOLDS` and what `inventory.chest_room` adds (a barn). A building's `stores`
+  ({holds, cool}) give both, all when sound, half when poor; `player.sheet` gives `stores`,
+  and the shelters' mending mends them too. A raising in the yard is found with the beasts
+  (a shelter) or at the house (the rest). The journal names a thing (`item`) in each
+  language (`dialogue.say`).
+
 - **The beasts' shelters** (Saga building 0.7.0, property 0.4.0, work 0.8.0): a raising may
   rise in one's yard (`where: yard`: with a home, one at a time, its materials from the bag and
   the house's chest); a building's `shelters` ({kinds, holds}) keep so many beasts of those
