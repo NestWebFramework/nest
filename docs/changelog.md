@@ -11,6 +11,18 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Building in winter, slower** (Saga building 0.10.0): a building round takes `WINTER_SLOW`
+  times longer in winter, and below `FROST_BELOW` degrees a stage's own `frost` slows it more
+  (frozen ground, clay that will not set; timber and reeds need none); the household's
+  help, the hired villagers and a clacă get as much less done; the site's card says its
+  `pace`.
+
+- **Building in winter, slower** (Saga building 0.10.0): a building round takes `WINTER_SLOW`
+  times longer in winter, and below `FROST_BELOW` degrees a stage's own `frost` slows it more
+  (frozen ground, clay that will not set; timber and reeds need none); the household's
+  help, the hired villagers and a clacă get as much less done; the site's card says its
+  `pace`.
+
 - **Hired hands and the clacă** (Saga building 0.9.0, work 0.8.1): one raising a house or a
   yard building posts hands wanted (`player.act` `hire` {item: the wage a round, qty:
   rounds}); others find the job on the village board (`work.offer` with an `employer`,
