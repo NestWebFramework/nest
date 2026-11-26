@@ -11,6 +11,17 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Words over people, sliders in a conversation, a stand's goods as cards** (Saga dialogue
+  0.5.0, player 0.7.0, economy 0.4.0): a node may carry an `input` (a slider: name, min, max,
+  step, value, label; its numbers may name facts), whose value comes back with the reply
+  (`/reply {value}`) as the fact `value` (and `qty`); a conversation may open at an entry
+  node with a thing already picked from its list (`/talk {pick}`: a card clicked). A
+  pack's `presence` may give `words` (by doing and trade, per language, a chance per slot):
+  `/here?lang=` gives each person's `word`, the same for every player; a presence rule may
+  `asks:` a hook for whom it places (`stand.keepers`: a stand's keeper stands at the market
+  while it is open). At a stand one says a price (`trade.offer`/`trade.counter {amount}`)
+  within the span the keeper gives (`low`, `high`).
+
 - **People in the same place for every player** (Saga player 0.6.0, dialogue 0.4.0,
   economy 0.3.2): the server places the people of a place (a pack's `presence`: places, the
   doings that keep one home, rules by doing, trade and work), the wanderers dealt out in time
