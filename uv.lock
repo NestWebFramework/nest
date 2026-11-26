@@ -1396,7 +1396,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-culture"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "engines/saga/subsystems/culture" }
 dependencies = [
     { name = "nest-auth" },
@@ -1720,7 +1720,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-player"
-version = "0.10.0"
+version = "0.11.0"
 source = { editable = "engines/saga/subsystems/player" }
 dependencies = [
     { name = "nest-auth" },
@@ -1848,7 +1848,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-religion"
-version = "0.2.1"
+version = "0.3.0"
 source = { editable = "engines/saga/subsystems/religion" }
 dependencies = [
     { name = "nest-auth" },

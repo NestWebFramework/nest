@@ -11,6 +11,11 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The liturgy, confession, a custom and the market done when their time is up** (Saga
+  player 0.11.0, religion, culture): checked when begun (`player.act.check`, answered by
+  religion and culture; the market's stock and price by the player), done when the time is
+  up; what cannot be is refused at once.
+
 - **Eating, drinking, filling done when their time is up; the drunk mood** (Saga player
   0.10.0): those acts are checked when begun (one has it, needs it, is at the well) and done
   when their time is up (busy `occupied` with the act; stopped before, nothing comes of them).
