@@ -11,10 +11,29 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Warmth in the house** (Saga survival 0.3.0, building 0.5.0, work 0.7.0): a house has an
+  `insulation` (its daub); in the cold its inside is as warm as the weather, the insulation and
+  the day's fire make it. The firewood a day is by the house's size and its insulation, burned
+  from the home, the chest and the household's bags; the daub cracks a little every day. Under
+  six degrees inside the household lose health and joy (twice under zero; signal
+  `survival.cold_house` with its `members`). `hearth()` says `indoors`, `insulation`,
+  `outdoors`. Building hooks `building.of` and `building.change`; a work's gains may
+  `improve` the home's attributes.
+
+- **Warmth in the house** (Saga survival 0.3.0, building 0.5.0, work 0.7.0): a house has an
+  `insulation` (its daub); in the cold its inside is as warm as the weather, the insulation and
+  the day's fire make it. The firewood a day is by the house's size and its insulation, burned
+  from the home, the chest and the household's bags; the daub cracks a little every day. Under
+  six degrees inside the household lose health and joy (twice under zero; signal
+  `survival.cold_house` with its `members`). `hearth()` says `indoors`, `insulation`,
+  `outdoors`. Building hooks `building.of` and `building.change`; a work's gains may
+  `improve` the home's attributes.
+
 - **Houses for sale, householders** (Saga household, settlement, saga, player, dialogue): a
   house no household lives in is sold on the village board (`player.here` houses: kind,
-  condition, price by both, seller, the one to talk to), bought in a conversation with its
-  owner or the village judge (`house.list`, `house.ask`, `house.offer`, `house.deal`: the price
+  condition, price by both, seller, the one to talk to: name and trade, to be found in the
+  village), bought in a conversation with its owner or the village judge (the fact
+  `sells_house` puts "I hear you have a house for sale" in their menus; household 0.2.1) (`house.list`, `house.ask`, `house.offer`, `house.deal`: the price
   asked, bargained, hands shaken) as the household's home, paid to the owner's household or
   the place's treasury. The
   forums' access may say who posts apart from who reads (`answer_access(..., speaks)`): in a
