@@ -1339,7 +1339,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-building"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "engines/saga/subsystems/building" }
 dependencies = [
     { name = "nest-db" },
@@ -1545,7 +1545,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-household"
-version = "0.2.1"
+version = "0.3.0"
 source = { editable = "engines/saga/subsystems/household" }
 dependencies = [
     { name = "nest-db" },
@@ -1909,7 +1909,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-survival"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "engines/saga/subsystems/survival" }
 dependencies = [
     { name = "nest-auth" },

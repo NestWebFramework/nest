@@ -11,6 +11,32 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **A building plot and a house raised by hand** (Saga building 0.6.0, household 0.3.0,
+  survival 0.3.1): the village judge grants a plot in conversation (the fact `grants_plots`;
+  `plot.ask`, `plot.take`: a fee by the place's kind, to its treasury), a building of base
+  `plot`; `player.here` names the judge. A game's buildings may say how one raises a house
+  (the section `raising`: its stages, each so many rounds of so many hours, what a round uses
+  and the tools it wants, the building's attributes once it stands, the knowledge to begin
+  it). On one's plot `work.offer` gives the kinds to begin (`raise.begin`), the stage at hand
+  (`raise.work`) and laying what one carries on the site's pile (`raise.unload`, the owner
+  `("site", id)`); a round takes from the pile, then the bag. The household's grown villagers
+  lend a round a day from the pile. The last stage done, the house is the household's home
+  (signals `building.stage_done`, `building.house_raised`); `player.sheet` gives `raising`.
+  A house being raised is never for sale.
+
+- **A building plot and a house raised by hand** (Saga building 0.6.0, household 0.3.0,
+  survival 0.3.1): the village judge grants a plot in conversation (the fact `grants_plots`;
+  `plot.ask`, `plot.take`: a fee by the place's kind, to its treasury), a building of base
+  `plot`; `player.here` names the judge. A game's buildings may say how one raises a house
+  (the section `raising`: its stages, each so many rounds of so many hours, what a round uses
+  and the tools it wants, the building's attributes once it stands, the knowledge to begin
+  it). On one's plot `work.offer` gives the kinds to begin (`raise.begin`), the stage at hand
+  (`raise.work`) and laying what one carries on the site's pile (`raise.unload`, the owner
+  `("site", id)`); a round takes from the pile, then the bag. The household's grown villagers
+  lend a round a day from the pile. The last stage done, the house is the household's home
+  (signals `building.stage_done`, `building.house_raised`); `player.sheet` gives `raising`.
+  A house being raised is never for sale.
+
 - **Warmth in the house** (Saga survival 0.3.0, building 0.5.0, work 0.7.0): a house has an
   `insulation` (its daub); in the cold its inside is as warm as the weather, the insulation and
   the day's fire make it. The firewood a day is by the house's size and its insulation, burned
