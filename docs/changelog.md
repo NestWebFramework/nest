@@ -11,6 +11,14 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The household's works** (Saga work 0.3.0, farm, property, building): the farm offers its
+  field and garden works to the catalog (`farm:<work>:<crop>`, as many rounds as are left);
+  the property asks `property.care` for each beast kind's daily yield, which the catalog
+  answers for a player's household (`care`: untended beasts give half; `marks` set when
+  tended); the building answers `building.repair` and `building.condition`, so works mend
+  the house (`repair: {home: n}`) and need it standing (`home_condition`). Jobs taken are
+  kept in the checkpoint (`work_jobs`): a restart offers no more than were left.
+
 - **Jobs from real employers, sleeping, a shelter** (Saga work 0.2.0, player 0.8.1): each day
   the households of a place post the pack's `jobs` that fit them (`employer`: professions,
   owns, age; seasons; rounds a day, wage, meal, makes) and can pay a day of; works list
