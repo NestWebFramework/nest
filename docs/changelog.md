@@ -11,6 +11,22 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **People in the same place for every player** (Saga player 0.6.0, dialogue 0.4.0,
+  economy 0.3.2): the server places the people of a place (a pack's `presence`: places, the
+  doings that keep one home, rules by doing, trade and work), the wanderers dealt out in time
+  slots of a few real minutes that begin and end at once for all; `/here` gives each person's
+  `at`, `talking` (someone talks with them) and `leaving` (where to, in the slot's last half
+  minute), and `moves_in`. One being talked to keeps their place until the last conversation
+  with them ends. A conversation lasts at most ten minutes (`ends_in`, `excuse` in its
+  payload): then the one spoken to excuses themselves, and the same player may not hold
+  them again for five. Several players talk with the same person at once, each their own
+  conversation. At a stand only, a trader shows that stand's goods.
+
+- **Greetings of the age** (Saga dialogue 0.3.0): a pack's `greetings` (the first whose conditions
+  hold is said before the opening node's words; a conversation opened at a node, such as a
+  stand, greets its own way) and a `time` fact (hour, part of the day, season, weather,
+  today's fast and feast, from what answers player.clock).
+
 - **Guilds keep their stands, and every item has a card** (Saga economy 0.3.1, guild, item,
   production, player 0.5.4): a stand may name guilds (`guilds: [fierari]`); its keeper is a
   member of that guild's branch in the town first (a master before a journeyman before an
