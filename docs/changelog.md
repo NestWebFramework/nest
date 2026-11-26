@@ -11,6 +11,24 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **A settlement learns** (Saga settlement 0.6.0): a householder sends for a master
+  (`player.act` `learn`: a knowledge the place may learn, one at a time); the village chest
+  gives half his pay (`CHEST_SHARE`), the residents give coin (`learn_coin`) and households
+  with coin to spare chip in daily (`CHIP_IN` above `SPARE`); paid, he teaches over its days,
+  faster with residents who know what it `helps` (`HELP_POINTS`, `MOST_A_DAY`); learned, it is
+  among the settlement's `technologies`. A settlement keeps its `learning` (a new column,
+  migration `settlement_0002`); `player.here` gives `learning` and `knowledge`; signals
+  `settlement.learning_begun`, `settlement.learned`.
+
+- **A settlement learns** (Saga settlement 0.6.0): a householder sends for a master
+  (`player.act` `learn`: a knowledge the place may learn, one at a time); the village chest
+  gives half his pay (`CHEST_SHARE`), the residents give coin (`learn_coin`) and households
+  with coin to spare chip in daily (`CHIP_IN` above `SPARE`); paid, he teaches over its days,
+  faster with residents who know what it `helps` (`HELP_POINTS`, `MOST_A_DAY`); learned, it is
+  among the settlement's `technologies`. A settlement keeps its `learning` (a new column,
+  migration `settlement_0002`); `player.here` gives `learning` and `knowledge`; signals
+  `settlement.learning_begun`, `settlement.learned`.
+
 - **Public works** (Saga building 0.14.0, player 0.12.1): a raising `where: commons` is a
   settlement's own building: a householder proposes it (`player.act` `public`), one at a
   time, and its site goes on a free lot; the residents work it unpaid (effect
