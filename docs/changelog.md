@@ -11,6 +11,26 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Public works** (Saga building 0.14.0, player 0.12.1): a raising `where: commons` is a
+  settlement's own building: a householder proposes it (`player.act` `public`), one at a
+  time, and its site goes on a free lot; the residents work it unpaid (effect
+  `public.work`), lay materials on its pile (`public.give`) and give coin to its purse
+  (`public_coin`), counted as its givers; the villagers come daily (`VILLAGERS_A_DAY`), a
+  round each or what the commons give (`BROUGHT`), the purse hiring more (`HIRED_A_DAY` at
+  `WAGE`); a householder may call a clacă on it. Signals `building.public_begun`,
+  `building.public_raised` (its first givers); `player.here` gives `public_work`. The journal
+  names a building (`kind`) in each language.
+
+- **Public works** (Saga building 0.14.0, player 0.12.1): a raising `where: commons` is a
+  settlement's own building: a householder proposes it (`player.act` `public`), one at a
+  time, and its site goes on a free lot; the residents work it unpaid (effect
+  `public.work`), lay materials on its pile (`public.give`) and give coin to its purse
+  (`public_coin`), counted as its givers; the villagers come daily (`VILLAGERS_A_DAY`), a
+  round each or what the commons give (`BROUGHT`), the purse hiring more (`HIRED_A_DAY` at
+  `WAGE`); a householder may call a clacă on it. Signals `building.public_begun`,
+  `building.public_raised` (its first givers); `player.here` gives `public_work`. The journal
+  names a building (`kind`) in each language.
+
 - **What a settlement may raise** (Saga settlement 0.5.0, building 0.13.0, dialogue 0.6.1): a
   settlement book may define `knowledge` (what a place learns: from which level, the master's
   pay, the days, the residents' technology that helps); the levels' order (`levels`,
