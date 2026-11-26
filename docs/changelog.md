@@ -11,6 +11,28 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The beasts' shelters** (Saga building 0.7.0, property 0.4.0, work 0.8.0): a raising may
+  rise in one's yard (`where: yard`: with a home, one at a time, its materials from the bag and
+  the house's chest); a building's `shelters` ({kinds, holds}) keep so many beasts of those
+  kinds, all when its walls and roof are sound, half when poor, none when a ruin
+  (`property.shelter`: the share of a household's beasts under a roof, for players'
+  households). In a kind's hard months beasts without a roof give half and die five times
+  as often (`UNSHELTERED_YIELD`, `UNSHELTERED_DEATH`; `property.died` says `unsheltered`, and
+  property's signals name the household's `members`). A work may need `shelters` and
+  `repair: {shelters: n}` mends them (`building.shelters`). `player.sheet` gives `yard` and
+  `shelters`.
+
+- **The beasts' shelters** (Saga building 0.7.0, property 0.4.0, work 0.8.0): a raising may
+  rise in one's yard (`where: yard`: with a home, one at a time, its materials from the bag and
+  the house's chest); a building's `shelters` ({kinds, holds}) keep so many beasts of those
+  kinds, all when its walls and roof are sound, half when poor, none when a ruin
+  (`property.shelter`: the share of a household's beasts under a roof, for players'
+  households). In a kind's hard months beasts without a roof give half and die five times
+  as often (`UNSHELTERED_YIELD`, `UNSHELTERED_DEATH`; `property.died` says `unsheltered`, and
+  property's signals name the household's `members`). A work may need `shelters` and
+  `repair: {shelters: n}` mends them (`building.shelters`). `player.sheet` gives `yard` and
+  `shelters`.
+
 - **A building plot and a house raised by hand** (Saga building 0.6.0, household 0.3.0,
   survival 0.3.1): the village judge grants a plot in conversation (the fact `grants_plots`;
   `plot.ask`, `plot.take`: a fee by the place's kind, to its treasury), a building of base
