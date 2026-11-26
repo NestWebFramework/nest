@@ -11,6 +11,19 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Houses for sale, householders** (Saga household, settlement, saga, player, dialogue): a
+  house no household lives in is sold on the village board (`player.here` houses: kind,
+  condition, price by both, seller, the one to talk to), bought in a conversation with its
+  owner or the village judge (`house.list`, `house.ask`, `house.offer`, `house.deal`: the price
+  asked, bargained, hands shaken) as the household's home, paid to the owner's household or
+  the place's treasury. The
+  forums' access may say who posts apart from who reads (`answer_access(..., speaks)`): in a
+  village's assembly residents read and householders speak. The page's texts carry the
+  buildings' names (`building.`).
+
+- Saga survival 0.2.2: what is made by one's fire (kindling, a snare, a rough rod) is offered
+  as handwork (kind `make`), not as gathering.
+
 - **The liturgy, confession, a custom and the market done when their time is up** (Saga
   player 0.11.0, religion, culture): checked when begun (`player.act.check`, answered by
   religion and culture; the market's stock and price by the player), done when the time is
