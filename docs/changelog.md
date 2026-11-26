@@ -11,6 +11,15 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The trades as works** (Saga work 0.4.0, production, guild): production offers the
+  recipes of one's trade (`craft:<recipe>`, a round one making, its time the recipe's minutes
+  by the `craft_scale` rule, quicker with skill) with what one lacks (skill, tools,
+  workstation, materials, and the guild's rank through `guild.may_make`), and makes one
+  recipe so many times (effect `craft`); an apprentice makes for the master (`guild.of` gives
+  the master), fed and taught the more. The catalog takes a subsystem's reasons as a list,
+  shows what a work makes and uses, and has a `ranks` need (journeymen's day work at a
+  master's).
+
 - **The household's works** (Saga work 0.3.0, farm, property, building): the farm offers its
   field and garden works to the catalog (`farm:<work>:<crop>`, as many rounds as are left);
   the property asks `property.care` for each beast kind's daily yield, which the catalog
