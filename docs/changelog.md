@@ -11,6 +11,36 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Eating, drinking, filling done when their time is up; the drunk mood** (Saga player
+  0.10.0): those acts are checked when begun (one has it, needs it, is at the well) and done
+  when their time is up (busy `occupied` with the act; stopped before, nothing comes of them).
+  An hour in drink: tipsy, merrier; very drunk, health and stamina suffer and the temper
+  frays; the morning after a heavy night, a hangover (signal `player.hangover`).
+
+- **Every act takes its time; containers; drink** (Saga player 0.9.0, inventory 0.6.0, work
+  0.6.2, survival 0.2.1): an act done at once occupies one for its time (busy `occupied`,
+  `what`: eating 10 game minutes a mouthful, a draught 3, the well 10, filling 10, the liturgy
+  90...), nothing else meanwhile. `POST /go {spot}` tells where in its settlement one is: the
+  well's water is drunk at `well_spots`, containers filled with water at `fill_spots`
+  (`act fill {item, liquid}`, else poured from the liquid one carries). A container keeps its
+  own wear: a draught wears it, empty it keeps its wear, worn out it is gone; the sheet gives
+  `draughts`, `holds`, `liquid`, `fills`. Drunkenness slows works and makes harm likelier.
+
+- **Overloaded** (Saga inventory 0.5.0, work 0.6.1): carrying more than one can makes
+  everything heavier by the share carried over the limit (at most `overload_most`, twice):
+  journeys slower (`travel.pace`), a work's rounds longer and less done in the time
+  (`work.burden`), stamina lost faster each hour (`overload_stamina`); `burden` in
+  `player.sheet`.
+
+- **What one carries, and a chest** (Saga inventory 0.4.0, work 0.6.0, production 0.3.1): a
+  player carries no more than its capacity (by strength and endurance: the `carry_*` rules);
+  what does not fit is left behind (signal `inventory.spilled`), a transfer that does not fit
+  is refused, so buying stops before a coin is paid; works and recipes say beforehand when
+  what they yield would not fit (need `room`). A household with a house keeps a chest
+  (`chest_holds`): `player.act` store / take, and the chest in `player.sheet`; what does not
+  fit in the bag goes home to the chest when there is one (`inventory.to_chest`). A house's
+  upgrade takes its materials from the bag and the chest together (building 0.4.1).
+
 - **Learning and technology as works** (Saga work 0.5.0, culture, building): works of study
   want a teacher living in the place (`teacher`), are done so many rounds a day (`daily`),
   ask effects of the others each round (`effects`: culture's `letters`, so the priest's
