@@ -83,6 +83,7 @@ members = [
     "nest-saga-survival",
     "nest-saga-travel",
     "nest-saga-war",
+    "nest-saga-work",
     "nest-saga-world",
     "nest-scheduler",
     "nest-search",
@@ -1719,7 +1720,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-player"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "engines/saga/subsystems/player" }
 dependencies = [
     { name = "nest-auth" },
@@ -1908,7 +1909,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-survival"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "engines/saga/subsystems/survival" }
 dependencies = [
     { name = "nest-auth" },
@@ -1950,6 +1951,27 @@ requires-dist = [
 name = "nest-saga-war"
 version = "0.2.0"
 source = { editable = "engines/saga/subsystems/war" }
+dependencies = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-auth" },
+    { name = "nest-db" },
+    { name = "nest-saga" },
+    { name = "nest-saga-character" },
+    { name = "nest-saga-settlement" },
+]
+
+[[package]]
+name = "nest-saga-work"
+version = "0.1.0"
+source = { editable = "engines/saga/subsystems/work" }
 dependencies = [
     { name = "nest-auth" },
     { name = "nest-db" },
@@ -2302,6 +2324,7 @@ dependencies = [
     { name = "nest-saga-survival" },
     { name = "nest-saga-travel" },
     { name = "nest-saga-war" },
+    { name = "nest-saga-work" },
     { name = "nest-saga-world" },
     { name = "nest-scheduler" },
     { name = "nest-search" },
@@ -2407,6 +2430,7 @@ requires-dist = [
     { name = "nest-saga-survival", editable = "engines/saga/subsystems/survival" },
     { name = "nest-saga-travel", editable = "engines/saga/subsystems/travel" },
     { name = "nest-saga-war", editable = "engines/saga/subsystems/war" },
+    { name = "nest-saga-work", editable = "engines/saga/subsystems/work" },
     { name = "nest-saga-world", editable = "engines/saga/subsystems/world" },
     { name = "nest-scheduler", editable = "modules/scheduler" },
     { name = "nest-search", editable = "interfaces/search" },

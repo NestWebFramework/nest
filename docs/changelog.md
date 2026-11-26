@@ -11,6 +11,19 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Works: one catalog of what a character can spend its time on** (new Saga subsystem work
+  0.1.0, survival, player 0.8.0): a pack's works (where, kind, a round's hours, needs:
+  attributes at least or at most, skills, technology, a tool, inputs, property, a trade or
+  none, age, the hours of the day, seasons; gives: coins, items, skill, technology, the
+  body's needs, and the lasting attributes, trained slowly); subsystems offer theirs
+  (`work.offer`: gathering as `gather:<slug>`), the catalog adds its needs and gains (`kinds`,
+  `extend`). `/here` lists the works with `can` and `why` (each a code: attribute, skill,
+  tool...); the act `task {item: work, qty: times}` does a work so many times (a round begun
+  and not finished counts nothing). The four lasting attributes (strength, dexterity,
+  endurance, wits) are set by age, trade and birth the first time a character works
+  (`player.sheet` lasting). Gathering's luck is drawn once per character, activity and day;
+  its risks are likelier when tired, weak, hungry or thirsty.
+
 - **Selling at a stand by cards** (Saga economy 0.4.1): each stand in `/here` gives `wares`,
   what of the player's own its keeper would buy (how many they have, the keeper's offer);
   a card clicked opens the talk at `stand_wares` with it picked.
