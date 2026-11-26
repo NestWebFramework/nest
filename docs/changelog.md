@@ -11,6 +11,30 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Hired hands and the clacă** (Saga building 0.9.0, work 0.8.1): one raising a house or a
+  yard building posts hands wanted (`player.act` `hire` {item: the wage a round, qty:
+  rounds}); others find the job on the village board (`work.offer` with an `employer`,
+  effect `raise.hands`) and work the stage at hand with the site's materials, paid from the
+  owner's coins; the village's grown villagers come by too, a round each a day, at a fair
+  wage (`FAIR_WAGE`, `VILLAGERS_A_DAY`). A clacă (`player.act` `claca`, once in
+  `CLACA_EVERY` days): the neighbours work unpaid for the host's food and drink, one of each
+  for each, more of them for a household that helped at theirs (`bonds["claca"]`); the
+  players are called on the board that day (effect `raise.claca`: no coin, a meal, a day
+  owed back). Signals `building.hands_worked`, `building.claca`. An offered work may carry an
+  `employer` and a `meal`.
+
+- **Hired hands and the clacă** (Saga building 0.9.0, work 0.8.1): one raising a house or a
+  yard building posts hands wanted (`player.act` `hire` {item: the wage a round, qty:
+  rounds}); others find the job on the village board (`work.offer` with an `employer`,
+  effect `raise.hands`) and work the stage at hand with the site's materials, paid from the
+  owner's coins; the village's grown villagers come by too, a round each a day, at a fair
+  wage (`FAIR_WAGE`, `VILLAGERS_A_DAY`). A clacă (`player.act` `claca`, once in
+  `CLACA_EVERY` days): the neighbours work unpaid for the host's food and drink, one of each
+  for each, more of them for a household that helped at theirs (`bonds["claca"]`); the
+  players are called on the board that day (effect `raise.claca`: no coin, a meal, a day
+  owed back). Signals `building.hands_worked`, `building.claca`. An offered work may carry an
+  `employer` and a `meal`.
+
 - **Food that spoils, the barn and the cellar** (Saga item 0.2.0, inventory 0.7.0, building
   0.8.0, dialogue 0.6.0, player 0.11.3): an item may say how many days it `keeps` and what it
   `spoils_to`; once a day such food spoils in the players' bags and their households' chests,

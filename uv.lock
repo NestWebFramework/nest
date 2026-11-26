@@ -1339,7 +1339,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-building"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "engines/saga/subsystems/building" }
 dependencies = [
     { name = "nest-db" },
@@ -1970,7 +1970,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-work"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "engines/saga/subsystems/work" }
 dependencies = [
     { name = "nest-auth" },
