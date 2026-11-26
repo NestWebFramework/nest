@@ -11,6 +11,24 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **What a settlement may raise** (Saga settlement 0.5.0, building 0.13.0, dialogue 0.6.1): a
+  settlement book may define `knowledge` (what a place learns: from which level, the master's
+  pay, the days, the residents' technology that helps); the levels' order (`levels`,
+  `at_least`). A building's `requires` gives the settlement type it wants at least and the
+  `knowledge` it needs; `player.here` gives the place's `public` catalog (built, may be raised
+  now, or what it lacks), level by level. A settlement is given its kind's grants only when
+  founded (once its commons stand, nothing appears by itself). Walls, gates and towers stand
+  on the ring around the plan (lot `walls`). The client's texts carry `knowledge.` names.
+
+- **What a settlement may raise** (Saga settlement 0.5.0, building 0.13.0, dialogue 0.6.1): a
+  settlement book may define `knowledge` (what a place learns: from which level, the master's
+  pay, the days, the residents' technology that helps); the levels' order (`levels`,
+  `at_least`). A building's `requires` gives the settlement type it wants at least and the
+  `knowledge` it needs; `player.here` gives the place's `public` catalog (built, may be raised
+  now, or what it lacks), level by level. A settlement is given its kind's grants only when
+  founded (once its commons stand, nothing appears by itself). Walls, gates and towers stand
+  on the ring around the plan (lot `walls`). The client's texts carry `knowledge.` names.
+
 - **A settlement's plan** (Saga settlement 0.4.0, building 0.12.0, household 0.3.1): a
   settlement type may give a `plan` (its side in lots: 3 is 3×3); a building's `lot` says
   where it stands on it: `centre` (the commons), `public` (a lot each, the inner first),
