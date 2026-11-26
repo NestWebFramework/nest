@@ -11,6 +11,26 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **A settlement grows by its rights** (Saga settlement 0.7.0): a place no longer evolves by
+  itself; ready for the next level, its judge petitions the realm it lies in
+  (`polity.realm_at`, `polity.realm`), the level's `fee` paid from its chest to the realm
+  (`polity.receive`); a ruler who is no player grants it the next day, a player who rules
+  decides (`player.act` `grant` / `refuse`, the fee back on a refusal; `player.sheet` gives
+  their `petitions`). A settlement type may name its `government`; `player.here` gives the
+  place's `government` and its `petition`. Prosperity grows weekly with the place's own
+  buildings. The petition is kept in a new column (migration `settlement_0003`); signals
+  `settlement.petitioned`, `settlement.granted`, `settlement.refused`.
+
+- **A settlement grows by its rights** (Saga settlement 0.7.0): a place no longer evolves by
+  itself; ready for the next level, its judge petitions the realm it lies in
+  (`polity.realm_at`, `polity.realm`), the level's `fee` paid from its chest to the realm
+  (`polity.receive`); a ruler who is no player grants it the next day, a player who rules
+  decides (`player.act` `grant` / `refuse`, the fee back on a refusal; `player.sheet` gives
+  their `petitions`). A settlement type may name its `government`; `player.here` gives the
+  place's `government` and its `petition`. Prosperity grows weekly with the place's own
+  buildings. The petition is kept in a new column (migration `settlement_0003`); signals
+  `settlement.petitioned`, `settlement.granted`, `settlement.refused`.
+
 - **A settlement learns** (Saga settlement 0.6.0): a householder sends for a master
   (`player.act` `learn`: a knowledge the place may learn, one at a time); the village chest
   gives half his pay (`CHEST_SHARE`), the residents give coin (`learn_coin`) and households
