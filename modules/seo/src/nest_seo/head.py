@@ -169,7 +169,8 @@ def head(
     own_canonical = m.canonical if m and m.canonical and not translated else ""
     canonical = absolute(request, own_canonical or path)
     pic = picture(request, (m.image if m and m.image else "") or image or str(s.get("image") or ""))
-    noindex = bool(m and m.noindex)
+    hidden = bool(s.get("hidden"))
+    noindex = hidden or bool(m and m.noindex)
     og_type = "article" if kind == "article" else "website"
     locale = translator(request).locale or "ro"
 
@@ -179,7 +180,9 @@ def head(
     if words:
         tags.append(f'<meta name="keywords" content="{escape(words)}">')
     tags.append(
-        '<meta name="robots" content="noindex, follow">'
+        '<meta name="robots" content="noindex, nofollow">'
+        if hidden
+        else '<meta name="robots" content="noindex, follow">'
         if noindex
         else '<meta name="robots" content="index, follow, max-image-preview:large">'
     )

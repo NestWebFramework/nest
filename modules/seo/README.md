@@ -3,7 +3,7 @@
 
 Search titles, descriptions, keywords, sharing pictures and indexing for every page of every module; meta tags, Open Graph and JSON-LD; a sitemap with photos; robots.txt.
 
-**Version 0.2.2** · module · works with Nest `>=0.4.1,<1` · licence MIT
+**Version 0.2.3** · module · works with Nest `>=0.4.1,<1` · licence MIT
 
 | | |
 |---|---|
@@ -36,6 +36,7 @@ modules:
 | `bing_verification` | str |  |
 | `google_analytics` | str |  |
 | `analytics_consent` | bool | `True` |
+| `hidden` | bool | `False` |
 | `robots_closed` | str |  |
 
 What each does: the reference page, or the admin panel's Settings.

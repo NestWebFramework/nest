@@ -18,7 +18,7 @@ module:
   id: nest.module.seo
   type: module
   title: SEO
-  version: 0.2.2
+  version: 0.2.3
   description: >
     Search titles, descriptions, keywords, sharing pictures and indexing for every page of
     every module; meta tags, Open Graph and JSON-LD; a sitemap with photos; robots.txt.
@@ -111,6 +111,11 @@ settings:
     default: true
     label: Ask visitors before analytics
     description: "A small notice asks each visitor before Google Analytics loads, and remembers the answer (the law in the EU asks consent for analytics cookies). Off, it loads at once."
+  hidden:
+    type: bool
+    default: false
+    label: Hidden from search engines
+    description: "While on, search engines are asked not to index the site at all: robots.txt closes every page, and every page and file says noindex (a meta tag and an X-Robots-Tag header). For a site not ready to be found; turn it off when it is."
   robots_closed:
     type: str
     default: ""

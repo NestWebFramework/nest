@@ -200,6 +200,20 @@ def test_the_site_defaults_robots_and_the_home_page(site):
     assert "Sitemap: https://morlaca.ro/sitemap.xml" in robots
 
 
+def test_a_hidden_site_asks_search_engines_to_stay_away(site):
+    site.nest.production = True
+    assert "x-robots-tag" not in site.get("/").headers
+    site.nest.settings.set("seo.hidden", "true")
+    home = site.get("/")
+    assert home.headers["x-robots-tag"] == "noindex, nofollow"
+    assert '<meta name="robots" content="noindex, nofollow">' in home.text
+    robots = site.get("/robots.txt")
+    assert robots.text.strip().endswith("Disallow: /") and "Sitemap" not in robots.text
+    site.nest.settings.set("seo.hidden", "false")  # turned off: indexed again
+    assert "x-robots-tag" not in site.get("/").headers
+    assert "Disallow: /admin/" in site.get("/robots.txt").text
+
+
 def test_structured_data_cannot_close_its_script(site):
     post(site, "Titlu", title="</script><script>alert(1)</script>")
     e = content.published_entries(site.db)[0]

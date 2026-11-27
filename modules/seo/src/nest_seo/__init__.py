@@ -34,10 +34,34 @@ SUBJECT_FIELDS = (
 )
 
 
+class Hidden:
+    """While the "hidden" setting is on, every answer says X-Robots-Tag: noindex, nofollow
+    (pages without a robots meta tag, pictures and files too)."""
+
+    def __init__(self, app: Any, settings: Any) -> None:
+        self.app, self.settings = app, settings
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http" or not self.settings.get("hidden"):
+            await self.app(scope, receive, send)
+            return
+
+        async def tagged(message: Any) -> None:
+            if message["type"] == "http.response.start":
+                message["headers"] = [
+                    *message.get("headers", []),
+                    (b"x-robots-tag", b"noindex, nofollow"),
+                ]
+            await send(message)
+
+        await self.app(scope, receive, tagged)
+
+
 def setup(host: ModuleHost) -> None:
     from nest_seo.web import admin, root
 
     host.state["settings"] = host.settings
+    host.add_middleware(Hidden, settings=host.settings)
     db_ = host.bound("nest.db")
     service.set_default(db_, host.default_language)
     from sqlalchemy.exc import SQLAlchemyError

@@ -11,6 +11,11 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- seo 0.2.3: the **Hidden from search engines** setting (`hidden`): while on, robots.txt
+  closes the whole site and every answer says noindex, nofollow (a meta tag in the pages
+  and an `X-Robots-Tag` header on everything), for a site not yet ready to be found. The
+  admin panel turns it off.
+
 - content 0.2.6: the `content.entries` lookup gives each entry's id, excerpt, featured
   picture and publication date too, and its body when asked (`"body": True`): a module may
   show a type's entries as its own (a settlement's introduction and articles, on a region's

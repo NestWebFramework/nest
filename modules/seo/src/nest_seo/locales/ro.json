@@ -126,5 +126,7 @@
  "OK": "De acord",
  "No, thanks": "Nu, mulțumesc",
  "Helps us see which pages are useful, so we can make the site better.": "Ne ajută să vedem ce pagini sunt utile, ca să facem site-ul mai bun.",
- "2 years": "2 ani"
+ "2 years": "2 ani",
+ "Hidden from search engines": "Ascuns motoarelor de căutare",
+ "While on, search engines are asked not to index the site at all: robots.txt closes every page, and every page and file says noindex (a meta tag and an X-Robots-Tag header). For a site not ready to be found; turn it off when it is.": "Cât e pornit, motoarele de căutare sunt rugate să nu indexeze deloc site-ul: robots.txt închide toate paginile, iar fiecare pagină și fișier spune noindex (o etichetă meta și un antet X-Robots-Tag). Pentru un site care nu e încă gata să fie găsit; opriți-l când este."
 }

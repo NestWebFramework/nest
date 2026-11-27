@@ -92,7 +92,7 @@ def robots(request: Request) -> Response:
         if p.strip().startswith("/")
     ]
     text = nest.templates.get_template("seo/robots.txt").render(
-        production=nest.production,
+        production=nest.production and not settings.get("hidden"),
         closed=sorted({c.rstrip("/") + "/" for c in closed} | {"/_nest/"}),
         sitemap=absolute(request, "/sitemap.xml"),
     )

@@ -1159,7 +1159,7 @@ requires-dist = [{ name = "nest-search", editable = "interfaces/search" }]
 
 [[package]]
 name = "nest-seo"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "modules/seo" }
 dependencies = [
     { name = "nest-auth" },
