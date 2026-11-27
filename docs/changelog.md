@@ -11,6 +11,12 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- Saga player 0.12.2: a journal entry sent live carries its `kind` (a page can sort it: the
+  village's notices, the realm's, one's own).
+
+- Saga player 0.12.2: a journal entry sent live carries its `kind` (a page can sort it: the
+  village's notices, the realm's, one's own).
+
 - **What one meets on the road** (Saga travel 0.2.0): a travel book may list `encounters`
   (the roads and months where each is met, its chance an hour, the items and coin it gives,
   the attributes and feelings it brings, its tale); on a journey at most `MET_MOST` of them
