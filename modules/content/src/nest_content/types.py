@@ -60,6 +60,11 @@ class FieldSpec(_Spec):
     required: bool = False
     max_length: int | None = None
     choices: list[str] | None = None
+    # a select whose choices another module gives: the name of a lookup answering
+    # [{"value", "label"}] (asked with {"type", "field"}); an empty value is the "none" choice
+    choices_from: str | None = None
+    # a select the admin's list of the type can be filtered by (and shows as a column)
+    filter: bool = False
     default: Any = None
 
 
@@ -103,7 +108,7 @@ class TypeSpec(_Spec):
         for name, spec in v.items():
             if not re.fullmatch(r"[a-z][a-z0-9_]{0,40}", name):
                 raise ValueError(f"field '{name}' must be snake_case")
-            if spec.type == "select" and not spec.choices:
+            if spec.type == "select" and not (spec.choices or spec.choices_from):
                 raise ValueError(f"field '{name}' is a select without choices")
         return v
 
@@ -181,7 +186,13 @@ def _fields_model(type_name: str, t: TypeSpec) -> type[BaseModel]:
     }
     fields: dict[str, Any] = {}
     for name, spec in t.fields.items():
-        kind: Any = Literal[tuple(spec.choices)] if spec.type == "select" else kinds[spec.type]
+        kind: Any = (
+            Literal[tuple(spec.choices)]
+            if spec.type == "select" and spec.choices
+            else str  # choices_from: checked against the lookup's choices when saved
+            if spec.type == "select"
+            else kinds[spec.type]
+        )
         constraint = (
             Field(spec.default if not spec.required else ..., max_length=spec.max_length)
             if spec.max_length and kind is str

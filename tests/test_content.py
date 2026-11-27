@@ -40,6 +40,7 @@ content_types:
       starts: {type: datetime, label: Începe, required: true}
       seats: {type: integer, label: Locuri}
       kind: {type: select, choices: [hram, nedeie]}
+      village: {type: select, label: Satul, choices_from: test.villages, filter: true}
 """
 
 WP_DUMP = r"""
@@ -400,6 +401,55 @@ def test_an_editor_writes_an_entry_of_a_declared_type(site):
     e = service.entry_by_path(site.db, "/evenimente/2026/hramul-satului/")
     assert e.fields == {"starts": "2026-08-15T10:00:00", "seats": 120, "kind": "hram"}
     assert "hramul" in site.get("/search?q=hramul").text.lower()
+
+
+def test_a_select_takes_its_choices_from_another_module(site):
+    villages = [
+        {"value": "", "label": "Toată valea"},  # the "none" choice, named
+        {"value": "33257", "label": "Feldru"},
+        {"value": "33266", "label": "Nepos"},
+    ]
+    site.nest._lookups.setdefault("test.villages", []).append(("test", lambda key: villages))
+    sign_in(site)
+    form = site.get("/admin/content/event/new").text
+    assert '<option value="33257">Feldru</option>' in form and ">Toată valea</option>" in form
+    assert '<option value="">—</option><option value="">' not in form  # one "none" choice
+    headers = {"X-CSRF-Token": site.cookies["nest_csrf"]}
+    base = {"title": "Hram", "status": "published", "field_starts": "2026-08-15T10:00"}
+    r = site.post(
+        "/admin/content/event/new", headers=headers, data={**base, "field_village": "999"}
+    )
+    assert r.status_code == 400 and "nu e una dintre variante" in r.text
+    r = site.post(
+        "/admin/content/event/new",
+        headers=headers,
+        follow_redirects=False,
+        data={**base, "field_village": "33257"},
+    )
+    assert r.status_code == 303
+    (e,) = [x for x in service.entries_of_type(site.db, "event")[0] if x.title == "Hram"]
+    assert e.fields["village"] == "33257"
+    edit = site.get(f"/admin/content/event/{e.id}").text
+    assert '<option value="33257" selected>Feldru</option>' in edit
+    # the list, filtered by it: a village's entries, those of none, and New for that village
+    service.save_entry(
+        site.db,
+        site.search,
+        site.types,
+        EntryData(
+            type="event", title="Toată valea", status="draft", fields={"starts": "2026-08-15T10:00"}
+        ),
+    )
+    listed = site.get("/admin/content/event").text
+    assert 'name="f_village"' in listed and "<td>Feldru</td>" in listed  # a filter, a column
+    one = site.get("/admin/content/event?f_village=33257").text
+    assert ">Hram<" in one and ">Toată valea</a>" not in one
+    assert "/admin/content/event/new?f_village=33257" in one
+    none = site.get("/admin/content/event?f_village=-").text
+    assert ">Toată valea</a>" in none and ">Hram<" not in none
+    new = site.get("/admin/content/event/new?f_village=33257").text
+    assert '<option value="33257" selected>Feldru</option>' in new
+    assert 'name="f_' not in site.get("/admin/content/page").text  # no filter: as before
 
 
 def test_children_follow_their_parents_slug_and_revisions_are_kept(site):

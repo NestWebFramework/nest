@@ -714,9 +714,11 @@ def entries_of_type(
     per_page: int = 50,
     term_id: int | None = None,
     without: str | None = None,
+    fields: dict[str, str] | None = None,
 ) -> tuple[list[Entry], int]:
     """A type's entries, newest change first; of a term (and its children), or without any
-    term of the taxonomy ``without``."""
+    term of the taxonomy ``without``; ``fields``: those whose field has that value (an empty
+    one: those without the field)."""
     with db.session() as s:
         query = select(Entry).where(Entry.type == type_name, Entry.status != TRASH)
         if term_id is not None:
@@ -731,6 +733,9 @@ def entries_of_type(
                 .where(Term.taxonomy == without)
             )
             query = query.where(Entry.id.not_in(tagged))
+        for name, value in (fields or {}).items():
+            got = Entry.fields[name].as_string()
+            query = query.where(or_(got.is_(None), got == "") if value == "" else got == value)
         if q:
             query = query.where(Entry.title.ilike(f"%{q}%"))
         total = s.scalar(select(func.count()).select_from(query.subquery())) or 0

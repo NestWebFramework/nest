@@ -6,7 +6,7 @@
 <p class="muted"><a href="{{ admin_root }}/content/">{{ _("Content") }}</a>{% if current_term or category == "none" %} › <a href="{{ admin_root }}/content/{{ type_name }}">{{ _(spec.title) }}</a>{% endif %}</p>
 <div class="row between"><h1>{% if current_term %}{{ current_term.name }}{% elif category == "none" %}{{ _("Without a category") }}{% else %}{{ _(spec.title) }}{% endif %}</h1>
   <div class="row">{% if trash_count %}<a class="button secondary" href="{{ admin_root }}/content/{{ type_name }}/trash">{{ _("Trash") }} ({{ trash_count }})</a>{% endif %}
-    <a class="button" href="{{ admin_root }}/content/{{ type_name }}/new{% if current_term %}?category={{ current_term.id }}{% endif %}">{{ _("New") }}</a></div></div>
+    {% set given = [] %}{% if current_term %}{% set added = given.append("category=" ~ current_term.id) %}{% endif %}{% for n, v in chosen.items() if v != "-" %}{% set added = given.append("f_" ~ n ~ "=" ~ v|urlencode) %}{% endfor %}<a class="button" href="{{ admin_root }}/content/{{ type_name }}/new{% if given %}?{{ given|join('&') }}{% endif %}">{{ _("New") }}</a></div></div>
 <div class="{{ 'content-browse' if grouping else '' }}">
   {% if grouping %}
   <nav class="term-nav" aria-label="{{ _(grouping_spec.title) }}">
@@ -26,18 +26,26 @@
       {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
       <input name="q" type="search" value="{{ q }}" placeholder="{{ _('Filter by title') }}" aria-label="{{ _('Filter by title') }}"
              hx-get="{{ admin_root }}/content/{{ type_name }}" hx-include="closest form" hx-trigger="input changed delay:250ms" hx-target="#rows" hx-swap="outerHTML">
+      {%- for name, f in filters.items() %}
+      <select name="f_{{ name }}" aria-label="{{ f.label or name }}">
+        <option value="">{{ f.label or name }}: {{ _("all") }}</option>
+        {%- for value, label in filter_options[name] %}<option value="{{ value or '-' }}"{% if chosen.get(name) == (value or '-') %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        {%- if "" not in filter_options[name]|map("first") %}<option value="-"{% if chosen.get(name) == "-" %} selected{% endif %}>— {{ _("none") }}</option>{% endif %}
+      </select>
+      {%- endfor %}
+      {% if filters %}<button type="submit" class="secondary">{{ _("Filter") }}</button>{% if chosen %} <a href="?{% if category %}category={{ category }}{% endif %}">{{ _("Clear") }}</a>{% endif %}{% endif %}
     </form>
     {% block rows %}
     <div id="rows" class="table-wrap">
       <table>
-        <thead><tr><th>{{ _("Title") }}</th><th>{{ _("Status") }}</th><th>{{ _("Address") }}</th>{% if tr_states %}<th>{{ _("Languages") }}</th>{% endif %}<th>{{ _("Updated") }}</th></tr></thead>
+        <thead><tr><th>{{ _("Title") }}</th>{% for name, f in filters.items() %}<th>{{ f.label or name }}</th>{% endfor %}<th>{{ _("Status") }}</th><th>{{ _("Address") }}</th>{% if tr_states %}<th>{{ _("Languages") }}</th>{% endif %}<th>{{ _("Updated") }}</th></tr></thead>
         <tbody>
           {% for e in entries %}
-          <tr><td><a href="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td><td>{{ _(e.status) }}</td>
+          <tr><td><a href="{{ admin_root }}/content/{{ type_name }}/{{ e.id }}">{{ e.title }}</a></td>{% for name in filters %}{% set v = (e.fields or {}).get(name) or "" %}<td>{{ filter_labels[name].get(v, v) }}</td>{% endfor %}<td>{{ _(e.status) }}</td>
               <td><a href="{{ e.path }}">{{ e.path }}</a></td>
               {% if tr_states %}<td>{% for lang, state in (tr_states.get(e.id) or {}).items() %}<a class="tr-state tr-{{ state }}" href="{{ admin_root }}/translations/content.entry/{{ e.id }}?lang={{ lang }}" title="{{ _(state) }}">{{ lang | upper }}</a> {% endfor %}</td>{% endif %}
               <td>{{ e.updated_at.strftime("%d.%m.%Y %H:%M") }}</td></tr>
-          {% else %}<tr><td colspan="{{ 5 if tr_states else 4 }}" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
+          {% else %}<tr><td colspan="{{ (5 if tr_states else 4) + filters|length }}" class="muted">{{ _("Nothing here yet.") }}</td></tr>{% endfor %}
         </tbody>
       </table>
       {% if pages > 1 %}<p class="muted">{{ page }} / {{ pages }}</p>{% endif %}

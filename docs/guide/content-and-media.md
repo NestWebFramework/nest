@@ -60,6 +60,12 @@ content_types:
 Field types are `text`, `textarea`, `html`, `integer`, `decimal`, `boolean`, `date`,
 `datetime`, `select`, `url`, `media` and `entry`. Each entry keeps its fields as
 JSON, checked against the declaration, so adding a field needs no migration.
+A `select` may take its choices from another module instead of a list:
+`choices_from: localities.choices` names a lookup answering `[{"value", "label"}]` (a site's
+settlements by name, their codes stored); an empty value there is the "none" choice, named.
+A select declared with `filter: true` is a filter of the type's list in the admin (and a
+column there), and "New" from a filtered list starts with that value; without it, the list
+is as it was.
 `uv run nest content types APP` lists what an application has.
 
 ### Addresses

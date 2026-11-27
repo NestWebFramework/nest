@@ -259,5 +259,10 @@
  ],
  "“{name}” is deleted; its entries stay, without it.": "„{name}” a fost ștearsă; intrările ei rămân, fără ea.",
  "“{title}” is back from the trash.": "„{title}” a fost adus înapoi din coș.",
- "“{title}” is in the trash; it can be brought back from there.": "„{title}” e în coș; poate fi adus înapoi de acolo."
+ "“{title}” is in the trash; it can be brought back from there.": "„{title}” e în coș; poate fi adus înapoi de acolo.",
+ "{field}: not one of its choices": "{field}: nu e una dintre variante",
+ "all": "toate",
+ "none": "niciuna",
+ "Filter": "Filtrează",
+ "Clear": "Șterge filtrul"
 }

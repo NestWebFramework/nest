@@ -754,6 +754,15 @@ def admin_list(
         term = service.term_by_id(db, int(category))
         if term is None or term.taxonomy != grouping:
             term = None
+    # the fields the list is filtered by (a select declared with filter: true): f_<name>,
+    # "-" for those without a value
+    filters = {n: f for n, f in spec.fields.items() if f.type == "select" and f.filter}
+    options = field_choices(request, type_name, spec) if filters else {}
+    chosen = {
+        n: request.query_params[f"f_{n}"]
+        for n in filters
+        if request.query_params.get(f"f_{n}") not in (None, "")
+    }
     entries, total = service.entries_of_type(
         db,
         type_name,
@@ -761,6 +770,7 @@ def admin_list(
         page=max(1, page),
         term_id=term.id if term else None,
         without=grouping if grouping and category == "none" else None,
+        fields={n: "" if v == "-" else v for n, v in chosen.items()},
     )
     tree = service.term_tree(db, grouping, type_name) if grouping else []
     nest = request.app.state.nest
@@ -795,7 +805,31 @@ def admin_list(
         everything=everything,
         loose=loose,
         tr_states=tr_states or None,
+        filters=filters,
+        filter_options={n: options.get(n, []) for n in filters},
+        filter_labels={n: dict(options.get(n, [])) for n in filters},
+        chosen=chosen,
     )
+
+
+def field_choices(request: Request, type_name: str, spec: Any) -> dict[str, list[tuple[str, str]]]:
+    """Each select field's choices, as (value, label): its own list, or what the lookup of its
+    ``choices_from`` answers (another module's: a site's settlements by name)."""
+    nest = request.app.state.nest
+    out: dict[str, list[tuple[str, str]]] = {}
+    for name, f in spec.fields.items():
+        if f.type != "select":
+            continue
+        if f.choices_from:
+            found = nest.lookup(f.choices_from, {"type": type_name, "field": name}) or []
+            out[name] = [
+                (str(c.get("value") or ""), str(c.get("label") or c.get("value") or ""))
+                for c in found
+                if isinstance(c, dict)
+            ]
+        else:
+            out[name] = [(c, c) for c in f.choices or []]
+    return out
 
 
 def _form_context(
@@ -811,6 +845,7 @@ def _form_context(
     return {
         "type_name": type_name,
         "spec": spec,
+        "choices": field_choices(request, type_name, spec),
         "values": values,
         "entry": entry,
         "error": error,
@@ -859,6 +894,11 @@ def admin_new(
         "fields": {},
         "terms": {},
     }
+    spec = _state(request)["types"].types[type_name]
+    for name, f in spec.fields.items():  # "New" from a filtered list: its values given
+        given = request.query_params.get(f"f_{name}")
+        if f.filter and given and given != "-":
+            values["fields"][name] = given
     wanted = request.query_params.get("category", "")
     if wanted.isdigit():  # "New" from a category's list: in that category
         t = service.term_by_id(db, int(wanted))
@@ -1186,6 +1226,12 @@ async def _save(
     try:
         # the seo fields, if the seo module put them in the form, are checked first: a page
         # is saved whole or not at all
+        for name, f in spec.fields.items():  # a lookup's choices: only those it gives
+            given = values["fields"].get(name)
+            if f.choices_from and given:
+                allowed = {v for v, _label in field_choices(request, type_name, spec)[name]}
+                if given not in allowed:
+                    raise ContentError("{field}: not one of its choices", field=f.label or name)
         seo_problem = nest.lookup("seo.check", {"form": form}) or nest.lookup(
             "translations.check", {"subject": "content.entry", "id": existing_id or 0, "form": form}
         )

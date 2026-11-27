@@ -11,6 +11,13 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- content 0.2.7: a `select` field may take its choices from another module
+  (`choices_from: <lookup>`, answering `[{"value", "label"}]`): editors pick a settlement by
+  its name while its code is kept; an empty value is the "none" choice, named; a value the
+  lookup does not give is refused when saved. A select declared with `filter: true` filters
+  the type's list in the admin (and is a column there), and "New" from a filtered list starts
+  with its value; types without it are listed as before.
+
 - seo 0.2.3: the **Hidden from search engines** setting (`hidden`): while on, robots.txt
   closes the whole site and every answer says noindex, nofollow (a meta tag in the pages
   and an `X-Robots-Tag` header on everything), for a site not yet ready to be found. The
