@@ -1,4 +1,4 @@
-"""The engine role: a module that keeps its state in one process (Saga's worlds), served by
+"""The engine role: a module that keeps its state in one process (a game's worlds, say), served by
 that process while gunicorn's workers serve the rest of the application.
 
 ``nest serve`` with such a module and several workers starts one more process, the
@@ -9,8 +9,8 @@ without opening the worlds, and pass to the engine, streamed both ways, every re
 
 * the routes of the one-process modules and of the packages that are part of them or
   depend on them (``/joc``, ``/api/joc``),
-* their pages in the admin panel (``/admin/saga``, ``/admin/player``...),
-* an event stream following one of their topics (``/_nest/events?topic=saga...``).
+* their pages in the admin panel (``/admin/<engine>``...),
+* an event stream following one of their topics (``/_nest/events?topic=<engine>...``).
 
 The engine answers only requests a worker signed (a token made from the application's
 secret key), and believes the visitor's address and scheme the worker sends with them.

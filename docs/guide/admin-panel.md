@@ -7,8 +7,7 @@ description: "How a Nest application's admin panel is made from its modules: set
 
 Every Nest application has one admin panel, and nobody writes it. The `admin` module
 is a shell; each module the application includes adds its own pages to it. Two sites
-made of the same modules have the same panel. A game made
-with the Saga engine has the engine's panel.
+made of the same modules have the same panel.
 
 ## Adding it
 
@@ -42,8 +41,7 @@ may open, with a one-line description.
 ### The waiting badges
 
 Some tiles carry a number: how many things wait for someone. The comments module
-counts comments waiting for a moderator; the glossary counts visitors' proposals
-waiting for an editor. Any module can add one by answering the `admin.waiting`
+counts comments waiting for a moderator. Any module can add one by answering the `admin.waiting`
 lookup with a count; the home page gathers them. A badge is shown only when the
 count is not zero.
 
@@ -54,9 +52,8 @@ The panel shows each person only what their roles open.
 | Role | What it opens |
 |---|---|
 | `admin` | Everything, including Settings, Themes, Modules, Languages and Accounts. `admin` has every other role. |
-| `editor` | Content, galleries, maps, dictionaries, SEO, redirects, translations, the timetable |
+| `editor` | Content, galleries, maps, SEO, redirects, translations |
 | `moderator` | Comments and the forum |
-| `gamemaster` | The Saga engine's pages (servers, the land, tools), in a game |
 
 Roles are given in **Accounts**, or when an account is created:
 
@@ -85,10 +82,9 @@ the manifest says `editable: false`). A number may have bounds (`min`, `max`); a
 outside them is refused.
 
 Administrators see every tab. A module may let another role change its own settings
-(`admin: settings_role: gamemaster`): such a user sees **Settings** in the menu with only
-those modules' tabs, and a **Settings** tab beside the module's own pages. A game's
-subsystems do this for their rules, so game masters tune the game without the rest of
-the site's settings.
+(`admin: settings_role: editor`): such a user sees **Settings** in the menu with only
+those modules' tabs, and a **Settings** tab beside the module's own pages, without the
+rest of the site's settings.
 
 ### The Themes tab
 
@@ -137,7 +133,7 @@ here** / **Down to here** on any (or down to nothing, its tables removed).
 
 The Registry tab shows only what fits the site: packages made for its type
 (`application.type`: site, game, registry, keeper; each package's `fits`), not the parts
-an engine brings with it (a game's subsystems), nor interfaces and providers (the server's
+a module brings with it, nor interfaces and providers (the server's
 administrator sets those up). **Show everything** lists the others, without Add. A
 category filter narrows it (content, community, media, maps…).
 
@@ -176,7 +172,6 @@ Each module with admin pages is mounted at `<admin route>/<module>`:
 | Page | Module | Role | What it is for |
 |---|---|---|---|
 | Content | `content` | editor | Pages, articles, categories, the trash, revisions |
-| Dictionaries | `glossary` | editor | Dictionaries, terms, visitors' proposals |
 | Galleries | `gallery` | editor | Albums and galleries, uploads, the photos' order |
 | Maps | `maps` | editor | Maps and their markers |
 | Comments | `comments` | moderator | Comments waiting, approved, and marked spam |
@@ -204,8 +199,7 @@ and gives its pages with `host.admin(router)` in its setup.
 ### The menu's groups
 
 The menu clusters the pages: each module's `admin: group:` names its group by an
-identifier (Nest's own: `content`, `community`, `site`; the Saga engine's `world`,
-`people`, `economy`, `power`, `faith`), and a group opens to its pages; the one holding
+identifier (Nest's own: `content`, `community`, `site`), and a group opens to its pages; the one holding
 the page shown is open. A page without a group is a link of its own. The panel's own
 pages (Settings, Modules, Languages, Themes) are in `site`, at the end. An application
 may regroup and order them:
@@ -213,12 +207,12 @@ may regroup and order them:
 ```yaml
 application:
   admin_menu:
-    - {group: economy, modules: [farm, guild, property]}
-    - {group: power, modules: [law, polity, justice]}
+    - {group: community, modules: [forum, comments, messages]}
+    - {group: content, modules: [content, gallery, maps]}
 ```
 
 Nothing is found by its words: a group's label is `group@<id>` in a catalog
-(`"group@economy": "Economia"`), a page's title is its module's `@admin.title` (see
+(`"group@community": "Comunitate"`), a page's title is its module's `@admin.title` (see
 [catalogs](../develop/templates-and-assets.md)), and the manifest's English is what
 shows when no catalog says otherwise. See [A module](../develop/a-module.md).
 

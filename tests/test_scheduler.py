@@ -255,4 +255,4 @@ def test_the_packages_jobs_are_declared_well():
     ]
     found, problems = specs.collect(sections, "none")
     assert problems == []
-    assert {"trains.sync", "keeper.watch", "keeper.prune"} <= set(found)
+    assert {"push.send", "keeper.watch", "keeper.prune"} <= set(found)

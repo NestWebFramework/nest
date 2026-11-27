@@ -67,8 +67,8 @@ runs in its thread pool, or the work goes through `run_in_threadpool`.
 
 ## Models: one base per module
 
-`model_base("glossary")` gives a declarative base whose tables must be named
-`glossary_<name>`: two modules' tables can never collide in one database. Its metadata
+`model_base("content")` gives a declarative base whose tables must be named
+`content_<name>`: two modules' tables can never collide in one database. Its metadata
 names constraints by a fixed convention, so a migration written on SQLite drops the same
 constraint on PostgreSQL.
 
@@ -77,16 +77,22 @@ from nest_db import model_base
 from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-Base = model_base("glossary")
+Base = model_base("content")
 
 
-class Dictionary(Base):
-    __tablename__ = "glossary_dictionary"
+class Term(Base):
+    """A category, a tag, or a term of any declared taxonomy."""
+
+    __tablename__ = "content_term"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    slug: Mapped[str] = mapped_column(String(120), unique=True)
-    title: Mapped[str] = mapped_column(String(200))
+    taxonomy: Mapped[str] = mapped_column(String(40), index=True)
+    slug: Mapped[str] = mapped_column(String(200))
+    name: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("content_term.id", ondelete="SET NULL"), nullable=True
+    )
 ```
 
 A class whose `__tablename__` lacks the prefix raises `TypeError` when it is defined.
@@ -127,11 +133,11 @@ A module that owns tables says where its migrations are:
 ```yaml
 db:
   migrations: migrations                    # a folder with versions/ inside
-  metadata: "nest_glossary.models:Base"     # for --autogenerate
+  metadata: "nest_content.models:Base"      # for --autogenerate
 ```
 
 Each module migrates on its own, with its own version table
-(`glossary_alembic_version`), in the order the plan starts modules, so a module's
+(`content_alembic_version`), in the order the plan starts modules, so a module's
 migrations can rely on its dependencies' tables. Alembic sees only the module's own
 tables (those with its prefix), and on SQLite alters tables in batch mode. Nest supplies
 what Alembic's `env.py` would: a module has only its revision files.
@@ -140,7 +146,7 @@ what Alembic's `env.py` would: a module has only its revision files.
 uv run nest db status APP                       # each module: up to date or pending
 uv run nest db upgrade APP [MODULE]             # apply what is pending
 uv run nest db downgrade APP MODULE TARGET      # step a module back (a revision, or -1)
-uv run nest db revision APP MODULE -m "who proposed a term" --autogenerate
+uv run nest db revision APP MODULE -m "who uploaded it" --autogenerate
 ```
 
 `revision` creates the module's `migrations/versions/` and its `script.py.mako` the
@@ -163,19 +169,19 @@ migrations to nothing and drops its version table.
 ### A new NOT NULL column
 
 Rows already in the table need a value for a new column that cannot be NULL. Give it a
-`server_default` in the migration, as the glossary's second revision does:
+`server_default` in the migration. For a module `example` whose items gain a status:
 
 ```python
 def upgrade() -> None:
-    # existing terms are published; no proposer
-    with op.batch_alter_table("glossary_term", schema=None) as batch_op:
+    # existing items are published; no proposer
+    with op.batch_alter_table("example_item", schema=None) as batch_op:
         batch_op.add_column(
             sa.Column("status", sa.String(length=16), nullable=False, server_default="published")
         )
         batch_op.add_column(
             sa.Column("submitter_name", sa.String(length=200), nullable=False, server_default="")
         )
-        batch_op.create_index(batch_op.f("ix_glossary_term_status"), ["status"], unique=False)
+        batch_op.create_index(batch_op.f("ix_example_item_status"), ["status"], unique=False)
 ```
 
 The model keeps its Python-side `default=`; the `server_default` fills the rows that were
@@ -190,13 +196,21 @@ the record's own table.
 ```python
 from nest_db import model_base, text_table
 from sqlalchemy import String, Text
+from sqlalchemy.orm import mapped_column
 
-Base = model_base("glossary")
+Base = model_base("content")
 
-# ... Dictionary and Sense as above ...
+# ... Entry and Term as above ...
 
-SenseText = text_table(Base, Sense, definition=Text, usage=Text)
-DictionaryText = text_table(Base, Dictionary, title=String(255), description=Text)
+TermText = text_table(
+    Base,
+    Term,
+    name=String(200),
+    slug=String(200),
+    path=mapped_column(String(500), nullable=True),
+    description=Text,
+    index=("path",),
+)
 ```
 
 `text_table(base, owner, *, unique=(), index=(), **fields)` makes `<owner table>_text`
@@ -215,17 +229,17 @@ never columns.
 | `delete_text(session, model, owner_id, locale)` | forgets one language's text |
 | `text_state(row, source)` | `missing`, `draft`, `outdated` or `published` |
 
-The glossary saves a dictionary's title in another language:
+Saving a category's name in another language:
 
 ```python
-def save_dictionary_text(db, dictionary_id: int, locale: str, title: str, description: str = ""):
+def save_term_text(db, term_id: int, locale: str, name: str, description: str = ""):
     with db.session() as s, s.begin():
         save_text(
             s,
-            DictionaryText,
-            dictionary_id,
+            TermText,
+            term_id,
             locale,
-            {"title": title.strip()[:255], "description": description.strip()},
+            {"name": name.strip()[:200], "description": description.strip()},
         )
 ```
 
@@ -243,10 +257,10 @@ it:
 from nest_search import Document
 
 search.index([
-    Document(kind="glossary.term", id=str(t.id), title=t.word, body=body, url=url, scope=d.slug)
+    Document(kind="content.entry", id=str(e.id), title=e.title, body=body, url=e.path, scope=e.type)
 ])
-search.remove("glossary.term", [str(t.id)])
-hits = search.query(q, kind="glossary.term", scope=d or None, limit=20, offset=0)
+search.remove("content.entry", [str(e.id)])
+hits = search.query(q, kind="content.entry", scope=entry_type or None, limit=20, offset=0)
 ```
 
 | Method | Does |
@@ -258,10 +272,10 @@ hits = search.query(q, kind="glossary.term", scope=d or None, limit=20, offset=0
 | `count(text, *, kind, scope)` | how many match |
 | `suggest(prefix, *, kind, scope, limit)` | titles starting with what was typed so far |
 
-`scope` narrows a search (a dictionary, a category) and is matched exactly. A `Hit` has
+`scope` narrows a search (an entry type, a category) and is matched exactly. A `Hit` has
 `title`, `url`, `snippet` and `snippet_html()`: the snippet escaped, its matches in
 `<mark>`. `fold(text)` lowers case and drops diacritics ("Știință" → "stiinta"). Search
 calls block, like database calls: search from a plain `def` handler.
 
 Index on every save, and give the module a command to rebuild its part of the index
-(the glossary's `nest glossary reindex APP` clears its kind and indexes every term).
+(the content module's `nest content reindex APP` clears its kind and indexes every entry).

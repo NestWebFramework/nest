@@ -182,29 +182,38 @@ def fetch_archive(url: str, dest: str, sha256: str, say_line) -> bool:  # noqa: 
     digest, got = hashlib.sha256(), 0
     opener = urllib.request.build_opener(_NoRedirect)
     request = urllib.request.Request(url, headers={"User-Agent": "nest-host"})
+    def drop() -> None:
+        with contextlib.suppress(OSError):
+            os.unlink(partial)
+
     try:
         with opener.open(request, timeout=120) as r, open(partial, "wb") as out:  # noqa: S310
             if r.status != 200:
                 say_line(f"nest-host: the keeper answered {r.status}")
+                drop()
                 return False
             for chunk in iter(lambda: r.read(1 << 20), b""):
                 digest.update(chunk)
                 out.write(chunk)
                 got += len(chunk)
-    except (OSError, ValueError) as e:
+    except Exception as e:  # noqa: BLE001 - cut off mid-way (IncompleteRead), refused, unreachable
         say_line(f"nest-host: cannot download it from the keeper: {getattr(e, 'reason', e)}")
-        if os.path.exists(partial):
-            os.unlink(partial)
+        drop()
         return False
     if digest.hexdigest() != sha256:
-        os.unlink(partial)
+        drop()
         say_line("nest-host: its SHA-256 is not the keeper's; nothing replaced")
         return False
-    folder = os.stat(os.path.dirname(dest))
-    with contextlib.suppress(OSError):  # not root (a test): it stays the helper's
-        os.chown(partial, folder.st_uid, folder.st_gid)
-    os.chmod(partial, 0o640)
-    os.replace(partial, dest)
+    try:
+        folder = os.stat(os.path.dirname(dest))
+        with contextlib.suppress(OSError):  # not root (a test): it stays the helper's
+            os.chown(partial, folder.st_uid, folder.st_gid)
+        os.chmod(partial, 0o640)
+        os.replace(partial, dest)
+    except OSError as e:  # the disk full, say: nothing replaced
+        say_line(f"nest-host: cannot keep the download: {e}")
+        drop()
+        return False
     say_line(
         f"· downloaded from the keeper: {os.path.basename(dest)}, {got} bytes, SHA-256 checked"
     )
@@ -265,9 +274,14 @@ class Jobs:
         )
         if restore is not None:
             command.append(restore["path"])
-            if restore.get("url") and not fetch_archive(
-                restore["url"], restore["path"], restore["sha256"], lambda t: self._line(job, t)
-            ):
+            try:
+                fetched = not restore.get("url") or fetch_archive(
+                    restore["url"], restore["path"], restore["sha256"], lambda t: self._line(job, t)
+                )
+            except Exception as e:  # noqa: BLE001 - whatever happens, the site is not left locked
+                self._line(job, f"nest-host: the download failed: {e}")
+                fetched = False
+            if not fetched:
                 self._done(job, 1)
                 return
         try:

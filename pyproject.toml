@@ -10,10 +10,6 @@ dependencies = [
     "nest-theme-base",
     "nest-theme-paper",
     "nest-theme-slate",
-    "nest-theme-morlaca-valley",
-    "nest-theme-morlaca-heritage",
-    "nest-theme-morlaca-chronicle",
-    "nest-theme-rail-signage",
     "nest-cache",
     "nest-cache-memory",
     "nest-pubsub",
@@ -26,7 +22,6 @@ dependencies = [
     "nest-forms",
     "nest-search",
     "nest-search-sqlite",
-    "nest-glossary",
     "nest-storage",
     "nest-storage-local",
     "nest-storage-s3",
@@ -39,69 +34,20 @@ dependencies = [
     "nest-translations",
     "nest-comments",
     "nest-redirects",
-    "nest-hangman",
-    "nest-feed",
     "nest-geo",
     "nest-docs",
     "nest-admin",
     "nest-agent",
     "nest-scheduler",
     "nest-keeper",
-    "nest-localities",
-    "nest-regions",
     "nest-registry",
     "nest-forum",
     "nest-messages",
-    "nest-trains",
-    "nest-transit",
-    "nest-coaches",
-    "nest-flights",
-    "nest-planner",
     "nest-consent",
     "nest-pwa",
-    "nest-hub",
     "nest-push",
     "nest-rating",
     "nest-keys",
-    "nest-almanac",
-    "nest-theme-clujul-gazeta",
-    "nest-nearby",
-    "nest-headlines",
-    "nest-theme-transit-lines",
-    "nest-saga",
-    "nest-saga-world",
-    "nest-saga-item",
-    "nest-saga-inventory",
-    "nest-saga-character",
-    "nest-saga-settlement",
-    "nest-saga-building",
-    "nest-saga-npc",
-    "nest-saga-production",
-    "nest-saga-economy",
-    "nest-saga-map",
-    "nest-saga-household",
-    "nest-saga-law",
-    "nest-saga-religion",
-    "nest-saga-relationship",
-    "nest-saga-dialogue",
-    "nest-saga-guild",
-    "nest-saga-quest",
-    "nest-saga-chronicle",
-    "nest-saga-player",
-    "nest-saga-travel",
-    "nest-saga-society",
-    "nest-saga-farm",
-    "nest-saga-equipment",
-    "nest-saga-polity",
-    "nest-saga-justice",
-    "nest-saga-war",
-    "nest-saga-work",
-    "nest-saga-overlord",
-    "nest-saga-culture",
-    "nest-saga-property",
-    "nest-saga-monastery",
-    "nest-saga-survival",
-    "nest-saga-history",
 ]
 
 [tool.uv]
@@ -114,8 +60,6 @@ members = [
     "interfaces/*",
     "providers/*",
     "themes/*",
-    "engines/saga",
-    "engines/saga/subsystems/*",
 ]
 
 [tool.uv.sources]
@@ -124,10 +68,6 @@ nest-htmx = { workspace = true }
 nest-theme-base = { workspace = true }
 nest-theme-paper = { workspace = true }
 nest-theme-slate = { workspace = true }
-nest-theme-morlaca-valley = { workspace = true }
-nest-theme-morlaca-heritage = { workspace = true }
-nest-theme-morlaca-chronicle = { workspace = true }
-nest-theme-rail-signage = { workspace = true }
 nest-cache = { workspace = true }
 nest-cache-memory = { workspace = true }
 nest-redis = { workspace = true }
@@ -140,7 +80,6 @@ nest-auth = { workspace = true }
 nest-forms = { workspace = true }
 nest-search = { workspace = true }
 nest-search-sqlite = { workspace = true }
-nest-glossary = { workspace = true }
 nest-storage = { workspace = true }
 nest-storage-local = { workspace = true }
 nest-storage-s3 = { workspace = true }
@@ -153,69 +92,20 @@ nest-seo = { workspace = true }
 nest-translations = { workspace = true }
 nest-comments = { workspace = true }
 nest-redirects = { workspace = true }
-nest-hangman = { workspace = true }
-nest-feed = { workspace = true }
 nest-geo = { workspace = true }
 nest-docs = { workspace = true }
 nest-admin = { workspace = true }
 nest-agent = { workspace = true }
 nest-scheduler = { workspace = true }
 nest-keeper = { workspace = true }
-nest-localities = { workspace = true }
-nest-regions = { workspace = true }
 nest-registry = { workspace = true }
 nest-forum = { workspace = true }
 nest-messages = { workspace = true }
-nest-trains = { workspace = true }
-nest-transit = { workspace = true }
-nest-coaches = { workspace = true }
-nest-flights = { workspace = true }
-nest-planner = { workspace = true }
 nest-consent = { workspace = true }
 nest-pwa = { workspace = true }
-nest-hub = { workspace = true }
 nest-push = { workspace = true }
 nest-rating = { workspace = true }
 nest-keys = { workspace = true }
-nest-almanac = { workspace = true }
-nest-theme-clujul-gazeta = { workspace = true }
-nest-nearby = { workspace = true }
-nest-headlines = { workspace = true }
-nest-theme-transit-lines = { workspace = true }
-nest-saga = { workspace = true }
-nest-saga-world = { workspace = true }
-nest-saga-item = { workspace = true }
-nest-saga-inventory = { workspace = true }
-nest-saga-character = { workspace = true }
-nest-saga-settlement = { workspace = true }
-nest-saga-building = { workspace = true }
-nest-saga-npc = { workspace = true }
-nest-saga-production = { workspace = true }
-nest-saga-economy = { workspace = true }
-nest-saga-map = { workspace = true }
-nest-saga-household = { workspace = true }
-nest-saga-law = { workspace = true }
-nest-saga-religion = { workspace = true }
-nest-saga-relationship = { workspace = true }
-nest-saga-dialogue = { workspace = true }
-nest-saga-guild = { workspace = true }
-nest-saga-quest = { workspace = true }
-nest-saga-chronicle = { workspace = true }
-nest-saga-player = { workspace = true }
-nest-saga-travel = { workspace = true }
-nest-saga-society = { workspace = true }
-nest-saga-farm = { workspace = true }
-nest-saga-equipment = { workspace = true }
-nest-saga-polity = { workspace = true }
-nest-saga-justice = { workspace = true }
-nest-saga-war = { workspace = true }
-nest-saga-work = { workspace = true }
-nest-saga-overlord = { workspace = true }
-nest-saga-culture = { workspace = true }
-nest-saga-property = { workspace = true }
-nest-saga-monastery = { workspace = true }
-nest-saga-survival = { workspace = true }
-nest-saga-history = { workspace = true }
 
 [dependency-groups]
 dev = [

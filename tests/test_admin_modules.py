@@ -7,11 +7,23 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 from test_auth import PASSWORD, client_for, post
-from test_composition import APP
 
 from nest import create_app
 from nest.host import Reloadable
 from nest.modules import history
+
+APP = """
+module: {name: site, id: test.app.site, type: application, version: 0.1.0}
+application: {title: Site, port: 8000, theme: base}
+modules:
+  - {name: auth, route: /cont, core: true}
+  - {name: admin, route: /admin, core: true}
+  - {name: comments, route: /comentarii}
+  - {name: forum, route: /forum}
+  - {name: redirects, enabled: false}
+bind:
+  nest.db: {providers: [db-sqlite]}
+"""
 
 
 @pytest.fixture

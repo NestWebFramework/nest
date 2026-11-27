@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from test_admin_modules import admin_client, register  # noqa: F401
 from test_auth import post
-from test_composition import APP
+from test_admin_modules import APP
 
 from nest import create_app
 from nest.catalog import Catalog, Entry

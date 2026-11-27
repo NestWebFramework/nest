@@ -17,58 +17,57 @@ are such sections).
 
 ## A module's manifest
 
-The glossary's, shortened:
+The comments module's, shortened:
 
 ```yaml
 module:
-  name: glossary
-  id: nest.module.glossary
+  name: comments
+  id: nest.module.comments
   type: module
-  title: Glossary
-  category: content
-  version: 0.1.0
-  description: Dictionaries of terms with senses.
+  title: Comments
+  category: community
+  version: 0.1.3
+  description: Threaded comments on any module's records, with moderation and spam defences.
   license: MIT
   created: "2026-11-13"
 
 nest: ">=0.2,<1"
 
-main: nest_glossary
-styles: [glossary.css]
+main: nest_comments
+styles: [comments.css]
 
 provides:
-  import: nest_glossary
-  exports: [KIND, SenseData, Urls]
+  import: nest_comments
+  exports: [Node, thread, thread_html]
 
 requires:
-  interfaces: [nest.db, nest.search]
+  interfaces: [nest.db]
 
 deps:
   db: ">=0.2,<1"
-  search: ">=0.1,<1"
   auth: ">=0.2,<1"
 
 db:
   migrations: migrations
-  metadata: "nest_glossary.models:Base"
+  metadata: "nest_comments.models:Base"
 
 settings:
-  per_page:
+  per_hour:
     type: int
-    default: 100
-    description: Terms per page in a letter's list.
+    default: 10
+    description: Comments a guest may send per address per hour.
 
 locales:
   - {locale: ro, file: locales/ro.json}
   - {locale: en, file: locales/en.json}
 
 admin:
-  title: Dictionaries
-  order: 12
-  role: editor
+  title: Comments
+  order: 20
+  role: moderator
 
 docs:
-  title: Glossary
+  title: Comments
   section: modules
 ```
 
@@ -76,7 +75,7 @@ docs:
 
 | Key | Required | Meaning |
 |---|---|---|
-| `id` | yes | the identity: lower-case and dotted (`nest.module.glossary`) |
+| `id` | yes | the identity: lower-case and dotted (`nest.module.comments`) |
 | `name` | yes | how applications and other manifests refer to it: lower-case letters, digits, `-`, `_` |
 | `type` | yes | `module`, `theme`, `provider`, `interface`, `application`, or a type an ecosystem's contract adds |
 | `version` | yes | a PEP 440 version (`0.1.0`) |
@@ -109,8 +108,8 @@ dependency belongs to the ecosystem it is listed under:
 ```yaml
 deps:
   nest:
-    trains: ">=0.1,<1"
     auth: ">=0.3,<1"
+    comments: ">=0.1,<1"
 ```
 
 ## settings
@@ -132,8 +131,8 @@ failing later.
 | `min`, `max` | none | the least and the most an `int` or `float` may be; the admin panel refuses a value outside them |
 
 Setting names are snake_case. The environment variable for a setting is
-`NEST_<APP>__<OWNER>__<KEY>`, upper-case, other characters as `_`: the trains module's
-secret `legacy_key` in the application `mysite` is `NEST_MYSITE__TRAINS__LEGACY_KEY`; the
+`NEST_<APP>__<OWNER>__<KEY>`, upper-case, other characters as `_`: the comments
+module's `per_hour` in the application `mysite` is `NEST_MYSITE__COMMENTS__PER_HOUR`; the
 PostgreSQL provider's password is `NEST_MYSITE__DB_POSTGRES__PASSWORD`.
 
 ## Files: templates, static, styles, locales
@@ -156,7 +155,7 @@ These are not typed by the core model; the package that reads them gives them me
 | Section | Read by | Keys |
 |---|---|---|
 | `db` | the `nest.db` interface | `migrations` (the folder with `versions/`), `metadata` (`package.module:Base`, for `--autogenerate`). See [database](database.md) |
-| `admin` | `host.admin()` | `title`, `order` (default 50), `role` (who sees it, default `admin`), `description`, `group` (its group in the panel's menu), `settings_role` (who besides administrators may change the module's settings, e.g. `gamemaster`) |
+| `admin` | `host.admin()` | `title`, `order` (default 50), `role` (who sees it, default `admin`), `description`, `group` (its group in the panel's menu), `settings_role` (who besides administrators may change the module's settings, e.g. `editor`) |
 | `csp` | the host | sources the page policy takes for `img-src`, `frame-src`, `media-src`, `connect-src` (https only). See [security](security.md) |
 | `pages` | the plan | `pages: false`: a module with no page of its own, included without a route (seo, notifications) |
 | `translatable` | the translations module | records whose text is kept per language: `model`, `label`, `fields`, `title`, `edit` |
@@ -172,9 +171,9 @@ A module included without a route is a plan error unless it has an `admin:` sect
 |---|---|
 | `startup` | `package.module:function`, called as `fn(nest)` once bindings exist and before any module is set up (the db interface migrates there) |
 | `forget` | `package.module:function`, called as `fn(nest, entry)` for every package uninstalled from the application (the db interface drops its tables) |
-| `one_process` | its state lives in its process (a game engine's worlds): the application runs as one process while it has it |
+| `one_process` | its state lives in its process (kept in memory, not in a shared store): the application runs as one process while it has it |
 | `process_local` | a provider whose values live in each process (cache-memory): `host.bound_if(..., shared=True)` skips it |
-| `subsystems` | a module that hosts parts: `types` (default `[subsystem]`), `bundled` (part names) |
+| `subsystems` | a module that hosts parts, each a package of its own: `types` (what its parts are), `bundled` (part names) |
 | `part_of` | a part names the module it belongs to (and depends on it) |
 | `system_deps` | system packages it needs, kept as written |
 
@@ -203,15 +202,15 @@ site's code (the admin panel's module page, **Place it on the site**):
 ```yaml
 offers:
   menu: {title: Forum, path: /}            # a link a menu may hold, under its address
-  shortcodes:
-    - {code: '[feed name="settlement"]', description: "A feed's readings, as a table."}
   blocks:                                   # for a theme's regions (the home page among them)
     - {name: latest, title: Latest forum topics, template: forum/block_latest.html,
        description: "The topics with the newest replies.", settings: {count: "How many"}}
 ```
 
 A block's template is rendered with the page's context and `block`, its settings (a dict
-of strings). Its words in other languages are in the module's catalog by identifier:
+of strings). Shortcodes are listed the same way, as the gallery does:
+`shortcodes: [{code: '[album slug="…"]', description: "An album's photos, in a page."}]`.
+Its words in other languages are in the module's catalog by identifier:
 `@block.latest`, `@block.latest.description`, `@block.latest.count`, `@shortcode.1`.
 
 ## Applications
@@ -256,11 +255,11 @@ bind:
 | `admin_languages` | the site's | the languages its admin panel can be read in |
 | `browser_language` | `true` | speak the browser's language before a visitor chooses |
 | `language_urls` | `cookie` | `cookie` (one address) or `prefix` (`/en/...` per language) |
-| `theme_settings` | `{}` | settings by theme: `{rail-signage: {tagline: "..."}}` |
+| `theme_settings` | `{}` | settings by theme: `{<theme>: {<setting>: <value>}}` |
 | `max_body_mb` | `32` | the largest request body, in MB (`NEST_MAX_BODY_MB` wins) |
 | `type` | `site` | what it is: `site`, `game`, `registry` or `keeper`; the packages offered to it are those whose `fits` names it |
 | `admin_frame` | `standalone` | the admin panel as a page of its own, or `site` (in the site's theme) |
-| `admin_menu` | `[]` | the panel menu's groups in order, `[{group: economy, modules: [farm, guild]}]` (identifiers; labels are `group@<id>` in a catalog); it overrides the modules' own `group` |
+| `admin_menu` | `[]` | the panel menu's groups in order, `[{group: community, modules: [forum, comments]}]` (identifiers; labels are `group@<id>` in a catalog); it overrides the modules' own `group` |
 
 | Key of a `modules:` entry | Meaning |
 |---|---|

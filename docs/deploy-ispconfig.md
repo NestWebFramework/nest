@@ -216,7 +216,7 @@ it is the keeper.
 
 ## Later: a database and file server
 
-When a site outgrows SQLite (many writers at once: a game, not a dictionary), its `.env`
+When a site outgrows SQLite (many writers at once: a game, not a blog), its `.env`
 binds PostgreSQL and S3/MinIO instead (the lines are in each `.env` example); move its data
 with `nest backup` and the database's own import. The images, the services and this
 procedure stay the same.

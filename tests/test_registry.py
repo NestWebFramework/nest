@@ -455,7 +455,7 @@ def test_publish_all_publishes_what_the_registry_lacks(registry, tmp_path, monke
     monkeypatch.setenv("NEST_REGISTRY_TOKEN", tokens["admin"])
     sent = []
     monkeypatch.setattr(remote, "publish", lambda project, url, **kw: sent.append(project.name))
-    roots = [REPO / "modules" / "forum", REPO / "modules" / "glossary"]
+    roots = [REPO / "modules" / "forum", REPO / "modules" / "rating"]
     up(
         c,
         tokens["admin"],
@@ -467,7 +467,7 @@ def test_publish_all_publishes_what_the_registry_lacks(registry, tmp_path, monke
         ),
     )
     done, there, refused = remote.publish_all(roots, "https://registry.example.org")
-    assert there == [f"nest-forum {forum_version()}"] and sent == ["glossary"] and not refused
+    assert there == [f"nest-forum {forum_version()}"] and sent == ["rating"] and not refused
 
 
 def test_the_keeper_and_the_admin_panel_search_the_registry(registry, tmp_path, monkeypatch):

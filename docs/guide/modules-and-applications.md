@@ -21,14 +21,11 @@ dependencies by itself, but listing a module lets you give it a route and settin
 | Pages, articles, categories, menus | `content` (at `/`) | `media`, `nest.db`, `nest.search`, `nest.storage` |
 | Photo galleries and albums | `gallery` | `media`, `nest.db`, `nest.storage` |
 | Maps with markers | `maps` | `nest.db` |
-| A "near me" page | `geo` | modules that answer `geo.near` (maps, trains) |
+| A "near me" page | `geo` | modules that answer `geo.near` (maps) |
 | Comments on anything | `comments` | `nest.db` |
 | A forum, private messages | `forum`, `messages` | `auth`, `nest.db` |
-| Dictionaries | `glossary` | `nest.db`, `nest.search` |
-| A word game | `hangman` | a module that answers `words.random` (glossary) |
 | Search titles, sitemap, robots.txt | `seo` | `nest.db` |
 | Old addresses kept working | `redirects` | `nest.db` |
-| Readings from RoboHub feeds, with their widget | `feed` | `nest.db`; feeds and their tokens in Admin → Feeds |
 | Text in several languages | `translations` | modules with translatable records |
 | "Saved." messages after actions | `notifications` | nothing |
 
@@ -53,7 +50,7 @@ modules:
 | Key | Meaning |
 |---|---|
 | `name` | The package's name, as `nest catalog` lists it |
-| `route` | Where its pages are served. Choose any path; old sites often keep their old ones (a timetable can stay at `/cfr`). |
+| `route` | Where its pages are served. Choose any path; old sites often keep their old ones (a blog can stay at `/blog`). |
 | `config` | Values for the module's settings, for this application |
 | `core: true` | It can never be disabled or uninstalled; nor can what it depends on |
 | `enabled: false` | Listed, but off until an administrator turns it on |
@@ -137,25 +134,24 @@ of its own, beside the Nest checkout:
 ### deps, by ecosystem
 
 Such an application lists what it needs in `deps`, grouped by the ecosystem each
-package belongs to, with a version range. From a timetable site's `module.yml`, shortened:
+package belongs to, with a version range. From a magazine site's `module.yml`, shortened:
 
 ```yaml
 deps:
   nest:
-    trains: ">=0.1,<1"
     content: ">=0.1,<1"
+    gallery: ">=0.1,<1"
     admin: ">=0.1,<1"
     auth: ">=0.3,<1"
     base: ">=0.2,<1"
-    rail-signage: ">=0.1,<1"
+    paper: ">=0.1,<1"
     db: ">=0.2,<1"
     db-sqlite: ">=0.1,<1"
 ```
 
 Once an application declares `deps`, the plan holds it to them. Every package it
 uses (modules, theme, interfaces and providers) must be listed, under the right
-ecosystem, at a version that is installed. Its own local modules need not be. A
-game on the Saga engine lists the engine and its subsystems under `saga:`.
+ecosystem, at a version that is installed. Its own local modules need not be.
 
 ### pyproject.toml asks for the same
 
@@ -168,8 +164,8 @@ name = "mysite"
 requires-python = ">=3.12"
 dependencies = [
     "nest-core>=0.2,<1",
-    "nest-trains>=0.1,<1",
     "nest-content>=0.1,<1",
+    "nest-gallery>=0.1,<1",
     # ...
 ]
 
@@ -178,7 +174,7 @@ package = false  # an application folder, which Nest runs
 
 [tool.uv.sources]
 nest-core = { path = "../nest/packages/nest-core", editable = true }
-nest-trains = { path = "../nest/modules/trains", editable = true }
+nest-content = { path = "../nest/modules/content", editable = true }
 ```
 
 Then, from the site's folder:

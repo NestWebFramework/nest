@@ -1,6 +1,6 @@
 # Modules: core, optional, plug and play
 
-An application is made of packages: modules, an engine's subsystems, providers, a theme.
+An application is made of packages: modules, providers, a theme.
 Its `module.yml` says which, and how they start by default; its administrator then
 chooses, while it runs, which of the optional ones it uses.
 
@@ -56,8 +56,8 @@ A change is never patched into the running application. It is:
    (seo its pages' descriptions, comments the threads on its records, through the
    `module.removed` lookup), the db interface drops its tables (its migrations down to
    nothing, through its `forget:` hook), its settings go;
-5. **reloaded**: under `nest serve`, its workers are made again one by one (and the
-   engine process with them), so no request is lost; under `nest run`, a change made in
+5. **reloaded**: under `nest serve`, its workers are made again one by one, so no
+   request is lost; under `nest run`, a change made in
    the panel makes the application again in place. A change made with the command line
    reloads `nest serve`; `nest run` is then restarted by hand.
 
@@ -139,38 +139,13 @@ the manifest) reload the application when changed.
 `nest validate --strict` checks the first three in the code, and Nest's tests run it over
 every package: a package that reaches into another fails the build.
 
-## A game's subsystems
-
-Saga's subsystems are managed the same way: the game marks its core (voievodate: world,
-map, item, inventory, character, settlement, building, npc, player and its content), the
-others are turned off and on in the panel, and the engine process is restarted with the
-site (its worlds written first). Each subsystem's manifest says what it relies on:
-
-- `deps:` what it cannot run without: it reads that one's state (`world.state["character"]`,
-  `world.of("character")`);
-- `uses:` what it works with when the game runs it: guarded reads
-  (`world.state.get("farm")`, `"farm" in world.state`), lookups another answers
-  (`host.lookup("saga.recipes")`), the names in its `tick.after`;
-- `facts:` the facts it gives conditions (`dialogue.facts`): without it, content asking
-  them (a dialogue line, a quest stage) is false. The game master is told how many, by
-  subsystem, when the world opens.
-
-`nest validate --strict` checks the first two in the code (Saga adds its own check
-through the `nest.checks` entry point), and the game's tests run the world without each
-subsystem that is not core.
-
-A subsystem turned back on in a world that ran without it is told how long it was away
-(`Subsystem.resume(world, away)`; `away` is None when it never ran there), from the game
-time each one last ran to, kept at every checkpoint. What it kept may be stale (people
-died, houses changed hands): that is where it sets it right.
-
 ## Installing packages
 
 An application's admin panel enables what is installed; it never installs. Installing is
 the server administrator's, from the **registry**: the packages this server trusts.
 
 - Nest's own: every package in the Nest checkout it runs from (`$NEST_HOME`, else found
-  from nest-core): its modules, engines and subsystems, providers, interfaces, themes.
+  from nest-core): its modules, providers, interfaces, themes.
 - Others, in a registry file (`$NEST_REGISTRY`, else `~/.config/nest/registry.yml`), each
   pinned so what was vetted is what comes: a git source at a commit (40 hex digits, never
   a branch), or a package index at an exact version, over https.

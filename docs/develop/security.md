@@ -45,7 +45,7 @@ Otherwise it is refused with 403. In a template, a form carries the field:
 ```jinja
 <form method="post" action="{{ action }}/new">
   {{ csrf_field }}
-  <button type="submit">{{ _("New word") }}</button>
+  <button type="submit">{{ _("New topic") }}</button>
 </form>
 ```
 
@@ -108,7 +108,7 @@ open.
 
 | Name | Effect |
 |---|---|
-| `"embed"` | other sites may show the page in a frame: no `X-Frame-Options`, `frame-ancestors *` (a widget, a station board) |
+| `"embed"` | other sites may show the page in a frame: no `X-Frame-Options`, `frame-ancestors *` (a widget, a map) |
 | `"geolocation"` | the page may ask the browser where the reader is: `geolocation=(self)` |
 
 The geo module's near-me page is the only page of a site that may ask for the location:
@@ -134,18 +134,18 @@ a backslash, a control character or another host falls back.
 `host.sign(value)` returns the value with an HMAC-SHA256 signature; `host.unsign(token)`
 returns the value, or `None` when it was changed. The key is derived from the
 application's secret and the module's name, so what one module signs another cannot pass
-off as its own. Hangman keeps a whole game in a signed cookie (no table, nothing to clean
-up), set HttpOnly, SameSite=Lax and Secure over https:
+off as its own. The admin panel keeps a theme preview in a signed cookie (no table,
+nothing to clean up), set HttpOnly, SameSite=Lax and Secure in production:
 
 ```python
 response.set_cookie(
     COOKIE,
-    game.dump(state["sign"]),
-    max_age=60 * 60 * 24 * 365,
+    sign(f"{name}|{int(time.time()) + PREVIEW_SECONDS}"),
+    max_age=PREVIEW_SECONDS,
     httponly=True,
     samesite="lax",
-    secure=request.url.scheme == "https",
-    path=state["url"] or "/",
+    secure=nest.production,
+    path="/",
 )
 ```
 
@@ -196,23 +196,23 @@ table nor cache holds an email or an address.
 
 ## Keeping robots out of public forms
 
-Modules that take text from visitors who have not signed in (comments, the glossary's
-proposals) combine three cheap checks:
+Modules that take text from visitors who have not signed in (comments) combine three
+cheap checks:
 
 - a **honeypot**: a field people cannot see and robots fill in; a form with it filled is
   thanked and dropped;
 - a **time stamp**: the time the form was shown, signed with the application's secret;
-  a form sent back sooner than a setting (`min_seconds`, `proposals_min_seconds`) or after
+  a form sent back sooner than a setting (`min_seconds`) or after
   a day is refused;
 - a **limit per address** per hour, the address kept only as a keyed hash.
 
 ```python
 if str(form.get("website", "")):  # the honeypot: people cannot see it, robots fill it
-    return _propose_page(request, db, {}, sent=True)
+    return again(notice=t("Thank you. Your comment awaits approval."), keep=False)
 age = service.stamp_age(nest.secret, str(form.get("stamp", "")))
-if age is None or age < float(_setting(request, "proposals_min_seconds")) or age > 86400:
+if age is None or age < state["min_seconds"] or age > 86400:
     return again(t("That was quick. Please send it again."))
 ```
 
 These are a module's own code, not a host facility: copy the pattern from
-`nest_comments` or `nest_glossary`.
+`nest_comments`.

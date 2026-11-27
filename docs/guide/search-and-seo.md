@@ -20,13 +20,13 @@ bind:
     providers: [search-sqlite]
 ```
 
-Modules that need it (`content`, `glossary`) say so in their manifest, and
+Modules that need it (`content`) say so in their manifest, and
 `nest plan` reports it if the binding is missing.
 
 ### What a module does with it
 
 A module indexes **documents**, each with a `kind` (whose it is), an `id`, a `title`,
-a `body`, a `url`, and an optional `scope` that narrows a search (one dictionary, one
+a `body`, a `url`, and an optional `scope` that narrows a search (one entry type, one
 category). It then asks for matches:
 
 ```python
@@ -35,7 +35,7 @@ from nest_search import Document, Search
 
 @router.get("/search")
 def search(request: Request, q: str = "", index: Search = bound(Search)):
-    hits = index.query(q, kind="glossary.term", limit=20) if q else []
+    hits = index.query(q, kind="content.entry", limit=20) if q else []
     ...
 ```
 
@@ -63,11 +63,9 @@ it from the records:
 
 ```sh
 uv run nest content reindex APP
-uv run nest glossary reindex APP
 ```
 
-The content module's search page is at `/search`; the glossary's at
-`<glossary route>/search`, across every dictionary.
+The content module's search page is at `/search`.
 
 ## SEO
 
@@ -79,7 +77,7 @@ modules:
   - name: seo
     config:
       site_url: https://example.org
-      description: "The Romanian train timetable: stations, trains, journeys."
+      description: "News, stories and photos from a small town."
 ```
 
 It needs no route: its pages are `/sitemap.xml` and `/robots.txt` at the site's
@@ -149,9 +147,9 @@ A module joins in by answering two lookups:
 
 - **`seo.urls`**: its public pages, each with a path, title, subject, description,
   text and photos. The sitemap and the SEO page are built from these answers.
-  content, gallery, maps, glossary, trains and hangman answer it.
+  content, gallery, maps and docs answer it.
 - **`seo.text`**: for a subject, extra words to propose from, for a page with little
-  text of its own (a category's entries, a station's trains).
+  text of its own (a category's entries). content answers it.
 
 Its edit form shows `{{ seo_fields(subject) }}`, its save asks the `seo.save` lookup,
 and its pages call `{{ seo_head(subject, ...) }}` in their head. Without the seo
@@ -201,6 +199,5 @@ redirect_prefixes:
   "/wp-content/uploads/": "/media/uploads/"
 ```
 
-A module that answers old addresses itself (the glossary's Glossword
-`/index.php/...` addresses, with `legacy_glossword: true`) asks the
-`redirects.request` lookup for those it does not know, before it gives up on them.
+A module that answers old addresses itself (an old site's `/index.php/...` addresses)
+asks the `redirects.request` lookup for those it does not know, before it gives up on them.

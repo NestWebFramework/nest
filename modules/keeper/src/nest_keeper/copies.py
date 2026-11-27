@@ -57,15 +57,24 @@ def _slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", plain.lower()).strip("-")[:60] or "site"
 
 
-def _folder(s: Any, row: KeeperSite) -> str:
-    """The site's folder name under backup_dir: chosen once, from its name, never reused."""
+def _when(name: str) -> str:
+    """An archive's time, from its name (``<app>-YYYYMMDD-HHMMSS.tar.gz``): what it sorts by."""
+    m = re.search(r"-(\d{8}-\d{6})\.tar\.gz$", name)
+    return m.group(1) if m else ""
+
+
+def _folder(s: Any, row: KeeperSite, base: Path | None = None) -> str:
+    """The site's folder name under backup_dir: chosen once, from its name, never reused (not
+    another site's, nor one left on disk by a site removed since: its copies are not this one's)."""
     if row.backup_folder:
         return row.backup_folder
     taken = set(s.scalars(select(KeeperSite.backup_folder).where(KeeperSite.id != row.id)))
-    base, n, name = _slug(row.name), 1, _slug(row.name)
+    if base is not None and base.is_dir():
+        taken |= {p.name for p in base.iterdir()}
+    base_name, n, name = _slug(row.name), 1, _slug(row.name)
     while name in taken:
         n += 1
-        name = f"{base}-{n}"
+        name = f"{base_name}-{n}"
     row.backup_folder = name
     return name
 
@@ -90,7 +99,7 @@ def local(base: Path | None, folder: str) -> list[Copy]:
         if ARCHIVE.match(p.name) and p.is_file():
             st = p.stat()
             out.append(Copy(p.name, st.st_size, datetime.fromtimestamp(st.st_mtime, UTC), _sum(p)))
-    return sorted(out, key=lambda c: c.name, reverse=True)
+    return sorted(out, key=lambda c: (_when(c.name), c.name), reverse=True)
 
 
 def _sum(path: Path) -> str:
@@ -164,7 +173,7 @@ def _fetch(db: Any, secret: str, site_id: int, base: Path, keep: int) -> tuple[l
         row = s.get(KeeperSite, site_id)
         if row is None:
             return [], "no such site"
-        folder = _folder(s, row)
+        folder = _folder(s, row, base)
     where = base / folder
     where.mkdir(parents=True, exist_ok=True)
     offered = []
@@ -173,7 +182,7 @@ def _fetch(db: Any, secret: str, site_id: int, base: Path, keep: int) -> tuple[l
         well_formed = isinstance(name, str) and ARCHIVE.match(name) and SHA256.match(digest)
         if well_formed and isinstance(size, int) and size >= 0:
             offered.append((name, size, digest))
-    newest = sorted(offered, reverse=True)[:keep]  # the name ends in its time
+    newest = sorted(offered, key=lambda o: (_when(o[0]), o[0]), reverse=True)[:keep]
     copied, failed = [], []
     for name, size, digest in sorted(newest):
         dest = where / name
@@ -196,7 +205,9 @@ def _fetch(db: Any, secret: str, site_id: int, base: Path, keep: int) -> tuple[l
 
 
 def _prune(where: Path, keep: int) -> None:
-    kept = sorted((p for p in where.iterdir() if ARCHIVE.match(p.name)), key=lambda p: p.name)
+    kept = sorted(
+        (p for p in where.iterdir() if ARCHIVE.match(p.name)), key=lambda p: (_when(p.name), p.name)
+    )
     for old in kept[:-keep]:
         old.unlink(missing_ok=True)
         old.with_name(old.name + ".sha256").unlink(missing_ok=True)

@@ -34,7 +34,7 @@ uv sync
 ```
 
 `uv sync` creates `.venv/` in the repository and installs the core, every module,
-interface, provider, theme and engine as editable packages. After it, every
+interface, provider and theme as editable packages. After it, every
 command in this documentation is run from the repository root with `uv run`.
 
 To check that everything is there:
@@ -120,8 +120,8 @@ Everything is done with one command. `uv run nest --help` lists the groups, and
 
 Some modules add their own group of commands, for imports and maintenance:
 `nest content`, `nest gallery`, `nest maps`, `nest comments`, `nest forum`,
-`nest glossary`, `nest redirects`, `nest trains`, `nest translations`, `nest saga`,
-`nest keeper`, `nest agent`, `nest scheduler`, `nest docs`. For example:
+`nest redirects`, `nest translations`, `nest keeper`, `nest agent`, `nest scheduler`,
+`nest docs`. For example:
 
 ```sh
 uv run nest content --help

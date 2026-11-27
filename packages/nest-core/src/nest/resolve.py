@@ -75,7 +75,7 @@ class Plan:
 
 def ecosystem_of(entry: Entry, contract: Contract) -> str:
     """Whose a package is: the ecosystem that defines its type (a subsystem is the game
-    engine's), or the one its id names (nest.saga.engine is saga's); else Nest's own."""
+    engine's), or the one its id names (x.engine.y is x's); else Nest's own."""
     core = contract.ecosystems[0] if contract.ecosystems else "nest"
     rule = contract.types.get(entry.type)
     if rule is not None and rule.ecosystem and rule.ecosystem != core:

@@ -5,7 +5,7 @@
   <!-- theme -->
   <rect x="40" y="24" width="780" height="54" rx="10" fill="#fff4d6" stroke="#e0b44a"/>
   <text x="430" y="49" text-anchor="middle" font-size="17" font-weight="700" fill="#5a4310">Theme</text>
-  <text x="430" y="68" text-anchor="middle" font-size="13" fill="#7a6020">layout, look, settings: base, paper, slate, morlaca-*, rail-signage</text>
+  <text x="430" y="68" text-anchor="middle" font-size="13" fill="#7a6020">layout, look, settings: base, paper, slate</text>
   <!-- application -->
   <rect x="40" y="98" width="780" height="70" rx="10" fill="#12355b"/>
   <text x="430" y="128" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">Application · module.yml</text>
@@ -18,7 +18,7 @@
       <rect x="60" y="232" width="110" height="50" rx="8"/><rect x="185" y="232" width="110" height="50" rx="8"/><rect x="310" y="232" width="110" height="50" rx="8"/>
       <rect x="435" y="232" width="110" height="50" rx="8"/><rect x="560" y="232" width="110" height="50" rx="8"/><rect x="685" y="232" width="115" height="50" rx="8"/>
     </g>
-    <g fill="#12355b"><text x="115" y="262">content</text><text x="240" y="262">gallery</text><text x="365" y="262">glossary</text><text x="490" y="262">trains</text><text x="615" y="262">comments</text><text x="742" y="262">admin · auth …</text></g>
+    <g fill="#12355b"><text x="115" y="262">content</text><text x="240" y="262">gallery</text><text x="365" y="262">forum</text><text x="490" y="262">maps</text><text x="615" y="262">comments</text><text x="742" y="262">admin · auth …</text></g>
   </g>
   <text x="430" y="322" text-anchor="middle" font-size="12.5" fill="#556">they need interfaces, and ask each other through lookups (host.answer / host.lookup): never import each other</text>
   <!-- interfaces -->

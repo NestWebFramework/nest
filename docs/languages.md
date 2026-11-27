@@ -29,7 +29,7 @@ application:
 - The language switch (`/_nest/language?language=en&next=/x/`) sends to `/en/x/` and sets
   no cookie: the address says the language.
 
-`cookie` mode (voievodate) is unchanged: one address, the language in a cookie.
+`cookie` mode is unchanged: one address, the language in a cookie.
 
 ## A record's text in every language: text tables
 
@@ -149,11 +149,11 @@ text tables get their default rows at start (one statement per table).
   shows the Romanian and tells search engines so.
 - **Maps.** A map's and each marker's title and description have rows per language; the
   map asks for its markers in the page's language (`/en/harta/sat.geojson`), with links to
-  the site's pages at their English addresses, and other modules' places (a settlement's
+  the site's pages at their English addresses, and other modules' places (an article's
   pin) come in that language too (`map.points` is asked with `{"locale": "en"}`). Saving a
   map keeps each marker where it was, so its translations stay, outdated if its words
   changed.
 
-Not translated yet: content's custom fields (a settlement's tagline), revisions of a
+Not translated yet: content's custom fields (an event's place), revisions of a
 translation, and the site-wide settings (the SEO site description, the site's title).
 Changing the default language of a site that has content is not supported yet.

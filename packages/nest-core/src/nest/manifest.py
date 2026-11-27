@@ -482,7 +482,7 @@ class Manifest(BaseModel):
     _raw: dict[str, Any] = PrivateAttr(default_factory=dict)
     _source: str = PrivateAttr(default="<memory>")
 
-    # deps grouped by ecosystem, as RoboHub's are: `nest: {auth: ">=0.3,<1"}`, `saga: {farm:
+    # deps grouped by ecosystem, as RoboHub's are: `nest: {auth: ">=0.3,<1"}`, `example: {part:
     # ">=0.1,<0.2"}`. They are flattened into deps for the plan; which ecosystem each was
     # listed under is kept here, so the plan can check it is that ecosystem's.
     dep_ecosystems: dict[str, str] = Field(default_factory=dict, exclude=True)

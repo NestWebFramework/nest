@@ -95,14 +95,14 @@ NEST_LOG_LEVEL=info
 
 Every module setting can be set from the environment as `NEST_<APP>__<MODULE>__<KEY>`:
 the names are in capitals, and any character other than a letter or digit becomes `_`.
-Gări's examples:
+For example:
 
 ```ini
-NEST_MYSITE__TRAINS__SYNC=false        # trains.sync for the application mysite
-NEST_MYSITE__TRAINS__SYNC_HOURS=24
+NEST_MYSITE__COMMENTS__ALLOW_GUESTS=false   # comments.allow_guests for the application mysite
+NEST_MYSITE__FORUM__POSTS_PER_MINUTE=3
 ```
 
-Secret settings (the trains module's `legacy_key`, a provider's password) belong here or
+Secret settings (the agent module's `read_token`, a provider's password) belong here or
 in the workspace `.env`, and never in a committed file.
 
 A binding can be switched the same way, with `NEST_BIND__<INTERFACE>` (dots become
@@ -139,7 +139,7 @@ On a `nest-site` server: `sudo nest-site nest <site> check /src/app`.
 ## SQLite or PostgreSQL
 
 Every site built with Nest so far binds `nest.db` to `db-sqlite`, which is the right default
-for content sites: an encyclopedia, a dictionary, a village site or a timetable is read far
+for content sites: a magazine, a blog, a village site or a photo archive is read far
 more than it is written. SQLite runs in WAL mode, `nest backup` copies it online while the
 site runs, and it needs no server. With several workers, SQLite reads well from all of them
 (each worker lets one thread at a time into it).

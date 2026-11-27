@@ -9,7 +9,7 @@ description: How to build web sites and applications with Nest, write modules fo
 > module, theme and provider has a version of its own: its reference page says it.
 
 Nest builds web sites and applications from **modules**: content and pages, photo
-galleries, dictionaries, comments, a railway timetable, maps, a forum, a game engine. An
+galleries, comments, maps, a forum, private messages, notifications. An
 application is a short `module.yml` that says which modules it mounts, where, with which
 settings, in which theme and languages; Nest plans it, checks it and runs it.
 

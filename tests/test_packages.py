@@ -64,7 +64,7 @@ class Uv:
 
 def test_nests_own_packages_are_trusted():
     offers = registry()
-    assert {"forum", "redis", "farm", "base"} <= set(offers)
+    assert {"forum", "redis", "base"} <= set(offers)
     assert offers["forum"].dist == "nest-forum" and offers["forum"].path is not None
     assert offers["db"].interface == "nest.db"
 
@@ -175,7 +175,6 @@ def test_the_keeper_installs_from_its_page(site, tmp_path, monkeypatch):
         )
         page = c.get("/admin/keeper/app/site/packages")
         assert page.status_code == 200 and "/admin/keeper/app/site/packages/forum/add" in page.text
-        assert "/packages/farm/add" not in page.text  # a game's parts, only with its engine
         token = c.cookies["nest_csrf"]
         done = c.post("/admin/keeper/app/site/packages/forum/add", data={"csrf_token": token})
         assert done.status_code == 200 and "installed nest-forum" in done.text

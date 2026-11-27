@@ -1,6 +1,6 @@
 # The Nest registry: registry.nest-framework.org
 
-Nest packages (modules, themes, providers, interfaces, an engine and its subsystems) are
+Nest packages (modules, themes, providers, interfaces) are
 Python packages that carry their manifest. The registry keeps them, and is two things on
 one store:
 

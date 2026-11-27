@@ -19,8 +19,8 @@ modules that own no port. The design is in
 | `application` | Composes modules, binds each interface to providers, runs on one port with its own workspace. |
 
 Each package is described by a `module.yml`, checked against the contract for its type
-(`packages/nest-core/src/nest/contracts/core.v1.yml`). An ecosystem, such as the Saga
-engine, can publish its own contract to add types.
+(`packages/nest-core/src/nest/contracts/core.v1.yml`). An ecosystem can publish its own
+contract to add types.
 
 Every package keeps two files side by side at its root, for two purposes: `module.yml`, what
 Nest knows it as (identity, what it gives and needs), and `pyproject.toml`, how Python builds
@@ -40,8 +40,8 @@ and a `pyproject.toml` that only gathers the Nest packages it runs on.
    tokens for every module at once or restyle one module's classes; its `templates/` override
    the theme's `layout.html` (its frame) or any one module's template.
 
-So morlaca, transilpedia or a game use the same forum, comments or sign-in, each in its own
-look, without forking them.
+So two sites can use the same forum, comments or sign-in, each in its own look, without
+forking them.
 
 An application in a repository of its own states what it needs of Nest in its `deps`, by
 ecosystem and with versions, as RoboHub's manifests do:
@@ -51,9 +51,9 @@ deps:
   nest:                  # Nest's own modules, providers and theme
     auth: ">=0.3,<1"
     db-sqlite: ">=0.1,<1"
-  saga:                  # the Saga engine and its subsystems
-    saga: ">=0.1,<1"
-    farm: ">=0.1,<1"
+  example:               # another ecosystem's packages, by its own name
+    engine: ">=0.1,<1"
+    part: ">=0.1,<1"
 ```
 
 A module may be the host of parts: an engine and its subsystems, a module and its
@@ -62,13 +62,13 @@ its own, with its identity, that names its host and depends on it, so a part mad
 another repository, joins the host the same way:
 
 ```yaml
-# the host (engines/saga/module.yml)
+# the host (engine/module.yml)
 subsystems:
-  types: [subsystem, content]
-  bundled: [world, map, item, ...]
-# a part (engines/saga/subsystems/farm/module.yml)
-part_of: saga
-deps: {saga: ">=0.1,<1"}
+  types: [part]
+  bundled: [one, two, ...]
+# a part (parts/one/module.yml)
+part_of: engine
+deps: {example: {engine: ">=0.1,<1"}}
 ```
 
 The plan refuses a part whose host the application does not include, a host that takes no
@@ -88,27 +88,25 @@ uv run nest plan applications/hello       # what the application is made of, in 
 uv run nest run applications/hello        # http://127.0.0.1:8100  (--reload while developing)
 uv run nest serve applications/hello      # production: gunicorn's master and workers (docs/deploy.md)
 uv run nest modules applications/hello    # its modules: core, enabled, disabled (docs/modules.md)
-uv run nest packages ../morlaca add forum # install a trusted package (then enable it)
-uv run nest themes ../morlaca use paper   # the site's look (docs/themes.md)
+uv run nest packages ../mysite add forum  # install a trusted package (then enable it)
+uv run nest themes ../mysite use paper    # the site's look (docs/themes.md)
 uv run nest publish modules/forum         # to the Nest registry (docs/registry.md)
 uv run nest validate --strict modules     # manifests, and the code keeping to them
 uv run pytest                             # the tests
 uv run nest validate .                    # every manifest against its contract
 uv run nest new app myapp --into applications
-uv run nest new module glossary --into modules
+uv run nest new module notes --into modules
 ```
 
 ## Where things live
 
 ```
 packages/nest-core/   the host: manifests, contracts, catalog, resolution, bindings, security, SSE, CLI
-modules/              reusable modules (htmx, auth, forms, glossary, hangman, content, media, gallery, maps, geo, comments, redirects, feed, forum, messages, trains, docs, seo, translations, notifications, admin, agent, scheduler, keeper, registry)
+modules/              reusable modules (htmx, auth, keys, forms, content, media, gallery, maps, geo, comments, rating, redirects, forum, messages, docs, seo, translations, notifications, push, pwa, consent, admin, agent, scheduler, keeper, registry)
 interfaces/           interfaces (cache, db, pubsub, search, storage)
 providers/            providers (cache-memory, redis, db-sqlite, db-postgres, db-mariadb, search-sqlite, storage-local)
-themes/               themes (base)
-engines/saga/             the Saga engine, a package like any module (module.yml and pyproject.toml, code in src/nest_saga/)
-engines/saga/subsystems/  its subsystems, each a package of its own that names the engine (part_of: saga)
-applications/             Nest's own applications (keeper, hello, registry, docsite); the sites live in repos of their own beside it
+themes/               themes (base, paper, slate)
+applications/         Nest's own applications (keeper, hello, registry, docsite); the sites live in repos of their own beside it
 ```
 
 At run time an application keeps its own files in its workspace,
@@ -133,7 +131,7 @@ Any declared setting can be overridden as `NEST_<APP>__<OWNER>__<KEY>`, for exam
 | `NEST_ALLOWED_HOSTS` | the hosts it answers, comma-separated; any other gets 400 |
 | `NEST_TRUSTED_PROXIES` | the proxies whose `X-Forwarded-*` headers `nest run` and `nest serve` believe |
 | `NEST_WORKERS`, `NEST_THREADS` | `nest serve`'s processes and each one's threads (or the manifest's `serve:`) |
-| `NEST_ROLE`, `NEST_ENGINE_URL` | set by `nest serve` for a game: the engine process, the workers, where they reach it |
+| `NEST_ROLE`, `NEST_ENGINE_URL` | set by `nest serve` for an application with an engine of its own: the engine process, the workers, where they reach it |
 
 Running one for real (the image, `nest check`, `nest backup`/`restore`, Caddy in front)
 is in [docs/deploy.md](docs/deploy.md).
@@ -151,7 +149,7 @@ provider, so changing databases means changing the binding. Module code stays th
 | `db-mariadb` | MariaDB or MySQL, utf8mb4, strict SQL mode, UTC, pool recycle | PyMySQL (pure Python) | existing MariaDB/MySQL data |
 
 ```yaml
-# applications/glossary/module.yml: today
+# applications/mysite/module.yml: today
 bind:
   nest.db: {providers: [db-sqlite]}
 ```
@@ -162,11 +160,11 @@ bind:
   nest.db:
     providers: [db-postgres]
     config:
-      db-postgres: {host: db.lan, database: glossary, user: glossary, sslmode: require}
+      db-postgres: {host: db.lan, database: mysite, user: mysite, sslmode: require}
 ```
 
-The password comes from the environment, as `NEST_GLOSSARY__DB_POSTGRES__PASSWORD`.
-A single secret URL works too, as `NEST_GLOSSARY__DB_POSTGRES__URL=postgresql://…`.
+The password comes from the environment, as `NEST_MYSITE__DB_POSTGRES__PASSWORD`.
+A single secret URL works too, as `NEST_MYSITE__DB_POSTGRES__URL=postgresql://…`.
 
 In a module:
 
@@ -174,11 +172,11 @@ In a module:
 from nest_db import Database, model_base
 from nest import bound
 
-Base = model_base("glossary")  # tables must be named glossary_*
+Base = model_base("notes")  # tables must be named notes_*
 
 
-class Term(Base):
-    __tablename__ = "glossary_term"
+class Note(Base):
+    __tablename__ = "notes_note"
     ...
 
 
@@ -201,18 +199,18 @@ because Nest supplies what Alembic's `env.py` would:
 ```yaml
 db:
   migrations: migrations                  # migrations/versions/*.py
-  metadata: nest_glossary.models:Base     # for --autogenerate
+  metadata: nest_notes.models:Base     # for --autogenerate
 ```
 
-Each module keeps its own version table (`glossary_alembic_version`) and migrates independently,
+Each module keeps its own version table (`notes_alembic_version`) and migrates independently,
 in dependency order. Autogenerate sees only tables under the module's prefix, so it can never
 drop another module's tables. On SQLite, column changes are written as batch operations.
 
 ```sh
-uv run nest db status applications/glossary
-uv run nest db revision applications/glossary glossary -m "add senses" --autogenerate
-uv run nest db upgrade applications/glossary
-uv run nest db downgrade applications/glossary glossary -1
+uv run nest db status applications/mysite
+uv run nest db revision applications/mysite notes -m "add tags" --autogenerate
+uv run nest db upgrade applications/mysite
+uv run nest db downgrade applications/mysite notes -1
 ```
 
 At startup, `NEST_MIGRATE` decides what happens. `auto` is the default in development:
@@ -307,7 +305,7 @@ class TermForm(Form):
 async def create(request: Request):
     form = await read(request, TermForm)
     if not form.ok:
-        return render(request, "glossary/edit.html", form=form, fragment="form")
+        return render(request, "notes/edit.html", form=form, fragment="form")
     ...
 ```
 
@@ -329,33 +327,8 @@ decides how. `search-sqlite` keeps an FTS5 index in the workspace:
 * titles rank above bodies;
 * snippets are escaped first and then marked.
 
-Whatever someone types is only words, never query syntax. The index is derived data, so
-`nest glossary reindex` rebuilds it from the records.
-
-## Glossaries: the regionalisme site
-
-`glossary` holds dictionaries. A dictionary holds terms, and a term holds senses (definition,
-usage, synonyms, antonyms, see-also, source, translation, abbreviation), the shape Glossword used.
-
-* **Visitors** browse by letter, read a term with its neighbours, and search every dictionary at once.
-* **Editors** (the `editor` role) add, change and remove terms, and each save is indexed.
-* **Definitions** are plain text, never HTML: a blank line starts a paragraph, `[[word]]` links a
-  term, and an address becomes a link.
-
-regionalisme.ro is on Nest, in its own repository (`../regionalisme`). With `legacy_glossword: true` in the
-application's manifest, Glossword's `/index.php/term/Graiul+moldovenesc,cuvânt.xhtml` addresses
-redirect permanently to the new ones.
-
-```sh
-uv run nest glossary import-glossword ../regionalisme export.txt --dictionary "Graiul moldovenesc"
-uv run nest glossary dictionaries ../regionalisme
-uv run nest glossary export ../regionalisme backup.json     # and `import` to restore
-uv run nest auth create-user ../regionalisme ana@example.ro --role editor
-uv run nest run ../regionalisme                             # http://127.0.0.1:8200
-```
-
-The import reads Glossword's own text export (Admin → Export). It is safe to run again:
-terms already imported are updated, not duplicated.
+Whatever someone types is only words, never query syntax. The index is derived data, so a
+module can always rebuild it from its records.
 
 ## Content: the CMS, and WordPress sites moved in
 
@@ -391,8 +364,8 @@ A WordPress site moves in from its mysqldump and uploads folder. No MySQL server
 `nest_db.mysqldump` reads the dump as data.
 
 ```sh
-uv run nest content import-wordpress ../morlaca ~/projects/morlaca-legacy/db/morlaca.sql \
-    --uploads ~/projects/morlaca-legacy/wp-content/uploads
+uv run nest content import-wordpress ../mysite ~/old-site/db/wordpress.sql \
+    --uploads ~/old-site/wp-content/uploads
 ```
 
 What the importer brings over:
@@ -431,67 +404,14 @@ at a route; they share nothing but the core's interfaces.
   failing handler renders nothing.
 
 ```sh
-uv run nest gallery import-wordpress ../morlaca ~/projects/morlaca-legacy/db/morlaca.sql \
-    --uploads ~/projects/morlaca-legacy/wp-content/uploads        # --all for galleries no page uses
-uv run nest gallery list ../morlaca
+uv run nest gallery import-wordpress ../mysite ~/old-site/db/wordpress.sql \
+    --uploads ~/old-site/wp-content/uploads        # --all for galleries no page uses
+uv run nest gallery list ../mysite
 ```
 
 The import moves Photo Gallery (10Web) and NextGEN galleries and albums with their photos and
 thumbnails. It keeps the plugins' ids as aliases: `[Best_Wordpress_Gallery id="2"]` and
 `[nggallery id=1]` in imported pages keep working, unchanged.
-
-## The glossary's community and hangman
-
-**`glossary`** (regionalisme.ro's dictionaries) takes a Glossword site whole:
-`nest glossary import-glossword-db APP dump.sql` brings every dictionary, a word given twice
-merged into one term with two senses, the original dates kept, and the visitors' proposals the
-site never judged as proposals still waiting.
-
-* **Proposals** (`proposals: true`): visitors send a word and its meaning at `/propose` (a
-  honeypot, a signed time stamp, a limit per address kept as a keyed hash). Editors judge them
-  in Admin → Dictionaries → Proposals: approved, a meaning for a word already there becomes
-  another of its senses; rejected, it stays out of sight. The admin panel shows how many wait
-  (any module answers `admin.waiting`; comments does too).
-* **Comments** on a term, when the application has the comments module.
-* **Other languages:** the words are never translated, they are the dictionary's subject; a
-  sense's definition and usage are explained in each other language (a text table), beside the
-  original in the editor, or in bulk: `nest glossary export-texts APP en file.json`, then
-  `import-texts`. A definition changed in the original drops its translation; one unchanged
-  keeps it through every edit and approval.
-* **Old addresses:** `/index.php/term/...`, `?a=srch` searches, and (through the redirects
-  module's `redirects.request`) its own pages.
-
-**`hangman`** plays with whichever module answers `words.random` and `words.by_ref` (the
-glossary does): a word at random, its meaning as the clue, the word's page at the end. The game
-lives in a signed cookie with only the word's reference, so the word never reaches the browser
-before the end; the alphabet (Romanian by default), the wrong guesses allowed and the word
-lengths are settings.
-
-## Trains: the timetable from data.gov.ro, journeys with changes
-
-**`trains`** (gari.ro's timetable) reads the CFR XML files Informatică Feroviară publishes for each
-operator on data.gov.ro (`sources/cfr_xml`), finds them through the portal's API
-(`sources/datagov`) and loads each into its year's timetable (`loader`), replacing only what
-that file brought before. With `sync: true` one worker asks the portal every day and loads what
-is new or changed (a checksum decides); the new year arrives in December and is in force from its
-first day. `nest trains sync | sources | load-xml`.
-
-* **Calendars:** each train's running periods and weekdays (the files' `Zile` bit field), so a
-  board can show only today's trains and a journey only the trains of its day.
-* **Journeys:** the Connection Scan Algorithm over one day's connections, kept in memory (built
-  in a fraction of a second): changes with a minimum time, overnight journeys, a station to go
-  through, direct only; the day's choices in tens of milliseconds, fares per leg.
-* **Pages:** stations (boards, services, map), trains (running days, cars drawn, route on the
-  map), the trains running now (placed by the timetable), operators, near me.
-* **Boards for other sites:** split-flap, LED or station-blue boards that refresh themselves;
-  only they may be framed elsewhere (`nest.security.allow(response, "embed")`).
-* **Old addresses:** gari.ro's encrypted tokens read back with its key (a secret in `.env`).
-
-**`geo`** is where the reader is: distances and a box for a database's first cut
-(`nest_geo.distance_km`, `box`, `near`), a locate button any module includes, and a near-me page
-that shows what every module answering `geo.near` has nearby (stations, places on the maps).
-Only pages that ask for it may use the browser's position
-(`nest.security.allow(response, "geolocation")`).
 
 ## Comments and redirects
 
@@ -510,8 +430,6 @@ comments module knowing them.
 * **Import:** `nest comments import-wordpress APP dump.sql` attaches WordPress comments to the
   pages their posts became. It finds them through the application's `wordpress.post` lookup,
   which `content` answers.
-  `nest comments import-glossword APP dump.sql` does the same for a Glossword site's
-  GentleSource comments, through `glossary.legacy_subject`.
 
 **`redirects`** sends old addresses on to new ones. It answers only after every page, so a page
 that exists always wins over a redirect.
@@ -549,359 +467,9 @@ Two core registries let modules cooperate without importing each other:
 uv run nest forum add-board applications/hello "Discuții generale" --description "Orice despre Nest."
 ```
 
-Realtime topics can be families (`forum.topic.*`, and later `player.*` for the game). A family's
+Realtime topics can be families (`forum.topic.*`). A family's
 `authorize(request, name)` sees the concrete name, which is how a member may follow
 `messages.user.7` only when they are member 7.
-
-## Trains: gari.ro's timetable
-
-**`trains`** is a railway timetable, reusable by any application:
-
-* **Stations:** departure and arrival boards, amenities, a map link, and, with `gallery`, their
-  photos.
-* **Trains:** the whole route, with passenger stops and the points a train runs through.
-* **Journeys:** direct trains between two stations, with duration, distance and the fare the
-  fare table gives per class.
-* **Operators**, an A–Z station list, and station names matched without diacritics: "Bucuresti"
-  finds "Bucureşti Nord".
-* **A railway map:** stations and the links trains run between them, drawn server-side as an
-  SVG, with no map library and nothing external.
-* **Stations near you:** one small static script asks the browser where it is.
-
-A route is kept as ordered stops whose times count past midnight (`07:40 (+1)`), so night
-trains stay in order.
-
-```sh
-uv run nest trains import-geticus ../gari ~/projects/gari-legacy/gari/db/gari.sql
-uv run nest gallery import-geticus ../gari ~/projects/gari-legacy/gari/db/gari.sql --root ~/projects/gari-legacy/gari
-uv run nest trains journeys ../gari "Cluj Napoca" "Bucuresti Nord"
-```
-
-`../gari` mounts the timetable at `/cfr`, where gari.ro had it (`/cfr/gara/…`,
-`/cfr/tren/…`, `/cfr/itinerariu`, `/cfr/companie/…`), and the galleries at `/galerii-foto`, as
-Geticus routed them.
-
-## The Saga engine
-
-**Saga** is Nest's engine for life-simulation games: characters, households, settlements and
-realms over generations, a text browser game with many players on one server. It is generic:
-a game made with it is an application in a repo of its own, with its content pack (its data)
-and its client. The first is voievodate.ro (`../voievodate`, a life in the medieval Romanian
-lands); Nest may grow other engines beside it in `engines/`. Saga is the **nest-saga
-ecosystem**: its engine (`engines/saga/engine`, the `saga` module) publishes a contract adding the **`subsystem`** type, which must declare `tick:`,
-so the core validates subsystems as it validates its own types.
-
-* **One World per game server** (`servers`). A world holds what each subsystem keeps, its own
-  seeded random generator and its own clock. Two servers share nothing.
-* **One loop per world is the only writer.** HTTP handlers `submit` commands and await the
-  result. Each tick, the loop:
-  1. applies the queued commands;
-  2. advances the clock;
-  3. runs each subsystem's stage in the order the manifests declare (`tick.after`), at its own
-     rate (`tick.every`), timed;
-  4. publishes the stages' events on `saga.<server>.<topic>`;
-  5. every `checkpoint` seconds (30 by default), writes what changed in every subsystem in
-     one transaction, in a thread. That is one fsync for the whole world and a consistent
-     snapshot (a crash never leaves the inventory ahead of the characters), and the loop never
-     waits on the disk. A checkpoint that fails is kept and written before the next one.
-* **Testable by hand.** With `autostart: false` the worlds are stepped by hand (tests, the CLI)
-  and behave exactly the same.
-* **Game masters** see every server's clock, tick time and stages at the module's route, and
-  can pause, resume and step it.
-
-```yaml
-# a subsystem's module.yml
-type: subsystem
-tick: {stage: npc, after: [world, economy], every: 0}
-```
-
-```python
-class NpcSubsystem(Subsystem):
-    def load(self, world, db): ...  # build world.state["npc"] from the database
-    def tick(self, world, dt): ...  # dt game seconds; world.rng, world.now, world.emit(...)
-    def flush(self, world): ...  # collect what changed; return a writer for a thread
-    @handles(TalkToNpc)
-    def talk(self, world, command): ...  # applied on the loop, answered to the submitter
-```
-
-**Light on small servers.** The target is 1000-2000 players on a basic machine, and the
-benchmark (`nest_saga.bench`) measures it. Game masters run it from the admin panel's **Tools** page
-(`<admin route>/saga/tools`): it shows progress while it runs, keeps each run's results in the
-workspace (`data/bench/`, the newest 50), and compares two runs in a before/after table with the
-change. From a terminal, `tools/bench_saga.py` does the same; a game passes its own content
-with `--local` (its content pack's folder), as the Tools page passes the running game's.
-
-The benchmark runs in a child process at low priority, one run at a time, in a scratch folder with
-its own SQLite database. Its environment is cleared of `NEST_*`, so the live secret and database
-credentials stay with the server. It is stopped after `bench_minutes`, and its folder is removed
-after. It builds a world of settlements and players, steps it, and
-reports each subsystem's tick time and the checkpoints. With 2000 players, 266 NPCs and 612
-buildings in 40 settlements:
-
-* A tick takes about 15 ms of work (4 ms characters, 2 ms NPCs, 9 ms production), once a
-  second.
-* A checkpoint takes about 100 ms every 30 seconds, off the loop. Before, it was a transaction
-  per subsystem every 5 to 10 seconds, the characters' alone 230 ms.
-
-The design choices behind that:
-
-* Writers use `nest_saga.store` (`save`, `drop`). It finds existing rows with one query per few
-  hundred keys and writes with executemany INSERT and UPDATE, instead of an ORM object per row.
-* `Written` remembers what was last written, so only changed columns are sent. A character's
-  needs change hourly; its skills rarely do.
-* Needs and work advance in steps of at least one game minute. Per-tick lookups (a settlement's
-  workstations) are computed once per tick.
-* The command queue is bounded (`queue_limit`). A flooded server answers "busy" instead of
-  growing without limit.
-
-
-**`world`** is the first subsystem ported. It keeps the game calendar (a restarted world goes on
-where it was), the season by month, and each day's weather for the world and its regions, drawn
-with the world's seeded generator. Clients follow `saga.<server>.world` for `clock` and
-`weather`.
-
-**Content packs** (type `content`) are the game's data as YAML: no code, no tick, read once at
-start. A game keeps its pack in its own repo, as a local module of its application
-(voievodate's is `modules/voievodate-content`, with the tools that rebuild its YAML from
-flasknest-core's seeds). Packs load in the order the application lists them, and a later pack
-redefines an item by its slug, so a server can override a game's data without copying it.
-
-**`item`** reads every pack's `items:` into one catalogue: weight, value, durability and wear,
-uses, effects, what an item is made of, and what a container leaves when it is empty. The other
-subsystems get it with `catalogue_of(host)`. Broken references are reported at start, not
-fatal. The original seeds had one: herbal tea leaves a `clay-cup` that no seed defines.
-
-**`inventory`** holds who has what (`inventory_stack`). An owner is any `(type, id)`, such as an
-npc, a player, a household or a guild. Each stack also has a location, which defaults to the
-owner's person or vault. Alike things pile up in one stack. Tools and other items with
-durability or several uses are kept unit by unit, each with its own wear. Taking is all or
-nothing, and the most worn units go first. A water skin's last drink leaves the empty skin.
-Stacks are written by key at each checkpoint. Game masters can follow each owner's
-`saga.<server>.inventory.<type>.<id>`. The commands are `GiveItem`, `TakeItem` and
-`TransferItem`.
-
-**`character`** is what NPCs and players are. Its definitions come from the packs' `characters:`
-files: attributes, skills, technologies, emotions, traits, the 18 professions and their ranks,
-social ranks, and 16 diseases with their effects and treatments. A character has a single sheet
-(`character_sheet`, its values kept as JSON), whether it is an NPC or a player. The npc and
-player subsystems will add a mind on top.
-
-* **Needs:** every living character gets hungry, thirsty and tired by the game hour (settings),
-  so a world runs the same at any tick or time scale. Rest and sleep restore stamina. At full
-  hunger or thirst, health falls.
-* **Emotions** follow the old engine's rules: feelings fade, want brings sadness, anger and fear,
-  and comfort brings joy.
-* **Diseases** incubate, hurt every few hours, progress, and roll once for death at 80%.
-  Contagious ones spread between characters in the same place, using the world's seeded
-  generator. A treatment is given once (an item used, a healer, rest) and rolls its
-  effectiveness.
-* **Healing:** health and carry weight recover when no disease affects them. The old engine had
-  no healing.
-
-The old seed list forgot the diseases. The seed tool now runs that seed too, and the export
-maps the treatments' placeholder item (`item_id=16`, the iron hammer) to the items their
-comments name. The commands are `CreateCharacter`, `Infect`, `Treat`, `GrantExperience` and
-`ChangeAttribute`. Game masters follow `saga.<server>.character` for births, deaths and
-illnesses, and `saga.<server>.character.<id>` for one character's sheet.
-
-**`map`** is the land: every tile's terrain and county, and the regions above (county, duchy,
-principality, kingdom). A game's content pack bakes them once: Voievodate's does it with its
-`tools/export_map.py`, from the old engine's 65 county outlines:
-
-* `regions.yml` holds the regions, with outlines and colours to draw.
-* `map.bin` holds 501 × 501 tiles of two bytes each, gzipped to 9 KB. The game holds it in memory,
-  so a tile's county is an index into bytes.
-
-The old engine kept 251,001 tile rows in a table and parsed the outlines with shapely at every
-boot. Other subsystems ask `map_of(host)`: `at(x, y)`, `region(x, y)`, `tiles_of(county)`. A
-settlement's region is the county it stands in. With `places: true` (voievodate sets it), a new
-world begins with one settlement in each county, named for its seat; their founders arrive with
-them. Game masters see the land in the admin panel (`<admin route>/saga/map`): the counties in their duchies' colours, and
-a dot for each settlement sized by its people, refreshed while the page is open.
-
-**`settlement`** keeps the hamlets, villages and towns: where each is (map tiles), its
-residents, treasury, prosperity and technologies. Once a game day it counts its living
-residents: the population, plus ages, genders, ranks and professions. It then evolves to the
-next type when it meets its rule: population, prosperity, base buildings and technologies. The
-old engine kept these rules in code; they are now in `settlements.yml`. The commands are
-`FoundSettlement`, `Settle` and `AdjustSettlement`.
-
-**`building`** raises buildings (`buildings.yml`: 29 buildings, 10 attributes, construction
-materials, 7 upgrades).
-
-* **Condition** is the weighted mean of a building's attributes.
-* **Grants:** every settlement gets, free, what its type grants: a hamlet a well and a church,
-  a village a market stall. This follows what the old engine built.
-* **Raising** a building otherwise takes the construction materials from the owner's
-  inventory.
-* **Upgrades** go in order, cost their materials and gold (a character's money or a
-  settlement's treasury) and take their game hours.
-* **Decay:** buildings decay by game day and year, using the old engine's odds and the world's
-  generator. Storms damage roofs. Wells improve the water supply, sanitation and fire
-  protection around them; the old code meant to, but no building was tagged.
-
-The commands are `RaiseBuilding`, `StartUpgrade` and `RepairBuilding`. Settlements and
-buildings are public, so anyone may follow `saga.<server>.settlement[.<id>]` and
-`saga.<server>.building[.<settlement id>]`.
-
-The checks at start report what the original data lacks. Settlement evolution past a village
-asks for technologies no pack defines (`basic_trade`, `trade_routes`, `stone_masonry`,
-`advanced_civil_engineering`), and a city is granted a `cathedral` that is no building.
-Placement by terrain waits for the map, the old engine's 501 × 501 tiles.
-
-**`npc`** gives NPCs a mind. Its data is in `npc.yml`: 26 GOAP actions, 9 conscience rules, and
-each profession's work, skill, workplace and schedule by season. Names, founders and provisions
-are there too.
-
-* **When to decide:** an NPC decides when its action ends, or at once when hunger or thirst pass
-  70.
-* **What to choose:** the schedule's activity for the game hour and season scores 0.5. Each
-  rule that holds adds its weight to an intent (thirst over 70 adds 10 to drink). The best
-  intent that can be planned wins.
-* **Planning:** the planner chains back through the actions' preconditions. To eat without
-  food, an NPC takes some from home or forages. Emotions and traits tilt the costs.
-* **Doing:** the NPC walks to where the action happens (home, workplace, well, market, the
-  wild) at a walking speed, then spends the action's game minutes there. Work trains the
-  profession's skill. Meals and drinks go on until sated.
-* **Founders:** a new settlement is peopled with the professions every settlement has (farmer,
-  hunter, woodcutter, fisher, merchant) and a few more. Each founder gets a home, a workplace
-  and provisions.
-
-The old engine's schedules read the wall clock's hour; Nest's follow the game's hour and
-season. The old GOAP list had no way to eat or drink before there was a market; Nest adds two
-actions from the old game's own data: the well's "Drink Water" and the "Gather Food" activity
-(foraging). The seeds' schedule-skip rules on work said to skip working while fed
-(`hunger_min: 20`); those are dropped, because the preconditions already stop a hungry worker.
-Buying waits for the economy. Anyone may follow `saga.<server>.npc.<settlement id>`: where each
-NPC is and what it does, with its walk (from, to, depart, arrive) for a client to animate.
-
-**`production`** is what workers make. Its data is `production.yml`: 82 recipes, what each
-trade keeps, and the seasons' effect on output.
-
-* **Working:** while an NPC works (its profession's activity, at its workplace), its job
-  advances by game minutes. Skill makes it faster, 2% a level.
-* **Choosing:** a worker makes the recipe of its trade that yields most. If one is stopped only
-  by something a common recipe gives (water, for the baker's bread), it does that first. It
-  chooses again after each making.
-* **Finishing:** a finished recipe takes its inputs (from the worker, else the settlement's
-  store), wears its tools and gives its outputs by the season. It also gives the recipe's
-  experience.
-* **The store:** beyond what the trade keeps (a farmer 20 wheat), the outputs go to the
-  settlement's store. Bakers take flour from it and the hungry take food (a new NPC action). It
-  is a commons until the economy puts prices on things.
-* **Kits:** a new worker gets the tools of its trade's first recipes, and founders know their
-  trade at level 1.
-
-The old engine gave no tools, and its recipes asked for skill levels nobody could reach, so it
-never produced. The original data also had these gaps:
-
-* Recipes ask for ten skills no pack defines (baking, smithing...); those are reported and not
-  asked.
-* Nothing made water, so drawing it at the well is added.
-* Four first recipes took 100 minutes where their kin take 6 to 10, so they are taken as 10.
-* Herders' recipes want a barn, so their buildings now have one.
-* Tools still break by the old arithmetic (a bow lasts six hunts). Replacing them waits for the
-  economy and the blacksmith.
-
-Anyone may follow `saga.<server>.production.<settlement id>` to watch the store.
-
-**`economy`** sets what things are worth and gives every settlement a market. Its data is
-`economy.yml`: the wage, the spread, the seasons and the old price limits.
-
-* **Values come from labour:** an item's cheapest recipe, at a wage, plus its inputs' values and
-  its tools' wear, through the whole chain. Bread is flour, water and the baker's time
-  (wheat 1.00, flour 1.84, bread 2.21). Items no recipe makes get a value from their type and
-  effects.
-* **Markets hold real goods** (an inventory owner, `("market", id)`) and trade from the
-  settlement's treasury, so money moves between people and is never made from nothing.
-* **Prices:** a price is the value moved by scarcity (stock against recent demand), the season
-  and a spread, worked out when asked.
-* **Who trades:** workers sell what their trade does not keep, as much as the market wants and
-  can pay for. The hungry buy the food that feeds most for the money (`go_buy_food`, playable
-  now). Workers buy back broken tools.
-* **Merchants:** once a game day, a settlement's merchant brings what its workers lack (a broken
-  tool) and sends away surpluses, for a commission. Money paid to and earned from the world
-  beyond is the only money that enters or leaves.
-
-The old engine began every item's price at 1.0, with limits for eleven, and its market paid
-sellers from nothing. Not yet here: taxes (with the settlement's laws), and demand for logs,
-clay and wool, which wait for builders and crafts. Anyone may follow
-`saga.<server>.economy.<settlement id>` for the market's goods and prices, at most once a game
-hour.
-
-**`household`** makes families. Every resident NPC belongs to a household, with the roles from
-`households.yml`.
-
-* **Marriage:** once a game day, unmarried adults of a settlement may marry. The spouse moves
-  into the head's home.
-* **Children:** married couples may have children, characters born at 0. Under 12 their family
-  feeds them every hour from what it holds, else buys food with the purse or a parent's money,
-  and brings water from the well. At 12 they get a mind of their own. At 16 they take up the
-  head's trade at the head's workplace, and production equips them.
-* **The purse:** members give a fifth of what they hold beyond 100 coins. Those short of money
-  are given an allowance, and a worker whose tool broke may draw the rest of its price.
-* **Death:** the headship passes to the spouse, then the eldest child, then a relative. An
-  emptied household leaves its purse to the settlement.
-* **Old age:** characters now also die of it (the `old_age` setting), so a land that is born
-  into also dies.
-
-Two-year simulations showed what a settlement needs to live, and set these rules:
-
-* An hour of work costs a quarter of an action's effects; the seeds' numbers are a working
-  session's.
-* A producer of food keeps two days' eating of it.
-* Workers take their surplus to market once a game day, not only when they make something.
-* A purchase of food buys a full meal and the next.
-* A merchant's caravan buys surpluses for export, up to 300 coins a day, so producers of logs,
-  clay or wool earn and money enters the land. Food is never exported.
-
-Not yet: animals, fields and winter firewood from the old household data.
-
-**`law`** gives each settlement its own taxes and laws (`law.yml`, from the old seeds by
-`tools/export_law.py`).
-
-* **Taxes:** each tax says what it falls on, and it is collected:
-  * a share of what is made, in kind, to the market (the grain tithe, the miller's toll);
-  * a share of what the market pays sellers (market dues, the tavern tax);
-  * a share of craftsmen's money once a year.
-
-  The old engine looked its taxes up as "income" and "trade", which none was called, so none
-  was ever collected.
-* **Laws:** a law's enforcement is the chance an offender is caught, and its severity the
-  punishment: a fine, lashes or the pillory. The starving poor steal food at the market (a new
-  NPC action), so theft has thieves. The old crime detection was an empty loop.
-* **Alms:** once a game day the treasury relieves the poor, from what it holds beyond its reserve.
-  A treasury that only took starved its settlement of coin.
-* **Commands:** `SetTax` and `SetLaw`.
-
-Judges, trials, councils and elections wait for the government.
-
-**`religion`** gives everyone a faith (`religion.yml`, from the old seeds by
-`tools/export_religion.py`). It comes from the region they live in (the old weights: Transylvania
-and the Banat 30% Catholic) or from their household's head.
-
-* **Worship:** on Sundays and major feasts the faithful of a settlement with a church of their
-  faith gather, and their piety and happiness rise. A church serves the faith most of its
-  settlement keeps. A week away costs a point of piety; priests keep theirs.
-* **The calendar** is the Julian, as the Romanian lands kept it throughout 1100-1600. Weekdays
-  come from the Julian Day Number. Easter follows the Julian computus for every church until the
-  reform of 1582, and the Gregorian for Catholics after it, given in Julian dates.
-* **Corrections to the old data:** Christmas is 25 December, not today's 7 January. The Order of
-  the Dragon was Sigismund's Catholic order (1408), not an Orthodox one.
-
-Game masters see each settlement's faiths, their piety and the year's feasts in the admin panel.
-
-A game runs from its own repo (with Nest checked out beside it), for voievodate:
-
-```sh
-cd ../voievodate
-uv run nest saga status .
-uv run nest saga step . voievodate 3600     # one game day at 24×
-uv run nest run .                            # http://127.0.0.1:8500/joc
-```
-
-The keeper still sees it: its `apps` setting lists `../voievodate`, a folder that is an
-application, so the game is planned, checked and probed with Nest's own applications.
 
 ## The admin panel
 
@@ -915,12 +483,11 @@ admin: {title: Content, order: 10, role: editor, description: Pages, articles an
 ```
 
 The panel mounts each module's pages at `<admin route>/<module>`: `/admin/content`,
-`/admin/redirects`, `/admin/saga`. It shows each user a menu and a front page with only the pages
+`/admin/redirects`, `/admin/forum`. It shows each user a menu and a front page with only the pages
 their roles open (the `admin` role opens all). A module's admin templates extend
 `admin/layout.html`, and links come from `admin_url(request, module, path)`.
 
-So morlaca and transilpedia, made of the same modules, have the same panel. A game made with
-the Saga engine has the engine's panel: its servers, its land and its tools (`/admin/saga`). No panel is written for an
+So two sites made of the same modules have the same panel. No panel is written for an
 application, and an application without the admin module serves no admin pages (it says so at
 start). A module whose pages are all in the panel needs no route of its own (redirects).
 
@@ -933,8 +500,8 @@ admin panel. The keeper finds applications in two ways:
 * installed packages of type application;
 * the folders of its `apps` setting (`applications` by default): a folder of applications, or
   a folder that is one application, as each site's repository is. The keeper application
-  lists Nest's own (`applications`: the keeper and hello) and the sites in their repositories
-  beside Nest: `../voievodate`, `../gari`, `../morlaca`, `../regionalisme`, `../transilpedia`.
+  lists Nest's own (`applications`: the keeper and hello) and the sites in repositories of their
+  own beside Nest (`../mysite`).
 
 For each application it shows the manifest, the plan (start order, routes, bindings, notes), any
 problems, and whether it answers its health check on its port. That check runs on this machine

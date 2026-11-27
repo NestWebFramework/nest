@@ -84,10 +84,8 @@ pages (each module that offers one) or any address, and are renamed, moved up an
 put under another link or out of it, opened in a new window, removed. A link to a page
 with no label of its own shows the page's title, in every language; a label of its own is
 translated in Translations. The theme says which menus it shows (`menus:` in its
-manifest, `main` in Nest's themes): a menu with that address is shown there. Themes that have a **Menu** setting
-(such as `rail-signage` and the morlaca themes) can replace it with a list like
-`Journeys = module:trains/itinerariu; History = category:istorie`, set in Settings →
-Themes or in `application.theme_settings`.
+manifest, `main` in Nest's themes): a menu with that address is shown there. A theme with a **Menu** setting of its own (its
+links, set in Settings → Themes or in `application.theme_settings`) shows that instead.
 
 ### The editor
 
@@ -223,14 +221,15 @@ provider's tile host.
 ### A map on another module's page
 
 A module that has its own data can put a map on its page without depending on
-`maps`, through the `maps.element` lookup. The trains module's station pages do this:
+`maps`, through the `maps.element` lookup. A hypothetical module `example`, on the page
+of one of its places:
 
 ```python
 nest = request.app.state.nest
 if nest.answered("maps.element"):
-    station_map = nest.lookup("maps.element", {
+    place_map = nest.lookup("maps.element", {
         "request": request,
-        "data": f"/cfr/gara/{slug}/harta.geojson",   # its own GeoJSON
+        "data": f"/example/{slug}/harta.geojson",    # its own GeoJSON
         "lat": 46.78, "lng": 23.59, "zoom": 14,
         "title": "Cluj Napoca",
         "fit": False,

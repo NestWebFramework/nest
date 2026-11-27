@@ -42,26 +42,36 @@ def test_every_application_is_found_and_planned():
     assert not ({"voievodate", *SITES} & set(apps))  # they live in repos of their own
 
 
+def missing_only(problems):
+    """A site's problems, here, may only be packages Nest's own environment lacks (a site's
+    private packages are installed in the site's environment, not in Nest's)."""
+    lines = [x for p in problems for x in p.splitlines()[1:]]
+    return all(
+        "installed" in x or "part of" in x or "is not known" in x for x in lines
+    )  # a type its engine brings (a subsystem), unknown without the engine
+
+
 @pytest.mark.skipif(len(OWN) < len(SITES), reason="not every site's repo is checked out")
 def test_the_sites_in_their_own_repos_are_found_and_planned():
     apps = {a.name: a for a in applications([REPO / "applications", *OWN])}
     for site in SITES:
-        assert site in apps and not apps[site].problems, (site, apps[site].problems)
-    assert apps["gari"].port == 8400 and "trains" in [u["name"] for u in apps["gari"].units]
+        assert site in apps and missing_only(apps[site].problems), (site, apps[site].problems)
+    assert apps["gari"].port == 8400
 
 
 @pytest.mark.skipif(not (GAME / "module.yml").exists(), reason="no voievodate checkout")
 def test_a_game_in_its_own_repo_is_found_and_planned():
     apps = {a.name: a for a in applications([REPO / "applications", GAME])}
     voievodate = apps["voievodate"]
-    assert voievodate.port == 8500 and not voievodate.problems, voievodate.problems
-    names = [u["name"] for u in voievodate.units]
-    assert names.index("saga") < names.index("npc") and {
-        "admin",
-        "economy",
-        "voievodate-content",
-    } <= set(names)
-    assert voievodate.bindings["nest.db"] == ["db-sqlite"]
+    assert voievodate.port == 8500 and missing_only(voievodate.problems), voievodate.problems
+
+
+def test_an_application_is_planned_in_order():
+    apps = {a.name: a for a in applications([REPO / "applications"])}
+    hello = apps["hello"]
+    assert hello.port == 8100 and not hello.problems, hello.problems
+    names = [u["name"] for u in hello.units]
+    assert names.index("auth") < names.index("forum") and hello.bindings["nest.db"] == ["db-sqlite"]
 
 
 def test_a_broken_application_shows_its_problems(tmp_path):
@@ -75,13 +85,12 @@ def test_a_broken_application_shows_its_problems(tmp_path):
     assert broken.problems and "nowhere" in " ".join(broken.problems)
 
 
-@pytest.mark.skipif(not (GAME / "module.yml").exists(), reason="no voievodate checkout")
 def test_the_keepers_pages(tmp_path):
     root = tmp_path / "keeper"
     root.mkdir()
     (root / "module.yml").write_text(
         textwrap.dedent(APP).replace(
-            "APPS", ",".join(map(str, [REPO / "applications", GAME, *OWN]))
+            "APPS", str(REPO / "applications")
         ),
         encoding="utf-8",
     )
@@ -110,13 +119,12 @@ def test_the_keepers_pages(tmp_path):
         sign_in("root@example.ro")
         assert "Watch a site" in c.get("/admin/keeper/").text  # the dashboard of watched sites
         page = c.get("/admin/keeper/apps").text
-        assert "Voievodate" in page or "voievodate" in page
         assert "/admin/keeper/app/hello" in page and ("runs" in page or "stopped" in page)
-        detail = c.get("/admin/keeper/app/voievodate").text
-        assert "Start order" in detail and "economy" in detail and "nest.db" in detail
+        detail = c.get("/admin/keeper/app/hello").text
+        assert "Start order" in detail and "forum" in detail and "nest.db" in detail
         assert c.get("/admin/keeper/app/nowhere").status_code == 404
         packages = c.get("/admin/keeper/packages").text
-        assert "subsystem" in packages and "nest.module.admin" in packages
+        assert "nest.module.admin" in packages
 
 
 def make_keeper(tmp_path):
@@ -124,14 +132,13 @@ def make_keeper(tmp_path):
     root.mkdir()
     (root / "module.yml").write_text(
         textwrap.dedent(APP).replace(
-            "APPS", ",".join(map(str, [REPO / "applications", GAME, *OWN]))
+            "APPS", str(REPO / "applications")
         ),
         encoding="utf-8",
     )
     return create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
 
 
-@pytest.mark.skipif(not (GAME / "module.yml").exists(), reason="no voievodate checkout")
 def test_the_rest_api_answers_only_to_a_token(tmp_path):
     from nest_keeper import rest as keeper_api
     from nest_keeper import tokens
@@ -159,13 +166,13 @@ def test_the_rest_api_answers_only_to_a_token(tmp_path):
         assert (
             eco["name"] == "nest"
             and eco["kind"] == "web"
-            and {"module", "application", "subsystem"} <= set(eco["types"])
+            and {"module", "application"} <= set(eco["types"])
         )
         apps = {a["name"]: a for a in c.get("/api/v1/apps", headers=auth).json()["apps"]}
-        assert apps["voievodate"]["port"] == 8500 and apps["voievodate"]["running"] in (True, False)
-        one = c.get("/api/v1/apps/voievodate", headers=auth).json()
+        assert apps["hello"]["port"] == 8100 and apps["hello"]["running"] in (True, False)
+        one = c.get("/api/v1/apps/hello", headers=auth).json()
         assert one["bindings"]["nest.db"] == ["db-sqlite"] and any(
-            u["name"] == "economy" for u in one["units"]
+            u["name"] == "forum" for u in one["units"]
         )
         assert c.get("/api/v1/apps/nowhere", headers=auth).status_code == 404
         assert any(

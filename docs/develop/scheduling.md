@@ -6,13 +6,13 @@ description: "Jobs that run at set times or intervals: declared in a package's m
 # Scheduled jobs
 
 The **scheduler** module runs the jobs an application's packages declare at set times or
-intervals: fetch a timetable every 6 hours, forget old records every night, check other
+intervals: send due notifications every 30 seconds, forget old records every night, check other
 sites every 5 minutes. It runs each job **once**, however many workers or containers serve
 the application. It remembers when each job runs next, so a restart neither repeats nor
 loses one, and the admin panel shows every job's runs.
 
-It is for **real clock time**. A game's own time (Saga's world loop, its seasons and
-timers) keeps its own clock and is not scheduled here.
+It is for **real clock time**. A game's own time (its seasons and timers) keeps its own
+clock and is not scheduled here.
 
 ## Declaring a job
 
@@ -20,22 +20,28 @@ A package declares its jobs in its `module.yml`, under `schedule:`:
 
 ```yaml
 schedule:
-  - name: sync
-    run: nest_trains.jobs:sync     # package.module:function
-    every: 6h                      # 30s, 15m, 6h, 1d
+  - name: cleanup
+    run: nest_keys.jobs:cleanup    # package.module:function
+    every: 24h                     # 30s, 15m, 6h, 1d
     catch_up: once
-    description: Ask data.gov.ro whether there is a new timetable, and load what is new.
+    description: Remove the accounts unused too long, telling the modules holding their data.
 ```
 
-The job is named after its package: this one is `trains.sync`. The function takes the
+The job is named after its package: this one is `keys.cleanup`. The function takes the
 job's context and returns a short text or a dict, which is kept as its result:
 
 ```python
-def sync(ctx):
-    if not ctx.host.settings.get("sync"):
-        return "sync is off"
-    report = load_new_timetable(ctx.host.bound("nest.db"), ctx.host.workspace)
-    return str(report)
+def cleanup(ctx):
+    from nest_keys import service
+
+    st = ctx.host.settings
+    unprotected, inactive = service.cleanup(
+        ctx.host.bound("nest.db"),
+        lambda user_id: ctx.host.gather("account.forget", user_id),
+        unprotected_days=int(st.get("unprotected_days") or 14),
+        inactive_days=int(st.get("inactive_days") or 365),
+    )
+    return f"removed {unprotected} unprotected and {inactive} inactive accounts"
 ```
 
 `ctx.host` is the job's own package's host: its settings, bindings and workspace, as in
@@ -66,9 +72,9 @@ An application changes a package's job in its own manifest, by the job's full na
 
 ```yaml
 schedule:
-  - {job: trains.sync, every: 3h}
+  - {job: push.send, every: 1m}
   - {job: keeper.prune, cron: "0 5 * * 0"}
-  - {job: trains.sync, enabled: false}
+  - {job: keys.cleanup, enabled: false}
 ```
 
 It can change the timing, `enabled`, `at_start`, `catch_up` and `timeout`, but never the
@@ -127,5 +133,4 @@ def setup(host):
     async def loop(): ...
 ```
 
-The trains module (`trains.sync`) and the keeper (`keeper.watch`, `keeper.prune`,
-`keeper.fetch`) do this.
+The keeper (`keeper.watch`, `keeper.prune`, `keeper.fetch`) does this.

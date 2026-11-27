@@ -26,7 +26,7 @@ it as) and a `pyproject.toml` (how Python installs it). Its code is in
 | `theme` | The layout, styles and widgets every page is drawn in. |
 
 Each manifest is checked against the contract for its type. An ecosystem can add
-types: the Saga game engine adds `subsystem` and `content`. See
+types of its own through its contract. See
 [The manifest](../develop/manifest.md).
 
 ## Binding
@@ -118,17 +118,17 @@ Modules cooperate without importing each other. One module **answers** a named
 question; others **look it up**:
 
 ```python
-# in the maps module's setup
-host.answer("maps.element", map_element)
+# in the gallery module's setup
+host.answer("gallery.spotlight", spotlight)
 
-# in the trains module, only if some module answers
-if nest.answered("maps.element"):
-    station_map = nest.lookup("maps.element", {"request": request, "data": url, ...})
+# in the content module, only if some module answers
+if nest.answered("gallery.spotlight"):
+    shown = nest.lookup("gallery.spotlight", {"html": body, ...})
 ```
 
 `lookup` returns the first answer that is not `None`. `gather` collects every
 module's answer: the admin panel gathers `admin.waiting` to show how many comments
-or proposals wait, and the SEO module gathers `seo.urls` from every module for the
+wait, and the SEO module gathers `seo.urls` from every module for the
 sitemap. If nobody answers, the feature is simply absent. See
 [Lookups](../develop/lookups.md).
 
@@ -145,12 +145,12 @@ that exists always wins over a redirect.
 A module can run a task from startup until shutdown with `@host.background`. Under
 `nest serve`, every worker runs it. With `@host.background(single=True)` only one
 worker of the workspace runs it at a time (a daily fetch, a clean-up); if that
-worker stops, another takes over. The trains module fetches new timetables this way.
+worker stops, another takes over. The keeper watches its sites this way.
 
 ## Migrations, per module
 
 A module that owns tables ships its own Alembic migrations and keeps its own version
-table (`<module>_alembic_version`). Its tables carry its prefix (`glossary_term`), so
+table (`<module>_alembic_version`). Its tables carry its prefix (`content_term`), so
 autogenerate never touches another module's tables.
 
 ```sh
@@ -180,8 +180,8 @@ browser, then the site's default. See [Languages](../languages.md).
 
 Accounts come from the `auth` module and have roles. Modules protect pages with
 `require_role("editor")`. The roles used by Nest's modules are `admin` (has every
-role), `editor` (content, galleries, maps, dictionaries, SEO, redirects) and
-`moderator` (comments, forum). The Saga engine adds `gamemaster`.
+role), `editor` (content, galleries, maps, SEO, redirects) and
+`moderator` (comments, forum).
 
 ## Core, enabled, disabled
 

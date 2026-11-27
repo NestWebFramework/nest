@@ -5,7 +5,7 @@ reports where it crosses into another package other than by the front door:
 
 * importing another package's internals (``from nest_auth.sessions import ...``) instead
   of its published API (``provides.exports``). A part may use its host's own modules
-  (a game subsystem, the engine's ``nest_saga.store``);
+  (an engine's part, through the engine's own store);
 * importing a name the other package does not export;
 * importing a package it does not depend on (``deps``): at the top of a file that is an
   error; inside a function it is a hidden optional dependency, a warning (ask with a
@@ -104,7 +104,7 @@ def check(entries: list[Entry], known: list[Entry]) -> list[Finding]:
     from nest.themes import check as themes_check  # noqa: PLC0415 - the theme contract
 
     findings += themes_check(entries, known)
-    for ep in entry_points(group="nest.checks"):  # an ecosystem's own (saga: world state)
+    for ep in entry_points(group="nest.checks"):  # an ecosystem's own (an engine's world state)
         try:
             extra = ep.load()
         except Exception as e:  # noqa: BLE001 - reported, the others still run

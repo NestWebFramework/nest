@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # nest-images: build the applications' images and push them to Docker Hub.
 #
-#   nest-images build [APP...]     build (all eight when none is named)
+#   nest-images build [APP...]     build (every one when none is named)
 #   nest-images push  [APP...]     push what was built: its version, its commits, latest
 #   nest-images list               the applications, their versions and image names
 #
-# APP: gari morlaca transilpedia clujul-online regionalisme transport-comun transportul aeroportul incotro docsite keeper. A site is built from its own
-# repository beside Nest (SRC/<site>) with Nest as a second build context; docsite and keeper
-# from Nest's repository with their own Dockerfile. Each image holds code only: the data
+# APP: gari morlaca transilpedia clujul-online regionalisme transport-comun transportul aeroportul incotro valea-somesului docsite keeper atlas. A site is built from its own
+# repository beside Nest (SRC/<site>) with Nest and the private packages' repositories (nest-saga,
+# nest-transport, nest-atlas, nest-site-modules, nest-site-themes) as further build contexts;
+# docsite and keeper from Nest's repository with their own Dockerfile; atlas from nest-atlas's. Each image holds code only: the data
 # (databases, uploads, settings, backups) are a folder on the server, mounted at /data.
 #
 # Set NAMESPACE (miraur) and SRC (the folder holding nest/ and the sites; ~/projects).
@@ -23,7 +24,8 @@ NAMESPACE=${NAMESPACE:-miraur}
 SITES_REPO=${SITES_REPO:-$NAMESPACE/nest-sites}
 SRC=${SRC:-$HOME/projects}
 NEST=$SRC/nest
-ALL=(gari morlaca transilpedia clujul-online regionalisme transport-comun transportul aeroportul incotro docsite keeper)
+PRIVATE="nest-saga nest-transport nest-atlas nest-site-modules nest-site-themes"  # beside Nest, in SRC
+ALL=(gari morlaca transilpedia clujul-online regionalisme transport-comun transportul aeroportul incotro valea-somesului docsite keeper atlas)
 
 die() { echo "nest-images: $*" >&2; exit 1; }
 say() { echo "· $*"; }
@@ -31,6 +33,7 @@ say() { echo "· $*"; }
 root_of() {  # the application's folder
   case $1 in
     docsite|keeper) echo "$NEST/applications/$1" ;;
+    atlas) echo "$SRC/nest-atlas/applications/atlas" ;;  # private: the atlas's own repository
     *) echo "$SRC/$1" ;;
   esac
 }
@@ -55,6 +58,7 @@ commit_of() {  # a checkout's commit, with -dirty when it has uncommitted change
 revision_of() {  # the site's commit and Nest's, as the image's third tag
   case $1 in
     docsite|keeper) commit_of "$NEST" ;;
+    atlas) echo "$(commit_of "$SRC/nest-atlas")-$(commit_of "$NEST")" ;;
     *) echo "$(commit_of "$(root_of "$1")")-$(commit_of "$NEST")" ;;
   esac
 }
@@ -68,14 +72,21 @@ build() {
   version=$(version_of "$app")
   revision=$(revision_of "$app")
   say "$image:$pre$version ($pre$revision)"
+  local private=()  # the private packages' repositories, each a build context of a site
+  for r in $PRIVATE; do private+=(--build-context "$r=$SRC/$r"); done
   case $app in
+    atlas)
+      DOCKER_BUILDKIT=1 docker build -q -f "$root/deploy/Dockerfile" --build-context "nest=$NEST" \
+        --label "org.opencontainers.image.version=$version" \
+        --label "org.opencontainers.image.revision=$revision" --build-arg "NEST_REVISION=$revision" \
+        -t "$image:$pre$version" -t "$image:$pre$revision" -t "$image:${pre}latest" "$SRC/nest-atlas" >/dev/null ;;
     docsite|keeper)
       DOCKER_BUILDKIT=1 docker build -q -f "$NEST/applications/$app/deploy/Dockerfile" \
         --label "org.opencontainers.image.version=$version" \
         --label "org.opencontainers.image.revision=$revision" --build-arg "NEST_REVISION=$revision" \
         -t "$image:$pre$version" -t "$image:$pre$revision" -t "$image:${pre}latest" "$NEST" >/dev/null ;;
     *)
-      DOCKER_BUILDKIT=1 docker build -q -f "$NEST/deploy/Dockerfile" --build-context "nest=$NEST" \
+      DOCKER_BUILDKIT=1 docker build -q -f "$NEST/deploy/Dockerfile" --build-context "nest=$NEST" "${private[@]}" \
         --label "org.opencontainers.image.version=$version" \
         --label "org.opencontainers.image.revision=$revision" --build-arg "NEST_REVISION=$revision" \
         -t "$image:$pre$version" -t "$image:$pre$revision" -t "$image:${pre}latest" "$root" >/dev/null ;;

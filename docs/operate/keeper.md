@@ -11,7 +11,7 @@ The keeper (`applications/keeper`) is Nest's own application. It does three jobs
   and the keeper asks every agent how its site is doing: whether it is up and since when,
   its uptime over 24 hours and 7 days, how fast it answers, its versions, pending
   migrations, its last backup, recent warnings and errors. It can also ask a site to do
-  something, such as make a backup or sync its timetable.
+  something, such as make a backup or run a module's action.
 - **It looks after the deployed sites.** It keeps a copy of every site's backups on its
   own server, checked against their SHA-256, and through each server's host helper it
   restarts, upgrades, rolls back and restores the sites, on this server and on others
@@ -254,15 +254,15 @@ browser cannot be made to call it.
 Its own action is **backup**: the workspace in one archive, made while the site runs, the
 oldest removed beyond `backup_keep` (14, as `nest-site`'s `KEEP`, so neither prunes the
 other's archives). A module adds actions by answering
-`agent.actions` with a list of `nest_agent.Action`. The trains module offers
-**trains.sync**, which fetches the timetable from data.gov.ro now:
+`agent.actions` with a list of `nest_agent.Action`. A hypothetical module `example` would
+offer **example.refresh**, which fetches its data now, this way:
 
 ```python
 from nest_agent import Action
 
 def setup(host):
     if host.has_module("agent"):
-        actions = [Action("trains.sync", "Sync the timetable", run_sync, "Fetch it now.")]
+        actions = [Action("example.refresh", "Refresh the data", run_refresh, "Fetch it now.")]
         host.answer("agent.actions", lambda _key: actions)
 ```
 

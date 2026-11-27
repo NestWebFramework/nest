@@ -8,7 +8,7 @@ description: "Scaffold a Nest module, understand its package layout, mount its r
 A module is a Python package with a `module.yml` beside its code. It owns no port: an
 application includes it at a route and gives it a `ModuleHost`, its view of the running
 application. This page builds one with the scaffold, then walks through a real module
-(hangman) to show each part a module usually has.
+(the forum) to show each part a module usually has.
 
 ## Scaffold it
 
@@ -131,59 +131,59 @@ process, or one test after another, must not share it). Handlers read it back wi
 `nest.host.module_state(request, "<module>")`.
 
 A value made with `host.live(key, kind)` is a setting read again each time it is asked
-for, so a change made in the admin panel applies at once, without a restart. Hangman's
-`setup`, as it is:
+for, so a change made in the admin panel applies at once, without a restart. The forum's
+`setup`, shortened:
 
 ```python
 from nest import ModuleHost
 
 
 def setup(host: ModuleHost) -> None:
-    host.state.update(
-        url="" if host.route in (None, "/") else host.route.rstrip("/"),
-        alphabet=host.live("alphabet", lambda v: [x for x in str(v or "").split() if x]),
-        max_wrong=host.live("max_wrong", int),
-        min_letters=host.live("min_letters", int),
-        max_letters=host.live("max_letters", int),
-        show_clue=host.live("show_clue", bool),
-        sign=host.sign,
-        unsign=host.unsign,
-        lookup=host.lookup,
-    )
-    from nest_hangman.web import router
+    from nest_forum.web import router
 
+    host.state.update(
+        base="" if host.route in (None, "/") else host.route,
+        public_read=host.live("public_read", bool),
+        edit_minutes=host.live("edit_minutes", int),
+        topics_per_page=host.live("topics_per_page", int),
+        posts_per_minute=host.live("posts_per_minute", int),
+        realtime=host.realtime,
+    )
     host.mount(router)
 ```
 
-and a handler in `web.py`:
+and a handler in `web.py`, shortened:
 
 ```python
 from fastapi import APIRouter, Request
+from nest_db import Database
 
-from nest import is_htmx, render
+from nest import bound, render
 from nest.host import module_state
 
 router = APIRouter()
 
 
-@router.get("/")
-def play(request: Request):
-    state = module_state(request, "hangman")
-    game, word = _current(request)
+@router.get("/{slug}/")
+def board_page(request: Request, slug: str, db: Database = bound(Database)):
+    state = module_state(request, "forum")
+    b = _board_or_404(request, service.board(db, slug))
+    per_page = state["topics_per_page"]  # a live setting, read now
+    rows, total = service.topics(db, b.id, page=_page(request), per_page=per_page)
     return render(
         request,
-        "hangman/play.html",
-        fragment="game" if is_htmx(request) else None,
-        action=state["url"],
-        word=word,
-        max_wrong=state["max_wrong"],  # a live setting, read now
+        "forum/board.html",
+        fragment="topics",
+        board=b,
+        topics=rows,
+        base=state["base"],
         # ...
     )
 ```
 
 `host.settings.get(key)` reads a setting once. Use it for values the module's routes
-depend on at setup (the glossary mounts its legacy router only when
-`legacy_glossword` is on); declare such a setting with `restart: true` so the admin panel
+depend on at setup (the auth module reads `session_days` once, when it sets up its
+sessions); declare such a setting with `restart: true` so the admin panel
 says a change applies when the application is made again.
 
 ## What else the host offers
@@ -239,8 +239,8 @@ def setup(host: ModuleHost) -> None:
 ```
 
 A context function runs for every page; keep it cheap, or return functions the template
-calls only when it needs them (the glossary returns `gl_title(d)`, which reads the
-translated titles once per page, on first use).
+calls only when it needs them (the content module returns `menu(slug)`, which reads a
+menu only when a template shows it).
 
 ## Settings
 
@@ -248,14 +248,14 @@ Settings are declared in `module.yml`, typed and checked at startup:
 
 ```yaml
 settings:
-  max_wrong:
-    type: int
-    default: 6
-    description: Wrong guesses before the game is lost (the drawing has six parts).
-  show_clue:
+  public_read:
     type: bool
     default: true
-    description: Show the word's meaning as a clue.
+    description: Whether people who have not signed in may read.
+  posts_per_minute:
+    type: int
+    default: 5
+    description: Posts a member may send per minute.
 ```
 
 A value is found, in this order: the environment (`NEST_<APP>__<MODULE>__<KEY>`, read-only
@@ -268,12 +268,12 @@ An application lists the module under `modules:` with a route, and may set its s
 
 ```yaml
 modules:
-  - name: hangman
-    route: /spanzuratoarea
+  - name: forum
+    route: /forum
     config:
-      max_wrong: 8
-  - name: glossary
-    route: /
+      posts_per_minute: 3
+  - name: comments
+    route: /comentarii
 ```
 
 If the application's manifest declares `deps:`, it lists every package it uses there,
@@ -282,14 +282,14 @@ by ecosystem and with a version range:
 ```yaml
 deps:
   nest:
-    hangman: ">=0.1,<1"
-    glossary: ">=0.1,<1"
+    forum: ">=0.2,<1"
+    comments: ">=0.1,<1"
 ```
 
 Then `uv run nest plan APP` shows the packages in start order and their bindings, and
-`uv run nest run APP --reload` serves it. Hangman takes its words from whichever module
-answers the `words.random` lookup; without the glossary (or another module answering
-it) the page says there are no words yet, it does not fail. That is the subject of
+`uv run nest run APP --reload` serves it. The forum asks whichever module answers the
+`forum.access` lookup who may read its private boards; without a module answering it,
+those boards stay closed to everyone but moderators, and the forum does not fail. That is the subject of
 [the next page](lookups.md).
 
 ## Where to go next

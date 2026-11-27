@@ -5,9 +5,9 @@ description: "host.answer, host.lookup, host.gather and nest.answered; fallbacks
 
 # Lookups: modules that cooperate without importing each other
 
-Modules are reused across applications in any combination: a site may have the glossary
-and hangman, another hangman alone, a third the glossary and comments. If hangman
-imported the glossary, it could not run without it, and an upgrade of one could break
+Modules are reused across applications in any combination: a site may have content
+and the gallery, another the gallery alone, a third content and comments. If content
+imported the gallery, it could not run without it, and an upgrade of one could break
 the other. So modules talk through the application instead: one **answers** a named
 question, another **asks** it, and neither imports the other.
 
@@ -25,61 +25,60 @@ or reading another module's state, is reported.
 
 The same `lookup`, `gather` and `answered` are on `request.app.state.nest`, for handlers.
 A name is a dotted string by convention: the module that defines the question first
-(`seo.urls`, `words.random`, `admin.waiting`). The key and the answer are plain data:
+(`seo.urls`, `forum.board`, `admin.waiting`). The key and the answer are plain data:
 dicts, lists, strings. A module that answers a question returns `None` for what it does
 not know, so the next one may answer.
 
 ## One answer: lookup
 
-Hangman needs a word and takes it from whichever module answers `words.random`. The
-glossary answers it:
+A module that wants a members-only board for one of its records (a club, a team) takes it
+from whichever module answers `forum.board`. The forum answers it, making the board the
+first time it is asked:
 
 ```python
 def setup(host: ModuleHost) -> None:
-    db = host.bound("nest.db")
+    def board_for(key: Any) -> dict[str, str] | None:
+        """forum.board: a board with this scope, made if missing, and its address."""
+        from nest_forum import service
 
-    def random_word(options: object) -> dict | None:
-        """A published word at random, with its first definition as a clue."""
-        from nest_glossary import service
+        if not isinstance(key, dict) or not key.get("scope") or not key.get("title"):
+            return None
+        b = service.ensure_board(
+            host.bound("nest.db"),
+            str(key["title"]),
+            slug=str(key.get("slug") or key["title"]),
+            description=str(key.get("description") or ""),
+            scope=str(key["scope"]),
+        )
+        return {"slug": b.slug, "url": f"{host.state['base']}/{b.slug}/"}
 
-        o = options if isinstance(options, dict) else {}
-        t, d = service.random_term(db, int(o.get("min", 4)), int(o.get("max", 14)))
-        return _word(t, d)  # {"ref", "word", "clue", "source", "url"} or None
-
-    host.answer("words.random", random_word)
-    host.answer("words.by_ref", word_by_ref)
+    host.answer("forum.board", board_for)
 ```
 
-and hangman asks, keeping `host.lookup` in its state for its handlers:
+and the other module (here a hypothetical `example`) asks:
 
 ```python
-def _new_word(state: dict[str, Any]) -> dict | None:
-    return state["lookup"](
-        "words.random", {"min": state["min_letters"], "max": state["max_letters"]}
-    )
+board = host.lookup("forum.board", {"scope": "example/team:7", "title": "The team"})
 ```
 
-Without a module answering, the lookup returns `None` and hangman says there are no
-words yet. A module that would rather use another's service when it is there, and its
-own way otherwise, asks `nest.answered` first. The trains module puts a map on a station
-page only when the maps module is in the application:
+Without a module answering, the lookup returns `None` and the page simply has no board.
+A module that would rather use another's service when it is there, and its own way
+otherwise, asks `nest.answered` first. The content module frames an article's pictures
+the way the gallery shows its photos, only when the gallery is in the application:
 
 ```python
 nest = request.app.state.nest
-station_map = None
-if st.latitude and st.longitude and nest.answered("maps.element"):
-    station_map = nest.lookup(
-        "maps.element",
+if nest.answered("gallery.spotlight"):
+    shown = nest.lookup(
+        "gallery.spotlight",
         {
-            "request": request,
-            "data": f"{_base(request)}/gara/{st.slug}/harta.geojson",
-            "lat": st.latitude,
-            "lng": st.longitude,
-            "zoom": 14,
-            "title": st.name,
-            "fit": False,
+            "html": body,
+            "all": bool(state["settings"].get("pictures_open_large")),
+            "viewer": nest.asset("gallery", "lightbox.js"),
         },
     )
+    if shown:
+        body = shown["html"]
 ```
 
 ## Every answer: gather
@@ -101,7 +100,7 @@ def groups(request: Request, lat: float, lon: float) -> list[dict[str, Any]]:
 A module with places takes part by answering:
 
 ```python
-host.answer("geo.near", lambda q: {"title": "Stations", "places": [
+host.answer("geo.near", lambda q: {"title": "On the map", "places": [
     {"title": ..., "url": ..., "km": ..., "note": ...}, ...]})
 ```
 
@@ -113,19 +112,19 @@ refreshing its addresses and search index. Nobody has to know who listens.
 
 | Name | Answered by | Asked by | Key → answer |
 |---|---|---|---|
-| `seo.urls` | glossary, hangman, content, gallery, maps, trains, docs | seo (gather) | none → a list of `{path, title, kind, group, subject, lastmod, images, edit}` |
-| `seo.text` | glossary, hangman, content, trains | seo (lookup) | a subject (`"glossary.term:12"`) → `{lead, text, context}`, the page's words for SEO proposals |
+| `seo.urls` | content, gallery, maps, docs | seo (gather) | none → a list of `{path, title, kind, group, subject, lastmod, images, edit}` |
+| `seo.text` | content | seo (lookup) | a subject (`"content.entry:12"`) → `{lead, text, context}`, the page's words for SEO proposals |
 | `seo.site_url` | seo | the host (prefixed language URLs) | none → the site's public address |
-| `words.random`, `words.by_ref` | glossary | hangman | `{min, max}` or a reference → `{ref, word, clue, source, url}` |
-| `geo.near` | maps, trains | geo (gather) | `{lat, lon, km, limit}` → `{title, places: [...]}` |
-| `maps.element` | maps | trains | `{request, data, lat, lng, zoom, title, fit}` → a map's HTML |
+| `forum.board` | forum | any module with members' boards | `{scope, title, slug?, description?}` → `{slug, url}` |
+| `gallery.spotlight` | gallery | content | `{html, all, viewer}` → `{html, used}`, an article's pictures framed |
+| `geo.near` | maps | geo (gather) | `{lat, lon, km, limit}` → `{title, places: [...]}` |
+| `maps.element` | maps | any module showing a map on its pages | `{request, data, lat, lng, zoom, title, fit}` → a map's HTML |
 | `map.points` | content | maps (gather) | `{locale}` → places to show on a map |
-| `admin.waiting` | glossary, comments | admin (gather) | none → `{module: count}` of what waits for a moderator |
+| `admin.waiting` | comments | admin (gather) | none → `{module: count}` of what waits for a moderator |
 | `translations.save`, `translations.states`, `translations.check`, `translations.kinds` | translations | content, gallery | the editors' side of translated text |
 | `translations.changed` | content | translations (gather) | `{subject, ids, locales}`: a translation was written |
-| `redirects.request` | redirects | glossary | a request → a redirect response, or `None` |
+| `redirects.request` | redirects | a module that answers old addresses itself | a request → a redirect response, or `None` |
 | `redirects.moved` | redirects | content | `{source, target, note}`: a page moved, add a redirect |
-| `glossary.legacy_subject` | glossary | comments (Glossword import) | an old Glossword address → `"glossary.term:<id>"` |
 | `wordpress.post` | content | comments (WordPress import) | an old WordPress post id → its entry |
 | `module.removed` | seo, comments | the host (gather), on uninstall | a module's name: forget what was kept about it |
 
@@ -189,21 +188,19 @@ A task that runs from startup until shutdown is an `async` function registered w
 
 ```python
 @host.background(single=True)
-async def timetable_sync() -> None:
-    from nest_trains.sync import sync
-
-    await asyncio.sleep(30)  # let the site start first
+async def watch_sites() -> None:
+    await asyncio.sleep(5)  # let the site start first
     while True:
-        hours = max(1, int(host.settings.get("sync_hours") or 24))
-        if host.settings.get("sync"):
+        seconds = max(60, int(host.settings.get("check_seconds") or 300))
+        try:
             db = host.bound("nest.db")
-            try:
-                # host.workspace needs `requires: {host: [workspace]}` in module.yml
-                await run_in_threadpool(sync, db, host.workspace / "data" / "trains-sources")
-            except Exception:
-                log.exception("timetable sync failed")
-        await asyncio.sleep(hours * 3600)
+            await run_in_threadpool(sites.check_all, db, host.state["seal"])
+        except Exception:
+            log.exception("watching the sites failed")
+        await asyncio.sleep(seconds)
 ```
+
+This is the keeper's, shortened: it asks every watched site how it is.
 
 Under `nest serve` each worker runs a plain `@host.background` task.
 `@host.background(single=True)` runs it in one worker of the workspace at a time, holding

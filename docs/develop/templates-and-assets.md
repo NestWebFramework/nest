@@ -17,17 +17,17 @@ The loader looks in this order, and the first match wins:
 2. the theme's `templates/`, then the theme it extends;
 3. each module's `templates/`, under the module's name.
 
-A module's templates are therefore reached as `"<module>/<file>"`: the hangman module's
-`templates/play.html` is `"hangman/play.html"`. To change that page for one site, the
-application ships its own `templates/hangman/play.html`; a theme may do the same for
+A module's templates are therefore reached as `"<module>/<file>"`: the forum's
+`templates/topic.html` is `"forum/topic.html"`. To change that page for one site, the
+application ships its own `templates/forum/topic.html`; a theme may do the same for
 every site that uses it.
 
 Autoescaping is on, and undefined names are errors (`StrictUndefined`): a typo in a
 template fails loudly instead of rendering empty. Test an optional value with
-`is defined`, as hangman does for the seo module's helpers:
+`is defined`, as the gallery does for the seo module's helpers:
 
 ```jinja
-{% block title %}{{ seo_page_title("hangman.play", _("Hangman")) if seo_page_title is defined else _("Hangman") ~ " · " ~ app.title }}{% endblock %}
+{% block title %}{{ seo_page_title("gallery.index", _("Galleries")) if seo_page_title is defined else _("Galleries") ~ " · " ~ app.title }}{% endblock %}
 ```
 
 ## render() and fragments
@@ -43,34 +43,38 @@ that is not a boosted navigation):
 ```python
 from nest import is_htmx, render
 
-return render(
-    request,
-    "hangman/play.html",
-    fragment="game" if is_htmx(request) else None,
-    word=word,
-    mask=game.mask(text, alphabet),
-    max_wrong=max_wrong,
-)
+if is_htmx(request):
+    return render(
+        request,
+        "forum/topic.html",
+        fragment="reply",
+        topic=t,
+        error=None,
+        body="",
+        base=state["base"],
+    )
+return RedirectResponse(f"{topic_url(state['base'], t)}?last=1#post-{p.id}", status_code=303)
 ```
 
 ```jinja
 {% extends "layout.html" %}
 {% block content %}
-<h1>{{ _("Hangman") }}</h1>
-{% block game %}
-<section id="hangman" class="hangman" aria-live="polite">
-  <form method="post" action="{{ action }}/guess"
-        hx-post="{{ action }}/guess" hx-target="#hangman" hx-swap="outerHTML">
-    {{ csrf_field }}
-    {% for l in letters %}<button type="submit" name="letter" value="{{ l }}">{{ l }}</button>{% endfor %}
-  </form>
-</section>
+<h1>{{ topic.title }}</h1>
+{# ... the posts ... #}
+{% block reply %}
+<form id="reply" class="stack" method="post" action="{{ base }}/t/{{ topic.id }}/reply"
+      hx-post="{{ base }}/t/{{ topic.id }}/reply" hx-target="#reply" hx-swap="outerHTML">
+  {{ csrf_field }}
+  {% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+  <div class="field"><label for="reply-body">{{ _("Reply") }}</label><textarea id="reply-body" name="body" rows="5" required>{{ body }}</textarea></div>
+  <button type="submit">{{ _("Send") }}</button>
+</form>
 {% endblock %}
 {% endblock %}
 ```
 
-Without JavaScript the form posts and the handler redirects (303) back to the page; with
-htmx the same handler returns the `game` block and htmx swaps it in. A block may use what
+Without JavaScript the form posts and the handler redirects (303) back to the topic; with
+htmx the same handler returns the `reply` block and htmx swaps it in. A block may use what
 the template sets up outside any block (its imports and `set`s).
 
 `render` adds `Vary: HX-Request` to every response. A request with the `X-Nest-Embed`
@@ -162,7 +166,7 @@ so the later restyles the earlier. The admin panel has its own bundle with the m
 `admin_styles`.
 
 ```yaml
-styles: [hangman.css]  # its base look; an application restyles it
+styles: [forum.css]  # its base look; an application restyles it
 ```
 
 Bundles are served at `/assets/_bundle/site.css` and `/assets/_bundle/admin.css` with a
@@ -209,18 +213,18 @@ one form per plural category of the language (Romanian has three):
 
 ```json
 {
-  "Hangman": "Spânzurătoarea",
-  "New word": "Alt cuvânt",
-  "{n} wrong guess of {max}": [
-    "{n} greșeală din {max}",
-    "{n} greșeli din {max}",
-    "{n} de greșeli din {max}"
+  "Comments": "Comentarii",
+  "Sign in to comment.": "Autentifică-te pentru a comenta.",
+  "{n} comment": [
+    "{n} comentariu",
+    "{n} comentarii",
+    "{n} de comentarii"
   ]
 }
 ```
 
 ```jinja
-{{ ngettext('{n} wrong guess of {max}', '{n} wrong guesses of {max}', misses, max=max_wrong) }}
+{{ ngettext("{n} comment", "{n} comments", total) }}
 ```
 
 Code writes English; text not in a catalog shows as written. In Python, outside a
@@ -229,7 +233,7 @@ template, `translator(request)` (from `nest`) gives the page's words, and
 
 Catalogs merge in start order and the application's come last, so an application can
 reword any module. To reword one module only, its catalog uses a scoped key:
-`"hangman::Hangman": "Spânzurătoare"` applies in hangman's templates alone. See
+`"forum::Board": "Secțiune"` applies in the forum's templates alone. See
 [languages](../languages.md).
 
 A package's own words (its title, its description, its admin page's) are never found by

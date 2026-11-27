@@ -30,7 +30,7 @@ module:
   id: nest.module.keeper
   type: module
   title: Keeper
-  version: 0.3.0
+  version: 0.3.1
   description: The deployed sites Nest watches through their agents, and Nest's applications, their plans and packages.
   license: MIT
   created: "2026-11-14"

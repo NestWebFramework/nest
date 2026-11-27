@@ -17,7 +17,7 @@ In the Nest repository:
 ```sh
 uv run pytest                          # packages/nest-core/tests and tests/
 uv run pytest tests/test_geo.py -q     # one file
-uv run pytest -k hangman               # tests whose name matches
+uv run pytest -k forum                 # tests whose name matches
 uv run ruff check .                    # lint: errors, imports, bugbear, pyupgrade, simplify
 uv run ruff format .                   # the formatter owns line length (100)
 ```
@@ -71,55 +71,52 @@ The application's manifest is written in the test, with only the modules it need
 `NEST_*` variables never leak into a test. Use `with TestClient(app) as c:` so the
 application's startup and shutdown run (background tasks, hooks).
 
-A module that should degrade without a partner gets a test of its own. Hangman, with no
-module answering `words.random`:
+A module that should degrade without a partner gets a test of its own. The forum, with no
+module answering `forum.access`, keeps a private board closed:
 
 ```python
-def test_hangman_without_words_says_so(tmp_path):
+def test_a_private_board_stays_closed_without_an_answer(tmp_path):
     root = tmp_path / "app"
     root.mkdir()
     (root / "module.yml").write_text(
-        "module: {name: joc, id: test.app.joc, type: application, version: 0.1.0}\n"
-        "application: {title: Joc, port: 8000, theme: base, languages: [ro]}\n"
-        "modules:\n  - {name: hangman, route: /}\n",
+        "module: {name: club, id: test.app.club, type: application, version: 0.1.0}\n"
+        "application: {title: Club, port: 8000, theme: base, languages: [ro]}\n"
+        "modules:\n  - {name: forum, route: /forum}\n  - {name: auth, route: /cont}\n"
+        "bind:\n  nest.db: {providers: [db-sqlite]}\n",
         encoding="utf-8",
     )
-    with TestClient(create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})) as c:
-        r = c.get("/")
-        assert r.status_code == 200 and "Încă nu sunt cuvinte" in r.text
+    app = create_app(root, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
+    with TestClient(app) as c:
+        board = app.state.nest.lookup("forum.board", {"scope": "club/team:7", "title": "Echipa"})
+        assert c.get(board["url"]).status_code == 404
 ```
 
 ## Fixture applications
 
-When several tests share a larger application, keep it as a folder in
-`tests/fixtures/` (the glossary's tests use `tests/fixtures/glossary-app/module.yml`,
-the glossary as a dictionary site mounts it) and make it in a fixture. Data is put in
-through the module's own service functions, with the bound providers:
+When several tests share a larger application, keep it as a folder (in `tests/fixtures/`,
+or one of the repository's applications: the forum's tests use `applications/hello`) and
+make it in a fixture. Data is put in through the module's own service functions, with the
+bound providers:
 
 ```python
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from nest_glossary import importer, service
+from nest_forum import service as forum
 
 from nest import create_app
 
-ROOT = Path(__file__).resolve().parents[1]
-APP = ROOT / "tests" / "fixtures" / "glossary-app"
-EXAMPLE = ROOT / "tests" / "fixtures" / "glossword_example.txt"
+HELLO = Path(__file__).resolve().parents[1] / "applications" / "hello"
 
 
 @pytest.fixture
 def site(tmp_path):
-    app = create_app(APP, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
-    nest = app.state.nest
-    db, search = nest.bindings.get("nest.db"), nest.bindings.get("nest.search")
-    urls = nest.module_state["glossary"]["urls"]
-    moldova = service.ensure_dictionary(db, "Graiul moldovenesc")
-    importer.import_terms(db, search, moldova, importer.read_glossword(EXAMPLE.read_text()), urls.term)
+    app = create_app(HELLO, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
+    db = app.state.nest.bindings.get("nest.db")
     with TestClient(app) as c:
-        c.db, c.search = db, search
+        forum.ensure_board(db, "General", description="Anything about the site.")
+        c.db = db
         yield c
 ```
 
@@ -141,8 +138,8 @@ def token(c: TestClient) -> str:
 
 
 r = c.post(
-    "/spanzuratoare/guess",
-    data={"csrf_token": token(c), "letter": "A"},
+    "/forum/t/1/reply",
+    data={"csrf_token": token(c), "body": "Agreed."},
     headers={"HX-Request": "true"},  # the htmx fragment, not a redirect
 )
 ```
@@ -170,27 +167,26 @@ def sign_in(c: TestClient, email: str, roles: tuple[str, ...]) -> None:
     create_user(c.db, email, PASSWORD, roles=roles)
     c.get("/healthz")
     r = c.post(
-        "/cont/login",
+        "/auth/login",
         data={"csrf_token": c.cookies["nest_csrf"], "email": email, "password": PASSWORD},
         follow_redirects=False,
     )
     assert r.status_code == 303
 
 
-def test_a_reader_cannot_edit(site):
-    sign_in(site, "reader@example.ro", ())
-    assert site.get("/graiul-moldovenesc/new").status_code == 403
+def test_a_guest_is_sent_to_sign_in(site):
+    r = site.get("/forum/general/new", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/auth/login")
 
 
-def test_an_editor_adds_a_term(site):
-    sign_in(site, "ed@example.ro", ("editor",))
-    assert "Termen nou" in site.get("/graiul-moldovenesc").text
-    headers = {**csrf(site), "HX-Request": "true"}
-    r = site.post("/graiul-moldovenesc/new", data={"word": "", "definition": "x"}, headers=headers)
-    assert "Câmpul este obligatoriu." in r.text  # the form again, with its error
+def test_a_topic_needs_a_title(site):
+    sign_in(site, "ana@example.ro", ())
+    assert "New topic" in site.get("/forum/general/").text
+    r = site.post("/forum/general/new", data={"title": "", "body": "x"}, headers=csrf(site))
+    assert r.status_code == 400 and "A topic needs a title." in r.text  # the form again
 ```
 
-The path is the auth module's route in the fixture application (`/cont` here). The
+The path is the auth module's route in the fixture application (`/auth` here). The
 client keeps the session cookie for the rest of the test.
 
 ## Testing manifests and the plan
@@ -250,7 +246,7 @@ application itself, loads a small sample of real data, and asks for its main pag
 def test_pages(tmp_path):
     app = create_app(APPLICATION, environ={"NEST_APP_WORKSPACE": str(tmp_path / "ws")})
     with TestClient(app) as c:
-        for path in ("/", "/cfr/", "/in-apropiere/"):
+        for path in ("/", "/galerii/", "/in-apropiere/"):
             assert c.get(path).status_code == 200, path
 ```
 

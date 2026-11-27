@@ -37,7 +37,7 @@ published name, never through its internals.
 | **Module** | Reusable code with routes, templates, settings, admin pages and its own tables. It owns no port; the application mounts it at a route. | `content`, `gallery`, `comments`, `forum` |
 | **Interface** | A named contract with no implementation. Modules depend on it, never on a particular provider. | `nest.db`, `nest.search`, `nest.storage`, `nest.cache` |
 | **Provider** | An implementation of an interface, with its own settings. The application chooses one. | `db-sqlite`, `db-postgres`, `search-sqlite`, `storage-local` |
-| **Theme** | The layout every page is drawn in, its styles and widgets. Modules fill it. | `base`, `paper`, `slate`, `rail-signage` |
+| **Theme** | The layout every page is drawn in, its styles and widgets. Modules fill it. | `base`, `paper`, `slate` |
 
 Because a module codes against `nest.db` and not against SQLite, moving a site from
 SQLite to PostgreSQL is a change of binding in the manifest. The module code stays
@@ -96,11 +96,10 @@ The repository holds the host and a set of packages any site can use:
 | Folder | What is in it |
 |---|---|
 | `packages/nest-core` | The host: manifests, contracts, planning, bindings, security, SSE and the `nest` command |
-| `modules/` | `admin`, `auth`, `content`, `media`, `gallery`, `maps`, `geo`, `comments`, `forum`, `messages`, `notifications`, `glossary`, `hangman`, `seo`, `redirects`, `translations`, `trains`, `forms`, `htmx`, `docs`, `agent`, `scheduler`, `keeper`, `registry` |
+| `modules/` | `admin`, `agent`, `auth`, `comments`, `consent`, `content`, `docs`, `forms`, `forum`, `gallery`, `geo`, `htmx`, `keeper`, `keys`, `maps`, `media`, `messages`, `notifications`, `push`, `pwa`, `rating`, `redirects`, `registry`, `scheduler`, `seo`, `translations` |
 | `interfaces/` | `cache`, `db`, `pubsub`, `search`, `storage` |
 | `providers/` | `cache-memory`, `redis`, `db-sqlite`, `db-postgres`, `db-mariadb`, `search-sqlite`, `storage-local`, `storage-s3` |
-| `themes/` | `base`, `paper`, `slate`, `rail-signage`, and the morlaca themes |
-| `engines/saga` | Saga, an engine for life-simulation browser games, and its subsystems |
+| `themes/` | `base`, `paper`, `slate` |
 | `applications/` | Nest's own applications: `hello`, `keeper`, `registry`, `docsite` |
 
 Every module has a reference page, for example
@@ -117,7 +116,7 @@ Every module has a reference page, for example
   configured in the admin panel. There is no drag-and-drop layout editor.
 - **Not a microservice platform.** One site is one process (or one set of workers)
   on one port. Modules talk to each other inside it, not over the network.
-- **Not WordPress.** It can import WordPress, Geticus and Glossword sites and keep
+- **Not WordPress.** It can import WordPress and Geticus sites and keep
   their addresses, but it does not run their plugins or themes.
 
 ## Next

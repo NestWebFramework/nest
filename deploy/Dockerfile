@@ -3,8 +3,14 @@
 # One image for any Nest application that lives in its own repository beside Nest.
 # Built from the application's folder, with Nest given as a second context:
 #
-#   docker build -f ../nest/deploy/Dockerfile --build-context nest=../nest -t morlaca .
+#   docker build -f ../nest/deploy/Dockerfile --build-context nest=../nest \
+#     --build-context nest-saga=../nest-saga --build-context nest-transport=../nest-transport \
+#     --build-context nest-atlas=../nest-atlas --build-context nest-site-modules=../nest-site-modules \
+#     --build-context nest-site-themes=../nest-site-themes -t morlaca .
 #
+# The private packages' repositories (nest-saga, nest-transport...) are contexts too, beside Nest
+# as the application's path sources expect them; nest-images passes them (an empty folder for
+# what an application does not use is fine).
 # (an application's deploy/compose.yml does the same). The application's uv.lock fixes
 # every version; Nest's packages are installed from /src/nest, where its pyproject's
 # path sources (../nest) point. The workspace is /data: mount a volume there.
@@ -17,6 +23,11 @@ FROM python:${PYTHON}-slim AS build
 COPY --from=uv /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 COPY --from=nest . /src/nest
+COPY --from=nest-saga . /src/nest-saga
+COPY --from=nest-transport . /src/nest-transport
+COPY --from=nest-atlas . /src/nest-atlas
+COPY --from=nest-site-modules . /src/nest-site-modules
+COPY --from=nest-site-themes . /src/nest-site-themes
 COPY . /src/app
 WORKDIR /src/app
 RUN --mount=type=cache,target=/root/.cache/uv \

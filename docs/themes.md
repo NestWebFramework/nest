@@ -82,9 +82,9 @@ menus:
 
 and its layout shows a region with `{{ region("footer") }}` (nothing when it is empty).
 Nest's themes have `home` (under the home page's content), `after_content` and `footer`;
-morlaca-heritage also `sidebar`. What goes in them is chosen in **Themes → Regions**: the
-blocks the site's modules offer (newest articles, the latest forum topics, live readings,
-a search box), each with its settings, kept in the workspace (`data/regions.yml`).
+a theme may add its own (a `sidebar`). What goes in them is chosen in **Themes → Regions**: the
+blocks the site's modules offer (newest articles, the latest forum topics, a search box),
+each with its settings, kept in the workspace (`data/regions.yml`).
 
 An application's own templates and stylesheet stay on top of any theme: one that
 overrides `layout.html` keeps its frame and gets the theme's
@@ -94,7 +94,8 @@ tokens and shapes under its own skin.
 
 What is one site's own (its tagline, its banner, its footer's links, the categories its
 home page shows) is a theme **setting**, not text in a template, so the same theme serves
-any application. A theme declares its settings as a module does:
+any application. A theme declares its settings as a module does (here a hypothetical theme
+`example`):
 
 ```yaml
 settings:
@@ -107,9 +108,9 @@ theme in use has its section there):
 
 ```yaml
 application:
-  theme: morlaca-valley
+  theme: example
   theme_settings:
-    morlaca-valley: {tagline: "the village below the hill", banner: uploads/panorama.jpg}
+    example: {tagline: "the village below the hill", banner: uploads/panorama.jpg}
 ```
 
 Templates read them with `{{ theme_setting("tagline") }}`: the setting of the theme in use,
@@ -124,11 +125,5 @@ A theme that uses a module's template helpers (content's `menu()`, `latest()`) l
 under `uses:` and checks `is defined`, so an application without that module still has
 its frame.
 
-A layout may extend a frame its themes share (`{% extends "morlaca/frame.html" %}`); the
+A layout may extend a frame its themes share (`{% extends "example/frame.html" %}`); the
 theme contract follows `extends` through the theme chain.
-
-Nest comes with three more written this way: `morlaca-valley` (the
-valley's colours, a cross-stitch band, a village's page as the home page), and built on
-it `morlaca-heritage` (the name over a banner, a sidebar) and `morlaca-chronicle` (an
-almanac's masthead, drop capitals). Each site gives them its own words through their
-settings.
