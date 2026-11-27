@@ -11,6 +11,16 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **What one meets on the road** (Saga travel 0.2.0): a travel book may list `encounters`
+  (the roads and months where each is met, its chance an hour, the items and coin it gives,
+  the attributes and feelings it brings, its tale); on a journey at most `MET_MOST` of them
+  befall one, by the hours on their roads (signal `travel.encounter`, the journey's `met`).
+
+- **What one meets on the road** (Saga travel 0.2.0): a travel book may list `encounters`
+  (the roads and months where each is met, its chance an hour, the items and coin it gives,
+  the attributes and feelings it brings, its tale); on a journey at most `MET_MOST` of them
+  befall one, by the hours on their roads (signal `travel.encounter`, the journey's `met`).
+
 - **A settlement grows by its rights** (Saga settlement 0.7.0): a place no longer evolves by
   itself; ready for the next level, its judge petitions the realm it lies in
   (`polity.realm_at`, `polity.realm`), the level's `fee` paid from its chest to the realm
