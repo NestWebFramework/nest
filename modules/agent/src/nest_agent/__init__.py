@@ -18,9 +18,11 @@ links only, never what was written.
 from __future__ import annotations
 
 import collections
+import hashlib
 import logging
 import os
 import platform
+import re
 import shutil
 import threading
 import time
@@ -29,7 +31,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 import nest
@@ -400,12 +402,82 @@ async def action_run(request: Request, name: str, scope: str = Depends(controlle
     return reply({"action": name, "ok": True, "seconds": seconds, "result": result})
 
 
+# --- its backups, for the keeper to keep a copy of ------------------------------------------
+
+ARCHIVE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,100}-\d{8}-\d{6}\.tar\.gz$")
+_digests: dict[tuple[str, int, int], str] = {}  # (name, size, mtime) -> SHA-256, kept
+_digests_lock = threading.Lock()
+
+
+def digest(path: Any) -> str:
+    """An archive's SHA-256, worked out once (an archive never changes once it is made)."""
+    st = path.stat()
+    key = (path.name, st.st_size, st.st_mtime_ns)
+    with _digests_lock:
+        if key in _digests:
+            return _digests[key]
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    with _digests_lock:
+        if len(_digests) > 1000:
+            _digests.clear()
+        _digests[key] = h.hexdigest()
+    return _digests[key]
+
+
+def archives(the_nest: Any) -> list[Any]:
+    """The workspace's finished backups (never a .partial one), oldest first."""
+    from nest.ops import _backups as found_backups  # noqa: PLC0415
+
+    return [p for p in found_backups(the_nest.workspace) if ARCHIVE.match(p.name) and p.is_file()]
+
+
+def _listing(the_nest: Any) -> list[dict[str, Any]]:
+    out = []
+    for p in archives(the_nest):
+        st = p.stat()
+        out.append(
+            {
+                "name": p.name,
+                "size": st.st_size,
+                "made": datetime.fromtimestamp(st.st_mtime, UTC).isoformat(timespec="seconds"),
+                "sha256": digest(p),
+            }
+        )
+    return out
+
+
+@api.get("/backups")
+async def backup_list(request: Request, scope: str = Depends(reader)):
+    """The backups the site keeps, each with its size and SHA-256 (for a copy's check)."""
+    found = await run_in_threadpool(_listing, request.app.state.nest)
+    return reply({"backups": found, "download": scope == "control"})
+
+
+@api.get("/backups/{name}")
+def backup_download(request: Request, name: str, scope: str = Depends(controller)):
+    """One backup, streamed (the control token only: an archive holds all the site's data)."""
+    found = {p.name: p for p in archives(request.app.state.nest)}
+    if not ARCHIVE.match(name) or name not in found:
+        return reply({"error": f"no backup '{name}'"}, 404)
+    events: Events = module_state(request, "agent")["events"]
+    events.note("info", "agent", f"backup {name} copied by the keeper")
+    return FileResponse(
+        found[name],
+        media_type="application/gzip",
+        filename=name,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @api.get("/")
 def index(scope: str = Depends(reader)):
     return reply(
         {
             "agent": API,
-            "links": ["status", "events", "check", "actions"],
+            "links": ["status", "events", "check", "actions", "backups"],
             "scope": scope,
         }
     )
@@ -417,7 +489,7 @@ def index(scope: str = Depends(reader)):
 def _backup(the_nest: Any) -> dict[str, Any]:
     from nest.ops import backup  # noqa: PLC0415
 
-    keep = int(the_nest.settings.get("agent.backup_keep") or 7)
+    keep = int(the_nest.settings.get("agent.backup_keep") or 14)
     path = backup(the_nest, keep=max(1, keep))
     return {"archive": path.name, "size_mb": round(path.stat().st_size / 2**20, 1)}
 

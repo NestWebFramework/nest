@@ -10,6 +10,9 @@
 #   GET  <route>/v1/actions         what it can be asked to do (a backup; its modules' own:
 #                                    the timetable's sync, ...)
 #   POST <route>/v1/actions/{name}  do one (the control token only)
+#   GET  <route>/v1/backups         the backups it keeps: name, size, date, SHA-256
+#   GET  <route>/v1/backups/{name}  one of them, streamed (the control token only), for
+#                                    the keeper to keep a copy away from the site's disk
 # Two tokens: one that reads, one that reads and acts. The site keeps only their
 # SHA-256 (`nest agent token APP` makes one and prints both halves); the keeper keeps
 # the token itself. Cookies are not read, so a browser cannot be made to call it.
@@ -19,7 +22,7 @@ module:
   id: nest.module.agent
   type: module
   title: Agent
-  version: 0.1.2
+  version: 0.2.0
   description: The site's status, events and checks, and the actions it allows, for the keeper, to a token.
   license: MIT
   created: "2026-11-20"
@@ -46,8 +49,8 @@ settings:
     description: The SHA-256 of the token that also runs its actions (sha256:…, from `nest agent token --control`). Set in the environment.
   backup_keep:
     type: int
-    default: 7
-    description: Backups kept when the keeper asks for one (the oldest go).
+    default: 14
+    description: Backups kept when the keeper asks for one (the oldest go). The same as nest-site's KEEP, or one of them prunes the other's.
   events:
     type: int
     default: 200

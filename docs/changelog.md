@@ -11,6 +11,16 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The player's profile** (Saga player 0.13.0): a character's player keeps a profile on the
+  server (`POST /{server}/profile` {alerts, dismiss}: the alerts wanted, an event dismissed,
+  the newest `DISMISSED_KEPT` remembered; `player.sheet` gives `profile`), kept with the
+  character (a new column, migration `player_0004`).
+
+- **The player's profile** (Saga player 0.13.0): a character's player keeps a profile on the
+  server (`POST /{server}/profile` {alerts, dismiss}: the alerts wanted, an event dismissed,
+  the newest `DISMISSED_KEPT` remembered; `player.sheet` gives `profile`), kept with the
+  character (a new column, migration `player_0004`).
+
 - Saga player 0.12.2: a journal entry sent live carries its `kind` (a page can sort it: the
   village's notices, the realm's, one's own).
 

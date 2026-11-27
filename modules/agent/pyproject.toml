@@ -1,6 +1,6 @@
 [project]
 name = "nest-agent"
-version = "0.1.2"
+version = "0.2.0"
 description = "A site's agent: its status, events and checks, and the actions it allows, for the keeper, to a token."
 requires-python = ">=3.12"
 license = "MIT"

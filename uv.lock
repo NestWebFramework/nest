@@ -1720,7 +1720,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-player"
-version = "0.12.1"
+version = "0.12.2"
 source = { editable = "engines/saga/subsystems/player" }
 dependencies = [
     { name = "nest-auth" },
