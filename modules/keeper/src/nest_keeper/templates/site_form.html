@@ -19,6 +19,10 @@
   </fieldset>{% endif %}
   <label class="field">{{ _("Agent's address") }} <span class="muted">({{ _("empty: the address and /_agent; for a web check, the address checked, empty: the address") }})</span><input name="agent" type="url" maxlength="300" placeholder="https://gari.ro/_agent" value="{{ values.get('agent', '') }}"></label>
   <label class="field">{{ _("Agent's token") }}{% if site %} <span class="muted">({{ _("empty: keep the one it has") }})</span>{% endif %}<input name="token" type="password" autocomplete="off" maxlength="100" placeholder="na_… ({{ _('not for a web check') }})"></label>
+  <label class="field">{{ _("Server") }} <span class="muted">({{ _("whose host helper acts on it") }})</span><select name="server_id">
+    <option value="">{{ _("this server (the keeper's settings)") }}</option>
+    {% for sv in servers %}<option value="{{ sv.id }}" {% if values.get('server_id', '')|string == sv.id|string %}selected{% endif %}>{{ sv.name }}</option>{% endfor %}
+  </select></label>
   <label class="field">{{ _("Name on the server") }} <span class="muted">({{ _("nest-site's; empty: no restarts from here") }})</span><input name="host_site" maxlength="63" pattern="[a-z0-9][a-z0-9-]*" placeholder="gari" value="{{ values.get('host_site', '') }}"></label>
   {% if site %}<label><input type="checkbox" name="enabled" value="true" {% if site.enabled %}checked{% endif %}> {{ _("Watched (unticked: paused)") }}</label>{% endif %}
   <p><button>{% if site %}{{ _("Save") }}{% else %}{{ _("Watch it") }}{% endif %}</button></p>

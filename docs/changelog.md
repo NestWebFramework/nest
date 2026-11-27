@@ -11,6 +11,30 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **People at work in their place** (Saga player 0.14.0, building 0.14.1): presence content may
+  name places that are no painting and hold anyone (`elsewhere`: at work), where the trades no
+  rule puts elsewhere go while working; the plan names each building's owner (`owner_id`), so
+  a page can show the master at his workshop's lot (or at home, without one).
+
+- **People at work in their place** (Saga player 0.14.0, building 0.14.1): presence content may
+  name places that are no painting and hold anyone (`elsewhere`: at work), where the trades no
+  rule puts elsewhere go while working; the plan names each building's owner (`owner_id`), so
+  a page can show the master at his workshop's lot (or at home, without one).
+
+- **The keeper keeps the sites' backups, and puts them back** (keeper 0.3.0, agent 0.2.0,
+  the keeper application 0.3.0): with `backup_dir`, the keeper copies every site's backups
+  each night (`keeper.fetch`) through its agent (`GET /_agent/v1/backups`, and each archive
+  to the control token), checks each against its SHA-256 and keeps the newest
+  `backup_keep` per site; a site behind another server's Cloudflare tunnel is copied the
+  same way. **Servers** in the keeper: each server's `nest-host`, its token and its
+  Cloudflare Access service token (kept encrypted), a site acted on by its server's helper
+  (`host_url` stays the helper of sites with none; migration `keeper_0005`). **Restore…**
+  on a site's page: an archive of its server, or the keeper's copy, which the helper
+  downloads through a one-time link (`KEEPER_URL` in `host.conf`) and checks before
+  anything is replaced; `restore` only when `ALLOW` names it. `nest-site restore` backs the
+  site up first. The agent keeps 14 backups when asked for one (as `nest-site`'s `KEEP`;
+  it was 7, and pruned the nightly ones).
+
 - **The player's profile** (Saga player 0.13.0): a character's player keeps a profile on the
   server (`POST /{server}/profile` {alerts, dismiss}: the alerts wanted, an event dismissed,
   the newest `DISMISSED_KEPT` remembered; `player.sheet` gives `profile`), kept with the

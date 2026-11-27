@@ -1,0 +1,27 @@
+{% extends "admin/layout.html" %}
+{% block title %}{% if server %}{{ server.name }}{% else %}{{ _("Add a server") }}{% endif %} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/servers">← {{ _("Servers") }}</a></p>
+<h1>{% if server %}{{ _("Change") }} {{ server.name }}{% else %}{{ _("Add a server") }}{% endif %}</h1>
+{% if not server %}<ol class="muted">
+  <li>{{ _("On that server, install nest-host (deploy/site/) and make its token: nest-host token.") }}</li>
+  <li>{{ _("Publish its helper through the server's Cloudflare tunnel (a hostname to http://localhost:8090), behind a Cloudflare Access application whose policy allows only a service token.") }}</li>
+  <li>{{ _("Give here the tunnel's address, the helper's token (nh_…) and the service token's client ID and secret. The keeper keeps the secrets encrypted.") }}</li>
+</ol>{% endif %}
+{% if server and server.token_lost %}<p class="notice danger">{{ _("Its token cannot be read (the keeper's key changed): give it again.") }}</p>{% endif %}
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="{{ base }}/servers/{% if server %}{{ server.id }}/edit{% else %}new{% endif %}" class="stack">{{ csrf_field }}
+  <label class="field">{{ _("Name") }}<input name="name" required maxlength="120" placeholder="server-2" value="{{ values.get('name', '') }}"></label>
+  <label class="field">{{ _("Helper's address") }} <span class="muted">({{ _("https through a tunnel; plain http only on this machine or a private network") }})</span><input name="url" type="url" required maxlength="300" placeholder="https://host-2.example.org" value="{{ values.get('url', '') }}"></label>
+  <label class="field">{{ _("Helper's token") }}{% if server %} <span class="muted">({{ _("empty: keep the one it has") }})</span>{% endif %}<input name="token" type="password" autocomplete="off" maxlength="100" placeholder="nh_…"></label>
+  <fieldset class="field"><legend>Cloudflare Access <span class="muted">({{ _("a service token; empty: none") }})</span></legend>
+    <label class="field">{{ _("Client ID") }}<input name="access_id" maxlength="200" autocomplete="off" placeholder="….access" value="{{ values.get('access_id', '') }}"></label>
+    <label class="field">{{ _("Client secret") }}{% if server and server.has_access %} <span class="muted">({{ _("empty: keep the one it has") }})</span>{% endif %}<input name="access_secret" type="password" autocomplete="off" maxlength="200"></label>
+  </fieldset>
+  <p><button>{% if server %}{{ _("Save") }}{% else %}{{ _("Add it") }}{% endif %}</button></p>
+</form>
+{% if server %}
+<details><summary class="worse">{{ _("Forget this server") }}</summary>
+<form method="post" action="{{ base }}/servers/{{ server.id }}/delete">{{ csrf_field }}<p class="muted">{{ _("Its sites stay watched, with no server: no restarts or restores from here until they are given one.") }}</p><button class="danger">{{ _("Forget") }} {{ server.name }}</button></form></details>
+{% endif %}
+{% endblock %}

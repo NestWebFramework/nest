@@ -51,3 +51,4 @@
 .keeper-attention { margin: .35rem 0 0; font-size: .9rem; }
 .keeper-attention a, .keeper-waiting a { text-decoration: none; }
 .keeper-attention a::before { content: "● "; color: var(--accent); }
+form.inline { display: inline; margin-left: .5rem; }

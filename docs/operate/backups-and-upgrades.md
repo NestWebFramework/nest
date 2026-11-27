@@ -86,7 +86,7 @@ mounted at `/data`.
 | Command | What it does |
 |---|---|
 | `sudo nest-site backup S` | a backup now, into the data folder's `backups/`, keeping `KEEP` (14 by default) |
-| `sudo nest-site restore S ARCHIVE` | stops the site, restores with `--force`, starts it, waits for `/healthz`. An archive outside the data folder is copied into `backups/` first |
+| `sudo nest-site restore S ARCHIVE` | backs the site up first (nothing pruned; the path kept in `/var/lib/nest-site/S.before-restore`), stops it, restores with `--force`, starts it, waits for `/healthz`. An archive outside the data folder is copied into `backups/` first |
 | `sudo nest-site upgrade S [--no-pull]` | pull, build, back up, restart, wait until healthy; roll back otherwise |
 | `sudo nest-site rollback S [ARCHIVE]` | the image before, and the backup made before the upgrade |
 | `sudo nest-site nest S ARGS…` | any nest command in the site: in the running container, else in a one-off container |
@@ -169,13 +169,21 @@ three `NEST_MIGRATE` modes and [Databases](../develop/database.md) for writing m
 
 ## Copy backups off the server
 
-Backups in the data folder (`/var/snap/docker/common/nest/S/backups/`) survive a broken container, but not a lost disk. Copy them
-elsewhere: rsync the folder to another machine, or include it in the hosting provider's
-backup. The archives contain everything except the secrets, so store them where you would
-store the site's data.
+Backups in the data folder (`/var/snap/docker/common/nest/S/backups/`) survive a broken
+container, but not a lost disk. The [keeper](keeper.md#copies-of-the-sites-backups) keeps
+a copy of every site's backups on its own server, with `backup_dir` set: each night it
+downloads the new ones through each site's agent, checks their SHA-256, and keeps the
+newest `backup_keep` per site. It pulls them, so a site's server never writes there and
+cannot delete them, and it works the same for a site behind another server's Cloudflare
+tunnel. From the keeper, a copy can be [restored](keeper.md#restarts-upgrades-and-restores-the-host-helpers)
+on the site's server.
+
+For a third copy, rsync the keeper's `backup_dir` to another machine or disk, or include
+it in the hosting provider's backup. The archives contain everything except the secrets,
+so store them where you would store the sites' data.
 
 ```sh
-rsync -a server:/var/snap/docker/common/nest/S/backups/ /backups/S/
+rsync -a keeper-server:/var/snap/docker/common/nest/keeper/backups/sites/ /mnt/nas/nest-sites/
 ```
 
 ## Test a restore
@@ -189,7 +197,8 @@ A backup you have never restored is a hope. Now and then:
 4. `nest check APP` to confirm the databases' integrity.
 
 On the server itself, `sudo nest-site restore S <archive>` does the real thing and puts
-the site back on that archive's data.
+the site back on that archive's data; the keeper's **Restore…** does the same from its
+page, with an archive of the server or one of its own copies.
 
 ## `nest check` and backups
 

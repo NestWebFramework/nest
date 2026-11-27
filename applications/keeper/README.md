@@ -1,6 +1,6 @@
 # Nest keeper
 
-**Version 0.2.2** (in `module.yml`; raise it there and here together) · port 8000 · part of Nest
+**Version 0.3.0** (in `module.yml`; raise it there and here together) · port 8000 · part of Nest
 
 Nest's own application: it watches your deployed sites (Nest sites through their agents, other services with a web check), restarts and upgrades them through the host helper (`deploy/site/nest-host`), and shows the applications Nest knows, their plans and packages.
 

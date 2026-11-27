@@ -16,7 +16,9 @@
 #                                    roll back: the image before, the backup before
 #   nest-site rollback SITE [ARCHIVE] the image before, and the backup made before the upgrade
 #   nest-site backup SITE            a backup now, into the data folder's backups/ (14 kept)
-#   nest-site restore SITE ARCHIVE   an archive back (the site stopped meanwhile)
+#   nest-site restore SITE ARCHIVE   an archive back (the site stopped meanwhile), after a
+#                                    backup of the data it replaces (its path remembered in
+#                                    /var/lib/nest-site/SITE.before-restore)
 #   nest-site nest SITE ARGS...      a nest command in the site (nest-site nest gari db status /src/app)
 #   nest-site status|logs SITE
 set -euo pipefail
@@ -70,9 +72,10 @@ in_site() {  # a nest command against the site: in the running container, else i
   fi
 }
 
-backup() {  # the archive's path on the host
-  local said
-  said=$(in_site backup "$APP" --keep "${KEEP:-14}")
+backup() {  # the archive's path on the host; "all": nothing pruned (KEEP otherwise)
+  local said args=(backup "$APP")
+  [[ ${1:-} == all ]] || args+=(--keep "${KEEP:-14}")
+  said=$(in_site "${args[@]}")
   said=$(grep -o '/data/[^ ]*\.tar\.gz' <<<"$said" | tail -1)
   [[ -n $said ]] || die "the backup did not say where it is"
   echo "$DATA/${said#/data/}"
@@ -135,6 +138,11 @@ case $CMD in
   restore)
     archive=${1:-}; [[ -f $archive ]] || die "which archive? (one in $DATA/backups/)"
     case $archive in "$DATA"/*) inside=/data/${archive#"$DATA"/} ;; *) cp "$archive" "$DATA/backups/" && inside=/data/backups/$(basename "$archive") ;; esac
+    # the data it replaces, kept first (nothing pruned: the archive asked for stays)
+    before=$(backup all) || die "the backup before the restore failed: nothing replaced"
+    install -d -m 0750 "$STATE"
+    echo "$before" >"$STATE/$SITE.before-restore"
+    say "backup before the restore: $(basename "$before")"
     systemctl stop "$UNIT" || true
     docker run --rm --env-file "$ENVF" -v "$DATA:/data" "$IMAGE:current" nest restore "$APP" "$inside" --force
     systemctl start "$UNIT"

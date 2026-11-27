@@ -23,15 +23,17 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy import case, delete, func, select
 
-from nest_keeper.models import KeeperAction, KeeperCheck, KeeperSite, utcnow
+from nest_keeper.models import KeeperAction, KeeperCheck, KeeperServer, KeeperSite, utcnow
 
 TIMEOUT = 10.0
 READ_LIMIT = 2 * 2**20  # an agent's answer is small; never read more than this
+DOWNLOAD_TIMEOUT = 120.0  # between two reads of a backup being copied, not for all of it
 
 
 class SiteError(ValueError):
@@ -125,17 +127,26 @@ def call(
     method: str = "GET",
     timeout: float = TIMEOUT,
     who: str = "",
+    body: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> Answer:
-    """One request to an agent (or the host helper): what it answered, or why it did not."""
+    """One request to an agent (or the host helper): what it answered, or why it did not.
+    ``body`` goes as JSON; ``headers`` are added (a Cloudflare Access service token's)."""
+    data = b"" if method == "POST" else None
+    extra = dict(headers or {})
+    if body is not None:
+        data = json.dumps(body).encode()
+        extra["Content-Type"] = "application/json"
     request = urllib.request.Request(
         f"{agent}/v1/{path.lstrip('/')}",
         method=method,
-        data=b"" if method == "POST" else None,
+        data=data,
         headers={
             "Authorization": f"Bearer {token}",
             "Accept": "application/json",
             "User-Agent": "nest-keeper",
             **({"X-Nest-Who": who} if who else {}),
+            **extra,
         },
     )
     started = time.monotonic()
@@ -157,6 +168,44 @@ def call(
         detail = data.get("detail") or data.get("error") if isinstance(data, dict) else None
         problem = f"HTTP {code}" + (f": {detail}" if detail else "")
     return Answer(True, code, data, ms, problem[:500])
+
+
+def download(url: str, token: str, dest: Path, *, size: int, sha256: str) -> str:
+    """Stream ``url`` into ``dest`` (written as ``dest.partial``, renamed when whole), checked
+    against the size and SHA-256 it was said to have. Returns why it failed, or ""."""
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/gzip",
+            "User-Agent": "nest-keeper",
+        },
+    )
+    partial = dest.with_name(dest.name + ".partial")
+    h, got = hashlib.sha256(), 0
+    try:
+        with _opener.open(request, timeout=DOWNLOAD_TIMEOUT) as r, partial.open("wb") as out:
+            if r.status != 200:
+                return f"HTTP {r.status}"
+            for chunk in iter(lambda: r.read(1 << 20), b""):
+                got += len(chunk)
+                if got > size:
+                    return "longer than it was said to be"
+                h.update(chunk)
+                out.write(chunk)
+    except urllib.error.HTTPError as e:
+        return f"HTTP {e.code}"
+    except (OSError, ValueError) as e:
+        return f"no answer: {getattr(e, 'reason', None) or e}"[:500]
+    finally:
+        if partial.exists() and (got != size or h.hexdigest() != sha256):
+            partial.unlink()
+    if got != size:
+        return f"{got} bytes of {size}"
+    if h.hexdigest() != sha256:
+        return "its SHA-256 is not the one it was said to have"
+    partial.replace(dest)
+    return ""
 
 
 # --- the sites -----------------------------------------------------------------------------
@@ -183,6 +232,10 @@ class Site:
     recent: list[dict[str, Any]] = field(default_factory=list)
     host_site: str = ""  # its name on the server (nest-site), for the host helper
     kind: str = "agent"  # "agent" (a Nest site) or "web" (any address)
+    server_id: int | None = None  # the server whose helper acts on it (None: the settings')
+    backup_folder: str = ""  # its copies' folder, under the keeper's backup_dir
+    fetched_at: datetime | None = None  # when its backups were last copied to the keeper
+    fetch_problem: str = ""
 
     @property
     def state(self) -> str:
@@ -216,6 +269,10 @@ def _site(row: KeeperSite, secret: str) -> Site:
         status if isinstance(status, dict) else {},
         host_site=row.host_site or "",
         kind=row.kind or "agent",
+        server_id=row.server_id,
+        backup_folder=row.backup_folder or "",
+        fetched_at=row.fetched_at,
+        fetch_problem=row.fetch_problem or "",
     )
 
 
@@ -265,10 +322,12 @@ def add(
     token: str = "",
     host_site: str = "",
     kind: str = "agent",
+    server_id: int | None = None,
 ) -> int:
     name, url, agent = _clean(name, url, agent, kind)
     token = _clean_token(token, kind, required=True)
     with db.session() as s, s.begin():
+        _check_server(s, server_id)
         row = KeeperSite(
             name=name,
             url=url,
@@ -277,6 +336,7 @@ def add(
             token=seal(secret, token),
             status="",
             host_site=clean_host_site(host_site),
+            server_id=server_id,
         )
         s.add(row)
         s.flush()
@@ -294,6 +354,7 @@ def edit(
     token: str,
     enabled: bool,
     host_site: str = "",
+    server_id: int | None = None,
 ) -> None:
     with db.session() as s:
         row = s.get(KeeperSite, site_id)
@@ -309,10 +370,16 @@ def edit(
             raise SiteError("no such site")
         if kind == "agent" and agent != row.agent and not token:
             raise SiteError("a new agent address needs its token given again")
+        _check_server(s, server_id)
         row.name, row.url, row.agent, row.enabled = name, url, agent, enabled
-        row.host_site = host_site
+        row.host_site, row.server_id = host_site, server_id
         if token:
             row.token, row.scope = seal(secret, token), ""
+
+
+def _check_server(s: Any, server_id: int | None) -> None:
+    if server_id is not None and s.get(KeeperServer, server_id) is None:
+        raise SiteError("no such server")
 
 
 def remove(db: Any, site_id: int) -> bool:

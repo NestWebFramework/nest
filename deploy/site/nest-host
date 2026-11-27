@@ -14,12 +14,20 @@ nest-site runs, when the keeper asks with its token:
     GET  /v1/sites/SITE/logs?lines=N   the last lines of its log (200; at most 1000)
     POST /v1/sites/SITE/ACTION         start a job: restart, start, stop, backup, upgrade,
                                        rollback (as ALLOW says) -> 202 and the job
+    GET  /v1/sites/SITE/backups        the archives in its data folder's backups/
+    POST /v1/sites/SITE/restore        put an archive back (only if ALLOW names restore):
+                                       {"archive": NAME}, one in backups/; or
+                                       {"archive": NAME, "ticket": T, "sha256": H}, one the
+                                       keeper keeps, downloaded from KEEPER_URL first and
+                                       checked against H -> 202 and the job
     GET  /v1/jobs/ID                   a job: running or done, its exit code, its output
 
 Nothing else runs: no shell, no arguments from the request but a site's name (a site
-with /etc/nest/SITE.conf, lowercase letters, digits and dashes) and an action from the
-list. One job at a time per site. Every request that changes something is written to
-/var/lib/nest-site/host-jobs.log (JSON lines) and to the journal.
+with /etc/nest/SITE.conf, lowercase letters, digits and dashes), an action from the list,
+and for a restore an archive's name (its own pattern; in backups/, or fetched from the
+keeper's address set here, never one the request gives). One job at a time per site.
+Every request that changes something is written to /var/lib/nest-site/host-jobs.log
+(JSON lines) and to the journal.
 
     nest-host token     a token for the keeper, and the line for /etc/nest/host.conf
     nest-host serve     the service (what nest-host.service runs)
@@ -31,11 +39,16 @@ list. One job at a time per site. Every request that changes something is writte
                                  never a public address
     PORT=8090
     ALLOW=restart start stop backup upgrade rollback
+                                 restore too only when named (it replaces a site's data)
     SITES=                       only these sites (empty: every site with a .conf)
+    KEEPER_URL=                  the keeper's address with its route (https://keeper.example.org),
+                                 where a restore downloads the keeper's copy of an archive;
+                                 empty: only archives already in backups/ are restored
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import hmac
 import http.server
@@ -56,8 +69,13 @@ from datetime import datetime, timezone
 ETC = os.environ.get("NEST_ETC", "/etc/nest")
 STATE = os.environ.get("NEST_STATE", "/var/lib/nest-site")
 NEST_SITE = os.environ.get("NEST_SITE", "/usr/local/bin/nest-site")
-ACTIONS = ("restart", "start", "stop", "backup", "upgrade", "rollback")
+ACTIONS = ("restart", "start", "stop", "backup", "upgrade", "rollback", "restore")
+DEFAULT_ALLOW = ACTIONS[:-1]  # a restore replaces a site's data: only when ALLOW names it
 SITE_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+ARCHIVE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,100}-\d{8}-\d{6}\.tar\.gz$")
+TICKET = re.compile(r"^[A-Za-z0-9_-]{20,100}$")
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
+BODY_LIMIT = 4096
 OUTPUT_LIMIT = 200_000
 JOB_TIMEOUT = 1800  # an upgrade builds an image: at most half an hour
 FAILURES_ALLOWED = 20
@@ -102,12 +120,15 @@ class Config:
         if not (address.is_loopback or address.is_private) or address.is_unspecified:
             raise SystemExit(f"nest-host: BIND={self.bind} is not a loopback or private address")
         self.port = int(conf.get("PORT", "8090"))
-        allow = conf.get("ALLOW", " ".join(ACTIONS)).replace(",", " ").split()
+        allow = conf.get("ALLOW", " ".join(DEFAULT_ALLOW)).replace(",", " ").split()
         bad = [a for a in allow if a not in ACTIONS]
         if bad:
             raise SystemExit(f"nest-host: ALLOW names no action {bad[0]!r} ({', '.join(ACTIONS)})")
         self.allow = tuple(a for a in ACTIONS if a in allow)
         self.only = set(conf.get("SITES", "").replace(",", " ").split())
+        self.keeper_url = conf.get("KEEPER_URL", "").rstrip("/")
+        if self.keeper_url and not re.match(r"^https?://[^/?#\s]+(/[^?#\s]*)?$", self.keeper_url):
+            raise SystemExit(f"nest-host: KEEPER_URL={self.keeper_url} is not an http(s) address")
 
     def sites(self) -> list[str]:
         found = []
@@ -125,6 +146,70 @@ class Config:
     def site_conf(self, site: str) -> dict[str, str]:
         return read_conf(os.path.join(self.etc, f"{site}.conf"))
 
+    def backups_dir(self, site: str) -> str:
+        """The site's data folder's backups/ (DATA in its .conf, as nest-site reads it)."""
+        data = self.site_conf(site).get("DATA") or f"/srv/nest/{site}"
+        return os.path.join(data, "backups")
+
+
+def archives(folder: str) -> list[dict]:
+    """The finished archives in a backups/ folder, oldest first."""
+    out = []
+    try:
+        names = sorted(os.listdir(folder))
+    except OSError:
+        return out
+    for name in names:
+        path = os.path.join(folder, name)
+        if ARCHIVE.match(name) and os.path.isfile(path) and not os.path.islink(path):
+            st = os.stat(path)
+            made = datetime.fromtimestamp(st.st_mtime, timezone.utc)  # noqa: UP017
+            out.append(
+                {"name": name, "size": st.st_size, "made": made.isoformat(timespec="seconds")}
+            )
+    return out
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):  # noqa: ANN002, ANN003
+        return None
+
+
+def fetch_archive(url: str, dest: str, sha256: str, say_line) -> bool:  # noqa: ANN001
+    """Download an archive into dest (through dest.partial), checked against its SHA-256,
+    owned like the folder it lands in. True when it is whole and right."""
+    partial = dest + ".partial"
+    digest, got = hashlib.sha256(), 0
+    opener = urllib.request.build_opener(_NoRedirect)
+    request = urllib.request.Request(url, headers={"User-Agent": "nest-host"})
+    try:
+        with opener.open(request, timeout=120) as r, open(partial, "wb") as out:  # noqa: S310
+            if r.status != 200:
+                say_line(f"nest-host: the keeper answered {r.status}")
+                return False
+            for chunk in iter(lambda: r.read(1 << 20), b""):
+                digest.update(chunk)
+                out.write(chunk)
+                got += len(chunk)
+    except (OSError, ValueError) as e:
+        say_line(f"nest-host: cannot download it from the keeper: {getattr(e, 'reason', e)}")
+        if os.path.exists(partial):
+            os.unlink(partial)
+        return False
+    if digest.hexdigest() != sha256:
+        os.unlink(partial)
+        say_line("nest-host: its SHA-256 is not the keeper's; nothing replaced")
+        return False
+    folder = os.stat(os.path.dirname(dest))
+    with contextlib.suppress(OSError):  # not root (a test): it stays the helper's
+        os.chown(partial, folder.st_uid, folder.st_gid)
+    os.chmod(partial, 0o640)
+    os.replace(partial, dest)
+    say_line(
+        f"· downloaded from the keeper: {os.path.basename(dest)}, {got} bytes, SHA-256 checked"
+    )
+    return True
+
 
 # --- jobs ---------------------------------------------------------------------------------
 
@@ -136,7 +221,11 @@ class Jobs:
         self.order: deque[str] = deque(maxlen=200)
         self.running: dict[str, str] = {}  # site -> job id
 
-    def start(self, site: str, action: str, who: str) -> tuple[dict | None, str]:
+    def start(
+        self, site: str, action: str, who: str, restore: dict | None = None
+    ) -> tuple[dict | None, str]:
+        """A job; for a restore, ``restore`` has the archive's path, and the keeper's address
+        and SHA-256 when it is downloaded first."""
         with self.lock:
             if site in self.running:
                 return None, self.running[site]
@@ -144,6 +233,7 @@ class Jobs:
                 "id": secrets.token_hex(8),
                 "site": site,
                 "action": action,
+                "archive": os.path.basename(restore["path"]) if restore else None,
                 "who": who,
                 "started_at": now(),
                 "finished_at": None,
@@ -156,14 +246,30 @@ class Jobs:
                 self.items.pop(self.order[0], None)
             self.order.append(job["id"])
             self.running[site] = job["id"]
-        threading.Thread(target=self._run, args=(job,), daemon=True).start()
+        threading.Thread(target=self._run, args=(job, restore), daemon=True).start()
         return job, job["id"]
 
-    def _run(self, job: dict) -> None:
+    def _line(self, job: dict, text: str) -> None:
+        with self.lock:
+            if len(job["output"]) < OUTPUT_LIMIT:
+                job["output"] += text + "\n"
+
+    def _run(self, job: dict, restore: dict | None = None) -> None:
         command = [NEST_SITE, job["action"], job["site"]]  # rollback: the image and backup before
         audit(
-            {"at": now(), "event": "start", **{k: job[k] for k in ("id", "site", "action", "who")}}
+            {
+                "at": now(),
+                "event": "start",
+                **{k: job[k] for k in ("id", "site", "action", "who", "archive")},
+            }
         )
+        if restore is not None:
+            command.append(restore["path"])
+            if restore.get("url") and not fetch_archive(
+                restore["url"], restore["path"], restore["sha256"], lambda t: self._line(job, t)
+            ):
+                self._done(job, 1)
+                return
         try:
             proc = subprocess.Popen(  # noqa: S603 - a fixed program, a checked site, a listed action
                 command,
@@ -193,6 +299,9 @@ class Jobs:
             code = 127
             with self.lock:
                 job["output"] += f"nest-host: cannot run {NEST_SITE}: {e}\n"
+        self._done(job, code)
+
+    def _done(self, job: dict, code: int) -> None:
         with self.lock:
             job.update(running=False, code=code, finished_at=now())
             self.running.pop(job["site"], None)
@@ -382,6 +491,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     200 if code == 0 else 502, {"site": parts[1], "lines": out[-OUTPUT_LIMIT:]}
                 )
             return None
+        if len(parts) == 3 and parts[0] == "sites" and parts[2] == "backups":
+            if self.site_or_404(parts[1]):
+                folder = self.config.backups_dir(parts[1])
+                self.reply(200, {"site": parts[1], "backups": archives(folder)})
+            return None
         if len(parts) == 2 and parts[0] == "jobs":
             job = self.jobs.get(parts[1])
             return self.reply(200, job) if job else self.reply(404, {"error": "no such job"})
@@ -402,10 +516,52 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 {"error": f"'{action}' is not allowed here (ALLOW: {' '.join(self.config.allow)})"},
             )
         who = (self.headers.get("X-Nest-Who") or "keeper")[:200]
-        job, running = self.jobs.start(site, action, who)
+        restore = None
+        if action == "restore":
+            restore, problem = self.restore_of(site)
+            if restore is None:
+                return self.reply(problem[0], {"error": problem[1]})
+        job, running = self.jobs.start(site, action, who, restore)
         if job is None:
             return self.reply(409, {"error": f"{site} has a job running", "job": running})
         return self.reply(202, {k: v for k, v in job.items() if k != "output"})
+
+    def body(self) -> dict:
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return {}
+        if not 0 < length <= BODY_LIMIT:
+            return {}
+        try:
+            data = json.loads(self.rfile.read(length))
+        except ValueError:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def restore_of(self, site: str) -> tuple[dict | None, tuple[int, str]]:
+        """What a restore asks for, checked: (the job's restore, None) or (None, why not)."""
+        data = self.body()
+        name = data.get("archive")
+        if not isinstance(name, str) or not ARCHIVE.match(name):
+            return None, (400, "which archive? (its name, as nest backup made it)")
+        folder = self.config.backups_dir(site)
+        path = os.path.join(folder, name)
+        ticket, sha256 = data.get("ticket"), data.get("sha256")
+        if ticket is None:
+            if name not in {a["name"] for a in archives(folder)}:
+                return None, (404, f"no archive '{name}' in {folder}")
+            return {"path": path}, (0, "")
+        if not (isinstance(ticket, str) and TICKET.match(ticket)):
+            return None, (400, "a ticket is letters, digits, dashes and underscores")
+        if not (isinstance(sha256, str) and SHA256.match(sha256)):
+            return None, (400, "the archive's SHA-256 is needed with a ticket")
+        if not self.config.keeper_url:
+            return None, (409, "set KEEPER_URL in host.conf to restore the keeper's copies")
+        if not os.path.isdir(folder):
+            return None, (409, f"no folder {folder}")
+        url = f"{self.config.keeper_url}/backups/fetch/{ticket}"
+        return {"path": path, "url": url, "sha256": sha256}, (0, "")
 
 
 def serve() -> None:

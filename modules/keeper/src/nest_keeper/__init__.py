@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -324,6 +325,18 @@ def token_revoke(
     return RedirectResponse(admin_url(request, "keeper", "tokens"), status_code=303)
 
 
+@router.get("/backups/fetch/{ticket}")
+def backup_fetch(ticket: str):
+    """A copy of a site's backup, to the host helper restoring it: once, to a ticket the
+    keeper made for that restore (no session; the ticket is the permission)."""
+    from fastapi.responses import FileResponse  # noqa: PLC0415
+
+    found = copies.redeem(ticket) if len(ticket) < 100 else None
+    if found is None:
+        raise HTTPException(404)
+    return FileResponse(found, media_type="application/gzip", headers={"Cache-Control": "no-store"})
+
+
 @router.get("/")
 def front(request: Request):
     return RedirectResponse(admin_url(request, "keeper") + "/", status_code=303)
@@ -336,6 +349,9 @@ def setup(host: ModuleHost) -> None:
     ]
     host.state["seal"] = host.sign("agent-tokens")  # the key the agents' tokens are kept with
     host.state["settings"] = host.settings  # host_url and host_token, read when used
+    host.state["copies"] = copies.root(host.settings, host.workspace)  # backup_dir, or None
+    if host.state["copies"] is not None:
+        host.state["copies"].mkdir(parents=True, exist_ok=True)
     host.admin(admin)
     _watch(host)
     if host.route is not None:
@@ -357,7 +373,7 @@ def _watch(host: ModuleHost) -> None:
     @host.background(single=True)
     async def watch_sites() -> None:
         await asyncio.sleep(5)
-        rounds = 0
+        rounds, fetched = 0, 0.0
         while True:
             seconds = max(60, int(host.settings.get("check_seconds") or 300))
             try:
@@ -366,11 +382,16 @@ def _watch(host: ModuleHost) -> None:
                 if rounds % 60 == 0:
                     days = max(1, int(host.settings.get("history_days") or 30))
                     await run_in_threadpool(sites.prune, db, days)
+                base = host.state.get("copies")
+                if base is not None and time.monotonic() - fetched >= 86400 and rounds:
+                    fetched = time.monotonic()  # once a day, from the second round on
+                    keep = max(1, int(host.settings.get("backup_keep") or 30))
+                    await run_in_threadpool(copies.fetch_all, db, host.state["seal"], base, keep)
             except Exception:
                 log.exception("watching the sites failed")
             rounds += 1
             await asyncio.sleep(seconds)
 
 
-from nest_keeper import dashboard, sites  # noqa: E402,F401 - its pages, on the admin router
+from nest_keeper import copies, dashboard, servers_pages, sites  # noqa: E402,F401 - its pages
 from nest_keeper.rest import api  # noqa: E402 - after applications and probed, which it uses

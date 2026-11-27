@@ -6,3 +6,4 @@
 {%- endmacro %}
 {% macro pct(v) -%}{% if v is none %}—{% else %}{{ "%.2f"|format(v) }}%{% endif %}{%- endmacro %}
 {% macro ago(hours) -%}{% if hours is none %}—{% elif hours < 1 %}{{ _("under an hour ago") }}{% elif hours < 48 %}{{ hours|round|int }} h{% else %}{{ (hours / 24)|round|int }} {{ _("days") }}{% endif %}{%- endmacro %}
+{% macro mb(size) -%}{% if size is none %}—{% elif size < 1048576 %}{{ (size / 1024)|round(1) }} KB{% else %}{{ (size / 1048576)|round(1) }} MB{% endif %}{%- endmacro %}

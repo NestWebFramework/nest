@@ -148,6 +148,21 @@ One a night, 14 kept, by root's crontab (`sudo crontab -e`):
 Each is one archive in `/var/snap/docker/common/nest/keeper/backups/`: the databases (copied consistently while the site
 runs), the files, the settings; not the `.env`. **Copy them off the server** too.
 
+### The sites' backups, copied to the keeper
+
+The keeper copies every watched site's backups to `backups/sites/<site>/` in its data
+folder (`backup_dir`, set in its `module.yml`), each night at 05:30, the newest 30 kept
+(`backup_keep`). Its own backups leave that folder out. A site needs its **control** token
+in the keeper for this (its page says so otherwise). To keep the copies on another disk,
+mount it and point `backup_dir` there: a line `-e NEST_KEEPER__KEEPER__BACKUP_DIR=/site-backups
+-v /mnt/disk/nest-sites:/site-backups \` in the service's `docker run` (the folder owned
+like the data folder; with the Docker snap, under `/var/snap/docker/common`).
+
+For a restore of the keeper's copy, each server's helper downloads it from the keeper:
+`KEEPER_URL` in that server's `/etc/nest/host.conf` (`http://127.0.0.1:8800` on this one,
+`https://keeper.example.org` on another), and `restore` in its `ALLOW`. The download links
+live in the keeper's process: keep `NEST_WORKERS=1`.
+
 ## Every day
 
 | | |

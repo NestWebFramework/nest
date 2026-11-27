@@ -147,9 +147,9 @@ Without `PULL`, `nest-site build` builds the image on the server from the source
 `/opt/nest/src` (`SRC`, `REPO`). Use one way per application, not both: they run the same
 container name.
 
-### Restarts and upgrades from the keeper
+### Restarts, upgrades and restores from the keeper
 
-The [keeper](operate/keeper.md) can restart, back up, upgrade and roll back the
+The [keeper](operate/keeper.md) can restart, back up, upgrade, roll back and restore the
 applications `nest-site` runs, through the host helper:
 
 ```sh
@@ -166,12 +166,21 @@ sudo systemctl daemon-reload && sudo systemctl enable --now nest-host
 TOKEN_SHA256=sha256:…
 BIND=172.17.0.1
 PORT=8090
-ALLOW=restart backup upgrade rollback
+ALLOW=restart backup upgrade rollback restore
+KEEPER_URL=https://keeper.example.org
 ```
 
 `BIND` is `127.0.0.1` when the keeper runs on the host itself, and the Docker bridge's
 address (`172.17.0.1`) when the keeper is a container. The helper refuses any public
-address. The keeper's environment then gets:
+address.
+
+`restore` is allowed only when `ALLOW` names it (it replaces a site's data; the default
+leaves it out). `KEEPER_URL` is the keeper's address: a restore of the keeper's copy of a
+backup downloads it from there, through a one-time link. Without it, only the archives
+already in the site's `backups/` can be restored. On the keeper's own server it may be the
+keeper's local port (`http://127.0.0.1:8800`).
+
+The keeper's environment then gets:
 
 ```text
 NEST_KEEPER__KEEPER__HOST_URL=http://172.17.0.1:8090
@@ -181,6 +190,29 @@ NEST_KEEPER__KEEPER__HOST_TOKEN=nh_…
 Each job and who asked for it is written to `/var/lib/nest-site/host-jobs.log` and to the
 journal (`journalctl -u nest-host`). The helper drives `nest-site`, so it serves only the
 applications run that way.
+
+### Another server, behind its own Cloudflare tunnel
+
+A second server runs `nest-site` and `nest-host` the same way, with `BIND=127.0.0.1` and
+its `KEEPER_URL` set to the keeper's public address. The keeper reaches its helper through
+that server's tunnel, and only with a Cloudflare Access service token:
+
+1. In the server's tunnel, a public hostname for the helper: `host-2.example.org` →
+   `http://localhost:8090` (cloudflared on the host; a cloudflared container needs the
+   host's network to reach `localhost`).
+2. In Cloudflare Zero Trust: **Access → Service Auth → Service Tokens**, a token for the
+   keeper; then **Access → Applications**, a self-hosted application for
+   `host-2.example.org` whose only policy is *Service Auth* with that token. Every other
+   request is refused by Cloudflare before it reaches the server.
+3. In the keeper: **Servers → Add a server**: the address `https://host-2.example.org`,
+   the helper's `nh_…` token (`sudo nest-host token` on that server), and the service
+   token's client ID and secret. The page asks the helper at once: its host's name, its
+   sites, what it allows.
+4. Each of that server's sites, on its **Change** page: the server, and its `nest-site`
+   name.
+
+The helper's own token is still required: Access keeps the address private, the token says
+it is the keeper.
 
 ## Later: a database and file server
 

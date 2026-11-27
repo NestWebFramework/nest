@@ -1,0 +1,23 @@
+{% extends "admin/layout.html" %}
+{% from "keeper/_site_macros.html" import mb with context %}
+{% block title %}{{ _("Restore") }} · {{ site.name }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/sites/{{ site.id }}">← {{ site.name }}</a></p>
+<h1>{{ _("Restore") }} {{ site.name }}</h1>
+{% if problem %}<p class="notice danger" role="alert">{{ _("The host helper did not answer") }}: {{ problem }}</p>{% endif %}
+{% if error %}<p class="notice danger" role="alert">{{ error }}</p>{% endif %}
+{% if not allowed %}<p class="notice">{{ _("Its server's helper does not allow restores: add restore to ALLOW in its /etc/nest/host.conf, then restart nest-host.") }}</p>
+{% else %}
+<p>{{ _("The site is backed up first, then stopped; the archive's data replace its data; then it is started and must answer /healthz. What was written since the archive was made is lost (the backup made first keeps it).") }}</p>
+<form method="post" action="{{ base }}/sites/{{ site.id }}/server/restore" class="stack">{{ csrf_field }}
+<h2>{{ _("On its server") }}</h2>
+{% for b in on_server|reverse %}<label><input type="radio" name="source" value="server:{{ b.name }}" required> <code>{{ b.name }}</code> <span class="muted">· {{ mb(b.size) }}</span></label>
+{% else %}<p class="muted">{{ _("No backup in its data folder.") }}</p>{% endfor %}
+<h2>{{ _("At the keeper") }}</h2>
+{% for c in at_keeper %}<label><input type="radio" name="source" value="keeper:{{ c.name }}" required> <code>{{ c.name }}</code> <span class="muted">· {{ mb(c.size) }}{% if not c.sha256 %} · {{ _("no SHA-256 kept") }}{% endif %}</span></label>
+{% else %}<p class="muted">{{ _("No copy at the keeper.") }}</p>{% endfor %}
+<label class="field">{{ _("Type its name on the server to confirm") }} (<code>{{ site.host_site }}</code>)<input name="confirm" required autocomplete="off" maxlength="63"></label>
+<p><button class="danger">{{ _("Restore") }} {{ site.name }}</button></p>
+</form>
+{% endif %}
+{% endblock %}

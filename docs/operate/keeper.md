@@ -126,6 +126,8 @@ To let the keeper run actions, give it the control token instead (on the site's
 |---|---|---|
 | `check_seconds` | 300 | how often each site is checked, in seconds (every 5 minutes; 60 at least). With the scheduler, its job `keeper.watch` does it |
 | `history_days` | 30 | how many days of checks are kept for the uptime figures |
+| `backup_dir` | empty | where the keeper keeps a copy of every site's backups, a folder per site (relative to its workspace: `backups/sites` keeps them out of the keeper's own backups). Empty: no copies |
+| `backup_keep` | 30 | how many of each site's backups the keeper keeps |
 
 ### Security
 
@@ -139,15 +141,40 @@ To let the keeper run actions, give it the control token instead (on the site's
 - Every action is logged in the keeper with the account that ran it, and in the site's
   events.
 
-## Restarts and upgrades: the host helper
+## Copies of the sites' backups
+
+A backup in a site's data folder survives a broken container, not a lost disk. With
+`backup_dir` set, the keeper keeps its own copy of every site's backups, on its server:
+
+- each night (`keeper.fetch`, 05:30; or **Copy to the keeper now** on a site's page) it asks
+  each site's agent for the backups it keeps (name, size, SHA-256), downloads the ones it
+  lacks through the agent, and checks each against its size and SHA-256 before keeping it;
+- it keeps the newest `backup_keep` per site, in `<backup_dir>/<site>/` (the site's name,
+  made a folder name the first time), each with `<archive>.sha256` beside it;
+- the site's page shows them, when they were last copied, and what went wrong if anything.
+
+Copying needs the site's **control** token (an archive holds all its data); with the read
+token the page says so. It needs nothing else: the agent's https address is enough, so a
+site on another server, behind its own Cloudflare tunnel, is copied the same way. The keeper
+pulls, so neither a site nor its server can write or delete a copy at the keeper.
+
+The agent keeps 14 backups when the keeper asks for one (`agent.backup_keep`), the same as
+`nest-site`'s `KEEP`, so neither prunes the other's.
+
+## Restarts, upgrades and restores: the host helpers
 
 A site runs in a container, and neither the site nor the keeper (another container) can
-restart it. `nest-host` (in `deploy/site/`) is a small service on the server that does it
+restart it. `nest-host` (in `deploy/site/`) is a small service on each server that does it
 for them: it runs `nest-site` when the keeper asks with its token.
 
-Give a watched site its **name on the server** (its `nest-site` name, `mysite`) on its
-**Change** page, and set the keeper's `host_url` and `host_token`. The site's page then has
-a **Server** section:
+The keeper knows each server under **Servers**: its helper's address, its token, and for a
+server elsewhere, the Cloudflare Access service token its tunnel asks for (the secrets kept
+encrypted, like the agents' tokens). The page asks every helper at once what it serves. The
+helper of the keeper's own server may also be its settings, `host_url` and `host_token`: a
+site with no server uses it.
+
+Give a watched site its **server** and its **name on the server** (its `nest-site` name,
+`mysite`) on its **Change** page. The site's page then has a **Server** section:
 
 - its systemd unit (`nest-site@mysite.service`) active or not, healthy or not, and when its
   current and previous images were built;
@@ -158,11 +185,29 @@ a **Server** section:
 An upgrade is `nest-site upgrade`: it pulls the sources, builds, backs up, restarts (the
 migrations run first), and rolls back by itself if the site is not healthy.
 
+**Restore…** (when the helper's `ALLOW` names `restore`) lists the archives in the site's
+data folder on its server and the keeper's copies. Choose one, type the site's name on the
+server, and the helper:
+
+1. for a keeper's copy, downloads it from the keeper (`KEEPER_URL` in its `host.conf`)
+   through a one-time link, good for half an hour, and checks its SHA-256: a copy that does
+   not match replaces nothing;
+2. runs `nest-site restore`, which backs the site up first (its path kept in
+   `/var/lib/nest-site/<site>.before-restore`, nothing pruned), stops it, restores, starts
+   it and waits for `/healthz`.
+
+A restore is noted in the site's action log (`server.restore`, the archive, who asked).
+Restoring onto a new server is still done there: `nest-site init`, the `.env` (never in a
+backup), then the restore.
+
 The helper is deliberately narrow:
 
 - it runs only `nest-site` and only these actions: `restart`, `start`, `stop`, `backup`,
-  `upgrade`, `rollback`. `ALLOW` in its `host.conf` can narrow the list further. No shell
-  is used, and the only things taken from a request are the site's name and the action;
+  `upgrade`, `rollback`, and `restore` when `ALLOW` names it. `ALLOW` in its `host.conf`
+  can narrow the list further. No shell is used, and the only things taken from a request
+  are the site's name, the action, and for a restore an archive's name (in the site's
+  `backups/`, or downloaded from the keeper's address set in `host.conf`, never one the
+  request gives);
 - the site must have `/etc/nest/<site>.conf`, and its name must be lowercase letters,
   digits and dashes. `SITES` in `host.conf` can narrow which sites it serves;
 - it listens on the loopback or a private address only (the Docker bridge), and refuses
@@ -173,11 +218,12 @@ The helper is deliberately narrow:
 - it writes every job, with the account that asked, to `/var/lib/nest-site/host-jobs.log`
   and the journal. The keeper notes it in the site's action log too (`server.restart`, …).
 
-Installing it is in [Deploying on a server with ISPConfig](../deploy-ispconfig.md).
+Installing it, and reaching a helper on another server through its Cloudflare tunnel, is in
+[Deploying on a server with ISPConfig](../deploy-ispconfig.md).
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `host_url` | empty | the helper's address: `http://127.0.0.1:8090`, or `http://172.17.0.1:8090` from a container. Plain http only to the loopback or a private network |
+| `host_url` | empty | the helper of the keeper's own server, for the sites with no server: `http://127.0.0.1:8090`, or `http://172.17.0.1:8090` from a container. Plain http only to the loopback or a private network |
 | `host_token` | (secret) | the helper's token, in the keeper's environment: `NEST_KEEPER__KEEPER__HOST_TOKEN=nh_…` |
 
 ## The agent

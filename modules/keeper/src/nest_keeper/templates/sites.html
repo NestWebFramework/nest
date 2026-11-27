@@ -3,7 +3,7 @@
 {% block title %}{{ _("Sites") }} · {{ app.title }}{% endblock %}
 {% macro waiting_label(w) %}{{ w.labels.get(locale) or w.labels.get("en") or w.key }}{% endmacro %}
 {% block admin_content %}
-<div class="row between"><h1>{{ _("Sites") }}</h1><span class="row"><a href="{{ base }}/apps">{{ _("Applications") }}</a> <a href="{{ base }}/packages">{{ _("Packages") }}</a> <a href="{{ base }}/tokens">{{ _("API tokens") }}</a> <a class="button" href="{{ base }}/sites/new">{{ _("Watch a site") }}</a></span></div>
+<div class="row between"><h1>{{ _("Sites") }}</h1><span class="row"><a href="{{ base }}/apps">{{ _("Applications") }}</a> <a href="{{ base }}/packages">{{ _("Packages") }}</a> <a href="{{ base }}/servers">{{ _("Servers") }}</a> <a href="{{ base }}/tokens">{{ _("API tokens") }}</a> <a class="button" href="{{ base }}/sites/new">{{ _("Watch a site") }}</a></span></div>
 <p class="muted">{{ _("The deployed sites the keeper watches, each through its agent: whether it answers and is well, since when, how often these last days.") }}</p>
 {% block sites %}
 <div id="sites" hx-get="{{ base }}/" hx-trigger="every 15s" hx-select="#sites" hx-swap="outerHTML">

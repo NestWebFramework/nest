@@ -1,5 +1,5 @@
 {% extends "admin/layout.html" %}
-{% from "keeper/_site_macros.html" import state_label, bars, pct, ago with context %}
+{% from "keeper/_site_macros.html" import state_label, bars, pct, ago, mb with context %}
 {% block title %}{{ site.name }} · {{ _("Sites") }}{% endblock %}
 {% block admin_content %}
 {% set st = site.status %}
@@ -40,10 +40,12 @@
 
 {% if server %}
 <h2>{{ _("Server") }}</h2>
-{% if not server.configured %}<p class="muted">{{ _("No host helper yet: set the keeper's host_url and host_token (nest-host on the server) to restart, back up and upgrade this site from here.") }}</p>
+{% if server.get("token_lost") %}<p class="notice danger">{{ _("The token of its server cannot be read (the keeper's key changed): give it again on the server's page.") }} <a href="{{ base }}/servers/{{ server.token_lost.id }}/edit">{{ server.token_lost.name }} →</a></p>
+{% elif not server.configured %}<p class="muted">{{ _("No host helper yet: set the keeper's host_url and host_token (nest-host on the server) to restart, back up and upgrade this site from here.") }}</p>
 {% elif server.problem %}<p class="notice danger">{{ _("The host helper did not answer") }}: {{ server.problem }}</p>
 {% else %}{% set sv = server.state %}
 <dl class="keeper-facts">
+  {% if server.server %}<dt>{{ _("Server") }}</dt><dd>{{ server.server }}</dd>{% endif %}
   <dt>{{ _("Service") }}</dt><dd><code>{{ sv.unit }}</code> · <span class="{{ 'better' if sv.active == 'active' else 'worse' }}">{{ sv.active }}</span>{% if sv.healthy is not none %} · <span class="{{ 'better' if sv.healthy else 'worse' }}">{{ _("healthy") if sv.healthy else _("not healthy") }}</span>{% endif %}</dd>
   <dt>{{ _("Image") }}</dt><dd><code>{{ sv.image }}</code> · {{ _("current") }} {{ (sv.built.current or "—")[:16]|replace("T", " ") }} · {{ _("previous") }} {{ (sv.built.previous or "—")[:16]|replace("T", " ") }}</dd>
   {% if sv.job %}<dt>{{ _("Running") }}</dt><dd><a href="{{ base }}/sites/{{ site.id }}/server/jobs/{{ sv.job }}">{{ _("a job is running") }} →</a></dd>{% endif %}
@@ -52,6 +54,7 @@
 {% for name in ("restart", "backup") if name in sv.allow %}
   <form method="post" action="{{ base }}/sites/{{ site.id }}/server/{{ name }}">{{ csrf_field }}<button {% if sv.job %}disabled{% endif %}>{{ _(server.actions[name]) }}</button></form>
 {% endfor %}
+{% if "restore" in sv.allow %}<a class="button secondary" href="{{ base }}/sites/{{ site.id }}/server/restore">{{ _("Restore…") }}</a>{% endif %}
 {% for name in ("upgrade", "rollback", "stop", "start") if name in sv.allow %}
   <details class="keeper-confirm"><summary>{{ _(server.actions[name]) }}…</summary>
     <form method="post" action="{{ base }}/sites/{{ site.id }}/server/{{ name }}">{{ csrf_field }}
@@ -62,6 +65,18 @@
 </div>
 <p><a href="{{ base }}/sites/{{ site.id }}/server/logs">{{ _("Its log") }} →</a>{% if sv.jobs %} · {{ _("Last jobs") }}: {% for j in sv.jobs[:5] %}<a href="{{ base }}/sites/{{ site.id }}/server/jobs/{{ j.id }}">{{ j.action }}</a> <span class="{{ 'muted' if j.running else ('better' if j.code == 0 else 'worse') }}">{% if j.running %}…{% elif j.code == 0 %}✓{% else %}✗{% endif %}</span>{% if not loop.last %} · {% endif %}{% endfor %}{% endif %}</p>
 {% endif %}
+{% endif %}
+
+{% if copies and copies.on %}
+<h2>{{ _("Copies at the keeper") }}</h2>
+<p>{% if site.fetched_at %}{{ _("Last copied") }} {{ site.fetched_at.strftime("%d.%m.%Y %H:%M") }} UTC{% else %}<span class="muted">{{ _("Not copied yet.") }}</span>{% endif %}
+{% if copies.running %} · <span class="keeper-state warn">{{ _("copying…") }}</span>{% else %}
+<form method="post" action="{{ base }}/sites/{{ site.id }}/fetch" class="inline">{{ csrf_field }}<button class="secondary">{{ _("Copy to the keeper now") }}</button></form>{% endif %}</p>
+{% if site.fetch_problem %}<p class="notice danger">{{ site.fetch_problem }}</p>{% endif %}
+{% if copies.kept %}<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Archive") }}</th><th>{{ _("Size") }}</th><th>SHA-256</th></tr></thead>
+  <tbody>{% for c in copies.kept %}<tr><td><code>{{ c.name }}</code></td><td>{{ mb(c.size) }}</td><td class="muted"><code>{{ c.sha256[:16] }}{% if c.sha256 %}…{% endif %}</code></td></tr>{% endfor %}</tbody>
+</table></div>{% endif %}
 {% endif %}
 
 {% if offered.get("actions") %}

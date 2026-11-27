@@ -691,7 +691,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-agent"
-version = "0.1.2"
+version = "0.2.0"
 source = { editable = "modules/agent" }
 dependencies = [
     { name = "nest-core" },
@@ -1093,7 +1093,7 @@ requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
 
 [[package]]
 name = "nest-keeper"
-version = "0.2.3"
+version = "0.3.0"
 source = { editable = "modules/keeper" }
 dependencies = [
     { name = "nest-admin" },
@@ -1339,7 +1339,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-building"
-version = "0.14.0"
+version = "0.14.1"
 source = { editable = "engines/saga/subsystems/building" }
 dependencies = [
     { name = "nest-db" },
@@ -1720,7 +1720,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-player"
-version = "0.12.2"
+version = "0.14.0"
 source = { editable = "engines/saga/subsystems/player" }
 dependencies = [
     { name = "nest-auth" },

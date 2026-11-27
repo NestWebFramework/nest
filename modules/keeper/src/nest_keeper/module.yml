@@ -8,8 +8,12 @@
 # answer time, versions, pending migrations, backups, recent events, `nest check`,
 # and the actions the site allows (a backup, a timetable sync) with who ran which.
 # One worker asks every check_seconds; the checks are kept history_days.
-# With host_url and host_token, a site given its name on the server can be restarted,
-# backed up, upgraded and rolled back from its page, through nest-host (deploy/site/).
+# A site given its server (Servers: each one's nest-host, deploy/site/, its address and
+# token; through a Cloudflare tunnel for a server elsewhere) and its name there can be
+# restarted, backed up, upgraded, rolled back and restored from its page. A site with no
+# server uses host_url and host_token, the helper of the keeper's own server.
+# With backup_dir, the keeper keeps a copy of every site's backups (keeper.fetch, each
+# night, through the agents), and a restore can put one of them back.
 #
 # Applications are found as installed packages of type application (a site in
 # a repo of its own) and as folders of the apps setting (./applications). For
@@ -26,7 +30,7 @@ module:
   id: nest.module.keeper
   type: module
   title: Keeper
-  version: 0.2.3
+  version: 0.3.0
   description: The deployed sites Nest watches through their agents, and Nest's applications, their plans and packages.
   license: MIT
   created: "2026-11-14"
@@ -44,6 +48,7 @@ provides:
 
 requires:
   interfaces: [nest.db]
+  host: [workspace]   # backup_dir, when relative, is under the workspace
 
 deps:
   db: ">=0.2,<1"
@@ -61,6 +66,14 @@ settings:
     type: str
     secret: true
     description: The host helper's token (nh_…, from `nest-host token`). Set in the environment.
+  backup_dir:
+    type: str
+    default: ""
+    description: "Where the keeper keeps a copy of every site's backups, a folder per site (relative to its workspace; in a container, a mounted folder: /site-backups). Empty: no copies."
+  backup_keep:
+    type: int
+    default: 30
+    description: How many of each site's backups the keeper keeps (the oldest go).
 
 db:
   migrations: migrations
@@ -90,3 +103,8 @@ schedule:
     run: nest_keeper.jobs:prune
     cron: "15 4 * * *"
     description: Forget the checks older than history_days.
+  - name: fetch
+    run: nest_keeper.jobs:fetch
+    cron: "30 5 * * *"
+    catch_up: once
+    description: Copy every site's new backups to the keeper's backup_dir, each checked, the newest backup_keep kept.

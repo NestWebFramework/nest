@@ -3,7 +3,7 @@
 
 The deployed sites Nest watches through their agents, and Nest's applications, their plans and packages.
 
-**Version 0.2.3** · module · works with Nest `>=0.4,<1` · licence MIT
+**Version 0.3.0** · module · works with Nest `>=0.4,<1` · licence MIT
 
 | | |
 |---|---|
@@ -31,6 +31,8 @@ modules:
 | `history_days` | int | `30` |
 | `host_url` | str |  |
 | `host_token` | str | *(secret)* |
+| `backup_dir` | str |  |
+| `backup_keep` | int | `30` |
 
 What each does: the reference page, or the admin panel's Settings.
 <!-- /nest:readme -->

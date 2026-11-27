@@ -1,0 +1,25 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ _("Servers") }} · {{ app.title }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ base }}/">← {{ _("Sites") }}</a></p>
+<div class="row between"><h1>{{ _("Servers") }}</h1><a class="button" href="{{ base }}/servers/new">{{ _("Add a server") }}</a></div>
+<p class="muted">{{ _("Each server runs nest-host, the keeper's hands there: restarts, backups, upgrades, rollbacks and restores of its sites. A server elsewhere is reached through its own address (a Cloudflare tunnel to its nest-host), with a Cloudflare Access service token.") }}</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ _("Server") }}</th><th>{{ _("Helper") }}</th><th>{{ _("Its answer") }}</th><th>{{ _("Watched sites") }}</th><th></th></tr></thead>
+  <tbody>
+  {% if settings_helper %}<tr>
+    <td>{{ _("This server") }} <span class="muted">({{ _("the keeper's settings") }})</span></td>
+    <td><code>{{ settings_helper.url }}</code></td>
+    <td>{% if settings_answer.ok %}<span class="better">✓ {{ settings_answer.host }}</span> · {{ settings_answer.sites|join(", ") }}<br><span class="muted">{{ settings_answer.allow|join(" ") }}</span>{% else %}<span class="worse">{{ settings_answer.problem }}</span>{% endif %}</td>
+    <td class="muted">{{ _("the sites with no server") }}</td><td></td>
+  </tr>{% endif %}
+  {% for sv, answer in servers %}<tr>
+    <td><strong>{{ sv.name }}</strong>{% if sv.has_access %} <span class="muted">· Cloudflare Access</span>{% endif %}</td>
+    <td><code>{{ sv.url }}</code></td>
+    <td>{% if answer.ok %}<span class="better">✓ {{ answer.host }}</span> · {{ answer.sites|join(", ") }}<br><span class="muted">{{ answer.allow|join(" ") }}</span>{% else %}<span class="worse">{{ answer.problem }}</span>{% endif %}</td>
+    <td>{{ sv.sites|join(", ") or "—" }}</td>
+    <td><a href="{{ base }}/servers/{{ sv.id }}/edit">{{ _("Change") }}</a></td>
+  </tr>{% else %}{% if not settings_helper %}<tr><td colspan="5" class="muted">{{ _("No server yet.") }}</td></tr>{% endif %}{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

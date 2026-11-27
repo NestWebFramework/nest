@@ -7,6 +7,10 @@
 /sites/{id}             one site: its status, last checks, recent events, `nest check`,
                         the actions its agent allows (the control token) and who ran which
 /sites/{id}/edit        change it, pause it, give a new token; or stop watching it
+/sites/{id}/fetch       copy its backups to the keeper now (backup_dir)
+/sites/{id}/server/...  its server, through that server's host helper: restart, back up,
+                        upgrade, roll back; restore an archive (the server's, or the keeper's
+                        copy, which the helper downloads through a one-time link)
 """
 
 from __future__ import annotations
@@ -22,7 +26,7 @@ from starlette.concurrency import run_in_threadpool
 
 from nest import admin_url, bound, render
 from nest.host import module_state
-from nest_keeper import admin, host, keeper, sites
+from nest_keeper import admin, copies, host, keeper, sites
 
 
 def _seal(request: Request) -> str:
@@ -31,6 +35,30 @@ def _seal(request: Request) -> str:
 
 def _base(request: Request) -> str:
     return admin_url(request, "keeper")
+
+
+def _state(request: Request) -> dict[str, Any]:
+    return module_state(request, "keeper")
+
+
+def _copies(request: Request, site: sites.Site) -> dict[str, Any]:
+    """The keeper's copies of the site's backups, and whether it keeps any."""
+    base = _state(request).get("copies")
+    return {
+        "on": base is not None and site.kind == "agent",
+        "kept": copies.local(base, site.backup_folder),
+        "running": copies.running(site.id),
+    }
+
+
+def _server_id(raw: str) -> int | None:
+    raw = raw.strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        raise sites.SiteError("no such server") from None
 
 
 @admin.get("/")
@@ -60,6 +88,7 @@ def _form(
     values: Any = None,
     status_code: int = 200,
 ):
+    db = request.app.state.nest.bindings.get("nest.db")
     return render(
         request,
         "keeper/site_form.html",
@@ -67,6 +96,7 @@ def _form(
         site=site,
         error=error,
         values=values or {},
+        servers=host.servers(db, _seal(request)),
         base=_base(request),
     )
 
@@ -85,6 +115,7 @@ async def site_create(
     token: str = Form(""),
     host_site: str = Form(""),
     kind: str = Form("agent"),
+    server_id: str = Form(""),
     user: CurrentUser = Depends(keeper),
     db: Database = bound(Database),
 ):
@@ -99,10 +130,18 @@ async def site_create(
             token=token,
             host_site=host_site,
             kind=kind,
+            server_id=_server_id(server_id),
         )
     except sites.SiteError as e:
         # never the token, back in a page
-        values = {"name": name, "url": url, "agent": agent, "host_site": host_site, "kind": kind}
+        values = {
+            "name": name,
+            "url": url,
+            "agent": agent,
+            "host_site": host_site,
+            "kind": kind,
+            "server_id": server_id,
+        }
         return _form(request, error=str(e), values=values, status_code=400)
     await run_in_threadpool(sites.check, db, seal, site_id)  # its first check, at once
     return RedirectResponse(f"{_base(request)}/sites/{site_id}", status_code=303)
@@ -147,7 +186,8 @@ async def site_detail(
         events=events,
         offered=offered,
         problems=problems,
-        server=await _server(request, site),
+        server=await _server(request, db, site),
+        copies=_copies(request, site),
         log=await run_in_threadpool(sites.actions_log, db, site_id),
         result=None,
         findings=None,
@@ -219,6 +259,7 @@ async def site_action(
         offered={},
         problems=[],
         server=None,
+        copies=_copies(request, site),
         log=await run_in_threadpool(sites.actions_log, db, site_id),
         result=result,
         findings=None,
@@ -242,6 +283,7 @@ def site_edit_form(
             "url": site.url,
             "agent": site.agent,
             "host_site": site.host_site,
+            "server_id": "" if site.server_id is None else str(site.server_id),
         },
     )
 
@@ -256,6 +298,7 @@ def site_edit(
     token: str = Form(""),
     enabled: bool = Form(False),
     host_site: str = Form(""),
+    server_id: str = Form(""),
     user: CurrentUser = Depends(keeper),
     db: Database = bound(Database),
 ):
@@ -272,9 +315,16 @@ def site_edit(
             token=token,
             enabled=enabled,
             host_site=host_site,
+            server_id=_server_id(server_id),
         )
     except sites.SiteError as e:
-        values = {"name": name, "url": url, "agent": agent, "host_site": host_site}
+        values = {
+            "name": name,
+            "url": url,
+            "agent": agent,
+            "host_site": host_site,
+            "server_id": server_id,
+        }
         return _form(request, site=site, error=str(e), values=values, status_code=400)
     return RedirectResponse(f"{_base(request)}/sites/{site_id}", status_code=303)
 
@@ -294,15 +344,23 @@ def site_delete(
 # --- the server, through the host helper (nest-host) -------------------------------------
 
 
-def _helper(request: Request) -> host.Helper | None:
-    return host.helper(module_state(request, "keeper")["settings"])
+def _helper(request: Request, db: Database, site: sites.Site) -> host.Helper | None:
+    return host.helper_for(db, _seal(request), _state(request)["settings"], site)
 
 
-async def _server(request: Request, site: sites.Site) -> dict[str, Any] | None:
-    """The site's container as the host helper sees it (None: no helper, or no name)."""
-    h = _helper(request)
+async def _server(request: Request, db: Database, site: sites.Site) -> dict[str, Any] | None:
+    """The site's container as its host helper sees it (None: no helper, or no name)."""
     if not site.host_site:
         return None
+    h = await run_in_threadpool(_helper, request, db, site)
+    if h is None and site.server_id is not None:  # its server is kept, its token unreadable
+        found = await run_in_threadpool(host.server, db, _seal(request), site.server_id)
+        return {
+            "configured": True,
+            "state": None,
+            "problem": "",
+            "token_lost": found,
+        }
     if h is None:
         return {"configured": False, "state": None, "problem": ""}
     answer = await run_in_threadpool(host.state, h, site.host_site)
@@ -312,15 +370,109 @@ async def _server(request: Request, site: sites.Site) -> dict[str, Any] | None:
         "state": answer.data if ok else None,
         "problem": "" if ok else answer.problem,
         "actions": host.ACTIONS,
+        "server": h.name,
     }
 
 
 def _server_site(request: Request, db: Database, site_id: int) -> tuple[sites.Site, host.Helper]:
     site = _site_or_404(db, _seal(request), site_id)
-    h = _helper(request)
+    h = _helper(request, db, site)
     if h is None or not site.host_site:
-        raise HTTPException(409, "no host helper for this site (host_url, host_token, its name)")
+        raise HTTPException(409, "no host helper for this site (its server, its name there)")
     return site, h
+
+
+# (before /server/{action}, which would take /server/restore)
+@admin.get("/sites/{site_id:int}/server/restore")
+async def server_restore_form(
+    request: Request,
+    site_id: int,
+    user: CurrentUser = Depends(keeper),
+    db: Database = bound(Database),
+):
+    site, h = await run_in_threadpool(_server_site, request, db, site_id)
+    return await _restore_page(request, site, h)
+
+
+async def _restore_page(
+    request: Request, site: sites.Site, h: host.Helper, *, error: str = "", status_code: int = 200
+):
+    state, listed = await asyncio.gather(
+        run_in_threadpool(host.state, h, site.host_site),
+        run_in_threadpool(host.backups, h, site.host_site),
+    )
+    allow = (state.data or {}).get("allow", []) if isinstance(state.data, dict) else []
+    on_server = (
+        listed.data.get("backups", [])
+        if listed.code == 200 and isinstance(listed.data, dict)
+        else []
+    )
+    return render(
+        request,
+        "keeper/server_restore.html",
+        status_code=status_code,
+        site=site,
+        allowed=host.RESTORE in allow,
+        problem=state.problem or ("" if listed.code == 200 else listed.problem),
+        on_server=on_server,
+        at_keeper=_copies(request, site)["kept"],
+        error=error,
+        base=_base(request),
+    )
+
+
+@admin.post("/sites/{site_id:int}/server/restore")
+async def server_restore(
+    request: Request,
+    site_id: int,
+    source: str = Form(""),
+    confirm: str = Form(""),
+    user: CurrentUser = Depends(keeper),
+    db: Database = bound(Database),
+):
+    """Put an archive back on the site: one on its server, or the keeper's copy (the helper
+    downloads it through a one-time link and checks its SHA-256 first). The helper backs the
+    site up before replacing anything."""
+    site, h = await run_in_threadpool(_server_site, request, db, site_id)
+    where, _, name = source.partition(":")
+    if confirm.strip() != site.host_site:
+        return await _restore_page(
+            request, site, h, error="type the site's name on the server to confirm", status_code=400
+        )
+    if not copies.ARCHIVE.match(name) or where not in ("server", "keeper"):
+        return await _restore_page(request, site, h, error="choose an archive", status_code=400)
+    body = {"archive": name}
+    if where == "keeper":
+        base = _state(request).get("copies")
+        found = copies.find(base, site.backup_folder, name)
+        if base is None or found is None:
+            return await _restore_page(
+                request, site, h, error="the keeper has no such copy", status_code=400
+            )
+        path = copies.path_of(base, site.backup_folder, name)
+        digest = found.sha256 or await run_in_threadpool(copies.sha256_of, path)
+        body.update(ticket=copies.ticket(path, digest), sha256=digest)
+    who = user.email or f"user #{user.id}"
+    answer = await run_in_threadpool(host.restore, h, site.host_site, who, body)
+    data = answer.data if isinstance(answer.data, dict) else {}
+    started = answer.code == 202 and data.get("id")
+    note = f"{where}:{name}, " + (
+        f"job {data['id']}" if started else (data.get("error") or answer.problem)
+    )
+    await run_in_threadpool(
+        sites.note_action, db, site.id, "server.restore", who, bool(started), note
+    )
+    if started:
+        return RedirectResponse(
+            f"{_base(request)}/sites/{site_id}/server/jobs/{data['id']}", status_code=303
+        )
+    return await _restore_page(
+        request,
+        site,
+        h,
+        error=data.get("error") or answer.problem or "not started",
+        status_code=502,
+    )
 
 
 @admin.post("/sites/{site_id:int}/server/{action}")
@@ -406,3 +558,26 @@ async def server_logs(
         lines=lines,
         base=_base(request),
     )
+
+
+# --- its backups, copied to the keeper, and put back ------------------------------------------
+
+
+@admin.post("/sites/{site_id:int}/fetch")
+async def site_fetch(
+    request: Request,
+    site_id: int,
+    user: CurrentUser = Depends(keeper),
+    db: Database = bound(Database),
+):
+    """Copy the site's backups to the keeper now, in the background (the page shows it)."""
+    seal = _seal(request)
+    site = await run_in_threadpool(_site_or_404, db, seal, site_id)
+    base = _state(request).get("copies")
+    if base is None or site.kind != "agent":
+        raise HTTPException(409, "the keeper keeps no copies (backup_dir), or this is a web check")
+    keep = max(1, int(_state(request)["settings"].get("backup_keep") or 30))
+    copies.start(db, seal, site.id, base, keep)
+    who = user.email or f"user #{user.id}"
+    await run_in_threadpool(sites.note_action, db, site.id, "keeper.fetch", who, True, "started")
+    return RedirectResponse(f"{_base(request)}/sites/{site_id}", status_code=303)

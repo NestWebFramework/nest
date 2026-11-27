@@ -9,7 +9,7 @@ module:
   id: nest.app.keeper
   type: application
   title: Nest keeper
-  version: 0.2.2
+  version: 0.3.0
   description: Watches the deployed sites, restarts and upgrades them, and shows Nest's applications.
   license: MIT
   created: "2026-11-14"
@@ -25,7 +25,9 @@ modules:
   - name: keeper
     route: /
     # nest's own applications, and those in repos of their own beside it
-    config: {apps: "applications,../voievodate,../gari,../morlaca,../regionalisme,../transilpedia"}
+    config:
+      apps: "applications,../voievodate,../gari,../morlaca,../regionalisme,../transilpedia"
+      backup_dir: backups/sites  # the sites' backups, copied each night (keeper.fetch)
   - name: admin
     route: /admin
   - name: auth
