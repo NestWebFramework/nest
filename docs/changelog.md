@@ -11,6 +11,26 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **Apprenticeships and guilds put right** (Saga guild 0.5.0, economy 0.4.2): a guild's book
+  may list its `village_trades` (the trades learned from a village craftsman without a
+  guild, each with its skill): only those are taught so (`not-taught` otherwise); the village
+  apprentice takes the `apprentice` rank and rises to journeyman and village master by the
+  trade's skill (`VILLAGE_JOURNEYMAN`, `VILLAGE_MASTER`; signal `guild.village_promoted`); a
+  new trade begins again as an apprentice. A guild's statute may set the `pay` a master gives
+  each apprentice a month. A town holds one guild of a craft. `guild.promoted` names the
+  rank (`rank_name`), `guild.village_apprentice` the master. A sale the guild forbids says so
+  (`guild-monopoly`; a stand's wares mark it `barred`).
+
+- **Apprenticeships and guilds put right** (Saga guild 0.5.0, economy 0.4.2): a guild's book
+  may list its `village_trades` (the trades learned from a village craftsman without a
+  guild, each with its skill): only those are taught so (`not-taught` otherwise); the village
+  apprentice takes the `apprentice` rank and rises to journeyman and village master by the
+  trade's skill (`VILLAGE_JOURNEYMAN`, `VILLAGE_MASTER`; signal `guild.village_promoted`); a
+  new trade begins again as an apprentice. A guild's statute may set the `pay` a master gives
+  each apprentice a month. A town holds one guild of a craft. `guild.promoted` names the
+  rank (`rank_name`), `guild.village_apprentice` the master. A sale the guild forbids says so
+  (`guild-monopoly`; a stand's wares mark it `barred`).
+
 - **People at work in their place** (Saga player 0.14.0, building 0.14.1): presence content may
   name places that are no painting and hold anyone (`elsewhere`: at work), where the trades no
   rule puts elsewhere go while working; the plan names each building's owner (`owner_id`), so

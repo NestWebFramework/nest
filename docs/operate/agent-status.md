@@ -93,6 +93,13 @@ A service may also answer these. The keeper's site page uses them when present:
 | `GET {agent}/v1/actions` | `{"actions": [{"name", "title", "description", "running"}], "allowed": bool}` |
 | `POST {agent}/v1/actions/{name}` | with a control token: run it. `200 {"action", "ok", "seconds", "result"}`, `403` for a read token, `404` unknown, `409` already running |
 | `GET {agent}/v1/check` | `{"failed": bool, "findings": [{"level": "ok"/"warn"/"fail", "text"}]}`: a production check |
+| `GET {agent}/v1/backups` | `{"backups": [{"name", "size", "made", "sha256"}], "download": bool}`: the backups it keeps, oldest first; `download` true for a control token |
+| `GET {agent}/v1/backups/{name}` | with a control token: the archive itself, streamed (`403` for a read token, `404` unknown) |
+
+With `backups`, a keeper that keeps copies (its `backup_dir`) downloads each archive it
+lacks every night, and keeps it only if its size and SHA-256 are the listed ones. A name is
+`<app>-YYYYMMDD-HHMMSS.tar.gz`; the keeper ignores any other. Give the listing's
+`sha256` in lowercase hex, and never list an archive still being written.
 
 ## A minimal answer, in a few lines
 

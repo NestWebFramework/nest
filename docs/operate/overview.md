@@ -202,4 +202,4 @@ Each site repository has a `deploy/` folder:
 
 - [Backups and upgrades](backups-and-upgrades.md): `nest backup`, `nest restore`,
   `nest-site upgrade` and its automatic rollback.
-- [The keeper](keeper.md): watching the deployed sites through their agents (uptime, versions, events, backups), and every application at once.
+- [The keeper](keeper.md): watching the deployed sites through their agents (uptime, versions, events, backups), a copy of their backups on its server, restarts, upgrades and restores on each server, and every application at once.

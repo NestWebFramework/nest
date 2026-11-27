@@ -1,17 +1,21 @@
 ---
 title: "The keeper"
-description: "Nest's own application: it watches the deployed sites through their agents (uptime, versions, events, actions), and shows every application Nest can see, its plan and packages."
+description: "Nest's own application: it watches the deployed sites through their agents (uptime, versions, events, actions), keeps a copy of their backups, restarts, upgrades and restores them on their servers, and shows every application Nest can see, its plan and packages."
 ---
 
 # The keeper
 
-The keeper (`applications/keeper`) is Nest's own application. It does two jobs:
+The keeper (`applications/keeper`) is Nest's own application. It does three jobs:
 
 - **It watches the deployed sites.** Each site includes the [agent](#the-agent) module,
   and the keeper asks every agent how its site is doing: whether it is up and since when,
   its uptime over 24 hours and 7 days, how fast it answers, its versions, pending
   migrations, its last backup, recent warnings and errors. It can also ask a site to do
   something, such as make a backup or sync its timetable.
+- **It looks after the deployed sites.** It keeps a copy of every site's backups on its
+  own server, checked against their SHA-256, and through each server's host helper it
+  restarts, upgrades, rolls back and restores the sites, on this server and on others
+  behind their own Cloudflare tunnels.
 - **It shows every application Nest can see** on this machine: how each one is planned,
   what is wrong with it, and which packages it uses.
 
@@ -36,7 +40,8 @@ uv run nest auth create-user applications/keeper you@example.org --role admin --
 
 The application is small: the `keeper` module at `/`, `admin` at `/admin`, `auth` at
 `/cont`, and SQLite for its own database. That database holds the watched sites, their
-check history, the log of actions run, and its API tokens.
+check history, the log of actions run, the servers it acts on, and its API tokens. The
+copies of the sites' backups are files, in `backup_dir`.
 
 ## Watching deployed sites
 
@@ -140,6 +145,10 @@ To let the keeper run actions, give it the control token instead (on the site's
   address that keeps sending bad tokens gets 429 for a minute.
 - Every action is logged in the keeper with the account that ran it, and in the site's
   events.
+- The servers' helper tokens and Cloudflare Access secrets are kept encrypted the same way,
+  and never shown again once given (an empty field keeps the one kept).
+- A backup is copied only with a control token, and kept only when its size and SHA-256
+  are the ones the agent listed: a copy cut short or altered is thrown away.
 
 ## Copies of the sites' backups
 
@@ -239,9 +248,12 @@ browser cannot be made to call it.
 | `GET /_agent/v1/check` | read | what production needs, as `nest check` reports it |
 | `GET /_agent/v1/actions` | read | the actions it allows, and whether this token may run them |
 | `POST /_agent/v1/actions/{name}` | control | run one; 409 if it is already running |
+| `GET /_agent/v1/backups` | read | the backups it keeps: name, size, date, SHA-256; and whether this token may download them |
+| `GET /_agent/v1/backups/{name}` | control | one of them, streamed (an archive holds all the site's data), for the keeper's copy |
 
 Its own action is **backup**: the workspace in one archive, made while the site runs, the
-oldest removed beyond `backup_keep` (7). A module adds actions by answering
+oldest removed beyond `backup_keep` (14, as `nest-site`'s `KEEP`, so neither prunes the
+other's archives). A module adds actions by answering
 `agent.actions` with a list of `nest_agent.Action`. The trains module offers
 **trains.sync**, which fetches the timetable from data.gov.ro now:
 
@@ -367,8 +379,9 @@ be cached.
 
 ## Run your own keeper
 
-A keeper is one person's tool. It holds the tokens of the sites it watches, and with
-control tokens and the host helper it can restart and upgrade them. So there is no shared
+A keeper is one person's tool. It holds the tokens of the sites it watches and a copy of
+their data, and with control tokens and the host helpers it can restart, upgrade and
+restore them. So there is no shared
 keeper to sign up to: you run your own, on a domain of yours, and your tokens never leave
 your server.
 
@@ -414,7 +427,7 @@ site runs in its own container, built from `/opt/nest/src/<site>` with a host po
 installed in development, committed and built, never changed in a running container.
 
 Restarting and upgrading a container is done on the host, by `nest-site` and systemd,
-either from the keeper (through the [host helper](#restarts-and-upgrades-the-host-helper))
+either from the keeper (through the [host helpers](#restarts-upgrades-and-restores-the-host-helpers))
 or by hand:
 
 | Question | On the server |

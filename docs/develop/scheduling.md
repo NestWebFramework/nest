@@ -127,4 +127,5 @@ def setup(host):
     async def loop(): ...
 ```
 
-The trains module (`trains.sync`) and the keeper (`keeper.watch`, `keeper.prune`) do this.
+The trains module (`trains.sync`) and the keeper (`keeper.watch`, `keeper.prune`,
+`keeper.fetch`) do this.
