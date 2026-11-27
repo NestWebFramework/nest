@@ -51,6 +51,7 @@ members = [
     "nest-rating",
     "nest-redirects",
     "nest-redis",
+    "nest-regions",
     "nest-registry",
     "nest-saga",
     "nest-saga-building",
@@ -1136,10 +1137,14 @@ version = "0.1.0"
 source = { editable = "modules/localities" }
 dependencies = [
     { name = "nest-core" },
+    { name = "nest-db" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+]
 
 [[package]]
 name = "nest-maps"
@@ -1311,6 +1316,23 @@ requires-dist = [
     { name = "nest-cache", editable = "interfaces/cache" },
     { name = "nest-pubsub", editable = "interfaces/pubsub" },
     { name = "redis", specifier = ">=5.0,<9" },
+]
+
+[[package]]
+name = "nest-regions"
+version = "0.1.0"
+source = { editable = "modules/regions" }
+dependencies = [
+    { name = "nest-core" },
+    { name = "nest-db" },
+    { name = "nest-localities" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "nest-core", editable = "packages/nest-core" },
+    { name = "nest-db", editable = "interfaces/db" },
+    { name = "nest-localities", editable = "modules/localities" },
 ]
 
 [[package]]
@@ -1515,7 +1537,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-guild"
-version = "0.5.1"
+version = "0.6.0"
 source = { editable = "engines/saga/subsystems/guild" }
 dependencies = [
     { name = "nest-auth" },
@@ -1774,7 +1796,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-production"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "engines/saga/subsystems/production" }
 dependencies = [
     { name = "nest-db" },
@@ -2291,6 +2313,7 @@ dependencies = [
     { name = "nest-hub" },
     { name = "nest-keeper" },
     { name = "nest-keys" },
+    { name = "nest-localities" },
     { name = "nest-maps" },
     { name = "nest-media" },
     { name = "nest-messages" },
@@ -2303,6 +2326,7 @@ dependencies = [
     { name = "nest-rating" },
     { name = "nest-redirects" },
     { name = "nest-redis" },
+    { name = "nest-regions" },
     { name = "nest-registry" },
     { name = "nest-saga" },
     { name = "nest-saga-building" },
@@ -2397,6 +2421,7 @@ requires-dist = [
     { name = "nest-hub", editable = "modules/hub" },
     { name = "nest-keeper", editable = "modules/keeper" },
     { name = "nest-keys", editable = "modules/keys" },
+    { name = "nest-localities", editable = "modules/localities" },
     { name = "nest-maps", editable = "modules/maps" },
     { name = "nest-media", editable = "modules/media" },
     { name = "nest-messages", editable = "modules/messages" },
@@ -2409,6 +2434,7 @@ requires-dist = [
     { name = "nest-rating", editable = "modules/rating" },
     { name = "nest-redirects", editable = "modules/redirects" },
     { name = "nest-redis", editable = "providers/redis" },
+    { name = "nest-regions", editable = "modules/regions" },
     { name = "nest-registry", editable = "modules/registry" },
     { name = "nest-saga", editable = "engines/saga" },
     { name = "nest-saga-building", editable = "engines/saga/subsystems/building" },

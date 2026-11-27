@@ -11,6 +11,22 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **The masterpiece and the masters' places** (Saga guild 0.6.0, production 0.4.1): a guild's
+  statute may name its `masterpiece` (a recipe) and its `masters_most` (the closed number of
+  masters); a player journeyman becomes a master only once his masterpiece is made and taken
+  by the guild (`guild.made`, asked after a craft; signal `guild.masterpiece`) and a master's
+  place is free. A village apprentice and journeyman make no harder pieces than the custom
+  allows (`VILLAGE_LEVELS`). `player.sheet`'s guild says the masterpiece, whether it is
+  made, and the masters' places.
+
+- **The masterpiece and the masters' places** (Saga guild 0.6.0, production 0.4.1): a guild's
+  statute may name its `masterpiece` (a recipe) and its `masters_most` (the closed number of
+  masters); a player journeyman becomes a master only once his masterpiece is made and taken
+  by the guild (`guild.made`, asked after a craft; signal `guild.masterpiece`) and a master's
+  place is free. A village apprentice and journeyman make no harder pieces than the custom
+  allows (`VILLAGE_LEVELS`). `player.sheet`'s guild says the masterpiece, whether it is
+  made, and the masters' places.
+
 - **A workshop of one's own** (Saga building 0.15.0, production 0.4.0, household 0.4.0, guild
   0.5.1): a player works a trade only at the workstations of the village's own buildings and
   of the workshops it may use (`workshop.usable`: its own, its guild master's, those lent or

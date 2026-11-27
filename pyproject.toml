@@ -47,6 +47,8 @@ dependencies = [
     "nest-agent",
     "nest-scheduler",
     "nest-keeper",
+    "nest-localities",
+    "nest-regions",
     "nest-registry",
     "nest-forum",
     "nest-messages",
@@ -159,6 +161,8 @@ nest-admin = { workspace = true }
 nest-agent = { workspace = true }
 nest-scheduler = { workspace = true }
 nest-keeper = { workspace = true }
+nest-localities = { workspace = true }
+nest-regions = { workspace = true }
 nest-registry = { workspace = true }
 nest-forum = { workspace = true }
 nest-messages = { workspace = true }
