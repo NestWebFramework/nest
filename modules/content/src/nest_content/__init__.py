@@ -330,19 +330,27 @@ def setup(host: ModuleHost) -> None:
 
     def entries_of(key: object = None) -> list[dict] | None:
         """``host.lookup("content.entries", {"type": "efemeride"})``: a type's published
-        entries (title, path, fields, a line about each), for a module that shows them its
-        way (the almanac's on-this-day)."""
+        entries (id, title, path, fields, excerpt, a line about each, the featured picture's
+        key, when published), for a module that shows them its way (the almanac's
+        on-this-day, a settlement's page). ``"body": True`` gives each one's body too (its
+        stored, cleaned HTML)."""
         kind = str(key.get("type") or "") if isinstance(key, dict) else ""
         if not kind or kind not in registry.types:
             return None
         from nest_content.seo import summary
 
+        with_body = bool(key.get("body")) if isinstance(key, dict) else False
         return [
             {
+                "id": e.id,
                 "title": e.title,
                 "path": e.path,
                 "fields": dict(e.fields or {}),
                 "summary": summary(e, 160),
+                "excerpt": e.excerpt,
+                "featured": e.featured,
+                "published_at": e.published_at,
+                **({"body": e.body} if with_body else {}),
             }
             for e in _service.published_of_types(db, [kind])
         ]

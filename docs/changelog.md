@@ -11,6 +11,11 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- content 0.2.6: the `content.entries` lookup gives each entry's id, excerpt, featured
+  picture and publication date too, and its body when asked (`"body": True`): a module may
+  show a type's entries as its own (a settlement's introduction and articles, on a region's
+  site).
+
 - **The keeper's copies kept apart, a cut-off restore unlocks** (keeper 0.3.1, the keeper
   application 0.3.1): a site's backup folder is never one already on disk (a site removed
   leaves its copies; a new one of the same name gets its own folder); copies are ordered and
