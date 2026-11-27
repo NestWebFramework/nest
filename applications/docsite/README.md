@@ -1,6 +1,6 @@
 # Nest
 
-**Version 0.1.3** (in `module.yml`; raise it there and here together) · port 8700 · part of Nest
+**Version 0.1.4** (in `module.yml`; raise it there and here together) · port 8700 · part of Nest
 
 nest-framework.org: what Nest is, and its documentation (Nest's docs/ folder, served by the docs module).
 
