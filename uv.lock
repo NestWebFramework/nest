@@ -38,6 +38,7 @@ members = [
     "nest-hub",
     "nest-keeper",
     "nest-keys",
+    "nest-localities",
     "nest-maps",
     "nest-media",
     "nest-messages",
@@ -1130,6 +1131,17 @@ requires-dist = [
 ]
 
 [[package]]
+name = "nest-localities"
+version = "0.1.0"
+source = { editable = "modules/localities" }
+dependencies = [
+    { name = "nest-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nest-core", editable = "packages/nest-core" }]
+
+[[package]]
 name = "nest-maps"
 version = "0.2.3"
 source = { editable = "modules/maps" }
@@ -1339,7 +1351,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-building"
-version = "0.14.1"
+version = "0.15.0"
 source = { editable = "engines/saga/subsystems/building" }
 dependencies = [
     { name = "nest-db" },
@@ -1503,7 +1515,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-guild"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "engines/saga/subsystems/guild" }
 dependencies = [
     { name = "nest-auth" },
@@ -1545,7 +1557,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-household"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "engines/saga/subsystems/household" }
 dependencies = [
     { name = "nest-db" },
@@ -1762,7 +1774,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-production"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "engines/saga/subsystems/production" }
 dependencies = [
     { name = "nest-db" },

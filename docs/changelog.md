@@ -11,6 +11,28 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- **A workshop of one's own** (Saga building 0.15.0, production 0.4.0, household 0.4.0, guild
+  0.5.1): a player works a trade only at the workstations of the village's own buildings and
+  of the workshops it may use (`workshop.usable`: its own, its guild master's, those lent or
+  rented to it, kept on the workshop as `user:<character>` days; `workshop.public`). A
+  raising may be a workshop of a `trade`, offered in the yard to that trade's journeymen and
+  masters: a village's stands in the yard, a market town's and up on a workshop lot of its own.
+  A master rents a place in his workshop (`workshop.rent`, the fact `rents_workshop`, `RENT` a
+  month); a village apprentice is lent his master's (`workshop.lend`). A workshop whose master
+  is gone is sold by the judge with the houses (`household.workshop_bought`). `player.sheet`
+  gives `workshops`.
+
+- **A workshop of one's own** (Saga building 0.15.0, production 0.4.0, household 0.4.0, guild
+  0.5.1): a player works a trade only at the workstations of the village's own buildings and
+  of the workshops it may use (`workshop.usable`: its own, its guild master's, those lent or
+  rented to it, kept on the workshop as `user:<character>` days; `workshop.public`). A
+  raising may be a workshop of a `trade`, offered in the yard to that trade's journeymen and
+  masters: a village's stands in the yard, a market town's and up on a workshop lot of its own.
+  A master rents a place in his workshop (`workshop.rent`, the fact `rents_workshop`, `RENT` a
+  month); a village apprentice is lent his master's (`workshop.lend`). A workshop whose master
+  is gone is sold by the judge with the houses (`household.workshop_bought`). `player.sheet`
+  gives `workshops`.
+
 - **Apprenticeships and guilds put right** (Saga guild 0.5.0, economy 0.4.2): a guild's book
   may list its `village_trades` (the trades learned from a village craftsman without a
   guild, each with its skill): only those are taught so (`not-taught` otherwise); the village
