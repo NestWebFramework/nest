@@ -1472,7 +1472,7 @@ requires-dist = [
 
 [[package]]
 name = "nest-saga-economy"
-version = "0.4.2"
+version = "0.5.0"
 source = { editable = "engines/saga/subsystems/economy" }
 dependencies = [
     { name = "nest-db" },

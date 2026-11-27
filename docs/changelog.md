@@ -11,13 +11,14 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
-- **The masterpiece and the masters' places** (Saga guild 0.6.0, production 0.4.1): a guild's
-  statute may name its `masterpiece` (a recipe) and its `masters_most` (the closed number of
-  masters); a player journeyman becomes a master only once his masterpiece is made and taken
-  by the guild (`guild.made`, asked after a craft; signal `guild.masterpiece`) and a master's
-  place is free. A village apprentice and journeyman make no harder pieces than the custom
-  allows (`VILLAGE_LEVELS`). `player.sheet`'s guild says the masterpiece, whether it is
-  made, and the masters' places.
+- **One's own wares** (Saga economy 0.5.0): a craftsman sells what his trade makes besides
+  the market's stands. `player.act` `sell_gate` {item, qty}: in a place below a market town,
+  from one's own house, at a little under the market's offer and free of the market's dues;
+  `sell_stall`: in a market town or bigger, on its market days (content: `markets`, weekdays by
+  settlement kind) or a fair's, the stall's place paid once a day (to the treasury), at the
+  market's price. At a fair anything may be sold. The guild's monopoly holds (`trade.permit`).
+  `/here`'s `own` says where one may sell, the market days, the toll and one's wares with their
+  prices; signal `economy.sold_own`. `Economy.sell` / `sell_at` take `dues=False`.
 
 - **The masterpiece and the masters' places** (Saga guild 0.6.0, production 0.4.1): a guild's
   statute may name its `masterpiece` (a recipe) and its `masters_most` (the closed number of
