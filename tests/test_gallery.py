@@ -314,3 +314,22 @@ def test_file_names_and_camera_data_are_not_a_photos_words():
     assert texts.caption("Author: Andreea Nechita") == "Author: Andreea Nechita"  # kept, a credit
     assert texts.describes("Author: Andreea Nechita") == ""  # but it does not say what is shown
     assert texts.describes("Hora la nedeie") == "Hora la nedeie"
+
+
+
+def test_a_home_page_shows_photos_of_the_day(tmp_path):
+    """gallery_photos(n) in a template (the lookup gallery.photos): one photo from each
+    album first, each with its album's title and address (a home page's strip)."""
+    with make(tmp_path, ALONE) as c:
+        mountains = service.ensure(c.db, "La munte")
+        village = service.ensure(c.db, "În sat")
+        service.set_photos(c.db, mountains.id, [{"key": "foto/a.jpg"}, {"key": "foto/b.jpg"}])
+        service.set_photos(c.db, village.id, [{"key": "foto/c.jpg", "alt": "fântâna"}])
+        c.get("/healthz")
+        photos = c.app.state.nest.lookup("gallery.photos", {"n": 8})
+        assert len(photos) == 2  # one from each album first
+        by_album = {p["url"]: p for p in photos}
+        assert set(by_album) == {"/galerii/la-munte/", "/galerii/in-sat/"}
+        assert by_album["/galerii/in-sat/"]["alt"] == "fântâna"
+        assert by_album["/galerii/la-munte/"]["album"] == "La munte"
+        assert c.app.state.nest.lookup("gallery.photos", {"n": 8}) == photos  # the same all day

@@ -3,7 +3,7 @@
 
 Photo galleries and albums with pages, embeds, a lightbox, uploads in the admin panel and WordPress imports.
 
-**Version 0.3.3** · module · works with Nest `>=0.2,<1` · licence MIT
+**Version 0.3.4** · module · works with Nest `>=0.2,<1` · licence MIT
 
 | | |
 |---|---|

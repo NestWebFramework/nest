@@ -11,6 +11,10 @@ This documentation is for **Nest %NEST_VERSION%**.
 
 ## Unreleased
 
+- gallery 0.3.4: some photos of the published albums for a home page, others each day, one
+  from each album first, each with its album's title (in the page's language) and address:
+  `gallery_photos(8)` in a template, `lookup("gallery.photos", {"n": 8})` for a module.
+
 - content 0.2.7: a `select` field may take its choices from another module
   (`choices_from: <lookup>`, answering `[{"value", "label"}]`): editors pick a settlement by
   its name while its code is kept; an empty value is the "none" choice, named; a value the
